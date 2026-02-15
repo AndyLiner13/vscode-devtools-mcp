@@ -61,8 +61,8 @@ importers:
         specifier: ^8.43.0
         version: 8.55.0(eslint@10.0.0)(typescript@5.9.3)
       chrome-devtools-frontend:
-        specifier: 1.0.1579812
-        version: 1.0.1579812
+        specifier: 1.0.1583146
+        version: 1.0.1583146
       core-js:
         specifier: 3.48.0
         version: 3.48.0
@@ -687,8 +687,8 @@ packages:
     resolution: {integrity: sha512-+ys997U96po4Kx/ABpBCqhA9EuxJaQWDQg7295H4hBphv3IZg0boBKuwYpt4YXp6MZ5AmZQnU/tyMTlRpaSejg==}
     engines: {node: '>= 0.4'}
 
-  chrome-devtools-frontend@1.0.1579812:
-    resolution: {integrity: sha512-//emw+k5en7+q4CN1KccoUWYK1eR04olzWhziLWJHRS03q8l9eMVMcmC5tSghWtYrMGdlUJPfuvi9sKENdafzQ==}
+  chrome-devtools-frontend@1.0.1583146:
+    resolution: {integrity: sha512-WfH6W0WY/WGJXWwOHTBTPldHM4hT+7ewDPu6zBgNjKxrU9jYjnwDMwX0WS94XuCo2ytBzvTrUOMeprHET/KSdg==}
 
   cliui@9.0.1:
     resolution: {integrity: sha512-k7ndgKhwoQveBL+/1tqGJYNz097I7WOvwbmmU2AR5+magtbjPWQTS1C5vzGkBC8Ym8UWRzfKUzUUqFLypY4Q+w==}
@@ -2402,7 +2402,7 @@ snapshots:
       call-bind-apply-helpers: 1.0.2
       get-intrinsic: 1.3.0
 
-  chrome-devtools-frontend@1.0.1579812: {}
+  chrome-devtools-frontend@1.0.1583146: {}
 
   cliui@9.0.1:
     dependencies:
