@@ -1,0 +1,4191 @@
+[
+  {
+    "name": "primitiveTypes",
+    "kind": "module",
+    "startLine": 2,
+    "endLine": 82,
+    "children": [
+      {
+        "name": "strings",
+        "kind": "module",
+        "startLine": 3,
+        "endLine": 42,
+        "children": [
+          {
+            "name": "simple",
+            "kind": "string",
+            "startLine": 4,
+            "endLine": 4,
+            "detail": "hello world"
+          },
+          {
+            "name": "empty",
+            "kind": "string",
+            "startLine": 5,
+            "endLine": 5
+          },
+          {
+            "name": "singleChar",
+            "kind": "string",
+            "startLine": 6,
+            "endLine": 6,
+            "detail": "a"
+          },
+          {
+            "name": "withSpaces",
+            "kind": "string",
+            "startLine": 7,
+            "endLine": 7,
+            "detail": "   spaces   "
+          },
+          {
+            "name": "escapeSequences",
+            "kind": "module",
+            "startLine": 8,
+            "endLine": 22,
+            "children": [
+              {
+                "name": "newline",
+                "kind": "string",
+                "startLine": 9,
+                "endLine": 9,
+                "detail": "line1\nline2"
+              },
+              {
+                "name": "tab",
+                "kind": "string",
+                "startLine": 10,
+                "endLine": 10,
+                "detail": "col1\tcol2"
+              },
+              {
+                "name": "carriageReturn",
+                "kind": "string",
+                "startLine": 11,
+                "endLine": 11,
+                "detail": "before\rafter"
+              },
+              {
+                "name": "backslash",
+                "kind": "string",
+                "startLine": 12,
+                "endLine": 12,
+                "detail": "path\\to\\file"
+              },
+              {
+                "name": "quote",
+                "kind": "string",
+                "startLine": 13,
+                "endLine": 13,
+                "detail": "she said \"hello\""
+              },
+              {
+                "name": "forwardSlash",
+                "kind": "string",
+                "startLine": 14,
+                "endLine": 14,
+                "detail": "url/path"
+              },
+              {
+                "name": "backspace",
+                "kind": "string",
+                "startLine": 15,
+                "endLine": 15,
+                "detail": "back\bspace"
+              },
+              {
+                "name": "formFeed",
+                "kind": "string",
+                "startLine": 16,
+                "endLine": 16,
+                "detail": "page\fbreak"
+              },
+              {
+                "name": "unicodeBasic",
+                "kind": "string",
+                "startLine": 17,
+                "endLine": 17,
+                "detail": "ABC"
+              },
+              {
+                "name": "unicodeEmoji",
+                "kind": "string",
+                "startLine": 18,
+                "endLine": 18,
+                "detail": "❤️"
+              },
+              {
+                "name": "unicodeCJK",
+                "kind": "string",
+                "startLine": 19,
+                "endLine": 19,
+                "detail": "中文"
+              },
+              {
+                "name": "unicodeArabic",
+                "kind": "string",
+                "startLine": 20,
+                "endLine": 20,
+                "detail": "العربية"
+              },
+              {
+                "name": "combinedEscapes",
+                "kind": "string",
+                "startLine": 21,
+                "endLine": 21,
+                "detail": "line1\nline2\ttabbed\\path\"quoted\""
+              }
+            ]
+          },
+          {
+            "name": "unicodeRaw",
+            "kind": "module",
+            "startLine": 23,
+            "endLine": 34,
+            "children": [
+              {
+                "name": "emoji",
+                "kind": "string",
+                "startLine": 24,
+                "endLine": 24,
+                "detail": "🎉🚀💡🔥✨"
+              },
+              {
+                "name": "chinese",
+                "kind": "string",
+                "startLine": 25,
+                "endLine": 25,
+                "detail": "中文测试"
+              },
+              {
+                "name": "japanese",
+                "kind": "string",
+                "startLine": 26,
+                "endLine": 26,
+                "detail": "日本語テスト"
+              },
+              {
+                "name": "korean",
+                "kind": "string",
+                "startLine": 27,
+                "endLine": 27,
+                "detail": "한국어 테스트"
+              },
+              {
+                "name": "arabic",
+                "kind": "string",
+                "startLine": 28,
+                "endLine": 28,
+                "detail": "اختبار عربي"
+              },
+              {
+                "name": "hebrew",
+                "kind": "string",
+                "startLine": 29,
+                "endLine": 29,
+                "detail": "בדיקה עברית"
+              },
+              {
+                "name": "cyrillic",
+                "kind": "string",
+                "startLine": 30,
+                "endLine": 30,
+                "detail": "Тест кириллицы"
+              },
+              {
+                "name": "greek",
+                "kind": "string",
+                "startLine": 31,
+                "endLine": 31,
+                "detail": "Ελληνική δοκιμή"
+              },
+              {
+                "name": "thai",
+                "kind": "string",
+                "startLine": 32,
+                "endLine": 32,
+                "detail": "ทดสอบภาษาไทย"
+              },
+              {
+                "name": "mixed",
+                "kind": "string",
+                "startLine": 33,
+                "endLine": 33,
+                "detail": "Hello 世界 🌍 مرحبا"
+              }
+            ]
+          },
+          {
+            "name": "specialCharacters",
+            "kind": "module",
+            "startLine": 35,
+            "endLine": 40,
+            "children": [
+              {
+                "name": "controlChars",
+                "kind": "string",
+                "startLine": 36,
+                "endLine": 36,
+                "detail": "visible\u0000\u0001\u001f"
+              },
+              {
+                "name": "zeroWidthJoiner",
+                "kind": "string",
+                "startLine": 37,
+                "endLine": 37,
+                "detail": "👨‍👩‍👧‍👦"
+              },
+              {
+                "name": "rightToLeft",
+                "kind": "string",
+                "startLine": 38,
+                "endLine": 38,
+                "detail": "‏‏RTL marker"
+              },
+              {
+                "name": "bom",
+                "kind": "string",
+                "startLine": 39,
+                "endLine": 39,
+                "detail": "﻿with BOM"
+              }
+            ]
+          },
+          {
+            "name": "longString",
+            "kind": "string",
+            "startLine": 41,
+            "endLine": 41,
+            "detail": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+          }
+        ]
+      },
+      {
+        "name": "numbers",
+        "kind": "module",
+        "startLine": 43,
+        "endLine": 76,
+        "children": [
+          {
+            "name": "integers",
+            "kind": "module",
+            "startLine": 44,
+            "endLine": 50,
+            "children": [
+              {
+                "name": "zero",
+                "kind": "number",
+                "startLine": 45,
+                "endLine": 45,
+                "detail": "0"
+              },
+              {
+                "name": "positive",
+                "kind": "number",
+                "startLine": 46,
+                "endLine": 46,
+                "detail": "42"
+              },
+              {
+                "name": "negative",
+                "kind": "number",
+                "startLine": 47,
+                "endLine": 47,
+                "detail": "-42"
+              },
+              {
+                "name": "large",
+                "kind": "number",
+                "startLine": 48,
+                "endLine": 48,
+                "detail": "9007199254740991"
+              },
+              {
+                "name": "negativeLarge",
+                "kind": "number",
+                "startLine": 49,
+                "endLine": 49,
+                "detail": "-9007199254740991"
+              }
+            ]
+          },
+          {
+            "name": "floats",
+            "kind": "module",
+            "startLine": 51,
+            "endLine": 59,
+            "children": [
+              {
+                "name": "simple",
+                "kind": "number",
+                "startLine": 52,
+                "endLine": 52,
+                "detail": "3.14"
+              },
+              {
+                "name": "negative",
+                "kind": "number",
+                "startLine": 53,
+                "endLine": 53,
+                "detail": "-3.14"
+              },
+              {
+                "name": "leadingZero",
+                "kind": "number",
+                "startLine": 54,
+                "endLine": 54,
+                "detail": "0.123"
+              },
+              {
+                "name": "negativeLeadingZero",
+                "kind": "number",
+                "startLine": 55,
+                "endLine": 55,
+                "detail": "-0.456"
+              },
+              {
+                "name": "manyDecimals",
+                "kind": "number",
+                "startLine": 56,
+                "endLine": 56,
+                "detail": "3.141592653589793"
+              },
+              {
+                "name": "tiny",
+                "kind": "number",
+                "startLine": 57,
+                "endLine": 57,
+                "detail": "1e-9"
+              },
+              {
+                "name": "negativeZero",
+                "kind": "number",
+                "startLine": 58,
+                "endLine": 58,
+                "detail": "0"
+              }
+            ]
+          },
+          {
+            "name": "exponential",
+            "kind": "module",
+            "startLine": 60,
+            "endLine": 69,
+            "children": [
+              {
+                "name": "positiveLowerE",
+                "kind": "number",
+                "startLine": 61,
+                "endLine": 61,
+                "detail": "12300000000"
+              },
+              {
+                "name": "positiveUpperE",
+                "kind": "number",
+                "startLine": 62,
+                "endLine": 62,
+                "detail": "45600000000"
+              },
+              {
+                "name": "negativeExponent",
+                "kind": "number",
+                "startLine": 63,
+                "endLine": 63,
+                "detail": "0.0000789"
+              },
+              {
+                "name": "explicitPositiveExp",
+                "kind": "number",
+                "startLine": 64,
+                "endLine": 64,
+                "detail": "10000000000"
+              },
+              {
+                "name": "largePositive",
+                "kind": "number",
+                "startLine": 65,
+                "endLine": 65,
+                "detail": "1.7976931348623157e+308"
+              },
+              {
+                "name": "largeNegative",
+                "kind": "number",
+                "startLine": 66,
+                "endLine": 66,
+                "detail": "-1.7976931348623157e+308"
+              },
+              {
+                "name": "smallPositive",
+                "kind": "number",
+                "startLine": 67,
+                "endLine": 67,
+                "detail": "5e-324"
+              },
+              {
+                "name": "scientificNotation",
+                "kind": "number",
+                "startLine": 68,
+                "endLine": 68,
+                "detail": "6.022e+23"
+              }
+            ]
+          },
+          {
+            "name": "edgeCases",
+            "kind": "module",
+            "startLine": 70,
+            "endLine": 75,
+            "children": [
+              {
+                "name": "maxSafeInteger",
+                "kind": "number",
+                "startLine": 71,
+                "endLine": 71,
+                "detail": "9007199254740991"
+              },
+              {
+                "name": "minSafeInteger",
+                "kind": "number",
+                "startLine": 72,
+                "endLine": 72,
+                "detail": "-9007199254740991"
+              },
+              {
+                "name": "justZero",
+                "kind": "number",
+                "startLine": 73,
+                "endLine": 73,
+                "detail": "0"
+              },
+              {
+                "name": "negativeJustZero",
+                "kind": "number",
+                "startLine": 74,
+                "endLine": 74,
+                "detail": "0"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "booleans",
+        "kind": "module",
+        "startLine": 77,
+        "endLine": 80,
+        "children": [
+          {
+            "name": "trueValue",
+            "kind": "boolean",
+            "startLine": 78,
+            "endLine": 78,
+            "detail": "true"
+          },
+          {
+            "name": "falseValue",
+            "kind": "boolean",
+            "startLine": 79,
+            "endLine": 79,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "nullValue",
+        "kind": "variable",
+        "startLine": 81,
+        "endLine": 81,
+        "detail": "null"
+      }
+    ]
+  },
+  {
+    "name": "structuralTypes",
+    "kind": "module",
+    "startLine": 83,
+    "endLine": 155,
+    "children": [
+      {
+        "name": "objects",
+        "kind": "module",
+        "startLine": 84,
+        "endLine": 123,
+        "children": [
+          {
+            "name": "empty",
+            "kind": "module",
+            "startLine": 85,
+            "endLine": 85,
+            "detail": "{}"
+          },
+          {
+            "name": "singleKey",
+            "kind": "module",
+            "startLine": 86,
+            "endLine": 88,
+            "children": [
+              {
+                "name": "onlyKey",
+                "kind": "string",
+                "startLine": 87,
+                "endLine": 87,
+                "detail": "onlyValue"
+              }
+            ]
+          },
+          {
+            "name": "multipleKeys",
+            "kind": "module",
+            "startLine": 89,
+            "endLine": 93,
+            "children": [
+              {
+                "name": "key1",
+                "kind": "string",
+                "startLine": 90,
+                "endLine": 90,
+                "detail": "value1"
+              },
+              {
+                "name": "key2",
+                "kind": "string",
+                "startLine": 91,
+                "endLine": 91,
+                "detail": "value2"
+              },
+              {
+                "name": "key3",
+                "kind": "string",
+                "startLine": 92,
+                "endLine": 92,
+                "detail": "value3"
+              }
+            ]
+          },
+          {
+            "name": "specialKeys",
+            "kind": "module",
+            "startLine": 94,
+            "endLine": 112,
+            "children": [
+              {
+                "name": "\"\"",
+                "kind": "string",
+                "startLine": 95,
+                "endLine": 95,
+                "detail": "emptyKey"
+              },
+              {
+                "name": "\" \"",
+                "kind": "string",
+                "startLine": 96,
+                "endLine": 96,
+                "detail": "spaceKey"
+              },
+              {
+                "name": "with spaces",
+                "kind": "string",
+                "startLine": 97,
+                "endLine": 97,
+                "detail": "spacedKey"
+              },
+              {
+                "name": "with-dashes",
+                "kind": "string",
+                "startLine": 98,
+                "endLine": 98,
+                "detail": "dashedKey"
+              },
+              {
+                "name": "with_underscores",
+                "kind": "string",
+                "startLine": 99,
+                "endLine": 99,
+                "detail": "underscoredKey"
+              },
+              {
+                "name": "with.dots",
+                "kind": "string",
+                "startLine": 100,
+                "endLine": 100,
+                "detail": "dottedKey"
+              },
+              {
+                "name": "with:colons",
+                "kind": "string",
+                "startLine": 101,
+                "endLine": 101,
+                "detail": "colonedKey"
+              },
+              {
+                "name": "123numeric",
+                "kind": "string",
+                "startLine": 102,
+                "endLine": 102,
+                "detail": "numericStartKey"
+              },
+              {
+                "name": "UPPERCASE",
+                "kind": "string",
+                "startLine": 103,
+                "endLine": 103,
+                "detail": "uppercaseKey"
+              },
+              {
+                "name": "camelCase",
+                "kind": "string",
+                "startLine": 104,
+                "endLine": 104,
+                "detail": "camelCaseKey"
+              },
+              {
+                "name": "PascalCase",
+                "kind": "string",
+                "startLine": 105,
+                "endLine": 105,
+                "detail": "pascalCaseKey"
+              },
+              {
+                "name": "snake_case",
+                "kind": "string",
+                "startLine": 106,
+                "endLine": 106,
+                "detail": "snakeCaseKey"
+              },
+              {
+                "name": "kebab-case",
+                "kind": "string",
+                "startLine": 107,
+                "endLine": 107,
+                "detail": "kebabCaseKey"
+              },
+              {
+                "name": "中文键",
+                "kind": "string",
+                "startLine": 108,
+                "endLine": 108,
+                "detail": "chineseKey"
+              },
+              {
+                "name": "キー",
+                "kind": "string",
+                "startLine": 109,
+                "endLine": 109,
+                "detail": "japaneseKey"
+              },
+              {
+                "name": "مفتاح",
+                "kind": "string",
+                "startLine": 110,
+                "endLine": 110,
+                "detail": "arabicKey"
+              },
+              {
+                "name": "🔑",
+                "kind": "string",
+                "startLine": 111,
+                "endLine": 111,
+                "detail": "emojiKey"
+              }
+            ]
+          },
+          {
+            "name": "mixedValueTypes",
+            "kind": "module",
+            "startLine": 113,
+            "endLine": 122,
+            "children": [
+              {
+                "name": "stringVal",
+                "kind": "string",
+                "startLine": 114,
+                "endLine": 114,
+                "detail": "text"
+              },
+              {
+                "name": "intVal",
+                "kind": "number",
+                "startLine": 115,
+                "endLine": 115,
+                "detail": "42"
+              },
+              {
+                "name": "floatVal",
+                "kind": "number",
+                "startLine": 116,
+                "endLine": 116,
+                "detail": "3.14"
+              },
+              {
+                "name": "boolTrue",
+                "kind": "boolean",
+                "startLine": 117,
+                "endLine": 117,
+                "detail": "true"
+              },
+              {
+                "name": "boolFalse",
+                "kind": "boolean",
+                "startLine": 118,
+                "endLine": 118,
+                "detail": "false"
+              },
+              {
+                "name": "nullVal",
+                "kind": "variable",
+                "startLine": 119,
+                "endLine": 119,
+                "detail": "null"
+              },
+              {
+                "name": "arrayVal",
+                "kind": "array",
+                "startLine": 120,
+                "endLine": 120,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "number",
+                    "startLine": 120,
+                    "endLine": 120
+                  },
+                  {
+                    "name": "1",
+                    "kind": "number",
+                    "startLine": 120,
+                    "endLine": 120
+                  },
+                  {
+                    "name": "2",
+                    "kind": "number",
+                    "startLine": 120,
+                    "endLine": 120
+                  }
+                ]
+              },
+              {
+                "name": "objectVal",
+                "kind": "module",
+                "startLine": 121,
+                "endLine": 121,
+                "children": [
+                  {
+                    "name": "nested",
+                    "kind": "string",
+                    "startLine": 121,
+                    "endLine": 121,
+                    "detail": "object"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "arrays",
+        "kind": "module",
+        "startLine": 124,
+        "endLine": 154,
+        "children": [
+          {
+            "name": "empty",
+            "kind": "array",
+            "startLine": 125,
+            "endLine": 125,
+            "detail": "[]"
+          },
+          {
+            "name": "singleElement",
+            "kind": "array",
+            "startLine": 126,
+            "endLine": 126,
+            "children": [
+              {
+                "name": "0",
+                "kind": "string",
+                "startLine": 126,
+                "endLine": 126
+              }
+            ]
+          },
+          {
+            "name": "homogeneous",
+            "kind": "module",
+            "startLine": 127,
+            "endLine": 135,
+            "children": [
+              {
+                "name": "strings",
+                "kind": "array",
+                "startLine": 128,
+                "endLine": 128,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "string",
+                    "startLine": 128,
+                    "endLine": 128
+                  },
+                  {
+                    "name": "1",
+                    "kind": "string",
+                    "startLine": 128,
+                    "endLine": 128
+                  },
+                  {
+                    "name": "2",
+                    "kind": "string",
+                    "startLine": 128,
+                    "endLine": 128
+                  },
+                  {
+                    "name": "3",
+                    "kind": "string",
+                    "startLine": 128,
+                    "endLine": 128
+                  },
+                  {
+                    "name": "4",
+                    "kind": "string",
+                    "startLine": 128,
+                    "endLine": 128
+                  }
+                ]
+              },
+              {
+                "name": "integers",
+                "kind": "array",
+                "startLine": 129,
+                "endLine": 129,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "number",
+                    "startLine": 129,
+                    "endLine": 129
+                  },
+                  {
+                    "name": "1",
+                    "kind": "number",
+                    "startLine": 129,
+                    "endLine": 129
+                  },
+                  {
+                    "name": "2",
+                    "kind": "number",
+                    "startLine": 129,
+                    "endLine": 129
+                  },
+                  {
+                    "name": "3",
+                    "kind": "number",
+                    "startLine": 129,
+                    "endLine": 129
+                  },
+                  {
+                    "name": "4",
+                    "kind": "number",
+                    "startLine": 129,
+                    "endLine": 129
+                  }
+                ]
+              },
+              {
+                "name": "floats",
+                "kind": "array",
+                "startLine": 130,
+                "endLine": 130,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "number",
+                    "startLine": 130,
+                    "endLine": 130
+                  },
+                  {
+                    "name": "1",
+                    "kind": "number",
+                    "startLine": 130,
+                    "endLine": 130
+                  },
+                  {
+                    "name": "2",
+                    "kind": "number",
+                    "startLine": 130,
+                    "endLine": 130
+                  },
+                  {
+                    "name": "3",
+                    "kind": "number",
+                    "startLine": 130,
+                    "endLine": 130
+                  },
+                  {
+                    "name": "4",
+                    "kind": "number",
+                    "startLine": 130,
+                    "endLine": 130
+                  }
+                ]
+              },
+              {
+                "name": "booleans",
+                "kind": "array",
+                "startLine": 131,
+                "endLine": 131,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "boolean",
+                    "startLine": 131,
+                    "endLine": 131
+                  },
+                  {
+                    "name": "1",
+                    "kind": "boolean",
+                    "startLine": 131,
+                    "endLine": 131
+                  },
+                  {
+                    "name": "2",
+                    "kind": "boolean",
+                    "startLine": 131,
+                    "endLine": 131
+                  },
+                  {
+                    "name": "3",
+                    "kind": "boolean",
+                    "startLine": 131,
+                    "endLine": 131
+                  }
+                ]
+              },
+              {
+                "name": "nulls",
+                "kind": "array",
+                "startLine": 132,
+                "endLine": 132,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "variable",
+                    "startLine": 132,
+                    "endLine": 132
+                  },
+                  {
+                    "name": "1",
+                    "kind": "variable",
+                    "startLine": 132,
+                    "endLine": 132
+                  },
+                  {
+                    "name": "2",
+                    "kind": "variable",
+                    "startLine": 132,
+                    "endLine": 132
+                  }
+                ]
+              },
+              {
+                "name": "objects",
+                "kind": "array",
+                "startLine": 133,
+                "endLine": 133,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "module",
+                    "startLine": 133,
+                    "endLine": 133,
+                    "children": [
+                      {
+                        "name": "id",
+                        "kind": "number",
+                        "startLine": 133,
+                        "endLine": 133,
+                        "detail": "1"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "1",
+                    "kind": "module",
+                    "startLine": 133,
+                    "endLine": 133,
+                    "children": [
+                      {
+                        "name": "id",
+                        "kind": "number",
+                        "startLine": 133,
+                        "endLine": 133,
+                        "detail": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "2",
+                    "kind": "module",
+                    "startLine": 133,
+                    "endLine": 133,
+                    "children": [
+                      {
+                        "name": "id",
+                        "kind": "number",
+                        "startLine": 133,
+                        "endLine": 133,
+                        "detail": "3"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "arrays",
+                "kind": "array",
+                "startLine": 134,
+                "endLine": 134,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "array",
+                    "startLine": 134,
+                    "endLine": 134,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "number",
+                        "startLine": 134,
+                        "endLine": 134
+                      }
+                    ]
+                  },
+                  {
+                    "name": "1",
+                    "kind": "array",
+                    "startLine": 134,
+                    "endLine": 134,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "number",
+                        "startLine": 134,
+                        "endLine": 134
+                      }
+                    ]
+                  },
+                  {
+                    "name": "2",
+                    "kind": "array",
+                    "startLine": 134,
+                    "endLine": 134,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "number",
+                        "startLine": 134,
+                        "endLine": 134
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "heterogeneous",
+            "kind": "array",
+            "startLine": 136,
+            "endLine": 145,
+            "children": [
+              {
+                "name": "0",
+                "kind": "string",
+                "startLine": 137,
+                "endLine": 137
+              },
+              {
+                "name": "1",
+                "kind": "number",
+                "startLine": 138,
+                "endLine": 138
+              },
+              {
+                "name": "2",
+                "kind": "number",
+                "startLine": 139,
+                "endLine": 139
+              },
+              {
+                "name": "3",
+                "kind": "boolean",
+                "startLine": 140,
+                "endLine": 140
+              },
+              {
+                "name": "4",
+                "kind": "boolean",
+                "startLine": 141,
+                "endLine": 141
+              },
+              {
+                "name": "5",
+                "kind": "variable",
+                "startLine": 142,
+                "endLine": 142
+              },
+              {
+                "name": "6",
+                "kind": "module",
+                "startLine": 143,
+                "endLine": 143,
+                "children": [
+                  {
+                    "name": "key",
+                    "kind": "string",
+                    "startLine": 143,
+                    "endLine": 143,
+                    "detail": "value"
+                  }
+                ]
+              },
+              {
+                "name": "7",
+                "kind": "array",
+                "startLine": 144,
+                "endLine": 144,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "number",
+                    "startLine": 144,
+                    "endLine": 144
+                  },
+                  {
+                    "name": "1",
+                    "kind": "number",
+                    "startLine": 144,
+                    "endLine": 144
+                  },
+                  {
+                    "name": "2",
+                    "kind": "number",
+                    "startLine": 144,
+                    "endLine": 144
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "sparse",
+            "kind": "array",
+            "startLine": 146,
+            "endLine": 153,
+            "children": [
+              {
+                "name": "0",
+                "kind": "variable",
+                "startLine": 147,
+                "endLine": 147
+              },
+              {
+                "name": "1",
+                "kind": "number",
+                "startLine": 148,
+                "endLine": 148
+              },
+              {
+                "name": "2",
+                "kind": "variable",
+                "startLine": 149,
+                "endLine": 149
+              },
+              {
+                "name": "3",
+                "kind": "variable",
+                "startLine": 150,
+                "endLine": 150
+              },
+              {
+                "name": "4",
+                "kind": "number",
+                "startLine": 151,
+                "endLine": 151
+              },
+              {
+                "name": "5",
+                "kind": "variable",
+                "startLine": 152,
+                "endLine": 152
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "nestedStructures",
+    "kind": "module",
+    "startLine": 156,
+    "endLine": 269,
+    "children": [
+      {
+        "name": "depth2",
+        "kind": "module",
+        "startLine": 157,
+        "endLine": 161,
+        "children": [
+          {
+            "name": "level1",
+            "kind": "module",
+            "startLine": 158,
+            "endLine": 160,
+            "children": [
+              {
+                "name": "level2",
+                "kind": "string",
+                "startLine": 159,
+                "endLine": 159,
+                "detail": "value"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "depth3",
+        "kind": "module",
+        "startLine": 162,
+        "endLine": 168,
+        "children": [
+          {
+            "name": "level1",
+            "kind": "module",
+            "startLine": 163,
+            "endLine": 167,
+            "children": [
+              {
+                "name": "level2",
+                "kind": "module",
+                "startLine": 164,
+                "endLine": 166,
+                "children": [
+                  {
+                    "name": "level3",
+                    "kind": "string",
+                    "startLine": 165,
+                    "endLine": 165,
+                    "detail": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "depth4",
+        "kind": "module",
+        "startLine": 169,
+        "endLine": 177,
+        "children": [
+          {
+            "name": "level1",
+            "kind": "module",
+            "startLine": 170,
+            "endLine": 176,
+            "children": [
+              {
+                "name": "level2",
+                "kind": "module",
+                "startLine": 171,
+                "endLine": 175,
+                "children": [
+                  {
+                    "name": "level3",
+                    "kind": "module",
+                    "startLine": 172,
+                    "endLine": 174,
+                    "children": [
+                      {
+                        "name": "level4",
+                        "kind": "string",
+                        "startLine": 173,
+                        "endLine": 173,
+                        "detail": "value"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "depth5",
+        "kind": "module",
+        "startLine": 178,
+        "endLine": 188,
+        "children": [
+          {
+            "name": "level1",
+            "kind": "module",
+            "startLine": 179,
+            "endLine": 187,
+            "children": [
+              {
+                "name": "level2",
+                "kind": "module",
+                "startLine": 180,
+                "endLine": 186,
+                "children": [
+                  {
+                    "name": "level3",
+                    "kind": "module",
+                    "startLine": 181,
+                    "endLine": 185,
+                    "children": [
+                      {
+                        "name": "level4",
+                        "kind": "module",
+                        "startLine": 182,
+                        "endLine": 184,
+                        "children": [
+                          {
+                            "name": "level5",
+                            "kind": "string",
+                            "startLine": 183,
+                            "endLine": 183,
+                            "detail": "value"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "depth10",
+        "kind": "module",
+        "startLine": 189,
+        "endLine": 209,
+        "children": [
+          {
+            "name": "l1",
+            "kind": "module",
+            "startLine": 190,
+            "endLine": 208,
+            "children": [
+              {
+                "name": "l2",
+                "kind": "module",
+                "startLine": 191,
+                "endLine": 207,
+                "children": [
+                  {
+                    "name": "l3",
+                    "kind": "module",
+                    "startLine": 192,
+                    "endLine": 206,
+                    "children": [
+                      {
+                        "name": "l4",
+                        "kind": "module",
+                        "startLine": 193,
+                        "endLine": 205,
+                        "children": [
+                          {
+                            "name": "l5",
+                            "kind": "module",
+                            "startLine": 194,
+                            "endLine": 204,
+                            "children": [
+                              {
+                                "name": "l6",
+                                "kind": "module",
+                                "startLine": 195,
+                                "endLine": 203,
+                                "children": [
+                                  {
+                                    "name": "l7",
+                                    "kind": "module",
+                                    "startLine": 196,
+                                    "endLine": 202,
+                                    "children": [
+                                      {
+                                        "name": "l8",
+                                        "kind": "module",
+                                        "startLine": 197,
+                                        "endLine": 201,
+                                        "children": [
+                                          {
+                                            "name": "l9",
+                                            "kind": "module",
+                                            "startLine": 198,
+                                            "endLine": 200,
+                                            "children": [
+                                              {
+                                                "name": "l10",
+                                                "kind": "string",
+                                                "startLine": 199,
+                                                "endLine": 199,
+                                                "detail": "deepest"
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "nestedArrays",
+        "kind": "module",
+        "startLine": 210,
+        "endLine": 223,
+        "children": [
+          {
+            "name": "depth2",
+            "kind": "array",
+            "startLine": 211,
+            "endLine": 211,
+            "children": [
+              {
+                "name": "0",
+                "kind": "array",
+                "startLine": 211,
+                "endLine": 211,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "number",
+                    "startLine": 211,
+                    "endLine": 211
+                  },
+                  {
+                    "name": "1",
+                    "kind": "number",
+                    "startLine": 211,
+                    "endLine": 211
+                  }
+                ]
+              },
+              {
+                "name": "1",
+                "kind": "array",
+                "startLine": 211,
+                "endLine": 211,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "number",
+                    "startLine": 211,
+                    "endLine": 211
+                  },
+                  {
+                    "name": "1",
+                    "kind": "number",
+                    "startLine": 211,
+                    "endLine": 211
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "depth3",
+            "kind": "array",
+            "startLine": 212,
+            "endLine": 212,
+            "children": [
+              {
+                "name": "0",
+                "kind": "array",
+                "startLine": 212,
+                "endLine": 212,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "array",
+                    "startLine": 212,
+                    "endLine": 212,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "number",
+                        "startLine": 212,
+                        "endLine": 212
+                      },
+                      {
+                        "name": "1",
+                        "kind": "number",
+                        "startLine": 212,
+                        "endLine": 212
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "1",
+                "kind": "array",
+                "startLine": 212,
+                "endLine": 212,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "array",
+                    "startLine": 212,
+                    "endLine": 212,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "number",
+                        "startLine": 212,
+                        "endLine": 212
+                      },
+                      {
+                        "name": "1",
+                        "kind": "number",
+                        "startLine": 212,
+                        "endLine": 212
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "depth5",
+            "kind": "array",
+            "startLine": 213,
+            "endLine": 213,
+            "children": [
+              {
+                "name": "0",
+                "kind": "array",
+                "startLine": 213,
+                "endLine": 213,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "array",
+                    "startLine": 213,
+                    "endLine": 213,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "array",
+                        "startLine": 213,
+                        "endLine": 213,
+                        "children": [
+                          {
+                            "name": "0",
+                            "kind": "array",
+                            "startLine": 213,
+                            "endLine": 213,
+                            "children": [
+                              {
+                                "name": "0",
+                                "kind": "number",
+                                "startLine": 213,
+                                "endLine": 213
+                              },
+                              {
+                                "name": "1",
+                                "kind": "number",
+                                "startLine": 213,
+                                "endLine": 213
+                              },
+                              {
+                                "name": "2",
+                                "kind": "number",
+                                "startLine": 213,
+                                "endLine": 213
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "mixed",
+            "kind": "array",
+            "startLine": 214,
+            "endLine": 222,
+            "children": [
+              {
+                "name": "0",
+                "kind": "array",
+                "startLine": 215,
+                "endLine": 218,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "module",
+                    "startLine": 216,
+                    "endLine": 216,
+                    "children": [
+                      {
+                        "name": "key",
+                        "kind": "array",
+                        "startLine": 216,
+                        "endLine": 216,
+                        "children": [
+                          {
+                            "name": "0",
+                            "kind": "number",
+                            "startLine": 216,
+                            "endLine": 216
+                          },
+                          {
+                            "name": "1",
+                            "kind": "number",
+                            "startLine": 216,
+                            "endLine": 216
+                          },
+                          {
+                            "name": "2",
+                            "kind": "number",
+                            "startLine": 216,
+                            "endLine": 216
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "1",
+                    "kind": "array",
+                    "startLine": 217,
+                    "endLine": 217,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "module",
+                        "startLine": 217,
+                        "endLine": 217,
+                        "children": [
+                          {
+                            "name": "nested",
+                            "kind": "string",
+                            "startLine": 217,
+                            "endLine": 217,
+                            "detail": "value"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "1",
+                "kind": "array",
+                "startLine": 219,
+                "endLine": 221,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "array",
+                    "startLine": 220,
+                    "endLine": 220,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "array",
+                        "startLine": 220,
+                        "endLine": 220,
+                        "children": [
+                          {
+                            "name": "0",
+                            "kind": "module",
+                            "startLine": 220,
+                            "endLine": 220,
+                            "children": [
+                              {
+                                "name": "deep",
+                                "kind": "module",
+                                "startLine": 220,
+                                "endLine": 220,
+                                "children": [
+                                  {
+                                    "name": "deeper",
+                                    "kind": "array",
+                                    "startLine": 220,
+                                    "endLine": 220,
+                                    "children": [
+                                      {
+                                        "name": "0",
+                                        "kind": "number",
+                                        "startLine": 220,
+                                        "endLine": 220
+                                      },
+                                      {
+                                        "name": "1",
+                                        "kind": "number",
+                                        "startLine": 220,
+                                        "endLine": 220
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "complexMixed",
+        "kind": "module",
+        "startLine": 224,
+        "endLine": 268,
+        "children": [
+          {
+            "name": "users",
+            "kind": "array",
+            "startLine": 225,
+            "endLine": 267,
+            "children": [
+              {
+                "name": "0",
+                "kind": "module",
+                "startLine": 226,
+                "endLine": 266,
+                "children": [
+                  {
+                    "name": "id",
+                    "kind": "number",
+                    "startLine": 227,
+                    "endLine": 227,
+                    "detail": "1"
+                  },
+                  {
+                    "name": "name",
+                    "kind": "string",
+                    "startLine": 228,
+                    "endLine": 228,
+                    "detail": "Alice"
+                  },
+                  {
+                    "name": "profile",
+                    "kind": "module",
+                    "startLine": 229,
+                    "endLine": 255,
+                    "children": [
+                      {
+                        "name": "settings",
+                        "kind": "module",
+                        "startLine": 230,
+                        "endLine": 247,
+                        "children": [
+                          {
+                            "name": "notifications",
+                            "kind": "module",
+                            "startLine": 231,
+                            "endLine": 238,
+                            "children": [
+                              {
+                                "name": "email",
+                                "kind": "boolean",
+                                "startLine": 232,
+                                "endLine": 232,
+                                "detail": "true"
+                              },
+                              {
+                                "name": "push",
+                                "kind": "module",
+                                "startLine": 233,
+                                "endLine": 237,
+                                "children": [
+                                  {
+                                    "name": "enabled",
+                                    "kind": "boolean",
+                                    "startLine": 234,
+                                    "endLine": 234,
+                                    "detail": "true"
+                                  },
+                                  {
+                                    "name": "frequency",
+                                    "kind": "string",
+                                    "startLine": 235,
+                                    "endLine": 235,
+                                    "detail": "daily"
+                                  },
+                                  {
+                                    "name": "categories",
+                                    "kind": "array",
+                                    "startLine": 236,
+                                    "endLine": 236,
+                                    "children": [
+                                      {
+                                        "name": "0",
+                                        "kind": "string",
+                                        "startLine": 236,
+                                        "endLine": 236
+                                      },
+                                      {
+                                        "name": "1",
+                                        "kind": "string",
+                                        "startLine": 236,
+                                        "endLine": 236
+                                      },
+                                      {
+                                        "name": "2",
+                                        "kind": "string",
+                                        "startLine": 236,
+                                        "endLine": 236
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "name": "theme",
+                            "kind": "module",
+                            "startLine": 239,
+                            "endLine": 246,
+                            "children": [
+                              {
+                                "name": "mode",
+                                "kind": "string",
+                                "startLine": 240,
+                                "endLine": 240,
+                                "detail": "dark"
+                              },
+                              {
+                                "name": "colors",
+                                "kind": "module",
+                                "startLine": 241,
+                                "endLine": 245,
+                                "children": [
+                                  {
+                                    "name": "primary",
+                                    "kind": "string",
+                                    "startLine": 242,
+                                    "endLine": 242,
+                                    "detail": "#007bff"
+                                  },
+                                  {
+                                    "name": "secondary",
+                                    "kind": "string",
+                                    "startLine": 243,
+                                    "endLine": 243,
+                                    "detail": "#6c757d"
+                                  },
+                                  {
+                                    "name": "accents",
+                                    "kind": "array",
+                                    "startLine": 244,
+                                    "endLine": 244,
+                                    "children": [
+                                      {
+                                        "name": "0",
+                                        "kind": "string",
+                                        "startLine": 244,
+                                        "endLine": 244
+                                      },
+                                      {
+                                        "name": "1",
+                                        "kind": "string",
+                                        "startLine": 244,
+                                        "endLine": 244
+                                      },
+                                      {
+                                        "name": "2",
+                                        "kind": "string",
+                                        "startLine": 244,
+                                        "endLine": 244
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "metadata",
+                        "kind": "module",
+                        "startLine": 248,
+                        "endLine": 254,
+                        "children": [
+                          {
+                            "name": "created",
+                            "kind": "string",
+                            "startLine": 249,
+                            "endLine": 249,
+                            "detail": "2024-01-15T10:30:00Z"
+                          },
+                          {
+                            "name": "tags",
+                            "kind": "array",
+                            "startLine": 250,
+                            "endLine": 253,
+                            "children": [
+                              {
+                                "name": "0",
+                                "kind": "module",
+                                "startLine": 251,
+                                "endLine": 251,
+                                "children": [
+                                  {
+                                    "name": "name",
+                                    "kind": "string",
+                                    "startLine": 251,
+                                    "endLine": 251,
+                                    "detail": "premium"
+                                  },
+                                  {
+                                    "name": "value",
+                                    "kind": "boolean",
+                                    "startLine": 251,
+                                    "endLine": 251,
+                                    "detail": "true"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "1",
+                                "kind": "module",
+                                "startLine": 252,
+                                "endLine": 252,
+                                "children": [
+                                  {
+                                    "name": "name",
+                                    "kind": "string",
+                                    "startLine": 252,
+                                    "endLine": 252,
+                                    "detail": "verified"
+                                  },
+                                  {
+                                    "name": "value",
+                                    "kind": "boolean",
+                                    "startLine": 252,
+                                    "endLine": 252,
+                                    "detail": "true"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "permissions",
+                    "kind": "array",
+                    "startLine": 256,
+                    "endLine": 265,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "module",
+                        "startLine": 257,
+                        "endLine": 264,
+                        "children": [
+                          {
+                            "name": "resource",
+                            "kind": "string",
+                            "startLine": 258,
+                            "endLine": 258,
+                            "detail": "posts"
+                          },
+                          {
+                            "name": "actions",
+                            "kind": "array",
+                            "startLine": 259,
+                            "endLine": 259,
+                            "children": [
+                              {
+                                "name": "0",
+                                "kind": "string",
+                                "startLine": 259,
+                                "endLine": 259
+                              },
+                              {
+                                "name": "1",
+                                "kind": "string",
+                                "startLine": 259,
+                                "endLine": 259
+                              },
+                              {
+                                "name": "2",
+                                "kind": "string",
+                                "startLine": 259,
+                                "endLine": 259
+                              }
+                            ]
+                          },
+                          {
+                            "name": "conditions",
+                            "kind": "module",
+                            "startLine": 260,
+                            "endLine": 263,
+                            "children": [
+                              {
+                                "name": "ownership",
+                                "kind": "boolean",
+                                "startLine": 261,
+                                "endLine": 261,
+                                "detail": "true"
+                              },
+                              {
+                                "name": "roles",
+                                "kind": "array",
+                                "startLine": 262,
+                                "endLine": 262,
+                                "children": [
+                                  {
+                                    "name": "0",
+                                    "kind": "string",
+                                    "startLine": 262,
+                                    "endLine": 262
+                                  },
+                                  {
+                                    "name": "1",
+                                    "kind": "string",
+                                    "startLine": 262,
+                                    "endLine": 262
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "edgeCases",
+    "kind": "module",
+    "startLine": 270,
+    "endLine": 323,
+    "children": [
+      {
+        "name": "emptyNested",
+        "kind": "module",
+        "startLine": 271,
+        "endLine": 282,
+        "children": [
+          {
+            "name": "emptyObject",
+            "kind": "module",
+            "startLine": 272,
+            "endLine": 272,
+            "detail": "{}"
+          },
+          {
+            "name": "emptyArray",
+            "kind": "array",
+            "startLine": 273,
+            "endLine": 273,
+            "detail": "[]"
+          },
+          {
+            "name": "nestedEmpty",
+            "kind": "module",
+            "startLine": 274,
+            "endLine": 281,
+            "children": [
+              {
+                "name": "obj",
+                "kind": "module",
+                "startLine": 275,
+                "endLine": 275,
+                "detail": "{}"
+              },
+              {
+                "name": "arr",
+                "kind": "array",
+                "startLine": 276,
+                "endLine": 276,
+                "detail": "[]"
+              },
+              {
+                "name": "deep",
+                "kind": "module",
+                "startLine": 277,
+                "endLine": 280,
+                "children": [
+                  {
+                    "name": "obj",
+                    "kind": "module",
+                    "startLine": 278,
+                    "endLine": 278,
+                    "detail": "{}"
+                  },
+                  {
+                    "name": "arr",
+                    "kind": "array",
+                    "startLine": 279,
+                    "endLine": 279,
+                    "detail": "[]"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "singleElements",
+        "kind": "module",
+        "startLine": 283,
+        "endLine": 287,
+        "children": [
+          {
+            "name": "singleKeyObject",
+            "kind": "module",
+            "startLine": 284,
+            "endLine": 284,
+            "children": [
+              {
+                "name": "key",
+                "kind": "string",
+                "startLine": 284,
+                "endLine": 284,
+                "detail": "value"
+              }
+            ]
+          },
+          {
+            "name": "singleElementArray",
+            "kind": "array",
+            "startLine": 285,
+            "endLine": 285,
+            "children": [
+              {
+                "name": "0",
+                "kind": "number",
+                "startLine": 285,
+                "endLine": 285
+              }
+            ]
+          },
+          {
+            "name": "singleNested",
+            "kind": "module",
+            "startLine": 286,
+            "endLine": 286,
+            "children": [
+              {
+                "name": "outer",
+                "kind": "module",
+                "startLine": 286,
+                "endLine": 286,
+                "children": [
+                  {
+                    "name": "inner",
+                    "kind": "array",
+                    "startLine": 286,
+                    "endLine": 286,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "module",
+                        "startLine": 286,
+                        "endLine": 286,
+                        "children": [
+                          {
+                            "name": "single",
+                            "kind": "boolean",
+                            "startLine": 286,
+                            "endLine": 286,
+                            "detail": "true"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "duplicateStructures",
+        "kind": "module",
+        "startLine": 288,
+        "endLine": 293,
+        "children": [
+          {
+            "name": "array1",
+            "kind": "array",
+            "startLine": 289,
+            "endLine": 289,
+            "children": [
+              {
+                "name": "0",
+                "kind": "number",
+                "startLine": 289,
+                "endLine": 289
+              },
+              {
+                "name": "1",
+                "kind": "number",
+                "startLine": 289,
+                "endLine": 289
+              },
+              {
+                "name": "2",
+                "kind": "number",
+                "startLine": 289,
+                "endLine": 289
+              }
+            ]
+          },
+          {
+            "name": "array2",
+            "kind": "array",
+            "startLine": 290,
+            "endLine": 290,
+            "children": [
+              {
+                "name": "0",
+                "kind": "number",
+                "startLine": 290,
+                "endLine": 290
+              },
+              {
+                "name": "1",
+                "kind": "number",
+                "startLine": 290,
+                "endLine": 290
+              },
+              {
+                "name": "2",
+                "kind": "number",
+                "startLine": 290,
+                "endLine": 290
+              }
+            ]
+          },
+          {
+            "name": "object1",
+            "kind": "module",
+            "startLine": 291,
+            "endLine": 291,
+            "children": [
+              {
+                "name": "a",
+                "kind": "number",
+                "startLine": 291,
+                "endLine": 291,
+                "detail": "1"
+              },
+              {
+                "name": "b",
+                "kind": "number",
+                "startLine": 291,
+                "endLine": 291,
+                "detail": "2"
+              }
+            ]
+          },
+          {
+            "name": "object2",
+            "kind": "module",
+            "startLine": 292,
+            "endLine": 292,
+            "children": [
+              {
+                "name": "a",
+                "kind": "number",
+                "startLine": 292,
+                "endLine": 292,
+                "detail": "1"
+              },
+              {
+                "name": "b",
+                "kind": "number",
+                "startLine": 292,
+                "endLine": 292,
+                "detail": "2"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "boundaryValues",
+        "kind": "module",
+        "startLine": 294,
+        "endLine": 304,
+        "children": [
+          {
+            "name": "emptyString",
+            "kind": "string",
+            "startLine": 295,
+            "endLine": 295
+          },
+          {
+            "name": "whitespaceString",
+            "kind": "string",
+            "startLine": 296,
+            "endLine": 296,
+            "detail": "   "
+          },
+          {
+            "name": "zeroInt",
+            "kind": "number",
+            "startLine": 297,
+            "endLine": 297,
+            "detail": "0"
+          },
+          {
+            "name": "zeroFloat",
+            "kind": "number",
+            "startLine": 298,
+            "endLine": 298,
+            "detail": "0"
+          },
+          {
+            "name": "negativeZero",
+            "kind": "number",
+            "startLine": 299,
+            "endLine": 299,
+            "detail": "0"
+          },
+          {
+            "name": "emptyArrayInArray",
+            "kind": "array",
+            "startLine": 300,
+            "endLine": 300,
+            "children": [
+              {
+                "name": "0",
+                "kind": "array",
+                "startLine": 300,
+                "endLine": 300
+              }
+            ]
+          },
+          {
+            "name": "emptyObjectInArray",
+            "kind": "array",
+            "startLine": 301,
+            "endLine": 301,
+            "children": [
+              {
+                "name": "0",
+                "kind": "module",
+                "startLine": 301,
+                "endLine": 301
+              }
+            ]
+          },
+          {
+            "name": "arrayInEmptyObject",
+            "kind": "module",
+            "startLine": 302,
+            "endLine": 302,
+            "children": [
+              {
+                "name": "items",
+                "kind": "array",
+                "startLine": 302,
+                "endLine": 302,
+                "detail": "[]"
+              }
+            ]
+          },
+          {
+            "name": "objectInEmptyArray",
+            "kind": "array",
+            "startLine": 303,
+            "endLine": 303,
+            "children": [
+              {
+                "name": "0",
+                "kind": "module",
+                "startLine": 303,
+                "endLine": 303,
+                "children": [
+                  {
+                    "name": "key",
+                    "kind": "string",
+                    "startLine": 303,
+                    "endLine": 303,
+                    "detail": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "similarButDifferent",
+        "kind": "module",
+        "startLine": 305,
+        "endLine": 314,
+        "children": [
+          {
+            "name": "stringNumber",
+            "kind": "string",
+            "startLine": 306,
+            "endLine": 306,
+            "detail": "42"
+          },
+          {
+            "name": "actualNumber",
+            "kind": "number",
+            "startLine": 307,
+            "endLine": 307,
+            "detail": "42"
+          },
+          {
+            "name": "stringBool",
+            "kind": "string",
+            "startLine": 308,
+            "endLine": 308,
+            "detail": "true"
+          },
+          {
+            "name": "actualBool",
+            "kind": "boolean",
+            "startLine": 309,
+            "endLine": 309,
+            "detail": "true"
+          },
+          {
+            "name": "stringNull",
+            "kind": "string",
+            "startLine": 310,
+            "endLine": 310,
+            "detail": "null"
+          },
+          {
+            "name": "actualNull",
+            "kind": "variable",
+            "startLine": 311,
+            "endLine": 311,
+            "detail": "null"
+          },
+          {
+            "name": "stringArray",
+            "kind": "string",
+            "startLine": 312,
+            "endLine": 312,
+            "detail": "[1,2,3]"
+          },
+          {
+            "name": "actualArray",
+            "kind": "array",
+            "startLine": 313,
+            "endLine": 313,
+            "children": [
+              {
+                "name": "0",
+                "kind": "number",
+                "startLine": 313,
+                "endLine": 313
+              },
+              {
+                "name": "1",
+                "kind": "number",
+                "startLine": 313,
+                "endLine": 313
+              },
+              {
+                "name": "2",
+                "kind": "number",
+                "startLine": 313,
+                "endLine": 313
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "whitespaceKeys",
+        "kind": "module",
+        "startLine": 315,
+        "endLine": 322,
+        "children": [
+          {
+            "name": " leading",
+            "kind": "string",
+            "startLine": 316,
+            "endLine": 316,
+            "detail": "leading space"
+          },
+          {
+            "name": "trailing ",
+            "kind": "string",
+            "startLine": 317,
+            "endLine": 317,
+            "detail": "trailing space"
+          },
+          {
+            "name": " both ",
+            "kind": "string",
+            "startLine": 318,
+            "endLine": 318,
+            "detail": "both spaces"
+          },
+          {
+            "name": "  multiple  ",
+            "kind": "string",
+            "startLine": 319,
+            "endLine": 319,
+            "detail": "multiple spaces"
+          },
+          {
+            "name": "\ttab",
+            "kind": "string",
+            "startLine": 320,
+            "endLine": 320,
+            "detail": "tab character"
+          },
+          {
+            "name": "↵newline",
+            "kind": "string",
+            "startLine": 321,
+            "endLine": 321,
+            "detail": "newline character"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "realWorldPatterns",
+    "kind": "module",
+    "startLine": 324,
+    "endLine": 483,
+    "children": [
+      {
+        "name": "apiResponse",
+        "kind": "module",
+        "startLine": 325,
+        "endLine": 346,
+        "children": [
+          {
+            "name": "status",
+            "kind": "number",
+            "startLine": 326,
+            "endLine": 326,
+            "detail": "200"
+          },
+          {
+            "name": "message",
+            "kind": "string",
+            "startLine": 327,
+            "endLine": 327,
+            "detail": "Success"
+          },
+          {
+            "name": "data",
+            "kind": "module",
+            "startLine": 328,
+            "endLine": 340,
+            "children": [
+              {
+                "name": "items",
+                "kind": "array",
+                "startLine": 329,
+                "endLine": 333,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "module",
+                    "startLine": 330,
+                    "endLine": 330,
+                    "children": [
+                      {
+                        "name": "id",
+                        "kind": "number",
+                        "startLine": 330,
+                        "endLine": 330,
+                        "detail": "1"
+                      },
+                      {
+                        "name": "name",
+                        "kind": "string",
+                        "startLine": 330,
+                        "endLine": 330,
+                        "detail": "Item 1"
+                      },
+                      {
+                        "name": "price",
+                        "kind": "number",
+                        "startLine": 330,
+                        "endLine": 330,
+                        "detail": "9.99"
+                      },
+                      {
+                        "name": "inStock",
+                        "kind": "boolean",
+                        "startLine": 330,
+                        "endLine": 330,
+                        "detail": "true"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "1",
+                    "kind": "module",
+                    "startLine": 331,
+                    "endLine": 331,
+                    "children": [
+                      {
+                        "name": "id",
+                        "kind": "number",
+                        "startLine": 331,
+                        "endLine": 331,
+                        "detail": "2"
+                      },
+                      {
+                        "name": "name",
+                        "kind": "string",
+                        "startLine": 331,
+                        "endLine": 331,
+                        "detail": "Item 2"
+                      },
+                      {
+                        "name": "price",
+                        "kind": "number",
+                        "startLine": 331,
+                        "endLine": 331,
+                        "detail": "19.99"
+                      },
+                      {
+                        "name": "inStock",
+                        "kind": "boolean",
+                        "startLine": 331,
+                        "endLine": 331,
+                        "detail": "false"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "2",
+                    "kind": "module",
+                    "startLine": 332,
+                    "endLine": 332,
+                    "children": [
+                      {
+                        "name": "id",
+                        "kind": "number",
+                        "startLine": 332,
+                        "endLine": 332,
+                        "detail": "3"
+                      },
+                      {
+                        "name": "name",
+                        "kind": "string",
+                        "startLine": 332,
+                        "endLine": 332,
+                        "detail": "Item 3"
+                      },
+                      {
+                        "name": "price",
+                        "kind": "number",
+                        "startLine": 332,
+                        "endLine": 332,
+                        "detail": "29.99"
+                      },
+                      {
+                        "name": "inStock",
+                        "kind": "boolean",
+                        "startLine": 332,
+                        "endLine": 332,
+                        "detail": "true"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "pagination",
+                "kind": "module",
+                "startLine": 334,
+                "endLine": 339,
+                "children": [
+                  {
+                    "name": "page",
+                    "kind": "number",
+                    "startLine": 335,
+                    "endLine": 335,
+                    "detail": "1"
+                  },
+                  {
+                    "name": "perPage",
+                    "kind": "number",
+                    "startLine": 336,
+                    "endLine": 336,
+                    "detail": "10"
+                  },
+                  {
+                    "name": "total",
+                    "kind": "number",
+                    "startLine": 337,
+                    "endLine": 337,
+                    "detail": "3"
+                  },
+                  {
+                    "name": "hasMore",
+                    "kind": "boolean",
+                    "startLine": 338,
+                    "endLine": 338,
+                    "detail": "false"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "meta",
+            "kind": "module",
+            "startLine": 341,
+            "endLine": 345,
+            "children": [
+              {
+                "name": "requestId",
+                "kind": "string",
+                "startLine": 342,
+                "endLine": 342,
+                "detail": "abc123"
+              },
+              {
+                "name": "timestamp",
+                "kind": "string",
+                "startLine": 343,
+                "endLine": 343,
+                "detail": "2024-02-14T12:00:00Z"
+              },
+              {
+                "name": "version",
+                "kind": "string",
+                "startLine": 344,
+                "endLine": 344,
+                "detail": "1.0.0"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "configFile",
+        "kind": "module",
+        "startLine": 347,
+        "endLine": 372,
+        "children": [
+          {
+            "name": "app",
+            "kind": "module",
+            "startLine": 348,
+            "endLine": 352,
+            "children": [
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 349,
+                "endLine": 349,
+                "detail": "MyApp"
+              },
+              {
+                "name": "version",
+                "kind": "string",
+                "startLine": 350,
+                "endLine": 350,
+                "detail": "2.1.0"
+              },
+              {
+                "name": "environment",
+                "kind": "string",
+                "startLine": 351,
+                "endLine": 351,
+                "detail": "production"
+              }
+            ]
+          },
+          {
+            "name": "database",
+            "kind": "module",
+            "startLine": 353,
+            "endLine": 362,
+            "children": [
+              {
+                "name": "host",
+                "kind": "string",
+                "startLine": 354,
+                "endLine": 354,
+                "detail": "localhost"
+              },
+              {
+                "name": "port",
+                "kind": "number",
+                "startLine": 355,
+                "endLine": 355,
+                "detail": "5432"
+              },
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 356,
+                "endLine": 356,
+                "detail": "mydb"
+              },
+              {
+                "name": "ssl",
+                "kind": "boolean",
+                "startLine": 357,
+                "endLine": 357,
+                "detail": "true"
+              },
+              {
+                "name": "pool",
+                "kind": "module",
+                "startLine": 358,
+                "endLine": 361,
+                "children": [
+                  {
+                    "name": "min",
+                    "kind": "number",
+                    "startLine": 359,
+                    "endLine": 359,
+                    "detail": "5"
+                  },
+                  {
+                    "name": "max",
+                    "kind": "number",
+                    "startLine": 360,
+                    "endLine": 360,
+                    "detail": "20"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "features",
+            "kind": "module",
+            "startLine": 363,
+            "endLine": 370,
+            "children": [
+              {
+                "name": "darkMode",
+                "kind": "boolean",
+                "startLine": 364,
+                "endLine": 364,
+                "detail": "true"
+              },
+              {
+                "name": "analytics",
+                "kind": "boolean",
+                "startLine": 365,
+                "endLine": 365,
+                "detail": "false"
+              },
+              {
+                "name": "experimental",
+                "kind": "module",
+                "startLine": 366,
+                "endLine": 369,
+                "children": [
+                  {
+                    "name": "featureA",
+                    "kind": "boolean",
+                    "startLine": 367,
+                    "endLine": 367,
+                    "detail": "true"
+                  },
+                  {
+                    "name": "featureB",
+                    "kind": "boolean",
+                    "startLine": 368,
+                    "endLine": 368,
+                    "detail": "false"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "locales",
+            "kind": "array",
+            "startLine": 371,
+            "endLine": 371,
+            "children": [
+              {
+                "name": "0",
+                "kind": "string",
+                "startLine": 371,
+                "endLine": 371
+              },
+              {
+                "name": "1",
+                "kind": "string",
+                "startLine": 371,
+                "endLine": 371
+              },
+              {
+                "name": "2",
+                "kind": "string",
+                "startLine": 371,
+                "endLine": 371
+              },
+              {
+                "name": "3",
+                "kind": "string",
+                "startLine": 371,
+                "endLine": 371
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "geoJson",
+        "kind": "module",
+        "startLine": 373,
+        "endLine": 407,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 374,
+            "endLine": 374,
+            "detail": "FeatureCollection"
+          },
+          {
+            "name": "features",
+            "kind": "array",
+            "startLine": 375,
+            "endLine": 406,
+            "children": [
+              {
+                "name": "0",
+                "kind": "module",
+                "startLine": 376,
+                "endLine": 386,
+                "children": [
+                  {
+                    "name": "type",
+                    "kind": "string",
+                    "startLine": 377,
+                    "endLine": 377,
+                    "detail": "Feature"
+                  },
+                  {
+                    "name": "geometry",
+                    "kind": "module",
+                    "startLine": 378,
+                    "endLine": 381,
+                    "children": [
+                      {
+                        "name": "type",
+                        "kind": "string",
+                        "startLine": 379,
+                        "endLine": 379,
+                        "detail": "Point"
+                      },
+                      {
+                        "name": "coordinates",
+                        "kind": "array",
+                        "startLine": 380,
+                        "endLine": 380,
+                        "children": [
+                          {
+                            "name": "0",
+                            "kind": "number",
+                            "startLine": 380,
+                            "endLine": 380
+                          },
+                          {
+                            "name": "1",
+                            "kind": "number",
+                            "startLine": 380,
+                            "endLine": 380
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "properties",
+                    "kind": "module",
+                    "startLine": 382,
+                    "endLine": 385,
+                    "children": [
+                      {
+                        "name": "name",
+                        "kind": "string",
+                        "startLine": 383,
+                        "endLine": 383,
+                        "detail": "San Francisco"
+                      },
+                      {
+                        "name": "population",
+                        "kind": "number",
+                        "startLine": 384,
+                        "endLine": 384,
+                        "detail": "884363"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "1",
+                "kind": "module",
+                "startLine": 387,
+                "endLine": 405,
+                "children": [
+                  {
+                    "name": "type",
+                    "kind": "string",
+                    "startLine": 388,
+                    "endLine": 388,
+                    "detail": "Feature"
+                  },
+                  {
+                    "name": "geometry",
+                    "kind": "module",
+                    "startLine": 389,
+                    "endLine": 400,
+                    "children": [
+                      {
+                        "name": "type",
+                        "kind": "string",
+                        "startLine": 390,
+                        "endLine": 390,
+                        "detail": "Polygon"
+                      },
+                      {
+                        "name": "coordinates",
+                        "kind": "array",
+                        "startLine": 391,
+                        "endLine": 399,
+                        "children": [
+                          {
+                            "name": "0",
+                            "kind": "array",
+                            "startLine": 392,
+                            "endLine": 398,
+                            "children": [
+                              {
+                                "name": "0",
+                                "kind": "array",
+                                "startLine": 393,
+                                "endLine": 393,
+                                "children": [
+                                  {
+                                    "name": "0",
+                                    "kind": "number",
+                                    "startLine": 393,
+                                    "endLine": 393
+                                  },
+                                  {
+                                    "name": "1",
+                                    "kind": "number",
+                                    "startLine": 393,
+                                    "endLine": 393
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "1",
+                                "kind": "array",
+                                "startLine": 394,
+                                "endLine": 394,
+                                "children": [
+                                  {
+                                    "name": "0",
+                                    "kind": "number",
+                                    "startLine": 394,
+                                    "endLine": 394
+                                  },
+                                  {
+                                    "name": "1",
+                                    "kind": "number",
+                                    "startLine": 394,
+                                    "endLine": 394
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "2",
+                                "kind": "array",
+                                "startLine": 395,
+                                "endLine": 395,
+                                "children": [
+                                  {
+                                    "name": "0",
+                                    "kind": "number",
+                                    "startLine": 395,
+                                    "endLine": 395
+                                  },
+                                  {
+                                    "name": "1",
+                                    "kind": "number",
+                                    "startLine": 395,
+                                    "endLine": 395
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "3",
+                                "kind": "array",
+                                "startLine": 396,
+                                "endLine": 396,
+                                "children": [
+                                  {
+                                    "name": "0",
+                                    "kind": "number",
+                                    "startLine": 396,
+                                    "endLine": 396
+                                  },
+                                  {
+                                    "name": "1",
+                                    "kind": "number",
+                                    "startLine": 396,
+                                    "endLine": 396
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "4",
+                                "kind": "array",
+                                "startLine": 397,
+                                "endLine": 397,
+                                "children": [
+                                  {
+                                    "name": "0",
+                                    "kind": "number",
+                                    "startLine": 397,
+                                    "endLine": 397
+                                  },
+                                  {
+                                    "name": "1",
+                                    "kind": "number",
+                                    "startLine": 397,
+                                    "endLine": 397
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "properties",
+                    "kind": "module",
+                    "startLine": 401,
+                    "endLine": 404,
+                    "children": [
+                      {
+                        "name": "name",
+                        "kind": "string",
+                        "startLine": 402,
+                        "endLine": 402,
+                        "detail": "Area"
+                      },
+                      {
+                        "name": "type",
+                        "kind": "string",
+                        "startLine": 403,
+                        "endLine": 403,
+                        "detail": "region"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "schemaDefinition",
+        "kind": "module",
+        "startLine": 408,
+        "endLine": 429,
+        "children": [
+          {
+            "name": "$schema",
+            "kind": "string",
+            "startLine": 409,
+            "endLine": 409,
+            "detail": "http://json-schema.org/draft-07/schema#"
+          },
+          {
+            "name": "$id",
+            "kind": "string",
+            "startLine": 410,
+            "endLine": 410,
+            "detail": "https://example.com/person.schema.json"
+          },
+          {
+            "name": "title",
+            "kind": "string",
+            "startLine": 411,
+            "endLine": 411,
+            "detail": "Person"
+          },
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 412,
+            "endLine": 412,
+            "detail": "object"
+          },
+          {
+            "name": "properties",
+            "kind": "module",
+            "startLine": 413,
+            "endLine": 427,
+            "children": [
+              {
+                "name": "firstName",
+                "kind": "module",
+                "startLine": 414,
+                "endLine": 417,
+                "children": [
+                  {
+                    "name": "type",
+                    "kind": "string",
+                    "startLine": 415,
+                    "endLine": 415,
+                    "detail": "string"
+                  },
+                  {
+                    "name": "description",
+                    "kind": "string",
+                    "startLine": 416,
+                    "endLine": 416,
+                    "detail": "The person's first name."
+                  }
+                ]
+              },
+              {
+                "name": "lastName",
+                "kind": "module",
+                "startLine": 418,
+                "endLine": 421,
+                "children": [
+                  {
+                    "name": "type",
+                    "kind": "string",
+                    "startLine": 419,
+                    "endLine": 419,
+                    "detail": "string"
+                  },
+                  {
+                    "name": "description",
+                    "kind": "string",
+                    "startLine": 420,
+                    "endLine": 420,
+                    "detail": "The person's last name."
+                  }
+                ]
+              },
+              {
+                "name": "age",
+                "kind": "module",
+                "startLine": 422,
+                "endLine": 426,
+                "children": [
+                  {
+                    "name": "description",
+                    "kind": "string",
+                    "startLine": 423,
+                    "endLine": 423,
+                    "detail": "Age in years."
+                  },
+                  {
+                    "name": "type",
+                    "kind": "string",
+                    "startLine": 424,
+                    "endLine": 424,
+                    "detail": "integer"
+                  },
+                  {
+                    "name": "minimum",
+                    "kind": "number",
+                    "startLine": 425,
+                    "endLine": 425,
+                    "detail": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "required",
+            "kind": "array",
+            "startLine": 428,
+            "endLine": 428,
+            "children": [
+              {
+                "name": "0",
+                "kind": "string",
+                "startLine": 428,
+                "endLine": 428
+              },
+              {
+                "name": "1",
+                "kind": "string",
+                "startLine": 428,
+                "endLine": 428
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "packageJson",
+        "kind": "module",
+        "startLine": 430,
+        "endLine": 458,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 431,
+            "endLine": 431,
+            "detail": "test-package"
+          },
+          {
+            "name": "version",
+            "kind": "string",
+            "startLine": 432,
+            "endLine": 432,
+            "detail": "1.0.0"
+          },
+          {
+            "name": "description",
+            "kind": "string",
+            "startLine": 433,
+            "endLine": 433,
+            "detail": "A test package"
+          },
+          {
+            "name": "main",
+            "kind": "string",
+            "startLine": 434,
+            "endLine": 434,
+            "detail": "index.js"
+          },
+          {
+            "name": "scripts",
+            "kind": "module",
+            "startLine": 435,
+            "endLine": 439,
+            "children": [
+              {
+                "name": "test",
+                "kind": "string",
+                "startLine": 436,
+                "endLine": 436,
+                "detail": "jest"
+              },
+              {
+                "name": "build",
+                "kind": "string",
+                "startLine": 437,
+                "endLine": 437,
+                "detail": "tsc"
+              },
+              {
+                "name": "start",
+                "kind": "string",
+                "startLine": 438,
+                "endLine": 438,
+                "detail": "node dist/index.js"
+              }
+            ]
+          },
+          {
+            "name": "dependencies",
+            "kind": "module",
+            "startLine": 440,
+            "endLine": 443,
+            "children": [
+              {
+                "name": "lodash",
+                "kind": "string",
+                "startLine": 441,
+                "endLine": 441,
+                "detail": "^4.17.21"
+              },
+              {
+                "name": "express",
+                "kind": "string",
+                "startLine": 442,
+                "endLine": 442,
+                "detail": "~4.18.0"
+              }
+            ]
+          },
+          {
+            "name": "devDependencies",
+            "kind": "module",
+            "startLine": 444,
+            "endLine": 447,
+            "children": [
+              {
+                "name": "typescript",
+                "kind": "string",
+                "startLine": 445,
+                "endLine": 445,
+                "detail": "^5.0.0"
+              },
+              {
+                "name": "@types/node",
+                "kind": "string",
+                "startLine": 446,
+                "endLine": 446,
+                "detail": "^20.0.0"
+              }
+            ]
+          },
+          {
+            "name": "keywords",
+            "kind": "array",
+            "startLine": 448,
+            "endLine": 448,
+            "children": [
+              {
+                "name": "0",
+                "kind": "string",
+                "startLine": 448,
+                "endLine": 448
+              },
+              {
+                "name": "1",
+                "kind": "string",
+                "startLine": 448,
+                "endLine": 448
+              },
+              {
+                "name": "2",
+                "kind": "string",
+                "startLine": 448,
+                "endLine": 448
+              }
+            ]
+          },
+          {
+            "name": "author",
+            "kind": "module",
+            "startLine": 449,
+            "endLine": 452,
+            "children": [
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 450,
+                "endLine": 450,
+                "detail": "Test Author"
+              },
+              {
+                "name": "email",
+                "kind": "string",
+                "startLine": 451,
+                "endLine": 451,
+                "detail": "test@example.com"
+              }
+            ]
+          },
+          {
+            "name": "license",
+            "kind": "string",
+            "startLine": 453,
+            "endLine": 453,
+            "detail": "MIT"
+          },
+          {
+            "name": "repository",
+            "kind": "module",
+            "startLine": 454,
+            "endLine": 457,
+            "children": [
+              {
+                "name": "type",
+                "kind": "string",
+                "startLine": 455,
+                "endLine": 455,
+                "detail": "git"
+              },
+              {
+                "name": "url",
+                "kind": "string",
+                "startLine": 456,
+                "endLine": 456,
+                "detail": "https://github.com/example/repo.git"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tsconfigJson",
+        "kind": "module",
+        "startLine": 459,
+        "endLine": 482,
+        "children": [
+          {
+            "name": "compilerOptions",
+            "kind": "module",
+            "startLine": 460,
+            "endLine": 479,
+            "children": [
+              {
+                "name": "target",
+                "kind": "string",
+                "startLine": 461,
+                "endLine": 461,
+                "detail": "ES2022"
+              },
+              {
+                "name": "module",
+                "kind": "string",
+                "startLine": 462,
+                "endLine": 462,
+                "detail": "NodeNext"
+              },
+              {
+                "name": "moduleResolution",
+                "kind": "string",
+                "startLine": 463,
+                "endLine": 463,
+                "detail": "NodeNext"
+              },
+              {
+                "name": "strict",
+                "kind": "boolean",
+                "startLine": 464,
+                "endLine": 464,
+                "detail": "true"
+              },
+              {
+                "name": "esModuleInterop",
+                "kind": "boolean",
+                "startLine": 465,
+                "endLine": 465,
+                "detail": "true"
+              },
+              {
+                "name": "skipLibCheck",
+                "kind": "boolean",
+                "startLine": 466,
+                "endLine": 466,
+                "detail": "true"
+              },
+              {
+                "name": "forceConsistentCasingInFileNames",
+                "kind": "boolean",
+                "startLine": 467,
+                "endLine": 467,
+                "detail": "true"
+              },
+              {
+                "name": "declaration",
+                "kind": "boolean",
+                "startLine": 468,
+                "endLine": 468,
+                "detail": "true"
+              },
+              {
+                "name": "declarationMap",
+                "kind": "boolean",
+                "startLine": 469,
+                "endLine": 469,
+                "detail": "true"
+              },
+              {
+                "name": "sourceMap",
+                "kind": "boolean",
+                "startLine": 470,
+                "endLine": 470,
+                "detail": "true"
+              },
+              {
+                "name": "outDir",
+                "kind": "string",
+                "startLine": 471,
+                "endLine": 471,
+                "detail": "./dist"
+              },
+              {
+                "name": "rootDir",
+                "kind": "string",
+                "startLine": 472,
+                "endLine": 472,
+                "detail": "./src"
+              },
+              {
+                "name": "lib",
+                "kind": "array",
+                "startLine": 473,
+                "endLine": 473,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "string",
+                    "startLine": 473,
+                    "endLine": 473
+                  },
+                  {
+                    "name": "1",
+                    "kind": "string",
+                    "startLine": 473,
+                    "endLine": 473
+                  }
+                ]
+              },
+              {
+                "name": "types",
+                "kind": "array",
+                "startLine": 474,
+                "endLine": 474,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "string",
+                    "startLine": 474,
+                    "endLine": 474
+                  },
+                  {
+                    "name": "1",
+                    "kind": "string",
+                    "startLine": 474,
+                    "endLine": 474
+                  }
+                ]
+              },
+              {
+                "name": "paths",
+                "kind": "module",
+                "startLine": 475,
+                "endLine": 478,
+                "children": [
+                  {
+                    "name": "@/*",
+                    "kind": "array",
+                    "startLine": 476,
+                    "endLine": 476,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "string",
+                        "startLine": 476,
+                        "endLine": 476
+                      }
+                    ]
+                  },
+                  {
+                    "name": "@utils/*",
+                    "kind": "array",
+                    "startLine": 477,
+                    "endLine": 477,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "string",
+                        "startLine": 477,
+                        "endLine": 477
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "include",
+            "kind": "array",
+            "startLine": 480,
+            "endLine": 480,
+            "children": [
+              {
+                "name": "0",
+                "kind": "string",
+                "startLine": 480,
+                "endLine": 480
+              }
+            ]
+          },
+          {
+            "name": "exclude",
+            "kind": "array",
+            "startLine": 481,
+            "endLine": 481,
+            "children": [
+              {
+                "name": "0",
+                "kind": "string",
+                "startLine": 481,
+                "endLine": 481
+              },
+              {
+                "name": "1",
+                "kind": "string",
+                "startLine": 481,
+                "endLine": 481
+              },
+              {
+                "name": "2",
+                "kind": "string",
+                "startLine": 481,
+                "endLine": 481
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "exhaustiveTypeMatrix",
+    "kind": "array",
+    "startLine": 484,
+    "endLine": 498,
+    "children": [
+      {
+        "name": "0",
+        "kind": "module",
+        "startLine": 485,
+        "endLine": 485,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 485,
+            "endLine": 485,
+            "detail": "string"
+          },
+          {
+            "name": "value",
+            "kind": "string",
+            "startLine": 485,
+            "endLine": 485,
+            "detail": "text"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 485,
+            "endLine": 485,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "1",
+        "kind": "module",
+        "startLine": 486,
+        "endLine": 486,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 486,
+            "endLine": 486,
+            "detail": "string"
+          },
+          {
+            "name": "value",
+            "kind": "string",
+            "startLine": 486,
+            "endLine": 486
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 486,
+            "endLine": 486,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "2",
+        "kind": "module",
+        "startLine": 487,
+        "endLine": 487,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 487,
+            "endLine": 487,
+            "detail": "number"
+          },
+          {
+            "name": "value",
+            "kind": "number",
+            "startLine": 487,
+            "endLine": 487,
+            "detail": "0"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 487,
+            "endLine": 487,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "3",
+        "kind": "module",
+        "startLine": 488,
+        "endLine": 488,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 488,
+            "endLine": 488,
+            "detail": "number"
+          },
+          {
+            "name": "value",
+            "kind": "number",
+            "startLine": 488,
+            "endLine": 488,
+            "detail": "-1"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 488,
+            "endLine": 488,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "4",
+        "kind": "module",
+        "startLine": 489,
+        "endLine": 489,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 489,
+            "endLine": 489,
+            "detail": "number"
+          },
+          {
+            "name": "value",
+            "kind": "number",
+            "startLine": 489,
+            "endLine": 489,
+            "detail": "1.5"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 489,
+            "endLine": 489,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "5",
+        "kind": "module",
+        "startLine": 490,
+        "endLine": 490,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 490,
+            "endLine": 490,
+            "detail": "number"
+          },
+          {
+            "name": "value",
+            "kind": "number",
+            "startLine": 490,
+            "endLine": 490,
+            "detail": "10000000000"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 490,
+            "endLine": 490,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "6",
+        "kind": "module",
+        "startLine": 491,
+        "endLine": 491,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 491,
+            "endLine": 491,
+            "detail": "boolean"
+          },
+          {
+            "name": "value",
+            "kind": "boolean",
+            "startLine": 491,
+            "endLine": 491,
+            "detail": "true"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 491,
+            "endLine": 491,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "7",
+        "kind": "module",
+        "startLine": 492,
+        "endLine": 492,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 492,
+            "endLine": 492,
+            "detail": "boolean"
+          },
+          {
+            "name": "value",
+            "kind": "boolean",
+            "startLine": 492,
+            "endLine": 492,
+            "detail": "false"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 492,
+            "endLine": 492,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "8",
+        "kind": "module",
+        "startLine": 493,
+        "endLine": 493,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 493,
+            "endLine": 493,
+            "detail": "null"
+          },
+          {
+            "name": "value",
+            "kind": "variable",
+            "startLine": 493,
+            "endLine": 493,
+            "detail": "null"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 493,
+            "endLine": 493,
+            "detail": "true"
+          }
+        ]
+      },
+      {
+        "name": "9",
+        "kind": "module",
+        "startLine": 494,
+        "endLine": 494,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 494,
+            "endLine": 494,
+            "detail": "array"
+          },
+          {
+            "name": "value",
+            "kind": "array",
+            "startLine": 494,
+            "endLine": 494,
+            "detail": "[]"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 494,
+            "endLine": 494,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "10",
+        "kind": "module",
+        "startLine": 495,
+        "endLine": 495,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 495,
+            "endLine": 495,
+            "detail": "array"
+          },
+          {
+            "name": "value",
+            "kind": "array",
+            "startLine": 495,
+            "endLine": 495,
+            "children": [
+              {
+                "name": "0",
+                "kind": "number",
+                "startLine": 495,
+                "endLine": 495
+              }
+            ]
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 495,
+            "endLine": 495,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "11",
+        "kind": "module",
+        "startLine": 496,
+        "endLine": 496,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 496,
+            "endLine": 496,
+            "detail": "object"
+          },
+          {
+            "name": "value",
+            "kind": "module",
+            "startLine": 496,
+            "endLine": 496,
+            "detail": "{}"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 496,
+            "endLine": 496,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "12",
+        "kind": "module",
+        "startLine": 497,
+        "endLine": 497,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 497,
+            "endLine": 497,
+            "detail": "object"
+          },
+          {
+            "name": "value",
+            "kind": "module",
+            "startLine": 497,
+            "endLine": 497,
+            "children": [
+              {
+                "name": "k",
+                "kind": "string",
+                "startLine": 497,
+                "endLine": 497,
+                "detail": "v"
+              }
+            ]
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 497,
+            "endLine": 497,
+            "detail": "false"
+          }
+        ]
+      }
+    ]
+  }
+]

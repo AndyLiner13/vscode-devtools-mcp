@@ -1,0 +1,561 @@
+[
+  {
+    "name": "frontmatter",
+    "kind": "frontmatter",
+    "startLine": 1,
+    "endLine": 18,
+    "children": [
+      {
+        "name": "title",
+        "kind": "key",
+        "startLine": 1,
+        "endLine": 1
+      },
+      {
+        "name": "author",
+        "kind": "key",
+        "startLine": 1,
+        "endLine": 1
+      },
+      {
+        "name": "date",
+        "kind": "key",
+        "startLine": 1,
+        "endLine": 1
+      },
+      {
+        "name": "version",
+        "kind": "key",
+        "startLine": 1,
+        "endLine": 1
+      },
+      {
+        "name": "tags",
+        "kind": "key",
+        "startLine": 1,
+        "endLine": 1
+      },
+      {
+        "name": "custom",
+        "kind": "key",
+        "startLine": 1,
+        "endLine": 1
+      },
+      {
+        "name": "boolean_field",
+        "kind": "key",
+        "startLine": 1,
+        "endLine": 1
+      },
+      {
+        "name": "number_field",
+        "kind": "key",
+        "startLine": 1,
+        "endLine": 1
+      },
+      {
+        "name": "null_field",
+        "kind": "key",
+        "startLine": 1,
+        "endLine": 1
+      },
+      {
+        "name": "array_field",
+        "kind": "key",
+        "startLine": 1,
+        "endLine": 1
+      }
+    ]
+  },
+  {
+    "name": "# Heading Level 1 (ATX Style)",
+    "kind": "heading",
+    "startLine": 28,
+    "endLine": 28,
+    "children": [
+      {
+        "name": "## Heading Level 2",
+        "kind": "heading",
+        "startLine": 30,
+        "endLine": 30,
+        "children": [
+          {
+            "name": "### Heading Level 3",
+            "kind": "heading",
+            "startLine": 32,
+            "endLine": 32,
+            "children": [
+              {
+                "name": "#### Heading Level 4",
+                "kind": "heading",
+                "startLine": 34,
+                "endLine": 34,
+                "children": [
+                  {
+                    "name": "##### Heading Level 5",
+                    "kind": "heading",
+                    "startLine": 36,
+                    "endLine": 36,
+                    "children": [
+                      {
+                        "name": "###### Heading Level 6",
+                        "kind": "heading",
+                        "startLine": 38,
+                        "endLine": 38
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "# Heading Level 1 (Setext Style)",
+    "kind": "heading",
+    "startLine": 40,
+    "endLine": 41,
+    "children": [
+      {
+        "name": "## Heading Level 2 (Setext Style)",
+        "kind": "heading",
+        "startLine": 43,
+        "endLine": 44
+      },
+      {
+        "name": "## Heading with inline code",
+        "kind": "heading",
+        "startLine": 46,
+        "endLine": 46
+      },
+      {
+        "name": "## Heading with bold and italic",
+        "kind": "heading",
+        "startLine": 48,
+        "endLine": 48
+      },
+      {
+        "name": "## Heading with link",
+        "kind": "heading",
+        "startLine": 50,
+        "endLine": 50
+      },
+      {
+        "name": "## Heading with emoji 🚀",
+        "kind": "heading",
+        "startLine": 52,
+        "endLine": 52,
+        "children": [
+          {
+            "name": "code block",
+            "kind": "code",
+            "startLine": 124,
+            "endLine": 129
+          },
+          {
+            "name": "code block (javascript)",
+            "kind": "code",
+            "startLine": 131,
+            "endLine": 151,
+            "detail": "javascript"
+          },
+          {
+            "name": "code block (typescript)",
+            "kind": "code",
+            "startLine": 153,
+            "endLine": 166,
+            "detail": "typescript"
+          },
+          {
+            "name": "code block (python)",
+            "kind": "code",
+            "startLine": 168,
+            "endLine": 186,
+            "detail": "python"
+          },
+          {
+            "name": "code block (json)",
+            "kind": "code",
+            "startLine": 188,
+            "endLine": 195,
+            "detail": "json"
+          },
+          {
+            "name": "code block (html)",
+            "kind": "code",
+            "startLine": 197,
+            "endLine": 209,
+            "detail": "html"
+          },
+          {
+            "name": "code block (css)",
+            "kind": "code",
+            "startLine": 211,
+            "endLine": 222,
+            "detail": "css"
+          },
+          {
+            "name": "code block (yaml)",
+            "kind": "code",
+            "startLine": 224,
+            "endLine": 229,
+            "detail": "yaml"
+          },
+          {
+            "name": "code block (bash)",
+            "kind": "code",
+            "startLine": 231,
+            "endLine": 237,
+            "detail": "bash"
+          },
+          {
+            "name": "code block (sql)",
+            "kind": "code",
+            "startLine": 239,
+            "endLine": 247,
+            "detail": "sql"
+          },
+          {
+            "name": "code block (diff)",
+            "kind": "code",
+            "startLine": 249,
+            "endLine": 254,
+            "detail": "diff"
+          },
+          {
+            "name": "code block (mermaid)",
+            "kind": "code",
+            "startLine": 256,
+            "endLine": 263,
+            "detail": "mermaid"
+          },
+          {
+            "name": "code block",
+            "kind": "code",
+            "startLine": 265,
+            "endLine": 268
+          },
+          {
+            "name": "table",
+            "kind": "3 cols",
+            "startLine": 472,
+            "endLine": 475,
+            "children": [
+              {
+                "name": "Header 1",
+                "kind": "column",
+                "startLine": 472,
+                "endLine": 472
+              },
+              {
+                "name": "Header 2",
+                "kind": "column",
+                "startLine": 472,
+                "endLine": 472
+              },
+              {
+                "name": "Header 3",
+                "kind": "column",
+                "startLine": 472,
+                "endLine": 472
+              }
+            ]
+          },
+          {
+            "name": "table",
+            "kind": "3 cols",
+            "startLine": 477,
+            "endLine": 480,
+            "children": [
+              {
+                "name": "Left Aligned",
+                "kind": "column",
+                "startLine": 477,
+                "endLine": 477
+              },
+              {
+                "name": "Center Aligned",
+                "kind": "column",
+                "startLine": 477,
+                "endLine": 477
+              },
+              {
+                "name": "Right Aligned",
+                "kind": "column",
+                "startLine": 477,
+                "endLine": 477
+              }
+            ]
+          },
+          {
+            "name": "table",
+            "kind": "3 cols",
+            "startLine": 482,
+            "endLine": 486,
+            "children": [
+              {
+                "name": "Mixed",
+                "kind": "column",
+                "startLine": 482,
+                "endLine": 482
+              },
+              {
+                "name": "Content",
+                "kind": "column",
+                "startLine": 482,
+                "endLine": 482
+              },
+              {
+                "name": "Types",
+                "kind": "column",
+                "startLine": 482,
+                "endLine": 482
+              }
+            ]
+          },
+          {
+            "name": "table",
+            "kind": "3 cols",
+            "startLine": 488,
+            "endLine": 490,
+            "children": [
+              {
+                "name": "Wide Header Column Name",
+                "kind": "column",
+                "startLine": 488,
+                "endLine": 488
+              },
+              {
+                "name": "Another Wide Header",
+                "kind": "column",
+                "startLine": 488,
+                "endLine": 488
+              },
+              {
+                "name": "Short",
+                "kind": "column",
+                "startLine": 488,
+                "endLine": 488
+              }
+            ]
+          },
+          {
+            "name": "table",
+            "kind": "1 cols",
+            "startLine": 492,
+            "endLine": 494,
+            "children": [
+              {
+                "name": "H1",
+                "kind": "column",
+                "startLine": 492,
+                "endLine": 492
+              }
+            ]
+          },
+          {
+            "name": "table",
+            "kind": "10 cols",
+            "startLine": 496,
+            "endLine": 498,
+            "children": [
+              {
+                "name": "Col1",
+                "kind": "column",
+                "startLine": 496,
+                "endLine": 496
+              },
+              {
+                "name": "Col2",
+                "kind": "column",
+                "startLine": 496,
+                "endLine": 496
+              },
+              {
+                "name": "Col3",
+                "kind": "column",
+                "startLine": 496,
+                "endLine": 496
+              },
+              {
+                "name": "Col4",
+                "kind": "column",
+                "startLine": 496,
+                "endLine": 496
+              },
+              {
+                "name": "Col5",
+                "kind": "column",
+                "startLine": 496,
+                "endLine": 496
+              },
+              {
+                "name": "Col6",
+                "kind": "column",
+                "startLine": 496,
+                "endLine": 496
+              },
+              {
+                "name": "Col7",
+                "kind": "column",
+                "startLine": 496,
+                "endLine": 496
+              },
+              {
+                "name": "Col8",
+                "kind": "column",
+                "startLine": 496,
+                "endLine": 496
+              },
+              {
+                "name": "Col9",
+                "kind": "column",
+                "startLine": 496,
+                "endLine": 496
+              },
+              {
+                "name": "Col10",
+                "kind": "column",
+                "startLine": 496,
+                "endLine": 496
+              }
+            ]
+          },
+          {
+            "name": "table",
+            "kind": "3 cols",
+            "startLine": 500,
+            "endLine": 502,
+            "children": [
+              {
+                "name": "Pipes",
+                "kind": "column",
+                "startLine": 500,
+                "endLine": 500
+              },
+              {
+                "name": "In",
+                "kind": "column",
+                "startLine": 500,
+                "endLine": 500
+              },
+              {
+                "name": "Content",
+                "kind": "column",
+                "startLine": 500,
+                "endLine": 500
+              }
+            ]
+          },
+          {
+            "name": "table",
+            "kind": "3 cols",
+            "startLine": 504,
+            "endLine": 507,
+            "children": [
+              {
+                "name": "Empty",
+                "kind": "column",
+                "startLine": 504,
+                "endLine": 504
+              },
+              {
+                "name": "",
+                "kind": "column",
+                "startLine": 504,
+                "endLine": 504
+              },
+              {
+                "name": "Cells",
+                "kind": "column",
+                "startLine": 504,
+                "endLine": 504
+              }
+            ]
+          },
+          {
+            "name": "table",
+            "kind": "4 cols",
+            "startLine": 509,
+            "endLine": 511,
+            "children": [
+              {
+                "name": "No",
+                "kind": "column",
+                "startLine": 509,
+                "endLine": 509
+              },
+              {
+                "name": "Spaces",
+                "kind": "column",
+                "startLine": 509,
+                "endLine": 509
+              },
+              {
+                "name": "Around",
+                "kind": "column",
+                "startLine": 509,
+                "endLine": 509
+              },
+              {
+                "name": "Pipes",
+                "kind": "column",
+                "startLine": 509,
+                "endLine": 509
+              }
+            ]
+          },
+          {
+            "name": "table",
+            "kind": "2 cols",
+            "startLine": 513,
+            "endLine": 516,
+            "children": [
+              {
+                "name": "Header",
+                "kind": "column",
+                "startLine": 513,
+                "endLine": 513
+              },
+              {
+                "name": "Header",
+                "kind": "column",
+                "startLine": 513,
+                "endLine": 513
+              }
+            ]
+          },
+          {
+            "name": "code block (javascript)",
+            "kind": "code",
+            "startLine": 628,
+            "endLine": 630,
+            "detail": "javascript"
+          },
+          {
+            "name": "code block (javascript)",
+            "kind": "code",
+            "startLine": 648,
+            "endLine": 650,
+            "detail": "javascript"
+          },
+          {
+            "name": "code block",
+            "kind": "code",
+            "startLine": 704,
+            "endLine": 707
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "# Heading in HTML",
+    "kind": "heading",
+    "startLine": 782,
+    "endLine": 782
+  }
+]

@@ -1,0 +1,33 @@
+{
+  "totalTokens": 26,
+  "legend": {
+    "tokenTypes": [
+      "class",
+      "enum",
+      "interface",
+      "namespace",
+      "typeParameter",
+      "type",
+      "parameter",
+      "variable",
+      "enumMember",
+      "property",
+      "function",
+      "method"
+    ],
+    "tokenModifiers": [
+      "declaration",
+      "static",
+      "async",
+      "readonly",
+      "defaultLibrary",
+      "local"
+    ]
+  },
+  "tokenTypeCounts": {
+    "variable": 13,
+    "property": 4,
+    "method": 7,
+    "function": 2
+  }
+}

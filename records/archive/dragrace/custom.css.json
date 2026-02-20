@@ -1,0 +1,2354 @@
+[
+  {
+    "name": "@charset \"UTF-8\"",
+    "kind": "at-rule",
+    "startLine": 19,
+    "endLine": 19
+  },
+  {
+    "name": "@import url(reset.css)",
+    "kind": "at-rule",
+    "startLine": 22,
+    "endLine": 22
+  },
+  {
+    "name": "@import url(typography.css)",
+    "kind": "at-rule",
+    "startLine": 23,
+    "endLine": 23
+  },
+  {
+    "name": "@import \"components.css\"",
+    "kind": "at-rule",
+    "startLine": 24,
+    "endLine": 24
+  },
+  {
+    "name": "@import url(print.css)print",
+    "kind": "at-rule",
+    "startLine": 25,
+    "endLine": 25
+  },
+  {
+    "name": "@import url(mobile.css)screen and (max-width:768px)",
+    "kind": "at-rule",
+    "startLine": 26,
+    "endLine": 26
+  },
+  {
+    "name": "@import url(dark.css)(prefers-color-scheme:dark)",
+    "kind": "at-rule",
+    "startLine": 27,
+    "endLine": 27
+  },
+  {
+    "name": "@import url(module.css)layer(base)",
+    "kind": "at-rule",
+    "startLine": 28,
+    "endLine": 28
+  },
+  {
+    "name": "@import url(theme.css)layer(theme) supports(display:grid)",
+    "kind": "at-rule",
+    "startLine": 29,
+    "endLine": 29
+  },
+  {
+    "name": "@namespace url(http://www.w3.org/1999/xhtml)",
+    "kind": "at-rule",
+    "startLine": 32,
+    "endLine": 32
+  },
+  {
+    "name": "@namespace svg url(http://www.w3.org/2000/svg)",
+    "kind": "at-rule",
+    "startLine": 33,
+    "endLine": 33
+  },
+  {
+    "name": "@namespace math\"http://www.w3.org/1998/Math/MathML\"",
+    "kind": "at-rule",
+    "startLine": 34,
+    "endLine": 34
+  },
+  {
+    "name": "@layer reset",
+    "kind": "at-rule",
+    "startLine": 37,
+    "endLine": 37
+  },
+  {
+    "name": "@layer base",
+    "kind": "at-rule",
+    "startLine": 38,
+    "endLine": 38
+  },
+  {
+    "name": "@layer components",
+    "kind": "at-rule",
+    "startLine": 39,
+    "endLine": 39
+  },
+  {
+    "name": "@layer utilities",
+    "kind": "at-rule",
+    "startLine": 40,
+    "endLine": 40
+  },
+  {
+    "name": "@layer reset",
+    "kind": "at-rule",
+    "startLine": 42,
+    "endLine": 48,
+    "children": [
+      {
+        "name": "*",
+        "kind": "selector",
+        "startLine": 43,
+        "endLine": 47
+      }
+    ]
+  },
+  {
+    "name": "@layer base",
+    "kind": "at-rule",
+    "startLine": 50,
+    "endLine": 54,
+    "children": [
+      {
+        "name": "body",
+        "kind": "selector",
+        "startLine": 51,
+        "endLine": 53
+      }
+    ]
+  },
+  {
+    "name": "@layer components",
+    "kind": "at-rule",
+    "startLine": 56,
+    "endLine": 60,
+    "children": [
+      {
+        "name": ".button",
+        "kind": "selector",
+        "startLine": 57,
+        "endLine": 59
+      }
+    ]
+  },
+  {
+    "name": "@layer utilities",
+    "kind": "at-rule",
+    "startLine": 62,
+    "endLine": 66,
+    "children": [
+      {
+        "name": ".hidden",
+        "kind": "selector",
+        "startLine": 63,
+        "endLine": 65
+      }
+    ]
+  },
+  {
+    "name": "@layer framework",
+    "kind": "at-rule",
+    "startLine": 69,
+    "endLine": 80,
+    "children": [
+      {
+        "name": "@layer base",
+        "kind": "at-rule",
+        "startLine": 70,
+        "endLine": 74,
+        "children": [
+          {
+            "name": "html",
+            "kind": "selector",
+            "startLine": 71,
+            "endLine": 73
+          }
+        ]
+      },
+      {
+        "name": "@layer theme",
+        "kind": "at-rule",
+        "startLine": 75,
+        "endLine": 79,
+        "children": [
+          {
+            "name": ":root",
+            "kind": "selector",
+            "startLine": 76,
+            "endLine": 78,
+            "children": [
+              {
+                "name": "--primary",
+                "kind": "custom-property",
+                "startLine": 77,
+                "endLine": 77,
+                "detail": "blue"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "@media all",
+    "kind": "at-rule",
+    "startLine": 86,
+    "endLine": 88,
+    "children": [
+      {
+        "name": ".all-media",
+        "kind": "selector",
+        "startLine": 87,
+        "endLine": 87
+      }
+    ]
+  },
+  {
+    "name": "@media screen",
+    "kind": "at-rule",
+    "startLine": 90,
+    "endLine": 92,
+    "children": [
+      {
+        "name": ".screen-only",
+        "kind": "selector",
+        "startLine": 91,
+        "endLine": 91
+      }
+    ]
+  },
+  {
+    "name": "@media print",
+    "kind": "at-rule",
+    "startLine": 94,
+    "endLine": 97,
+    "children": [
+      {
+        "name": ".print-only",
+        "kind": "selector",
+        "startLine": 95,
+        "endLine": 95
+      },
+      {
+        "name": "@page",
+        "kind": "at-rule",
+        "startLine": 96,
+        "endLine": 96
+      }
+    ]
+  },
+  {
+    "name": "@media speech",
+    "kind": "at-rule",
+    "startLine": 99,
+    "endLine": 101,
+    "children": [
+      {
+        "name": ".speech-only",
+        "kind": "selector",
+        "startLine": 100,
+        "endLine": 100
+      }
+    ]
+  },
+  {
+    "name": "@media screen and (min-width:768px)",
+    "kind": "at-rule",
+    "startLine": 103,
+    "endLine": 105,
+    "children": [
+      {
+        "name": ".tablet-up",
+        "kind": "selector",
+        "startLine": 104,
+        "endLine": 104
+      }
+    ]
+  },
+  {
+    "name": "@media screen and (min-width:768px) and (max-width:1024px)",
+    "kind": "at-rule",
+    "startLine": 107,
+    "endLine": 109,
+    "children": [
+      {
+        "name": ".tablet-only",
+        "kind": "selector",
+        "startLine": 108,
+        "endLine": 108
+      }
+    ]
+  },
+  {
+    "name": "@media (min-width:1200px)",
+    "kind": "at-rule",
+    "startLine": 111,
+    "endLine": 113,
+    "children": [
+      {
+        "name": ".desktop",
+        "kind": "selector",
+        "startLine": 112,
+        "endLine": 112
+      }
+    ]
+  },
+  {
+    "name": "@media (width>=768px)",
+    "kind": "at-rule",
+    "startLine": 115,
+    "endLine": 117,
+    "children": [
+      {
+        "name": ".range-syntax",
+        "kind": "selector",
+        "startLine": 116,
+        "endLine": 116
+      }
+    ]
+  },
+  {
+    "name": "@media (768px<=width<=1024px)",
+    "kind": "at-rule",
+    "startLine": 119,
+    "endLine": 121,
+    "children": [
+      {
+        "name": ".range-between",
+        "kind": "selector",
+        "startLine": 120,
+        "endLine": 120
+      }
+    ]
+  },
+  {
+    "name": "@media (orientation:portrait)",
+    "kind": "at-rule",
+    "startLine": 123,
+    "endLine": 125,
+    "children": [
+      {
+        "name": ".portrait",
+        "kind": "selector",
+        "startLine": 124,
+        "endLine": 124
+      }
+    ]
+  },
+  {
+    "name": "@media (orientation:landscape)",
+    "kind": "at-rule",
+    "startLine": 127,
+    "endLine": 129,
+    "children": [
+      {
+        "name": ".landscape",
+        "kind": "selector",
+        "startLine": 128,
+        "endLine": 128
+      }
+    ]
+  },
+  {
+    "name": "@media (aspect-ratio:16/9)",
+    "kind": "at-rule",
+    "startLine": 131,
+    "endLine": 133,
+    "children": [
+      {
+        "name": ".widescreen",
+        "kind": "selector",
+        "startLine": 132,
+        "endLine": 132
+      }
+    ]
+  },
+  {
+    "name": "@media (min-resolution:2dppx),(-webkit-min-device-pixel-ratio:2)",
+    "kind": "at-rule",
+    "startLine": 135,
+    "endLine": 137,
+    "children": [
+      {
+        "name": ".retina",
+        "kind": "selector",
+        "startLine": 136,
+        "endLine": 136
+      }
+    ]
+  },
+  {
+    "name": "@media (prefers-reduced-motion:reduce)",
+    "kind": "at-rule",
+    "startLine": 139,
+    "endLine": 144,
+    "children": [
+      {
+        "name": "*,*::before,*::after",
+        "kind": "selector",
+        "startLine": 140,
+        "endLine": 143
+      }
+    ]
+  },
+  {
+    "name": "@media (prefers-color-scheme:dark)",
+    "kind": "at-rule",
+    "startLine": 146,
+    "endLine": 151,
+    "children": [
+      {
+        "name": ":root",
+        "kind": "selector",
+        "startLine": 147,
+        "endLine": 150,
+        "children": [
+          {
+            "name": "--bg-color",
+            "kind": "custom-property",
+            "startLine": 148,
+            "endLine": 148,
+            "detail": "#1a1a1a"
+          },
+          {
+            "name": "--text-color",
+            "kind": "custom-property",
+            "startLine": 149,
+            "endLine": 149,
+            "detail": "#ffffff"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "@media (prefers-color-scheme:light)",
+    "kind": "at-rule",
+    "startLine": 153,
+    "endLine": 158,
+    "children": [
+      {
+        "name": ":root",
+        "kind": "selector",
+        "startLine": 154,
+        "endLine": 157,
+        "children": [
+          {
+            "name": "--bg-color",
+            "kind": "custom-property",
+            "startLine": 155,
+            "endLine": 155,
+            "detail": "#ffffff"
+          },
+          {
+            "name": "--text-color",
+            "kind": "custom-property",
+            "startLine": 156,
+            "endLine": 156,
+            "detail": "#1a1a1a"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "@media (prefers-contrast:high)",
+    "kind": "at-rule",
+    "startLine": 160,
+    "endLine": 164,
+    "children": [
+      {
+        "name": ".high-contrast",
+        "kind": "selector",
+        "startLine": 161,
+        "endLine": 163
+      }
+    ]
+  },
+  {
+    "name": "@media (prefers-contrast:more)",
+    "kind": "at-rule",
+    "startLine": 166,
+    "endLine": 168,
+    "children": [
+      {
+        "name": "body",
+        "kind": "selector",
+        "startLine": 167,
+        "endLine": 167
+      }
+    ]
+  },
+  {
+    "name": "@media (prefers-reduced-transparency:reduce)",
+    "kind": "at-rule",
+    "startLine": 170,
+    "endLine": 172,
+    "children": [
+      {
+        "name": ".glass-effect",
+        "kind": "selector",
+        "startLine": 171,
+        "endLine": 171
+      }
+    ]
+  },
+  {
+    "name": "@media (forced-colors:active)",
+    "kind": "at-rule",
+    "startLine": 174,
+    "endLine": 176,
+    "children": [
+      {
+        "name": ".forced-colors",
+        "kind": "selector",
+        "startLine": 175,
+        "endLine": 175
+      }
+    ]
+  },
+  {
+    "name": "@media (inverted-colors:inverted)",
+    "kind": "at-rule",
+    "startLine": 178,
+    "endLine": 180,
+    "children": [
+      {
+        "name": "img",
+        "kind": "selector",
+        "startLine": 179,
+        "endLine": 179
+      }
+    ]
+  },
+  {
+    "name": "@media (pointer:coarse)",
+    "kind": "at-rule",
+    "startLine": 182,
+    "endLine": 184,
+    "children": [
+      {
+        "name": ".touch-target",
+        "kind": "selector",
+        "startLine": 183,
+        "endLine": 183
+      }
+    ]
+  },
+  {
+    "name": "@media (pointer:fine)",
+    "kind": "at-rule",
+    "startLine": 186,
+    "endLine": 188,
+    "children": [
+      {
+        "name": ".precise",
+        "kind": "selector",
+        "startLine": 187,
+        "endLine": 187
+      }
+    ]
+  },
+  {
+    "name": "@media (hover:hover)",
+    "kind": "at-rule",
+    "startLine": 190,
+    "endLine": 192,
+    "children": [
+      {
+        "name": ".hoverable:hover",
+        "kind": "selector",
+        "startLine": 191,
+        "endLine": 191
+      }
+    ]
+  },
+  {
+    "name": "@media (hover:none)",
+    "kind": "at-rule",
+    "startLine": 194,
+    "endLine": 196,
+    "children": [
+      {
+        "name": ".no-hover",
+        "kind": "selector",
+        "startLine": 195,
+        "endLine": 195
+      }
+    ]
+  },
+  {
+    "name": "@media (any-hover:hover)",
+    "kind": "at-rule",
+    "startLine": 198,
+    "endLine": 200,
+    "children": [
+      {
+        "name": ".any-hover-support",
+        "kind": "selector",
+        "startLine": 199,
+        "endLine": 199
+      }
+    ]
+  },
+  {
+    "name": "@media (any-pointer:coarse)",
+    "kind": "at-rule",
+    "startLine": 202,
+    "endLine": 204,
+    "children": [
+      {
+        "name": ".touch-device",
+        "kind": "selector",
+        "startLine": 203,
+        "endLine": 203
+      }
+    ]
+  },
+  {
+    "name": "@media (color)",
+    "kind": "at-rule",
+    "startLine": 206,
+    "endLine": 208,
+    "children": [
+      {
+        "name": ".color-display",
+        "kind": "selector",
+        "startLine": 207,
+        "endLine": 207
+      }
+    ]
+  },
+  {
+    "name": "@media (color-gamut:p3)",
+    "kind": "at-rule",
+    "startLine": 210,
+    "endLine": 212,
+    "children": [
+      {
+        "name": ".wide-gamut",
+        "kind": "selector",
+        "startLine": 211,
+        "endLine": 211
+      }
+    ]
+  },
+  {
+    "name": "@media (dynamic-range:high)",
+    "kind": "at-rule",
+    "startLine": 214,
+    "endLine": 216,
+    "children": [
+      {
+        "name": ".hdr-content",
+        "kind": "selector",
+        "startLine": 215,
+        "endLine": 215
+      }
+    ]
+  },
+  {
+    "name": "@media (update:slow)",
+    "kind": "at-rule",
+    "startLine": 218,
+    "endLine": 220,
+    "children": [
+      {
+        "name": ".e-ink",
+        "kind": "selector",
+        "startLine": 219,
+        "endLine": 219
+      }
+    ]
+  },
+  {
+    "name": "@media (overflow-block:scroll)",
+    "kind": "at-rule",
+    "startLine": 222,
+    "endLine": 224,
+    "children": [
+      {
+        "name": ".scrollable",
+        "kind": "selector",
+        "startLine": 223,
+        "endLine": 223
+      }
+    ]
+  },
+  {
+    "name": "@media (overflow-inline:scroll)",
+    "kind": "at-rule",
+    "startLine": 226,
+    "endLine": 228,
+    "children": [
+      {
+        "name": ".horizontal-scroll",
+        "kind": "selector",
+        "startLine": 227,
+        "endLine": 227
+      }
+    ]
+  },
+  {
+    "name": "@media (display-mode:fullscreen)",
+    "kind": "at-rule",
+    "startLine": 230,
+    "endLine": 232,
+    "children": [
+      {
+        "name": ".fullscreen-mode",
+        "kind": "selector",
+        "startLine": 231,
+        "endLine": 231
+      }
+    ]
+  },
+  {
+    "name": "@media (display-mode:standalone)",
+    "kind": "at-rule",
+    "startLine": 234,
+    "endLine": 236,
+    "children": [
+      {
+        "name": ".app-mode",
+        "kind": "selector",
+        "startLine": 235,
+        "endLine": 235
+      }
+    ]
+  },
+  {
+    "name": "@media (scripting:enabled)",
+    "kind": "at-rule",
+    "startLine": 238,
+    "endLine": 240,
+    "children": [
+      {
+        "name": ".js-enabled",
+        "kind": "selector",
+        "startLine": 239,
+        "endLine": 239
+      }
+    ]
+  },
+  {
+    "name": "@media (scripting:none)",
+    "kind": "at-rule",
+    "startLine": 242,
+    "endLine": 244,
+    "children": [
+      {
+        "name": ".no-js-fallback",
+        "kind": "selector",
+        "startLine": 243,
+        "endLine": 243
+      }
+    ]
+  },
+  {
+    "name": "@media not screen",
+    "kind": "at-rule",
+    "startLine": 246,
+    "endLine": 248,
+    "children": [
+      {
+        "name": ".not-screen",
+        "kind": "selector",
+        "startLine": 247,
+        "endLine": 247
+      }
+    ]
+  },
+  {
+    "name": "@media only screen",
+    "kind": "at-rule",
+    "startLine": 250,
+    "endLine": 252,
+    "children": [
+      {
+        "name": ".only-screen",
+        "kind": "selector",
+        "startLine": 251,
+        "endLine": 251
+      }
+    ]
+  },
+  {
+    "name": "@media screen,print",
+    "kind": "at-rule",
+    "startLine": 254,
+    "endLine": 256,
+    "children": [
+      {
+        "name": ".screen-or-print",
+        "kind": "selector",
+        "startLine": 255,
+        "endLine": 255
+      }
+    ]
+  },
+  {
+    "name": "@media screen",
+    "kind": "at-rule",
+    "startLine": 259,
+    "endLine": 263,
+    "children": [
+      {
+        "name": "@media (min-width:768px)",
+        "kind": "at-rule",
+        "startLine": 260,
+        "endLine": 262,
+        "children": [
+          {
+            "name": ".nested-media",
+            "kind": "selector",
+            "startLine": 261,
+            "endLine": 261
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "@supports (display:grid)",
+    "kind": "at-rule",
+    "startLine": 266,
+    "endLine": 271,
+    "children": [
+      {
+        "name": ".grid-container",
+        "kind": "selector",
+        "startLine": 267,
+        "endLine": 270
+      }
+    ]
+  },
+  {
+    "name": "@supports (display:flex)",
+    "kind": "at-rule",
+    "startLine": 273,
+    "endLine": 277,
+    "children": [
+      {
+        "name": ".flex-container",
+        "kind": "selector",
+        "startLine": 274,
+        "endLine": 276
+      }
+    ]
+  },
+  {
+    "name": "@supports not (display:grid)",
+    "kind": "at-rule",
+    "startLine": 279,
+    "endLine": 283,
+    "children": [
+      {
+        "name": ".no-grid-fallback",
+        "kind": "selector",
+        "startLine": 280,
+        "endLine": 282
+      }
+    ]
+  },
+  {
+    "name": "@supports (display:grid) and (gap:1rem)",
+    "kind": "at-rule",
+    "startLine": 285,
+    "endLine": 289,
+    "children": [
+      {
+        "name": ".grid-with-gap",
+        "kind": "selector",
+        "startLine": 286,
+        "endLine": 288
+      }
+    ]
+  },
+  {
+    "name": "@supports (display:flex) or (display:grid)",
+    "kind": "at-rule",
+    "startLine": 291,
+    "endLine": 295,
+    "children": [
+      {
+        "name": ".modern-layout",
+        "kind": "selector",
+        "startLine": 292,
+        "endLine": 294
+      }
+    ]
+  },
+  {
+    "name": "@supports ((display:flex) and (gap:1rem)) or (display:grid)",
+    "kind": "at-rule",
+    "startLine": 297,
+    "endLine": 301,
+    "children": [
+      {
+        "name": ".complex-support",
+        "kind": "selector",
+        "startLine": 298,
+        "endLine": 300
+      }
+    ]
+  },
+  {
+    "name": "@supports selector(:has(.child))",
+    "kind": "at-rule",
+    "startLine": 303,
+    "endLine": 307,
+    "children": [
+      {
+        "name": ".parent:has(.child)",
+        "kind": "selector",
+        "startLine": 304,
+        "endLine": 306
+      }
+    ]
+  },
+  {
+    "name": "@supports selector(:is(a,button))",
+    "kind": "at-rule",
+    "startLine": 309,
+    "endLine": 313,
+    "children": [
+      {
+        "name": ":is(a,button):hover",
+        "kind": "selector",
+        "startLine": 310,
+        "endLine": 312
+      }
+    ]
+  },
+  {
+    "name": "@supports font-tech(color-COLRv1)",
+    "kind": "at-rule",
+    "startLine": 315,
+    "endLine": 319,
+    "children": [
+      {
+        "name": ".color-font",
+        "kind": "selector",
+        "startLine": 316,
+        "endLine": 318
+      }
+    ]
+  },
+  {
+    "name": "@font-face",
+    "kind": "at-rule",
+    "startLine": 322,
+    "endLine": 341
+  },
+  {
+    "name": "@font-face",
+    "kind": "at-rule",
+    "startLine": 343,
+    "endLine": 349
+  },
+  {
+    "name": "@font-feature-values \"Fancy Font\"",
+    "kind": "at-rule",
+    "startLine": 352,
+    "endLine": 372,
+    "children": [
+      {
+        "name": "@styleset",
+        "kind": "at-rule",
+        "startLine": 353,
+        "endLine": 356
+      },
+      {
+        "name": "@swash",
+        "kind": "at-rule",
+        "startLine": 357,
+        "endLine": 359
+      },
+      {
+        "name": "@ornaments",
+        "kind": "at-rule",
+        "startLine": 360,
+        "endLine": 362
+      },
+      {
+        "name": "@annotation",
+        "kind": "at-rule",
+        "startLine": 363,
+        "endLine": 365
+      },
+      {
+        "name": "@stylistic",
+        "kind": "at-rule",
+        "startLine": 366,
+        "endLine": 368
+      },
+      {
+        "name": "@character-variant",
+        "kind": "at-rule",
+        "startLine": 369,
+        "endLine": 371
+      }
+    ]
+  },
+  {
+    "name": "@keyframes fadeIn",
+    "kind": "at-rule",
+    "startLine": 375,
+    "endLine": 382,
+    "children": [
+      {
+        "name": "from",
+        "kind": "selector",
+        "startLine": 376,
+        "endLine": 378
+      },
+      {
+        "name": "to",
+        "kind": "selector",
+        "startLine": 379,
+        "endLine": 381
+      }
+    ]
+  },
+  {
+    "name": "@keyframes slideIn",
+    "kind": "at-rule",
+    "startLine": 384,
+    "endLine": 396,
+    "children": [
+      {
+        "name": "0%",
+        "kind": "selector",
+        "startLine": 385,
+        "endLine": 388
+      },
+      {
+        "name": "50%",
+        "kind": "selector",
+        "startLine": 389,
+        "endLine": 391
+      },
+      {
+        "name": "100%",
+        "kind": "selector",
+        "startLine": 392,
+        "endLine": 395
+      }
+    ]
+  },
+  {
+    "name": "@keyframes complexAnimation",
+    "kind": "at-rule",
+    "startLine": 398,
+    "endLine": 411,
+    "children": [
+      {
+        "name": "0%,100%",
+        "kind": "selector",
+        "startLine": 399,
+        "endLine": 401
+      },
+      {
+        "name": "25%",
+        "kind": "selector",
+        "startLine": 402,
+        "endLine": 404
+      },
+      {
+        "name": "50%",
+        "kind": "selector",
+        "startLine": 405,
+        "endLine": 407
+      },
+      {
+        "name": "75%",
+        "kind": "selector",
+        "startLine": 408,
+        "endLine": 410
+      }
+    ]
+  },
+  {
+    "name": "@keyframes bounce",
+    "kind": "at-rule",
+    "startLine": 413,
+    "endLine": 426,
+    "children": [
+      {
+        "name": "0%,20%,50%,80%,100%",
+        "kind": "selector",
+        "startLine": 414,
+        "endLine": 417
+      },
+      {
+        "name": "40%",
+        "kind": "selector",
+        "startLine": 418,
+        "endLine": 421
+      },
+      {
+        "name": "60%",
+        "kind": "selector",
+        "startLine": 422,
+        "endLine": 425
+      }
+    ]
+  },
+  {
+    "name": "@page",
+    "kind": "at-rule",
+    "startLine": 429,
+    "endLine": 432
+  },
+  {
+    "name": "@page :first",
+    "kind": "at-rule",
+    "startLine": 434,
+    "endLine": 436
+  },
+  {
+    "name": "@page :left",
+    "kind": "at-rule",
+    "startLine": 438,
+    "endLine": 441
+  },
+  {
+    "name": "@page :right",
+    "kind": "at-rule",
+    "startLine": 443,
+    "endLine": 446
+  },
+  {
+    "name": "@page :blank",
+    "kind": "at-rule",
+    "startLine": 448,
+    "endLine": 450
+  },
+  {
+    "name": "@page landscape",
+    "kind": "at-rule",
+    "startLine": 452,
+    "endLine": 454
+  },
+  {
+    "name": "@page narrow",
+    "kind": "at-rule",
+    "startLine": 456,
+    "endLine": 481,
+    "children": [
+      {
+        "name": "@top-left",
+        "kind": "at-rule",
+        "startLine": 460,
+        "endLine": 462
+      },
+      {
+        "name": "@top-center",
+        "kind": "at-rule",
+        "startLine": 463,
+        "endLine": 465
+      },
+      {
+        "name": "@top-right",
+        "kind": "at-rule",
+        "startLine": 466,
+        "endLine": 468
+      },
+      {
+        "name": "@bottom-left",
+        "kind": "at-rule",
+        "startLine": 469,
+        "endLine": 471
+      },
+      {
+        "name": "@bottom-center",
+        "kind": "at-rule",
+        "startLine": 472,
+        "endLine": 474
+      },
+      {
+        "name": "@bottom-right",
+        "kind": "at-rule",
+        "startLine": 475,
+        "endLine": 477
+      },
+      {
+        "name": "@left-top",
+        "kind": "at-rule",
+        "startLine": 478,
+        "endLine": 480
+      }
+    ]
+  },
+  {
+    "name": "@counter-style thumbs",
+    "kind": "at-rule",
+    "startLine": 484,
+    "endLine": 488
+  },
+  {
+    "name": "@counter-style custom-decimal",
+    "kind": "at-rule",
+    "startLine": 490,
+    "endLine": 499
+  },
+  {
+    "name": "@counter-style lower-greek-custom",
+    "kind": "at-rule",
+    "startLine": 501,
+    "endLine": 504
+  },
+  {
+    "name": "@counter-style dice",
+    "kind": "at-rule",
+    "startLine": 506,
+    "endLine": 509
+  },
+  {
+    "name": "@property --my-color",
+    "kind": "at-rule",
+    "startLine": 512,
+    "endLine": 516
+  },
+  {
+    "name": "@property --my-length",
+    "kind": "at-rule",
+    "startLine": 518,
+    "endLine": 522
+  },
+  {
+    "name": "@property --my-percentage",
+    "kind": "at-rule",
+    "startLine": 524,
+    "endLine": 528
+  },
+  {
+    "name": "@property --my-number",
+    "kind": "at-rule",
+    "startLine": 530,
+    "endLine": 534
+  },
+  {
+    "name": "@property --my-length-percentage",
+    "kind": "at-rule",
+    "startLine": 536,
+    "endLine": 540
+  },
+  {
+    "name": "@property --my-angle",
+    "kind": "at-rule",
+    "startLine": 542,
+    "endLine": 546
+  },
+  {
+    "name": "@property --my-time",
+    "kind": "at-rule",
+    "startLine": 548,
+    "endLine": 552
+  },
+  {
+    "name": "@property --my-image",
+    "kind": "at-rule",
+    "startLine": 554,
+    "endLine": 558
+  },
+  {
+    "name": "@property --my-url",
+    "kind": "at-rule",
+    "startLine": 560,
+    "endLine": 564
+  },
+  {
+    "name": "@property --my-custom",
+    "kind": "at-rule",
+    "startLine": 566,
+    "endLine": 570
+  },
+  {
+    "name": "@property --my-complex",
+    "kind": "at-rule",
+    "startLine": 572,
+    "endLine": 576
+  },
+  {
+    "name": "@container (min-width:400px)",
+    "kind": "at-rule",
+    "startLine": 579,
+    "endLine": 584,
+    "children": [
+      {
+        "name": ".card",
+        "kind": "selector",
+        "startLine": 580,
+        "endLine": 583
+      }
+    ]
+  },
+  {
+    "name": "@container sidebar (max-width:300px)",
+    "kind": "at-rule",
+    "startLine": 586,
+    "endLine": 590,
+    "children": [
+      {
+        "name": ".sidebar-item",
+        "kind": "selector",
+        "startLine": 587,
+        "endLine": 589
+      }
+    ]
+  },
+  {
+    "name": "@container (inline-size>45em)",
+    "kind": "at-rule",
+    "startLine": 592,
+    "endLine": 596,
+    "children": [
+      {
+        "name": ".article",
+        "kind": "selector",
+        "startLine": 593,
+        "endLine": 595
+      }
+    ]
+  },
+  {
+    "name": "@container style(--theme:dark)",
+    "kind": "at-rule",
+    "startLine": 598,
+    "endLine": 603,
+    "children": [
+      {
+        "name": ".themed-element",
+        "kind": "selector",
+        "startLine": 599,
+        "endLine": 602
+      }
+    ]
+  },
+  {
+    "name": "@container card (width>300px) and (height>200px)",
+    "kind": "at-rule",
+    "startLine": 605,
+    "endLine": 609,
+    "children": [
+      {
+        "name": ".card-content",
+        "kind": "selector",
+        "startLine": 606,
+        "endLine": 608
+      }
+    ]
+  },
+  {
+    "name": "@scope (.card)",
+    "kind": "at-rule",
+    "startLine": 612,
+    "endLine": 624,
+    "children": [
+      {
+        "name": ":scope",
+        "kind": "selector",
+        "startLine": 613,
+        "endLine": 615
+      },
+      {
+        "name": ".title",
+        "kind": "selector",
+        "startLine": 617,
+        "endLine": 619
+      },
+      {
+        "name": ".content",
+        "kind": "selector",
+        "startLine": 621,
+        "endLine": 623
+      }
+    ]
+  },
+  {
+    "name": "@scope (.card) to (.content)",
+    "kind": "at-rule",
+    "startLine": 626,
+    "endLine": 631,
+    "children": [
+      {
+        "name": "a",
+        "kind": "selector",
+        "startLine": 628,
+        "endLine": 630
+      }
+    ]
+  },
+  {
+    "name": "@starting-style",
+    "kind": "at-rule",
+    "startLine": 634,
+    "endLine": 639,
+    "children": [
+      {
+        "name": "dialog[open]",
+        "kind": "selector",
+        "startLine": 635,
+        "endLine": 638
+      }
+    ]
+  },
+  {
+    "name": ":root",
+    "kind": "selector",
+    "startLine": 645,
+    "endLine": 738,
+    "children": [
+      {
+        "name": "--color-primary",
+        "kind": "custom-property",
+        "startLine": 647,
+        "endLine": 647,
+        "detail": "#007bff"
+      },
+      {
+        "name": "--color-secondary",
+        "kind": "custom-property",
+        "startLine": 648,
+        "endLine": 648,
+        "detail": "#6c757d"
+      },
+      {
+        "name": "--color-success",
+        "kind": "custom-property",
+        "startLine": 649,
+        "endLine": 649,
+        "detail": "#28a745"
+      },
+      {
+        "name": "--color-danger",
+        "kind": "custom-property",
+        "startLine": 650,
+        "endLine": 650,
+        "detail": "#dc3545"
+      },
+      {
+        "name": "--color-warning",
+        "kind": "custom-property",
+        "startLine": 651,
+        "endLine": 651,
+        "detail": "#ffc107"
+      },
+      {
+        "name": "--color-info",
+        "kind": "custom-property",
+        "startLine": 652,
+        "endLine": 652,
+        "detail": "#17a2b8"
+      },
+      {
+        "name": "--color-light",
+        "kind": "custom-property",
+        "startLine": 653,
+        "endLine": 653,
+        "detail": "#f8f9fa"
+      },
+      {
+        "name": "--color-dark",
+        "kind": "custom-property",
+        "startLine": 654,
+        "endLine": 654,
+        "detail": "#343a40"
+      },
+      {
+        "name": "--color-rgb",
+        "kind": "custom-property",
+        "startLine": 657,
+        "endLine": 657,
+        "detail": "rgb(255 128 64)"
+      },
+      {
+        "name": "--color-rgba",
+        "kind": "custom-property",
+        "startLine": 658,
+        "endLine": 658,
+        "detail": "rgba(255,128,64,0.5)"
+      },
+      {
+        "name": "--color-hsl",
+        "kind": "custom-property",
+        "startLine": 659,
+        "endLine": 659,
+        "detail": "hsl(210 100% 50%)"
+      },
+      {
+        "name": "--color-hsla",
+        "kind": "custom-property",
+        "startLine": 660,
+        "endLine": 660,
+        "detail": "hsla(210,100%,50%,0.5)"
+      },
+      {
+        "name": "--color-hwb",
+        "kind": "custom-property",
+        "startLine": 661,
+        "endLine": 661,
+        "detail": "hwb(210 10% 10%)"
+      },
+      {
+        "name": "--color-lab",
+        "kind": "custom-property",
+        "startLine": 662,
+        "endLine": 662,
+        "detail": "lab(50%40 59)"
+      },
+      {
+        "name": "--color-lch",
+        "kind": "custom-property",
+        "startLine": 663,
+        "endLine": 663,
+        "detail": "lch(50%50 210)"
+      },
+      {
+        "name": "--color-oklch",
+        "kind": "custom-property",
+        "startLine": 664,
+        "endLine": 664,
+        "detail": "oklch(70%0.2 200)"
+      },
+      {
+        "name": "--color-oklab",
+        "kind": "custom-property",
+        "startLine": 665,
+        "endLine": 665,
+        "detail": "oklab(0.5 0.1-0.1)"
+      },
+      {
+        "name": "--color-p3",
+        "kind": "custom-property",
+        "startLine": 666,
+        "endLine": 666,
+        "detail": "color(display-p3 1 0.5 0)"
+      },
+      {
+        "name": "--color-srgb",
+        "kind": "custom-property",
+        "startLine": 667,
+        "endLine": 667,
+        "detail": "color(srgb 1 0.5 0)"
+      },
+      {
+        "name": "--color-srgb-linear",
+        "kind": "custom-property",
+        "startLine": 668,
+        "endLine": 668,
+        "detail": "color(srgb-linear 1 0.5 0)"
+      },
+      {
+        "name": "--color-a98-rgb",
+        "kind": "custom-property",
+        "startLine": 669,
+        "endLine": 669,
+        "detail": "color(a98-rgb 1 0.5 0)"
+      },
+      {
+        "name": "--color-prophoto",
+        "kind": "custom-property",
+        "startLine": 670,
+        "endLine": 670,
+        "detail": "color(prophoto-rgb 1 0.5 0)"
+      },
+      {
+        "name": "--color-rec2020",
+        "kind": "custom-property",
+        "startLine": 671,
+        "endLine": 671,
+        "detail": "color(rec2020 1 0.5 0)"
+      },
+      {
+        "name": "--color-xyz",
+        "kind": "custom-property",
+        "startLine": 672,
+        "endLine": 672,
+        "detail": "color(xyz 0.5 0.5 0.5)"
+      },
+      {
+        "name": "--color-xyz-d50",
+        "kind": "custom-property",
+        "startLine": 673,
+        "endLine": 673,
+        "detail": "color(xyz-d50 0.5 0.5 0.5)"
+      },
+      {
+        "name": "--color-xyz-d65",
+        "kind": "custom-property",
+        "startLine": 674,
+        "endLine": 674,
+        "detail": "color(xyz-d65 0.5 0.5 0.5)"
+      },
+      {
+        "name": "--color-mix",
+        "kind": "custom-property",
+        "startLine": 675,
+        "endLine": 675,
+        "detail": "color-mix(in srgb,red 50%,blue)"
+      },
+      {
+        "name": "--color-mix-hsl",
+        "kind": "custom-property",
+        "startLine": 676,
+        "endLine": 676,
+        "detail": "color-mix(in hsl shorter hue,hsl(10 100% 50%),hsl(60 100% 50%) 25%)"
+      },
+      {
+        "name": "--color-from-hsl",
+        "kind": "custom-property",
+        "startLine": 679,
+        "endLine": 679,
+        "detail": "hsl(from var(--color-primary) h s calc(l*1.2))"
+      },
+      {
+        "name": "--color-from-oklch",
+        "kind": "custom-property",
+        "startLine": 680,
+        "endLine": 680,
+        "detail": "oklch(from var(--color-primary) l c calc(h + 180))"
+      },
+      {
+        "name": "--spacing-xs",
+        "kind": "custom-property",
+        "startLine": 683,
+        "endLine": 683,
+        "detail": "0.25rem"
+      },
+      {
+        "name": "--spacing-sm",
+        "kind": "custom-property",
+        "startLine": 684,
+        "endLine": 684,
+        "detail": "0.5rem"
+      },
+      {
+        "name": "--spacing-md",
+        "kind": "custom-property",
+        "startLine": 685,
+        "endLine": 685,
+        "detail": "1rem"
+      },
+      {
+        "name": "--spacing-lg",
+        "kind": "custom-property",
+        "startLine": 686,
+        "endLine": 686,
+        "detail": "1.5rem"
+      },
+      {
+        "name": "--spacing-xl",
+        "kind": "custom-property",
+        "startLine": 687,
+        "endLine": 687,
+        "detail": "2rem"
+      },
+      {
+        "name": "--spacing-2xl",
+        "kind": "custom-property",
+        "startLine": 688,
+        "endLine": 688,
+        "detail": "3rem"
+      },
+      {
+        "name": "--font-family-sans",
+        "kind": "custom-property",
+        "startLine": 691,
+        "endLine": 691,
+        "detail": "system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,\"Helvetica Neue\",Arial,sans-serif"
+      },
+      {
+        "name": "--font-family-serif",
+        "kind": "custom-property",
+        "startLine": 692,
+        "endLine": 692,
+        "detail": "Georgia,Cambria,\"Times New Roman\",Times,serif"
+      },
+      {
+        "name": "--font-family-mono",
+        "kind": "custom-property",
+        "startLine": 693,
+        "endLine": 693,
+        "detail": "SFMono-Regular,Menlo,Monaco,Consolas,\"Liberation Mono\",\"Courier New\",monospace"
+      },
+      {
+        "name": "--font-size-xs",
+        "kind": "custom-property",
+        "startLine": 695,
+        "endLine": 695,
+        "detail": "0.75rem"
+      },
+      {
+        "name": "--font-size-sm",
+        "kind": "custom-property",
+        "startLine": 696,
+        "endLine": 696,
+        "detail": "0.875rem"
+      },
+      {
+        "name": "--font-size-base",
+        "kind": "custom-property",
+        "startLine": 697,
+        "endLine": 697,
+        "detail": "1rem"
+      },
+      {
+        "name": "--font-size-lg",
+        "kind": "custom-property",
+        "startLine": 698,
+        "endLine": 698,
+        "detail": "1.125rem"
+      },
+      {
+        "name": "--font-size-xl",
+        "kind": "custom-property",
+        "startLine": 699,
+        "endLine": 699,
+        "detail": "1.25rem"
+      },
+      {
+        "name": "--font-size-2xl",
+        "kind": "custom-property",
+        "startLine": 700,
+        "endLine": 700,
+        "detail": "1.5rem"
+      },
+      {
+        "name": "--font-size-3xl",
+        "kind": "custom-property",
+        "startLine": 701,
+        "endLine": 701,
+        "detail": "2rem"
+      },
+      {
+        "name": "--line-height-tight",
+        "kind": "custom-property",
+        "startLine": 703,
+        "endLine": 703,
+        "detail": "1.25"
+      },
+      {
+        "name": "--line-height-normal",
+        "kind": "custom-property",
+        "startLine": 704,
+        "endLine": 704,
+        "detail": "1.5"
+      },
+      {
+        "name": "--line-height-loose",
+        "kind": "custom-property",
+        "startLine": 705,
+        "endLine": 705,
+        "detail": "2"
+      },
+      {
+        "name": "--shadow-sm",
+        "kind": "custom-property",
+        "startLine": 708,
+        "endLine": 708,
+        "detail": "0 1px 2px 0 rgb(0 0 0/0.05)"
+      },
+      {
+        "name": "--shadow-md",
+        "kind": "custom-property",
+        "startLine": 709,
+        "endLine": 709,
+        "detail": "0 4px 6px -1px rgb(0 0 0/0.1),0 2px 4px -2px rgb(0 0 0/0.1)"
+      },
+      {
+        "name": "--shadow-lg",
+        "kind": "custom-property",
+        "startLine": 710,
+        "endLine": 710,
+        "detail": "0 10px 15px -3px rgb(0 0 0/0.1),0 4px 6px -4px rgb(0 0 0/0.1)"
+      },
+      {
+        "name": "--shadow-xl",
+        "kind": "custom-property",
+        "startLine": 711,
+        "endLine": 711,
+        "detail": "0 20px 25px -5px rgb(0 0 0/0.1),0 8px 10px -6px rgb(0 0 0/0.1)"
+      },
+      {
+        "name": "--border-radius-none",
+        "kind": "custom-property",
+        "startLine": 714,
+        "endLine": 714,
+        "detail": "0"
+      },
+      {
+        "name": "--border-radius-sm",
+        "kind": "custom-property",
+        "startLine": 715,
+        "endLine": 715,
+        "detail": "0.125rem"
+      },
+      {
+        "name": "--border-radius-md",
+        "kind": "custom-property",
+        "startLine": 716,
+        "endLine": 716,
+        "detail": "0.375rem"
+      },
+      {
+        "name": "--border-radius-lg",
+        "kind": "custom-property",
+        "startLine": 717,
+        "endLine": 717,
+        "detail": "0.5rem"
+      },
+      {
+        "name": "--border-radius-xl",
+        "kind": "custom-property",
+        "startLine": 718,
+        "endLine": 718,
+        "detail": "1rem"
+      },
+      {
+        "name": "--border-radius-full",
+        "kind": "custom-property",
+        "startLine": 719,
+        "endLine": 719,
+        "detail": "9999px"
+      },
+      {
+        "name": "--transition-fast",
+        "kind": "custom-property",
+        "startLine": 722,
+        "endLine": 722,
+        "detail": "150ms"
+      },
+      {
+        "name": "--transition-normal",
+        "kind": "custom-property",
+        "startLine": 723,
+        "endLine": 723,
+        "detail": "300ms"
+      },
+      {
+        "name": "--transition-slow",
+        "kind": "custom-property",
+        "startLine": 724,
+        "endLine": 724,
+        "detail": "500ms"
+      },
+      {
+        "name": "--z-dropdown",
+        "kind": "custom-property",
+        "startLine": 727,
+        "endLine": 727,
+        "detail": "1000"
+      },
+      {
+        "name": "--z-sticky",
+        "kind": "custom-property",
+        "startLine": 728,
+        "endLine": 728,
+        "detail": "1020"
+      },
+      {
+        "name": "--z-fixed",
+        "kind": "custom-property",
+        "startLine": 729,
+        "endLine": 729,
+        "detail": "1030"
+      },
+      {
+        "name": "--z-modal-backdrop",
+        "kind": "custom-property",
+        "startLine": 730,
+        "endLine": 730,
+        "detail": "1040"
+      },
+      {
+        "name": "--z-modal",
+        "kind": "custom-property",
+        "startLine": 731,
+        "endLine": 731,
+        "detail": "1050"
+      },
+      {
+        "name": "--z-popover",
+        "kind": "custom-property",
+        "startLine": 732,
+        "endLine": 732,
+        "detail": "1060"
+      },
+      {
+        "name": "--z-tooltip",
+        "kind": "custom-property",
+        "startLine": 733,
+        "endLine": 733,
+        "detail": "1070"
+      },
+      {
+        "name": "--complex-gradient",
+        "kind": "custom-property",
+        "startLine": 736,
+        "endLine": 736,
+        "detail": "linear-gradient(135deg,var(--color-primary) 0%,var(--color-secondary) 100%)"
+      },
+      {
+        "name": "--complex-shadow",
+        "kind": "custom-property",
+        "startLine": 737,
+        "endLine": 737,
+        "detail": "var(--shadow-md),inset 0 0 0 1px rgba(0,0,0,0.1)"
+      }
+    ]
+  },
+  {
+    "name": "html",
+    "kind": "selector",
+    "startLine": 745,
+    "endLine": 745
+  },
+  {
+    "name": "body",
+    "kind": "selector",
+    "startLine": 746,
+    "endLine": 746
+  },
+  {
+    "name": "div",
+    "kind": "selector",
+    "startLine": 747,
+    "endLine": 747
+  },
+  {
+    "name": "span",
+    "kind": "selector",
+    "startLine": 748,
+    "endLine": 748
+  },
+  {
+    "name": "p",
+    "kind": "selector",
+    "startLine": 749,
+    "endLine": 749
+  },
+  {
+    "name": "a",
+    "kind": "selector",
+    "startLine": 750,
+    "endLine": 750
+  },
+  {
+    "name": "img",
+    "kind": "selector",
+    "startLine": 751,
+    "endLine": 751
+  },
+  {
+    "name": ".class-name",
+    "kind": "selector",
+    "startLine": 754,
+    "endLine": 754
+  },
+  {
+    "name": ".class-name-2",
+    "kind": "selector",
+    "startLine": 755,
+    "endLine": 755
+  },
+  {
+    "name": ".class_with_underscore",
+    "kind": "selector",
+    "startLine": 756,
+    "endLine": 756
+  },
+  {
+    "name": ".class-with-hyphen",
+    "kind": "selector",
+    "startLine": 757,
+    "endLine": 757
+  },
+  {
+    "name": ".class123",
+    "kind": "selector",
+    "startLine": 758,
+    "endLine": 758
+  },
+  {
+    "name": ".CamelCase",
+    "kind": "selector",
+    "startLine": 759,
+    "endLine": 759
+  },
+  {
+    "name": ".UPPERCASE",
+    "kind": "selector",
+    "startLine": 760,
+    "endLine": 760
+  },
+  {
+    "name": "#id-name",
+    "kind": "selector",
+    "startLine": 763,
+    "endLine": 763
+  },
+  {
+    "name": "#another_id",
+    "kind": "selector",
+    "startLine": 764,
+    "endLine": 764
+  },
+  {
+    "name": "#id123",
+    "kind": "selector",
+    "startLine": 765,
+    "endLine": 765
+  },
+  {
+    "name": "[disabled]",
+    "kind": "selector",
+    "startLine": 768,
+    "endLine": 768
+  },
+  {
+    "name": "[type]",
+    "kind": "selector",
+    "startLine": 769,
+    "endLine": 769
+  },
+  {
+    "name": "[type=\"text\"]",
+    "kind": "selector",
+    "startLine": 770,
+    "endLine": 770
+  },
+  {
+    "name": "[type=\"password\"]",
+    "kind": "selector",
+    "startLine": 771,
+    "endLine": 771
+  },
+  {
+    "name": "[class~=\"word\"]",
+    "kind": "selector",
+    "startLine": 772,
+    "endLine": 772
+  },
+  {
+    "name": "[class|=\"prefix\"]",
+    "kind": "selector",
+    "startLine": 773,
+    "endLine": 773
+  },
+  {
+    "name": "[href^=\"https\"]",
+    "kind": "selector",
+    "startLine": 774,
+    "endLine": 774
+  },
+  {
+    "name": "[href$=\".pdf\"]",
+    "kind": "selector",
+    "startLine": 775,
+    "endLine": 775
+  },
+  {
+    "name": "[href*=\"example\"]",
+    "kind": "selector",
+    "startLine": 776,
+    "endLine": 776
+  },
+  {
+    "name": "[data-value i]",
+    "kind": "selector",
+    "startLine": 777,
+    "endLine": 777
+  },
+  {
+    "name": "[data-value=\"TEST\"i]",
+    "kind": "selector",
+    "startLine": 778,
+    "endLine": 778
+  },
+  {
+    "name": "[data-value=\"test\"s]",
+    "kind": "selector",
+    "startLine": 779,
+    "endLine": 779
+  },
+  {
+    "name": "[data-lang=\"zh\"s]",
+    "kind": "selector",
+    "startLine": 780,
+    "endLine": 780
+  },
+  {
+    "name": "*",
+    "kind": "selector",
+    "startLine": 783,
+    "endLine": 783
+  },
+  {
+    "name": "*.class",
+    "kind": "selector",
+    "startLine": 784,
+    "endLine": 784
+  },
+  {
+    "name": "*#id",
+    "kind": "selector",
+    "startLine": 785,
+    "endLine": 785
+  },
+  {
+    "name": "*[attr]",
+    "kind": "selector",
+    "startLine": 786,
+    "endLine": 786
+  },
+  {
+    "name": "h1,h2,h3,h4,h5,h6",
+    "kind": "selector",
+    "startLine": 789,
+    "endLine": 789
+  },
+  {
+    "name": ".btn,.button,[type=\"button\"]",
+    "kind": "selector",
+    "startLine": 790,
+    "endLine": 790
+  },
+  {
+    "name": "article p",
+    "kind": "selector",
+    "startLine": 793,
+    "endLine": 793
+  },
+  {
+    "name": ".container .item",
+    "kind": "selector",
+    "startLine": 794,
+    "endLine": 794
+  },
+  {
+    "name": "div.class p.another",
+    "kind": "selector",
+    "startLine": 795,
+    "endLine": 795
+  },
+  {
+    "name": "ul>li",
+    "kind": "selector",
+    "startLine": 798,
+    "endLine": 798
+  },
+  {
+    "name": ".parent>.direct-child",
+    "kind": "selector",
+    "startLine": 799,
+    "endLine": 799
+  },
+  {
+    "name": "h1+p",
+    "kind": "selector",
+    "startLine": 802,
+    "endLine": 802
+  },
+  {
+    "name": ".trigger+.target",
+    "kind": "selector",
+    "startLine": 803,
+    "endLine": 803
+  },
+  {
+    "name": "h2~p",
+    "kind": "selector",
+    "startLine": 806,
+    "endLine": 806
+  },
+  {
+    "name": ".first~.sibling",
+    "kind": "selector",
+    "startLine": 807,
+    "endLine": 807
+  },
+  {
+    "name": ".card",
+    "kind": "selector",
+    "startLine": 810,
+    "endLine": 834
+  },
+  {
+    "name": "div.class#id[attr=\"value\"]:hover::after",
+    "kind": "selector",
+    "startLine": 837,
+    "endLine": 837
+  },
+  {
+    "name": "article>section.main p:first-of-type::first-letter",
+    "kind": "selector",
+    "startLine": 838,
+    "endLine": 838
+  },
+  {
+    "name": "a:link",
+    "kind": "selector",
+    "startLine": 845,
+    "endLine": 845
+  },
+  {
+    "name": "a:visited",
+    "kind": "selector",
+    "startLine": 846,
+    "endLine": 846
+  },
+  {
+    "name": "button:hover",
+    "kind": "selector",
+    "startLine": 849,
+    "endLine": 849
+  },
+  {
+    "name": "button:active",
+    "kind": "selector",
+    "startLine": 850,
+    "endLine": 850
+  },
+  {
+    "name": "input:focus",
+    "kind": "selector",
+    "startLine": 851,
+    "endLine": 851
+  },
+  {
+    "name": "input:focus-visible",
+    "kind": "selector",
+    "startLine": 852,
+    "endLine": 852
+  },
+  {
+    "name": "input:focus-within",
+    "kind": "selector",
+    "startLine": 853,
+    "endLine": 853
+  },
+  {
+    "name": "input:enabled",
+    "kind": "selector",
+    "startLine": 856,
+    "endLine": 856
+  },
+  {
+    "name": "input:disabled",
+    "kind": "selector",
+    "startLine": 857,
+    "endLine": 857
+  },
+  {
+    "name": "input:read-only",
+    "kind": "selector",
+    "startLine": 858,
+    "endLine": 858
+  },
+  {
+    "name": "input:read-write",
+    "kind": "selector",
+    "startLine": 859,
+    "endLine": 859
+  },
+  {
+    "name": "input:placeholder-shown",
+    "kind": "selector",
+    "startLine": 860,
+    "endLine": 860
+  },
+  {
+    "name": "input:default",
+    "kind": "selector",
+    "startLine": 861,
+    "endLine": 861
+  },
+  {
+    "name": "input:checked",
+    "kind": "selector",
+    "startLine": 862,
+    "endLine": 862
+  },
+  {
+    "name": "input:indeterminate",
+    "kind": "selector",
+    "startLine": 863,
+    "endLine": 863
+  },
+  {
+    "name": "input:valid",
+    "kind": "selector",
+    "startLine": 864,
+    "endLine": 864
+  },
+  {
+    "name": "input:invalid",
+    "kind": "selector",
+    "startLine": 865,
+    "endLine": 865
+  },
+  {
+    "name": "input:in-range",
+    "kind": "selector",
+    "startLine": 866,
+    "endLine": 866
+  },
+  {
+    "name": "input:out-of-range",
+    "kind": "selector",
+    "startLine": 867,
+    "endLine": 867
+  },
+  {
+    "name": "input:required",
+    "kind": "selector",
+    "startLine": 868,
+    "endLine": 868
+  },
+  {
+    "name": "input:optional",
+    "kind": "selector",
+    "startLine": 869,
+    "endLine": 869
+  },
+  {
+    "name": "input:autofill",
+    "kind": "selector",
+    "startLine": 870,
+    "endLine": 870
+  },
+  {
+    "name": ":target",
+    "kind": "selector",
+    "startLine": 873,
+    "endLine": 873
+  },
+  {
+    "name": ":lang(en)",
+    "kind": "selector",
+    "startLine": 876,
+    "endLine": 876
+  },
+  {
+    "name": ":lang(fr)",
+    "kind": "selector",
+    "startLine": 877,
+    "endLine": 877
+  },
+  {
+    "name": ":lang(de)",
+    "kind": "selector",
+    "startLine": 878,
+    "endLine": 3453
+  }
+]

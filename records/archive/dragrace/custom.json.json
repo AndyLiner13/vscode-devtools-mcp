@@ -1,0 +1,4329 @@
+[
+  {
+    "name": "primitiveTypes",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "strings",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "simple",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "hello world"
+          },
+          {
+            "name": "empty",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0
+          },
+          {
+            "name": "singleChar",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "a"
+          },
+          {
+            "name": "withSpaces",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "   spaces   "
+          },
+          {
+            "name": "escapeSequences",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "newline",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "line1\nline2"
+              },
+              {
+                "name": "tab",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "col1\tcol2"
+              },
+              {
+                "name": "carriageReturn",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "before\rafter"
+              },
+              {
+                "name": "backslash",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "path\\to\\file"
+              },
+              {
+                "name": "quote",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "she said \"hello\""
+              },
+              {
+                "name": "forwardSlash",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "url/path"
+              },
+              {
+                "name": "backspace",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "back\bspace"
+              },
+              {
+                "name": "formFeed",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "page\fbreak"
+              },
+              {
+                "name": "unicodeBasic",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "ABC"
+              },
+              {
+                "name": "unicodeEmoji",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "❤️"
+              },
+              {
+                "name": "unicodeCJK",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "中文"
+              },
+              {
+                "name": "unicodeArabic",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "العربية"
+              },
+              {
+                "name": "combinedEscapes",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "line1\nline2\ttabbed\\path\"quoted\""
+              }
+            ]
+          },
+          {
+            "name": "unicodeRaw",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "emoji",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "🎉🚀💡🔥✨"
+              },
+              {
+                "name": "chinese",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "中文测试"
+              },
+              {
+                "name": "japanese",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "日本語テスト"
+              },
+              {
+                "name": "korean",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "한국어 테스트"
+              },
+              {
+                "name": "arabic",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "اختبار عربي"
+              },
+              {
+                "name": "hebrew",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "בדיקה עברית"
+              },
+              {
+                "name": "cyrillic",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "Тест кириллицы"
+              },
+              {
+                "name": "greek",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "Ελληνική δοκιμή"
+              },
+              {
+                "name": "thai",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "ทดสอบภาษาไทย"
+              },
+              {
+                "name": "mixed",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "Hello 世界 🌍 مرحبا"
+              }
+            ]
+          },
+          {
+            "name": "specialCharacters",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "controlChars",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "visible\u0000\u0001\u001f"
+              },
+              {
+                "name": "zeroWidthJoiner",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "👨‍👩‍👧‍👦"
+              },
+              {
+                "name": "rightToLeft",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "‏‏RTL marker"
+              },
+              {
+                "name": "bom",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "﻿with BOM"
+              }
+            ]
+          },
+          {
+            "name": "longString",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ..."
+          }
+        ]
+      },
+      {
+        "name": "numbers",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "integers",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "zero",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "0"
+              },
+              {
+                "name": "positive",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "42"
+              },
+              {
+                "name": "negative",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "-42"
+              },
+              {
+                "name": "large",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "9007199254740991"
+              },
+              {
+                "name": "negativeLarge",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "-9007199254740991"
+              }
+            ]
+          },
+          {
+            "name": "floats",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "simple",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3.14"
+              },
+              {
+                "name": "negative",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "-3.14"
+              },
+              {
+                "name": "leadingZero",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "0.123"
+              },
+              {
+                "name": "negativeLeadingZero",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "-0.456"
+              },
+              {
+                "name": "manyDecimals",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3.141592653589793"
+              },
+              {
+                "name": "tiny",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1e-9"
+              },
+              {
+                "name": "negativeZero",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "0"
+              }
+            ]
+          },
+          {
+            "name": "exponential",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "positiveLowerE",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "12300000000"
+              },
+              {
+                "name": "positiveUpperE",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "45600000000"
+              },
+              {
+                "name": "negativeExponent",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "0.0000789"
+              },
+              {
+                "name": "explicitPositiveExp",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "10000000000"
+              },
+              {
+                "name": "largePositive",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1.7976931348623157e+308"
+              },
+              {
+                "name": "largeNegative",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "-1.7976931348623157e+308"
+              },
+              {
+                "name": "smallPositive",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "5e-324"
+              },
+              {
+                "name": "scientificNotation",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "6.022e+23"
+              }
+            ]
+          },
+          {
+            "name": "edgeCases",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "maxSafeInteger",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "9007199254740991"
+              },
+              {
+                "name": "minSafeInteger",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "-9007199254740991"
+              },
+              {
+                "name": "justZero",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "0"
+              },
+              {
+                "name": "negativeJustZero",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "0"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "booleans",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "trueValue",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "true"
+          },
+          {
+            "name": "falseValue",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "nullValue",
+        "kind": "null",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "null"
+      }
+    ]
+  },
+  {
+    "name": "structuralTypes",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "objects",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "empty",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0
+          },
+          {
+            "name": "singleKey",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "onlyKey",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "onlyValue"
+              }
+            ]
+          },
+          {
+            "name": "multipleKeys",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "key1",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "value1"
+              },
+              {
+                "name": "key2",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "value2"
+              },
+              {
+                "name": "key3",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "value3"
+              }
+            ]
+          },
+          {
+            "name": "specialKeys",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "emptyKey"
+              },
+              {
+                "name": " ",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "spaceKey"
+              },
+              {
+                "name": "with spaces",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "spacedKey"
+              },
+              {
+                "name": "with-dashes",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "dashedKey"
+              },
+              {
+                "name": "with_underscores",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "underscoredKey"
+              },
+              {
+                "name": "with.dots",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "dottedKey"
+              },
+              {
+                "name": "with:colons",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "colonedKey"
+              },
+              {
+                "name": "123numeric",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "numericStartKey"
+              },
+              {
+                "name": "UPPERCASE",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "uppercaseKey"
+              },
+              {
+                "name": "camelCase",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "camelCaseKey"
+              },
+              {
+                "name": "PascalCase",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "pascalCaseKey"
+              },
+              {
+                "name": "snake_case",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "snakeCaseKey"
+              },
+              {
+                "name": "kebab-case",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "kebabCaseKey"
+              },
+              {
+                "name": "中文键",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "chineseKey"
+              },
+              {
+                "name": "キー",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "japaneseKey"
+              },
+              {
+                "name": "مفتاح",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "arabicKey"
+              },
+              {
+                "name": "🔑",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "emojiKey"
+              }
+            ]
+          },
+          {
+            "name": "mixedValueTypes",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "stringVal",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "text"
+              },
+              {
+                "name": "intVal",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "42"
+              },
+              {
+                "name": "floatVal",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3.14"
+              },
+              {
+                "name": "boolTrue",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "true"
+              },
+              {
+                "name": "boolFalse",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "false"
+              },
+              {
+                "name": "nullVal",
+                "kind": "null",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "null"
+              },
+              {
+                "name": "arrayVal",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3 items",
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "1"
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "2"
+                  },
+                  {
+                    "name": "[2]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "3"
+                  }
+                ]
+              },
+              {
+                "name": "objectVal",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "nested",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "object"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "arrays",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "empty",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0 items"
+          },
+          {
+            "name": "singleElement",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "only"
+              }
+            ]
+          },
+          {
+            "name": "homogeneous",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "strings",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "5 items",
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "a"
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "b"
+                  },
+                  {
+                    "name": "[2]",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "c"
+                  },
+                  {
+                    "name": "[3]",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "d"
+                  },
+                  {
+                    "name": "[4]",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "e"
+                  }
+                ]
+              },
+              {
+                "name": "integers",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "5 items",
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "1"
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "2"
+                  },
+                  {
+                    "name": "[2]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "3"
+                  },
+                  {
+                    "name": "[3]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "4"
+                  },
+                  {
+                    "name": "[4]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "5"
+                  }
+                ]
+              },
+              {
+                "name": "floats",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "5 items",
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "1.1"
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "2.2"
+                  },
+                  {
+                    "name": "[2]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "3.3"
+                  },
+                  {
+                    "name": "[3]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "4.4"
+                  },
+                  {
+                    "name": "[4]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "5.5"
+                  }
+                ]
+              },
+              {
+                "name": "booleans",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "4 items",
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "boolean",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "true"
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "boolean",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "false"
+                  },
+                  {
+                    "name": "[2]",
+                    "kind": "boolean",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "true"
+                  },
+                  {
+                    "name": "[3]",
+                    "kind": "boolean",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "false"
+                  }
+                ]
+              },
+              {
+                "name": "nulls",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3 items",
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "null",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "null"
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "null",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "null"
+                  },
+                  {
+                    "name": "[2]",
+                    "kind": "null",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "null"
+                  }
+                ]
+              },
+              {
+                "name": "objects",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3 items",
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "id",
+                        "kind": "number",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "1"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "id",
+                        "kind": "number",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "[2]",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "id",
+                        "kind": "number",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "3"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "arrays",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3 items",
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "array",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "[0]",
+                        "kind": "number",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "1"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "array",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "[0]",
+                        "kind": "number",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "[2]",
+                    "kind": "array",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "[0]",
+                        "kind": "number",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "3"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "heterogeneous",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "8 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "string"
+              },
+              {
+                "name": "[1]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "42"
+              },
+              {
+                "name": "[2]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3.14"
+              },
+              {
+                "name": "[3]",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "true"
+              },
+              {
+                "name": "[4]",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "false"
+              },
+              {
+                "name": "[5]",
+                "kind": "null",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "null"
+              },
+              {
+                "name": "[6]",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "key",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "value"
+                  }
+                ]
+              },
+              {
+                "name": "[7]",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "1"
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "2"
+                  },
+                  {
+                    "name": "[2]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "3"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "sparse",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "6 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "null",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "null"
+              },
+              {
+                "name": "[1]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1"
+              },
+              {
+                "name": "[2]",
+                "kind": "null",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "null"
+              },
+              {
+                "name": "[3]",
+                "kind": "null",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "null"
+              },
+              {
+                "name": "[4]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2"
+              },
+              {
+                "name": "[5]",
+                "kind": "null",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "null"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "nestedStructures",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "depth2",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "level1",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "level2",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "value"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "depth3",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "level1",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "level2",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "level3",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "depth4",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "level1",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "level2",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "level3",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "level4",
+                        "kind": "string",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "value"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "depth5",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "level1",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "level2",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "level3",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "level4",
+                        "kind": "object",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "children": [
+                          {
+                            "name": "level5",
+                            "kind": "string",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "value"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "depth10",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "l1",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "l2",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "l3",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "l4",
+                        "kind": "object",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "children": [
+                          {
+                            "name": "l5",
+                            "kind": "object",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "children": [
+                              {
+                                "name": "l6",
+                                "kind": "object",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "children": [
+                                  {
+                                    "name": "l7",
+                                    "kind": "object",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "children": [
+                                      {
+                                        "name": "l8",
+                                        "kind": "object",
+                                        "startLine": 0,
+                                        "endLine": 0
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "nestedArrays",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "depth2",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "2 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "1"
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "2"
+                  }
+                ]
+              },
+              {
+                "name": "[1]",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "3"
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "4"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "depth3",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "2 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "array",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "[0]",
+                        "kind": "number",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "1"
+                      },
+                      {
+                        "name": "[1]",
+                        "kind": "number",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "2"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "[1]",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "array",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "[0]",
+                        "kind": "number",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "3"
+                      },
+                      {
+                        "name": "[1]",
+                        "kind": "number",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "4"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "depth5",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "array",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "[0]",
+                        "kind": "array",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "children": [
+                          {
+                            "name": "[0]",
+                            "kind": "array",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "children": [
+                              {
+                                "name": "[0]",
+                                "kind": "number",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "detail": "1"
+                              },
+                              {
+                                "name": "[1]",
+                                "kind": "number",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "detail": "2"
+                              },
+                              {
+                                "name": "[2]",
+                                "kind": "number",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "detail": "3"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "mixed",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "2 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "key",
+                        "kind": "array",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "3 items",
+                        "children": [
+                          {
+                            "name": "[0]",
+                            "kind": "number",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "1"
+                          },
+                          {
+                            "name": "[1]",
+                            "kind": "number",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "2"
+                          },
+                          {
+                            "name": "[2]",
+                            "kind": "number",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "3"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "array",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "[0]",
+                        "kind": "object",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "children": [
+                          {
+                            "name": "nested",
+                            "kind": "string",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "value"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "[1]",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "array",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "[0]",
+                        "kind": "array",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "children": [
+                          {
+                            "name": "[0]",
+                            "kind": "object",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "children": [
+                              {
+                                "name": "deep",
+                                "kind": "object",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "children": [
+                                  {
+                                    "name": "deeper",
+                                    "kind": "array",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "2 items",
+                                    "children": [
+                                      {
+                                        "name": "[0]",
+                                        "kind": "number",
+                                        "startLine": 0,
+                                        "endLine": 0,
+                                        "detail": "1"
+                                      },
+                                      {
+                                        "name": "[1]",
+                                        "kind": "number",
+                                        "startLine": 0,
+                                        "endLine": 0,
+                                        "detail": "2"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "complexMixed",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "users",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "id",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "1"
+                  },
+                  {
+                    "name": "name",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "Alice"
+                  },
+                  {
+                    "name": "profile",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "settings",
+                        "kind": "object",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "children": [
+                          {
+                            "name": "notifications",
+                            "kind": "object",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "children": [
+                              {
+                                "name": "email",
+                                "kind": "boolean",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "detail": "true"
+                              },
+                              {
+                                "name": "push",
+                                "kind": "object",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "children": [
+                                  {
+                                    "name": "enabled",
+                                    "kind": "boolean",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "true"
+                                  },
+                                  {
+                                    "name": "frequency",
+                                    "kind": "string",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "daily"
+                                  },
+                                  {
+                                    "name": "categories",
+                                    "kind": "array",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "3 items",
+                                    "children": [
+                                      {
+                                        "name": "[0]",
+                                        "kind": "string",
+                                        "startLine": 0,
+                                        "endLine": 0,
+                                        "detail": "news"
+                                      },
+                                      {
+                                        "name": "[1]",
+                                        "kind": "string",
+                                        "startLine": 0,
+                                        "endLine": 0,
+                                        "detail": "updates"
+                                      },
+                                      {
+                                        "name": "[2]",
+                                        "kind": "string",
+                                        "startLine": 0,
+                                        "endLine": 0,
+                                        "detail": "alerts"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "name": "theme",
+                            "kind": "object",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "children": [
+                              {
+                                "name": "mode",
+                                "kind": "string",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "detail": "dark"
+                              },
+                              {
+                                "name": "colors",
+                                "kind": "object",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "children": [
+                                  {
+                                    "name": "primary",
+                                    "kind": "string",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "#007bff"
+                                  },
+                                  {
+                                    "name": "secondary",
+                                    "kind": "string",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "#6c757d"
+                                  },
+                                  {
+                                    "name": "accents",
+                                    "kind": "array",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "3 items",
+                                    "children": [
+                                      {
+                                        "name": "[0]",
+                                        "kind": "string",
+                                        "startLine": 0,
+                                        "endLine": 0,
+                                        "detail": "#ffc107"
+                                      },
+                                      {
+                                        "name": "[1]",
+                                        "kind": "string",
+                                        "startLine": 0,
+                                        "endLine": 0,
+                                        "detail": "#28a745"
+                                      },
+                                      {
+                                        "name": "[2]",
+                                        "kind": "string",
+                                        "startLine": 0,
+                                        "endLine": 0,
+                                        "detail": "#dc3545"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "metadata",
+                        "kind": "object",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "children": [
+                          {
+                            "name": "created",
+                            "kind": "string",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "2024-01-15T10:30:00Z"
+                          },
+                          {
+                            "name": "tags",
+                            "kind": "array",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "2 items",
+                            "children": [
+                              {
+                                "name": "[0]",
+                                "kind": "object",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "children": [
+                                  {
+                                    "name": "name",
+                                    "kind": "string",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "premium"
+                                  },
+                                  {
+                                    "name": "value",
+                                    "kind": "boolean",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "true"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "[1]",
+                                "kind": "object",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "children": [
+                                  {
+                                    "name": "name",
+                                    "kind": "string",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "verified"
+                                  },
+                                  {
+                                    "name": "value",
+                                    "kind": "boolean",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "true"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "permissions",
+                    "kind": "array",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "1 items",
+                    "children": [
+                      {
+                        "name": "[0]",
+                        "kind": "object",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "children": [
+                          {
+                            "name": "resource",
+                            "kind": "string",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "posts"
+                          },
+                          {
+                            "name": "actions",
+                            "kind": "array",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "3 items",
+                            "children": [
+                              {
+                                "name": "[0]",
+                                "kind": "string",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "detail": "read"
+                              },
+                              {
+                                "name": "[1]",
+                                "kind": "string",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "detail": "write"
+                              },
+                              {
+                                "name": "[2]",
+                                "kind": "string",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "detail": "delete"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "conditions",
+                            "kind": "object",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "children": [
+                              {
+                                "name": "ownership",
+                                "kind": "boolean",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "detail": "true"
+                              },
+                              {
+                                "name": "roles",
+                                "kind": "array",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "detail": "2 items",
+                                "children": [
+                                  {
+                                    "name": "[0]",
+                                    "kind": "string",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "admin"
+                                  },
+                                  {
+                                    "name": "[1]",
+                                    "kind": "string",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "editor"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "edgeCases",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "emptyNested",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "emptyObject",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0
+          },
+          {
+            "name": "emptyArray",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0 items"
+          },
+          {
+            "name": "nestedEmpty",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "obj",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0
+              },
+              {
+                "name": "arr",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "0 items"
+              },
+              {
+                "name": "deep",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "obj",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0
+                  },
+                  {
+                    "name": "arr",
+                    "kind": "array",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "0 items"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "singleElements",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "singleKeyObject",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "key",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "value"
+              }
+            ]
+          },
+          {
+            "name": "singleElementArray",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "42"
+              }
+            ]
+          },
+          {
+            "name": "singleNested",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "outer",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "inner",
+                    "kind": "array",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "1 items",
+                    "children": [
+                      {
+                        "name": "[0]",
+                        "kind": "object",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "children": [
+                          {
+                            "name": "single",
+                            "kind": "boolean",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "true"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "duplicateStructures",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "array1",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1"
+              },
+              {
+                "name": "[1]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2"
+              },
+              {
+                "name": "[2]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3"
+              }
+            ]
+          },
+          {
+            "name": "array2",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1"
+              },
+              {
+                "name": "[1]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2"
+              },
+              {
+                "name": "[2]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3"
+              }
+            ]
+          },
+          {
+            "name": "object1",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "a",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1"
+              },
+              {
+                "name": "b",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2"
+              }
+            ]
+          },
+          {
+            "name": "object2",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "a",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1"
+              },
+              {
+                "name": "b",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "boundaryValues",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "emptyString",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0
+          },
+          {
+            "name": "whitespaceString",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "   "
+          },
+          {
+            "name": "zeroInt",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "zeroFloat",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "negativeZero",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "emptyArrayInArray",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0
+              }
+            ]
+          },
+          {
+            "name": "emptyObjectInArray",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0
+              }
+            ]
+          },
+          {
+            "name": "arrayInEmptyObject",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "items",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "0 items"
+              }
+            ]
+          },
+          {
+            "name": "objectInEmptyArray",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "key",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "similarButDifferent",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "stringNumber",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "42"
+          },
+          {
+            "name": "actualNumber",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "42"
+          },
+          {
+            "name": "stringBool",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "true"
+          },
+          {
+            "name": "actualBool",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "true"
+          },
+          {
+            "name": "stringNull",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "null"
+          },
+          {
+            "name": "actualNull",
+            "kind": "null",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "null"
+          },
+          {
+            "name": "stringArray",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "[1,2,3]"
+          },
+          {
+            "name": "actualArray",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1"
+              },
+              {
+                "name": "[1]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2"
+              },
+              {
+                "name": "[2]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "whitespaceKeys",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": " leading",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "leading space"
+          },
+          {
+            "name": "trailing ",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "trailing space"
+          },
+          {
+            "name": " both ",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "both spaces"
+          },
+          {
+            "name": "  multiple  ",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "multiple spaces"
+          },
+          {
+            "name": "\ttab",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "tab character"
+          },
+          {
+            "name": "\nnewline",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "newline character"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "realWorldPatterns",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "apiResponse",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "status",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "200"
+          },
+          {
+            "name": "message",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Success"
+          },
+          {
+            "name": "data",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "items",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3 items",
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "id",
+                        "kind": "number",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "1"
+                      },
+                      {
+                        "name": "name",
+                        "kind": "string",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "Item 1"
+                      },
+                      {
+                        "name": "price",
+                        "kind": "number",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "9.99"
+                      },
+                      {
+                        "name": "inStock",
+                        "kind": "boolean",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "true"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "id",
+                        "kind": "number",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "2"
+                      },
+                      {
+                        "name": "name",
+                        "kind": "string",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "Item 2"
+                      },
+                      {
+                        "name": "price",
+                        "kind": "number",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "19.99"
+                      },
+                      {
+                        "name": "inStock",
+                        "kind": "boolean",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "false"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "[2]",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "id",
+                        "kind": "number",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "3"
+                      },
+                      {
+                        "name": "name",
+                        "kind": "string",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "Item 3"
+                      },
+                      {
+                        "name": "price",
+                        "kind": "number",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "29.99"
+                      },
+                      {
+                        "name": "inStock",
+                        "kind": "boolean",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "true"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "pagination",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "page",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "1"
+                  },
+                  {
+                    "name": "perPage",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "10"
+                  },
+                  {
+                    "name": "total",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "3"
+                  },
+                  {
+                    "name": "hasMore",
+                    "kind": "boolean",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "false"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "meta",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "requestId",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "abc123"
+              },
+              {
+                "name": "timestamp",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2024-02-14T12:00:00Z"
+              },
+              {
+                "name": "version",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1.0.0"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "configFile",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "app",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "MyApp"
+              },
+              {
+                "name": "version",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2.1.0"
+              },
+              {
+                "name": "environment",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "production"
+              }
+            ]
+          },
+          {
+            "name": "database",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "host",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "localhost"
+              },
+              {
+                "name": "port",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "5432"
+              },
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "mydb"
+              },
+              {
+                "name": "ssl",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "true"
+              },
+              {
+                "name": "pool",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "min",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "5"
+                  },
+                  {
+                    "name": "max",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "20"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "features",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "darkMode",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "true"
+              },
+              {
+                "name": "analytics",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "false"
+              },
+              {
+                "name": "experimental",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "featureA",
+                    "kind": "boolean",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "true"
+                  },
+                  {
+                    "name": "featureB",
+                    "kind": "boolean",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "false"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "locales",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "4 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "en-US"
+              },
+              {
+                "name": "[1]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "es-ES"
+              },
+              {
+                "name": "[2]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "fr-FR"
+              },
+              {
+                "name": "[3]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "zh-CN"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "geoJson",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "FeatureCollection"
+          },
+          {
+            "name": "features",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "2 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "type",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "Feature"
+                  },
+                  {
+                    "name": "geometry",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "type",
+                        "kind": "string",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "Point"
+                      },
+                      {
+                        "name": "coordinates",
+                        "kind": "array",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "2 items",
+                        "children": [
+                          {
+                            "name": "[0]",
+                            "kind": "number",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "-122.4194"
+                          },
+                          {
+                            "name": "[1]",
+                            "kind": "number",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "37.7749"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "properties",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "name",
+                        "kind": "string",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "San Francisco"
+                      },
+                      {
+                        "name": "population",
+                        "kind": "number",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "884363"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "[1]",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "type",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "Feature"
+                  },
+                  {
+                    "name": "geometry",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "type",
+                        "kind": "string",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "Polygon"
+                      },
+                      {
+                        "name": "coordinates",
+                        "kind": "array",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "1 items",
+                        "children": [
+                          {
+                            "name": "[0]",
+                            "kind": "array",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "children": [
+                              {
+                                "name": "[0]",
+                                "kind": "array",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "children": [
+                                  {
+                                    "name": "[0]",
+                                    "kind": "number",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "-122.5"
+                                  },
+                                  {
+                                    "name": "[1]",
+                                    "kind": "number",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "37.7"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "[1]",
+                                "kind": "array",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "children": [
+                                  {
+                                    "name": "[0]",
+                                    "kind": "number",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "-122.3"
+                                  },
+                                  {
+                                    "name": "[1]",
+                                    "kind": "number",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "37.7"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "[2]",
+                                "kind": "array",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "children": [
+                                  {
+                                    "name": "[0]",
+                                    "kind": "number",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "-122.3"
+                                  },
+                                  {
+                                    "name": "[1]",
+                                    "kind": "number",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "37.8"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "[3]",
+                                "kind": "array",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "children": [
+                                  {
+                                    "name": "[0]",
+                                    "kind": "number",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "-122.5"
+                                  },
+                                  {
+                                    "name": "[1]",
+                                    "kind": "number",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "37.8"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "[4]",
+                                "kind": "array",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "children": [
+                                  {
+                                    "name": "[0]",
+                                    "kind": "number",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "-122.5"
+                                  },
+                                  {
+                                    "name": "[1]",
+                                    "kind": "number",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "37.7"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "properties",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "name",
+                        "kind": "string",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "Area"
+                      },
+                      {
+                        "name": "type",
+                        "kind": "string",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "region"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "schemaDefinition",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "$schema",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "http://json-schema.org/draft-07/schema#"
+          },
+          {
+            "name": "$id",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "https://example.com/person.schema.json"
+          },
+          {
+            "name": "title",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Person"
+          },
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "object"
+          },
+          {
+            "name": "properties",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "firstName",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "type",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "string"
+                  },
+                  {
+                    "name": "description",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "The person's first name."
+                  }
+                ]
+              },
+              {
+                "name": "lastName",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "type",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "string"
+                  },
+                  {
+                    "name": "description",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "The person's last name."
+                  }
+                ]
+              },
+              {
+                "name": "age",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "description",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "Age in years."
+                  },
+                  {
+                    "name": "type",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "integer"
+                  },
+                  {
+                    "name": "minimum",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "required",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "2 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "firstName"
+              },
+              {
+                "name": "[1]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "lastName"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "packageJson",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "test-package"
+          },
+          {
+            "name": "version",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1.0.0"
+          },
+          {
+            "name": "description",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "A test package"
+          },
+          {
+            "name": "main",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "index.js"
+          },
+          {
+            "name": "scripts",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "test",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "jest"
+              },
+              {
+                "name": "build",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "tsc"
+              },
+              {
+                "name": "start",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "node dist/index.js"
+              }
+            ]
+          },
+          {
+            "name": "dependencies",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "lodash",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "^4.17.21"
+              },
+              {
+                "name": "express",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "~4.18.0"
+              }
+            ]
+          },
+          {
+            "name": "devDependencies",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "typescript",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "^5.0.0"
+              },
+              {
+                "name": "@types/node",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "^20.0.0"
+              }
+            ]
+          },
+          {
+            "name": "keywords",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "test"
+              },
+              {
+                "name": "[1]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "parser"
+              },
+              {
+                "name": "[2]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "ast"
+              }
+            ]
+          },
+          {
+            "name": "author",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "Test Author"
+              },
+              {
+                "name": "email",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "test@example.com"
+              }
+            ]
+          },
+          {
+            "name": "license",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "MIT"
+          },
+          {
+            "name": "repository",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "type",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "git"
+              },
+              {
+                "name": "url",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "https://github.com/example/repo.git"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tsconfigJson",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "compilerOptions",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "target",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "ES2022"
+              },
+              {
+                "name": "module",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "NodeNext"
+              },
+              {
+                "name": "moduleResolution",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "NodeNext"
+              },
+              {
+                "name": "strict",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "true"
+              },
+              {
+                "name": "esModuleInterop",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "true"
+              },
+              {
+                "name": "skipLibCheck",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "true"
+              },
+              {
+                "name": "forceConsistentCasingInFileNames",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "true"
+              },
+              {
+                "name": "declaration",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "true"
+              },
+              {
+                "name": "declarationMap",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "true"
+              },
+              {
+                "name": "sourceMap",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "true"
+              },
+              {
+                "name": "outDir",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "./dist"
+              },
+              {
+                "name": "rootDir",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "./src"
+              },
+              {
+                "name": "lib",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2 items",
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "ES2022"
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "DOM"
+                  }
+                ]
+              },
+              {
+                "name": "types",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2 items",
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "node"
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "jest"
+                  }
+                ]
+              },
+              {
+                "name": "paths",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "@/*",
+                    "kind": "array",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "1 items",
+                    "children": [
+                      {
+                        "name": "[0]",
+                        "kind": "string",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "./src/*"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "@utils/*",
+                    "kind": "array",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "1 items",
+                    "children": [
+                      {
+                        "name": "[0]",
+                        "kind": "string",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "./src/utils/*"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "include",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "src/**/*"
+              }
+            ]
+          },
+          {
+            "name": "exclude",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "node_modules"
+              },
+              {
+                "name": "[1]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "dist"
+              },
+              {
+                "name": "[2]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "**/*.test.ts"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "exhaustiveTypeMatrix",
+    "kind": "array",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "13 items",
+    "children": [
+      {
+        "name": "[0]",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "string"
+          },
+          {
+            "name": "value",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "text"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "[1]",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "string"
+          },
+          {
+            "name": "value",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "[2]",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "number"
+          },
+          {
+            "name": "value",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "[3]",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "number"
+          },
+          {
+            "name": "value",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "-1"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "[4]",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "number"
+          },
+          {
+            "name": "value",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1.5"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "[5]",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "number"
+          },
+          {
+            "name": "value",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "10000000000"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "[6]",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "boolean"
+          },
+          {
+            "name": "value",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "true"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "[7]",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "boolean"
+          },
+          {
+            "name": "value",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "false"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "[8]",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "null"
+          },
+          {
+            "name": "value",
+            "kind": "null",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "null"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "true"
+          }
+        ]
+      },
+      {
+        "name": "[9]",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "array"
+          },
+          {
+            "name": "value",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0 items"
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "[10]",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "array"
+          },
+          {
+            "name": "value",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1"
+              }
+            ]
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "[11]",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "object"
+          },
+          {
+            "name": "value",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "[12]",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "object"
+          },
+          {
+            "name": "value",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "k",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "v"
+              }
+            ]
+          },
+          {
+            "name": "nullable",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "false"
+          }
+        ]
+      }
+    ]
+  }
+]

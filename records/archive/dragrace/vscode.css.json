@@ -1,0 +1,2608 @@
+[
+  {
+    "name": "*",
+    "kind": "class",
+    "startLine": 43,
+    "endLine": 47
+  },
+  {
+    "name": "body",
+    "kind": "class",
+    "startLine": 51,
+    "endLine": 53
+  },
+  {
+    "name": ".button",
+    "kind": "class",
+    "startLine": 57,
+    "endLine": 59
+  },
+  {
+    "name": ".hidden",
+    "kind": "class",
+    "startLine": 63,
+    "endLine": 65
+  },
+  {
+    "name": "html",
+    "kind": "class",
+    "startLine": 71,
+    "endLine": 73
+  },
+  {
+    "name": ":root",
+    "kind": "class",
+    "startLine": 76,
+    "endLine": 78
+  },
+  {
+    "name": "@media all",
+    "kind": "module",
+    "startLine": 86,
+    "endLine": 88,
+    "children": [
+      {
+        "name": ".all-media",
+        "kind": "class",
+        "startLine": 87,
+        "endLine": 87
+      }
+    ]
+  },
+  {
+    "name": "@media screen",
+    "kind": "module",
+    "startLine": 90,
+    "endLine": 92,
+    "children": [
+      {
+        "name": ".screen-only",
+        "kind": "class",
+        "startLine": 91,
+        "endLine": 91
+      }
+    ]
+  },
+  {
+    "name": "@media print",
+    "kind": "module",
+    "startLine": 94,
+    "endLine": 97,
+    "children": [
+      {
+        "name": ".print-only",
+        "kind": "class",
+        "startLine": 95,
+        "endLine": 95
+      }
+    ]
+  },
+  {
+    "name": "@media speech",
+    "kind": "module",
+    "startLine": 99,
+    "endLine": 101,
+    "children": [
+      {
+        "name": ".speech-only",
+        "kind": "class",
+        "startLine": 100,
+        "endLine": 100
+      }
+    ]
+  },
+  {
+    "name": "@media screen and (min-width: 768px)",
+    "kind": "module",
+    "startLine": 103,
+    "endLine": 105,
+    "children": [
+      {
+        "name": ".tablet-up",
+        "kind": "class",
+        "startLine": 104,
+        "endLine": 104
+      }
+    ]
+  },
+  {
+    "name": "@media screen and (min-width: 768px) and (max-width: 1024px)",
+    "kind": "module",
+    "startLine": 107,
+    "endLine": 109,
+    "children": [
+      {
+        "name": ".tablet-only",
+        "kind": "class",
+        "startLine": 108,
+        "endLine": 108
+      }
+    ]
+  },
+  {
+    "name": "@media (min-width: 1200px)",
+    "kind": "module",
+    "startLine": 111,
+    "endLine": 113,
+    "children": [
+      {
+        "name": ".desktop",
+        "kind": "class",
+        "startLine": 112,
+        "endLine": 112
+      }
+    ]
+  },
+  {
+    "name": "@media (width >= 768px)",
+    "kind": "module",
+    "startLine": 115,
+    "endLine": 117,
+    "children": [
+      {
+        "name": ".range-syntax",
+        "kind": "class",
+        "startLine": 116,
+        "endLine": 116
+      }
+    ]
+  },
+  {
+    "name": "@media (768px <= width <= 1024px)",
+    "kind": "module",
+    "startLine": 119,
+    "endLine": 121,
+    "children": [
+      {
+        "name": ".range-between",
+        "kind": "class",
+        "startLine": 120,
+        "endLine": 120
+      }
+    ]
+  },
+  {
+    "name": "@media (orientation: portrait)",
+    "kind": "module",
+    "startLine": 123,
+    "endLine": 125,
+    "children": [
+      {
+        "name": ".portrait",
+        "kind": "class",
+        "startLine": 124,
+        "endLine": 124
+      }
+    ]
+  },
+  {
+    "name": "@media (orientation: landscape)",
+    "kind": "module",
+    "startLine": 127,
+    "endLine": 129,
+    "children": [
+      {
+        "name": ".landscape",
+        "kind": "class",
+        "startLine": 128,
+        "endLine": 128
+      }
+    ]
+  },
+  {
+    "name": "@media (aspect-ratio: 16/9)",
+    "kind": "module",
+    "startLine": 131,
+    "endLine": 133,
+    "children": [
+      {
+        "name": ".widescreen",
+        "kind": "class",
+        "startLine": 132,
+        "endLine": 132
+      }
+    ]
+  },
+  {
+    "name": "@media (min-resolution: 2dppx), (-webkit-min-device-pixel-ratio: 2)",
+    "kind": "module",
+    "startLine": 135,
+    "endLine": 137,
+    "children": [
+      {
+        "name": ".retina",
+        "kind": "class",
+        "startLine": 136,
+        "endLine": 136
+      }
+    ]
+  },
+  {
+    "name": "@media (prefers-reduced-motion: reduce)",
+    "kind": "module",
+    "startLine": 139,
+    "endLine": 144,
+    "children": [
+      {
+        "name": "*",
+        "kind": "class",
+        "startLine": 140,
+        "endLine": 143
+      },
+      {
+        "name": "*::before",
+        "kind": "class",
+        "startLine": 140,
+        "endLine": 143
+      },
+      {
+        "name": "*::after",
+        "kind": "class",
+        "startLine": 140,
+        "endLine": 143
+      }
+    ]
+  },
+  {
+    "name": "@media (prefers-color-scheme: dark)",
+    "kind": "module",
+    "startLine": 146,
+    "endLine": 151,
+    "children": [
+      {
+        "name": ":root",
+        "kind": "class",
+        "startLine": 147,
+        "endLine": 150
+      }
+    ]
+  },
+  {
+    "name": "@media (prefers-color-scheme: light)",
+    "kind": "module",
+    "startLine": 153,
+    "endLine": 158,
+    "children": [
+      {
+        "name": ":root",
+        "kind": "class",
+        "startLine": 154,
+        "endLine": 157
+      }
+    ]
+  },
+  {
+    "name": "@media (prefers-contrast: high)",
+    "kind": "module",
+    "startLine": 160,
+    "endLine": 164,
+    "children": [
+      {
+        "name": ".high-contrast",
+        "kind": "class",
+        "startLine": 161,
+        "endLine": 163
+      }
+    ]
+  },
+  {
+    "name": "@media (prefers-contrast: more)",
+    "kind": "module",
+    "startLine": 166,
+    "endLine": 168,
+    "children": [
+      {
+        "name": "body",
+        "kind": "class",
+        "startLine": 167,
+        "endLine": 167
+      }
+    ]
+  },
+  {
+    "name": "@media (prefers-reduced-transparency: reduce)",
+    "kind": "module",
+    "startLine": 170,
+    "endLine": 172,
+    "children": [
+      {
+        "name": ".glass-effect",
+        "kind": "class",
+        "startLine": 171,
+        "endLine": 171
+      }
+    ]
+  },
+  {
+    "name": "@media (forced-colors: active)",
+    "kind": "module",
+    "startLine": 174,
+    "endLine": 176,
+    "children": [
+      {
+        "name": ".forced-colors",
+        "kind": "class",
+        "startLine": 175,
+        "endLine": 175
+      }
+    ]
+  },
+  {
+    "name": "@media (inverted-colors: inverted)",
+    "kind": "module",
+    "startLine": 178,
+    "endLine": 180,
+    "children": [
+      {
+        "name": "img",
+        "kind": "class",
+        "startLine": 179,
+        "endLine": 179
+      }
+    ]
+  },
+  {
+    "name": "@media (pointer: coarse)",
+    "kind": "module",
+    "startLine": 182,
+    "endLine": 184,
+    "children": [
+      {
+        "name": ".touch-target",
+        "kind": "class",
+        "startLine": 183,
+        "endLine": 183
+      }
+    ]
+  },
+  {
+    "name": "@media (pointer: fine)",
+    "kind": "module",
+    "startLine": 186,
+    "endLine": 188,
+    "children": [
+      {
+        "name": ".precise",
+        "kind": "class",
+        "startLine": 187,
+        "endLine": 187
+      }
+    ]
+  },
+  {
+    "name": "@media (hover: hover)",
+    "kind": "module",
+    "startLine": 190,
+    "endLine": 192,
+    "children": [
+      {
+        "name": ".hoverable:hover",
+        "kind": "class",
+        "startLine": 191,
+        "endLine": 191
+      }
+    ]
+  },
+  {
+    "name": "@media (hover: none)",
+    "kind": "module",
+    "startLine": 194,
+    "endLine": 196,
+    "children": [
+      {
+        "name": ".no-hover",
+        "kind": "class",
+        "startLine": 195,
+        "endLine": 195
+      }
+    ]
+  },
+  {
+    "name": "@media (any-hover: hover)",
+    "kind": "module",
+    "startLine": 198,
+    "endLine": 200,
+    "children": [
+      {
+        "name": ".any-hover-support",
+        "kind": "class",
+        "startLine": 199,
+        "endLine": 199
+      }
+    ]
+  },
+  {
+    "name": "@media (any-pointer: coarse)",
+    "kind": "module",
+    "startLine": 202,
+    "endLine": 204,
+    "children": [
+      {
+        "name": ".touch-device",
+        "kind": "class",
+        "startLine": 203,
+        "endLine": 203
+      }
+    ]
+  },
+  {
+    "name": "@media (color)",
+    "kind": "module",
+    "startLine": 206,
+    "endLine": 208,
+    "children": [
+      {
+        "name": ".color-display",
+        "kind": "class",
+        "startLine": 207,
+        "endLine": 207
+      }
+    ]
+  },
+  {
+    "name": "@media (color-gamut: p3)",
+    "kind": "module",
+    "startLine": 210,
+    "endLine": 212,
+    "children": [
+      {
+        "name": ".wide-gamut",
+        "kind": "class",
+        "startLine": 211,
+        "endLine": 211
+      }
+    ]
+  },
+  {
+    "name": "@media (dynamic-range: high)",
+    "kind": "module",
+    "startLine": 214,
+    "endLine": 216,
+    "children": [
+      {
+        "name": ".hdr-content",
+        "kind": "class",
+        "startLine": 215,
+        "endLine": 215
+      }
+    ]
+  },
+  {
+    "name": "@media (update: slow)",
+    "kind": "module",
+    "startLine": 218,
+    "endLine": 220,
+    "children": [
+      {
+        "name": ".e-ink",
+        "kind": "class",
+        "startLine": 219,
+        "endLine": 219
+      }
+    ]
+  },
+  {
+    "name": "@media (overflow-block: scroll)",
+    "kind": "module",
+    "startLine": 222,
+    "endLine": 224,
+    "children": [
+      {
+        "name": ".scrollable",
+        "kind": "class",
+        "startLine": 223,
+        "endLine": 223
+      }
+    ]
+  },
+  {
+    "name": "@media (overflow-inline: scroll)",
+    "kind": "module",
+    "startLine": 226,
+    "endLine": 228,
+    "children": [
+      {
+        "name": ".horizontal-scroll",
+        "kind": "class",
+        "startLine": 227,
+        "endLine": 227
+      }
+    ]
+  },
+  {
+    "name": "@media (display-mode: fullscreen)",
+    "kind": "module",
+    "startLine": 230,
+    "endLine": 232,
+    "children": [
+      {
+        "name": ".fullscreen-mode",
+        "kind": "class",
+        "startLine": 231,
+        "endLine": 231
+      }
+    ]
+  },
+  {
+    "name": "@media (display-mode: standalone)",
+    "kind": "module",
+    "startLine": 234,
+    "endLine": 236,
+    "children": [
+      {
+        "name": ".app-mode",
+        "kind": "class",
+        "startLine": 235,
+        "endLine": 235
+      }
+    ]
+  },
+  {
+    "name": "@media (scripting: enabled)",
+    "kind": "module",
+    "startLine": 238,
+    "endLine": 240,
+    "children": [
+      {
+        "name": ".js-enabled",
+        "kind": "class",
+        "startLine": 239,
+        "endLine": 239
+      }
+    ]
+  },
+  {
+    "name": "@media (scripting: none)",
+    "kind": "module",
+    "startLine": 242,
+    "endLine": 244,
+    "children": [
+      {
+        "name": ".no-js-fallback",
+        "kind": "class",
+        "startLine": 243,
+        "endLine": 243
+      }
+    ]
+  },
+  {
+    "name": "@media not screen",
+    "kind": "module",
+    "startLine": 246,
+    "endLine": 248,
+    "children": [
+      {
+        "name": ".not-screen",
+        "kind": "class",
+        "startLine": 247,
+        "endLine": 247
+      }
+    ]
+  },
+  {
+    "name": "@media only screen",
+    "kind": "module",
+    "startLine": 250,
+    "endLine": 252,
+    "children": [
+      {
+        "name": ".only-screen",
+        "kind": "class",
+        "startLine": 251,
+        "endLine": 251
+      }
+    ]
+  },
+  {
+    "name": "@media screen, print",
+    "kind": "module",
+    "startLine": 254,
+    "endLine": 256,
+    "children": [
+      {
+        "name": ".screen-or-print",
+        "kind": "class",
+        "startLine": 255,
+        "endLine": 255
+      }
+    ]
+  },
+  {
+    "name": "@media screen",
+    "kind": "module",
+    "startLine": 259,
+    "endLine": 263,
+    "children": [
+      {
+        "name": "@media (min-width: 768px)",
+        "kind": "module",
+        "startLine": 260,
+        "endLine": 262,
+        "children": [
+          {
+            "name": ".nested-media",
+            "kind": "class",
+            "startLine": 261,
+            "endLine": 261
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": ".grid-container",
+    "kind": "class",
+    "startLine": 267,
+    "endLine": 270
+  },
+  {
+    "name": ".flex-container",
+    "kind": "class",
+    "startLine": 274,
+    "endLine": 276
+  },
+  {
+    "name": ".no-grid-fallback",
+    "kind": "class",
+    "startLine": 280,
+    "endLine": 282
+  },
+  {
+    "name": ".grid-with-gap",
+    "kind": "class",
+    "startLine": 286,
+    "endLine": 288
+  },
+  {
+    "name": ".modern-layout",
+    "kind": "class",
+    "startLine": 292,
+    "endLine": 294
+  },
+  {
+    "name": ".complex-support",
+    "kind": "class",
+    "startLine": 298,
+    "endLine": 300
+  },
+  {
+    "name": ".parent:has(.child)",
+    "kind": "class",
+    "startLine": 304,
+    "endLine": 306
+  },
+  {
+    "name": ":is(a, button):hover",
+    "kind": "class",
+    "startLine": 310,
+    "endLine": 312
+  },
+  {
+    "name": ".color-font",
+    "kind": "class",
+    "startLine": 316,
+    "endLine": 318
+  },
+  {
+    "name": "@font-face",
+    "kind": "class",
+    "startLine": 322,
+    "endLine": 341
+  },
+  {
+    "name": "@font-face",
+    "kind": "class",
+    "startLine": 343,
+    "endLine": 349
+  },
+  {
+    "name": "@keyframes fadeIn",
+    "kind": "class",
+    "startLine": 375,
+    "endLine": 382
+  },
+  {
+    "name": "@keyframes slideIn",
+    "kind": "class",
+    "startLine": 384,
+    "endLine": 396
+  },
+  {
+    "name": "@keyframes complexAnimation",
+    "kind": "class",
+    "startLine": 398,
+    "endLine": 411
+  },
+  {
+    "name": "@keyframes bounce",
+    "kind": "class",
+    "startLine": 413,
+    "endLine": 426
+  },
+  {
+    "name": ".card",
+    "kind": "class",
+    "startLine": 580,
+    "endLine": 583
+  },
+  {
+    "name": ".sidebar-item",
+    "kind": "class",
+    "startLine": 587,
+    "endLine": 589
+  },
+  {
+    "name": ".article",
+    "kind": "class",
+    "startLine": 593,
+    "endLine": 595
+  },
+  {
+    "name": ".themed-element",
+    "kind": "class",
+    "startLine": 599,
+    "endLine": 602
+  },
+  {
+    "name": ".card-content",
+    "kind": "class",
+    "startLine": 606,
+    "endLine": 608
+  },
+  {
+    "name": "@scope .card",
+    "kind": "module",
+    "startLine": 612,
+    "endLine": 624,
+    "children": [
+      {
+        "name": ":scope",
+        "kind": "class",
+        "startLine": 613,
+        "endLine": 615
+      },
+      {
+        "name": ".title",
+        "kind": "class",
+        "startLine": 617,
+        "endLine": 619
+      },
+      {
+        "name": ".content",
+        "kind": "class",
+        "startLine": 621,
+        "endLine": 623
+      }
+    ]
+  },
+  {
+    "name": "@scope .card → .content",
+    "kind": "module",
+    "startLine": 626,
+    "endLine": 631,
+    "children": [
+      {
+        "name": "a",
+        "kind": "class",
+        "startLine": 628,
+        "endLine": 630
+      }
+    ]
+  },
+  {
+    "name": "dialog[open]",
+    "kind": "class",
+    "startLine": 635,
+    "endLine": 638
+  },
+  {
+    "name": ":root",
+    "kind": "class",
+    "startLine": 645,
+    "endLine": 738
+  },
+  {
+    "name": "html",
+    "kind": "class",
+    "startLine": 745,
+    "endLine": 745
+  },
+  {
+    "name": "body",
+    "kind": "class",
+    "startLine": 746,
+    "endLine": 746
+  },
+  {
+    "name": "div",
+    "kind": "class",
+    "startLine": 747,
+    "endLine": 747
+  },
+  {
+    "name": "span",
+    "kind": "class",
+    "startLine": 748,
+    "endLine": 748
+  },
+  {
+    "name": "p",
+    "kind": "class",
+    "startLine": 749,
+    "endLine": 749
+  },
+  {
+    "name": "a",
+    "kind": "class",
+    "startLine": 750,
+    "endLine": 750
+  },
+  {
+    "name": "img",
+    "kind": "class",
+    "startLine": 751,
+    "endLine": 751
+  },
+  {
+    "name": ".class-name",
+    "kind": "class",
+    "startLine": 754,
+    "endLine": 754
+  },
+  {
+    "name": ".class-name-2",
+    "kind": "class",
+    "startLine": 755,
+    "endLine": 755
+  },
+  {
+    "name": ".class_with_underscore",
+    "kind": "class",
+    "startLine": 756,
+    "endLine": 756
+  },
+  {
+    "name": ".class-with-hyphen",
+    "kind": "class",
+    "startLine": 757,
+    "endLine": 757
+  },
+  {
+    "name": ".class123",
+    "kind": "class",
+    "startLine": 758,
+    "endLine": 758
+  },
+  {
+    "name": ".CamelCase",
+    "kind": "class",
+    "startLine": 759,
+    "endLine": 759
+  },
+  {
+    "name": ".UPPERCASE",
+    "kind": "class",
+    "startLine": 760,
+    "endLine": 760
+  },
+  {
+    "name": "#id-name",
+    "kind": "class",
+    "startLine": 763,
+    "endLine": 763
+  },
+  {
+    "name": "#another_id",
+    "kind": "class",
+    "startLine": 764,
+    "endLine": 764
+  },
+  {
+    "name": "#id123",
+    "kind": "class",
+    "startLine": 765,
+    "endLine": 765
+  },
+  {
+    "name": "[disabled]",
+    "kind": "class",
+    "startLine": 768,
+    "endLine": 768
+  },
+  {
+    "name": "[type]",
+    "kind": "class",
+    "startLine": 769,
+    "endLine": 769
+  },
+  {
+    "name": "[type=\"text\"]",
+    "kind": "class",
+    "startLine": 770,
+    "endLine": 770
+  },
+  {
+    "name": "[type='password']",
+    "kind": "class",
+    "startLine": 771,
+    "endLine": 771
+  },
+  {
+    "name": "[class~=\"word\"]",
+    "kind": "class",
+    "startLine": 772,
+    "endLine": 772
+  },
+  {
+    "name": "[class|=\"prefix\"]",
+    "kind": "class",
+    "startLine": 773,
+    "endLine": 773
+  },
+  {
+    "name": "[href^=\"https\"]",
+    "kind": "class",
+    "startLine": 774,
+    "endLine": 774
+  },
+  {
+    "name": "[href$=\".pdf\"]",
+    "kind": "class",
+    "startLine": 775,
+    "endLine": 775
+  },
+  {
+    "name": "[href*=\"example\"]",
+    "kind": "class",
+    "startLine": 776,
+    "endLine": 776
+  },
+  {
+    "name": "[data-value i",
+    "kind": "class",
+    "startLine": 777,
+    "endLine": 777
+  },
+  {
+    "name": "[data-value=\"TEST\" i]",
+    "kind": "class",
+    "startLine": 778,
+    "endLine": 778
+  },
+  {
+    "name": "[data-value=\"test\" s]",
+    "kind": "class",
+    "startLine": 779,
+    "endLine": 779
+  },
+  {
+    "name": "[data-lang=\"zh\" s]",
+    "kind": "class",
+    "startLine": 780,
+    "endLine": 780
+  },
+  {
+    "name": "*",
+    "kind": "class",
+    "startLine": 783,
+    "endLine": 783
+  },
+  {
+    "name": "*.class",
+    "kind": "class",
+    "startLine": 784,
+    "endLine": 784
+  },
+  {
+    "name": "*#id",
+    "kind": "class",
+    "startLine": 785,
+    "endLine": 785
+  },
+  {
+    "name": "*[attr]",
+    "kind": "class",
+    "startLine": 786,
+    "endLine": 786
+  },
+  {
+    "name": "h1",
+    "kind": "class",
+    "startLine": 789,
+    "endLine": 789
+  },
+  {
+    "name": "h2",
+    "kind": "class",
+    "startLine": 789,
+    "endLine": 789
+  },
+  {
+    "name": "h3",
+    "kind": "class",
+    "startLine": 789,
+    "endLine": 789
+  },
+  {
+    "name": "h4",
+    "kind": "class",
+    "startLine": 789,
+    "endLine": 789
+  },
+  {
+    "name": "h5",
+    "kind": "class",
+    "startLine": 789,
+    "endLine": 789
+  },
+  {
+    "name": "h6",
+    "kind": "class",
+    "startLine": 789,
+    "endLine": 789
+  },
+  {
+    "name": ".btn",
+    "kind": "class",
+    "startLine": 790,
+    "endLine": 790
+  },
+  {
+    "name": ".button",
+    "kind": "class",
+    "startLine": 790,
+    "endLine": 790
+  },
+  {
+    "name": "[type=\"button\"]",
+    "kind": "class",
+    "startLine": 790,
+    "endLine": 790
+  },
+  {
+    "name": "article p",
+    "kind": "class",
+    "startLine": 793,
+    "endLine": 793
+  },
+  {
+    "name": ".container .item",
+    "kind": "class",
+    "startLine": 794,
+    "endLine": 794
+  },
+  {
+    "name": "div.class p.another",
+    "kind": "class",
+    "startLine": 795,
+    "endLine": 795
+  },
+  {
+    "name": "ul > li",
+    "kind": "class",
+    "startLine": 798,
+    "endLine": 798
+  },
+  {
+    "name": ".parent > .direct-child",
+    "kind": "class",
+    "startLine": 799,
+    "endLine": 799
+  },
+  {
+    "name": "h1 + p",
+    "kind": "class",
+    "startLine": 802,
+    "endLine": 802
+  },
+  {
+    "name": ".trigger + .target",
+    "kind": "class",
+    "startLine": 803,
+    "endLine": 803
+  },
+  {
+    "name": "h2 ~ p",
+    "kind": "class",
+    "startLine": 806,
+    "endLine": 806
+  },
+  {
+    "name": ".first ~ .sibling",
+    "kind": "class",
+    "startLine": 807,
+    "endLine": 807
+  },
+  {
+    "name": ".card",
+    "kind": "class",
+    "startLine": 810,
+    "endLine": 834,
+    "children": [
+      {
+        "name": "& > .header",
+        "kind": "class",
+        "startLine": 813,
+        "endLine": 815
+      },
+      {
+        "name": "&:hover",
+        "kind": "class",
+        "startLine": 817,
+        "endLine": 819
+      },
+      {
+        "name": "&.active",
+        "kind": "class",
+        "startLine": 821,
+        "endLine": 823
+      },
+      {
+        "name": "@media (min-width: 768px)",
+        "kind": "module",
+        "startLine": 825,
+        "endLine": 829,
+        "children": [
+          {
+            "name": "&",
+            "kind": "class",
+            "startLine": 826,
+            "endLine": 828
+          }
+        ]
+      },
+      {
+        "name": ".nested-child",
+        "kind": "class",
+        "startLine": 831,
+        "endLine": 833
+      }
+    ]
+  },
+  {
+    "name": "div.class#id[attr=\"value\"]:hover::after",
+    "kind": "class",
+    "startLine": 837,
+    "endLine": 837
+  },
+  {
+    "name": "article > section.main p:first-of-type::first-letter",
+    "kind": "class",
+    "startLine": 838,
+    "endLine": 838
+  },
+  {
+    "name": "a:link",
+    "kind": "class",
+    "startLine": 845,
+    "endLine": 845
+  },
+  {
+    "name": "a:visited",
+    "kind": "class",
+    "startLine": 846,
+    "endLine": 846
+  },
+  {
+    "name": "button:hover",
+    "kind": "class",
+    "startLine": 849,
+    "endLine": 849
+  },
+  {
+    "name": "button:active",
+    "kind": "class",
+    "startLine": 850,
+    "endLine": 850
+  },
+  {
+    "name": "input:focus",
+    "kind": "class",
+    "startLine": 851,
+    "endLine": 851
+  },
+  {
+    "name": "input:focus-visible",
+    "kind": "class",
+    "startLine": 852,
+    "endLine": 852
+  },
+  {
+    "name": "input:focus-within",
+    "kind": "class",
+    "startLine": 853,
+    "endLine": 853
+  },
+  {
+    "name": "input:enabled",
+    "kind": "class",
+    "startLine": 856,
+    "endLine": 856
+  },
+  {
+    "name": "input:disabled",
+    "kind": "class",
+    "startLine": 857,
+    "endLine": 857
+  },
+  {
+    "name": "input:read-only",
+    "kind": "class",
+    "startLine": 858,
+    "endLine": 858
+  },
+  {
+    "name": "input:read-write",
+    "kind": "class",
+    "startLine": 859,
+    "endLine": 859
+  },
+  {
+    "name": "input:placeholder-shown",
+    "kind": "class",
+    "startLine": 860,
+    "endLine": 860
+  },
+  {
+    "name": "input:default",
+    "kind": "class",
+    "startLine": 861,
+    "endLine": 861
+  },
+  {
+    "name": "input:checked",
+    "kind": "class",
+    "startLine": 862,
+    "endLine": 862
+  },
+  {
+    "name": "input:indeterminate",
+    "kind": "class",
+    "startLine": 863,
+    "endLine": 863
+  },
+  {
+    "name": "input:valid",
+    "kind": "class",
+    "startLine": 864,
+    "endLine": 864
+  },
+  {
+    "name": "input:invalid",
+    "kind": "class",
+    "startLine": 865,
+    "endLine": 865
+  },
+  {
+    "name": "input:in-range",
+    "kind": "class",
+    "startLine": 866,
+    "endLine": 866
+  },
+  {
+    "name": "input:out-of-range",
+    "kind": "class",
+    "startLine": 867,
+    "endLine": 867
+  },
+  {
+    "name": "input:required",
+    "kind": "class",
+    "startLine": 868,
+    "endLine": 868
+  },
+  {
+    "name": "input:optional",
+    "kind": "class",
+    "startLine": 869,
+    "endLine": 869
+  },
+  {
+    "name": "input:autofill",
+    "kind": "class",
+    "startLine": 870,
+    "endLine": 870
+  },
+  {
+    "name": ":target",
+    "kind": "class",
+    "startLine": 873,
+    "endLine": 873
+  },
+  {
+    "name": ":lang(en)",
+    "kind": "class",
+    "startLine": 876,
+    "endLine": 876
+  },
+  {
+    "name": ":lang(fr)",
+    "kind": "class",
+    "startLine": 877,
+    "endLine": 877
+  },
+  {
+    "name": ":lang(de)",
+    "kind": "class",
+    "startLine": 878,
+    "endLine": 881
+  },
+  {
+    "name": ":not(.class)",
+    "kind": "class",
+    "startLine": 882,
+    "endLine": 882
+  },
+  {
+    "name": ":not([disabled])",
+    "kind": "class",
+    "startLine": 883,
+    "endLine": 883
+  },
+  {
+    "name": ":not(:first-child)",
+    "kind": "class",
+    "startLine": 884,
+    "endLine": 884
+  },
+  {
+    "name": ":not(:is(h1, h2, h3))",
+    "kind": "class",
+    "startLine": 885,
+    "endLine": 885
+  },
+  {
+    "name": ":not(:has(*))",
+    "kind": "class",
+    "startLine": 886,
+    "endLine": 886
+  },
+  {
+    "name": ":is(h1, h2, h3, h4, h5, h6)",
+    "kind": "class",
+    "startLine": 889,
+    "endLine": 889
+  },
+  {
+    "name": ":is(article, section, aside) > p",
+    "kind": "class",
+    "startLine": 890,
+    "endLine": 890
+  },
+  {
+    "name": ":is(.card, .panel):hover",
+    "kind": "class",
+    "startLine": 891,
+    "endLine": 891
+  },
+  {
+    "name": ":where(h1, h2, h3)",
+    "kind": "class",
+    "startLine": 894,
+    "endLine": 894
+  },
+  {
+    "name": ":where(ul, ol) li",
+    "kind": "class",
+    "startLine": 895,
+    "endLine": 895
+  },
+  {
+    "name": ":has(> img)",
+    "kind": "class",
+    "startLine": 898,
+    "endLine": 898
+  },
+  {
+    "name": ":has(+ p)",
+    "kind": "class",
+    "startLine": 899,
+    "endLine": 899
+  },
+  {
+    "name": ".form:has(:invalid)",
+    "kind": "class",
+    "startLine": 900,
+    "endLine": 900
+  },
+  {
+    "name": ".card:has(.featured)",
+    "kind": "class",
+    "startLine": 901,
+    "endLine": 901
+  },
+  {
+    "name": ".container:has(> :first-child:last-child)",
+    "kind": "class",
+    "startLine": 902,
+    "endLine": 902
+  },
+  {
+    "name": "article:has(h2, h3)",
+    "kind": "class",
+    "startLine": 903,
+    "endLine": 903
+  },
+  {
+    "name": ":not(:has(*)):not(img):not(input)",
+    "kind": "class",
+    "startLine": 904,
+    "endLine": 904
+  },
+  {
+    "name": ":root",
+    "kind": "class",
+    "startLine": 907,
+    "endLine": 907
+  },
+  {
+    "name": ":empty",
+    "kind": "class",
+    "startLine": 908,
+    "endLine": 908
+  },
+  {
+    "name": ":blank",
+    "kind": "class",
+    "startLine": 909,
+    "endLine": 909
+  },
+  {
+    "name": ":first-child",
+    "kind": "class",
+    "startLine": 912,
+    "endLine": 912
+  },
+  {
+    "name": ":last-child",
+    "kind": "class",
+    "startLine": 913,
+    "endLine": 913
+  },
+  {
+    "name": ":only-child",
+    "kind": "class",
+    "startLine": 914,
+    "endLine": 914
+  },
+  {
+    "name": ":nth-child(2)",
+    "kind": "class",
+    "startLine": 915,
+    "endLine": 915
+  },
+  {
+    "name": ":nth-child(odd)",
+    "kind": "class",
+    "startLine": 916,
+    "endLine": 916
+  },
+  {
+    "name": ":nth-child(even)",
+    "kind": "class",
+    "startLine": 917,
+    "endLine": 917
+  },
+  {
+    "name": ":nth-child(3n)",
+    "kind": "class",
+    "startLine": 918,
+    "endLine": 918
+  },
+  {
+    "name": ":nth-child(3n+1)",
+    "kind": "class",
+    "startLine": 919,
+    "endLine": 919
+  },
+  {
+    "name": ":nth-child(n+5)",
+    "kind": "class",
+    "startLine": 920,
+    "endLine": 920
+  },
+  {
+    "name": ":nth-child(-n+3)",
+    "kind": "class",
+    "startLine": 921,
+    "endLine": 921
+  },
+  {
+    "name": ":nth-child(2n+1 of .important)",
+    "kind": "class",
+    "startLine": 922,
+    "endLine": 922
+  },
+  {
+    "name": ":nth-last-child(1)",
+    "kind": "class",
+    "startLine": 923,
+    "endLine": 923
+  },
+  {
+    "name": ":nth-last-child(2)",
+    "kind": "class",
+    "startLine": 924,
+    "endLine": 924
+  },
+  {
+    "name": "p:first-of-type",
+    "kind": "class",
+    "startLine": 927,
+    "endLine": 927
+  },
+  {
+    "name": "p:last-of-type",
+    "kind": "class",
+    "startLine": 928,
+    "endLine": 928
+  },
+  {
+    "name": "p:only-of-type",
+    "kind": "class",
+    "startLine": 929,
+    "endLine": 929
+  },
+  {
+    "name": "p:nth-of-type(2n)",
+    "kind": "class",
+    "startLine": 930,
+    "endLine": 930
+  },
+  {
+    "name": "p:nth-last-of-type(1)",
+    "kind": "class",
+    "startLine": 931,
+    "endLine": 931
+  },
+  {
+    "name": ":defined",
+    "kind": "class",
+    "startLine": 934,
+    "endLine": 934
+  },
+  {
+    "name": ":host",
+    "kind": "class",
+    "startLine": 935,
+    "endLine": 935
+  },
+  {
+    "name": ":host(.special)",
+    "kind": "class",
+    "startLine": 936,
+    "endLine": 936
+  },
+  {
+    "name": ":host-context(.dark)",
+    "kind": "class",
+    "startLine": 937,
+    "endLine": 937
+  },
+  {
+    "name": "::slotted(p)",
+    "kind": "class",
+    "startLine": 938,
+    "endLine": 938
+  },
+  {
+    "name": ":fullscreen",
+    "kind": "class",
+    "startLine": 939,
+    "endLine": 939
+  },
+  {
+    "name": ":modal",
+    "kind": "class",
+    "startLine": 940,
+    "endLine": 940
+  },
+  {
+    "name": ":picture-in-picture",
+    "kind": "class",
+    "startLine": 941,
+    "endLine": 941
+  },
+  {
+    "name": ":paused",
+    "kind": "class",
+    "startLine": 942,
+    "endLine": 942
+  },
+  {
+    "name": ":playing",
+    "kind": "class",
+    "startLine": 943,
+    "endLine": 943
+  },
+  {
+    "name": ":muted",
+    "kind": "class",
+    "startLine": 944,
+    "endLine": 944
+  },
+  {
+    "name": ":volume-locked",
+    "kind": "class",
+    "startLine": 945,
+    "endLine": 945
+  },
+  {
+    "name": ":seeking",
+    "kind": "class",
+    "startLine": 946,
+    "endLine": 946
+  },
+  {
+    "name": ":buffering",
+    "kind": "class",
+    "startLine": 947,
+    "endLine": 947
+  },
+  {
+    "name": ":stalled",
+    "kind": "class",
+    "startLine": 948,
+    "endLine": 948
+  },
+  {
+    "name": ":current",
+    "kind": "class",
+    "startLine": 949,
+    "endLine": 949
+  },
+  {
+    "name": ":past",
+    "kind": "class",
+    "startLine": 950,
+    "endLine": 950
+  },
+  {
+    "name": ":future",
+    "kind": "class",
+    "startLine": 951,
+    "endLine": 951
+  },
+  {
+    "name": ":left",
+    "kind": "class",
+    "startLine": 954,
+    "endLine": 954
+  },
+  {
+    "name": ":right",
+    "kind": "class",
+    "startLine": 955,
+    "endLine": 955
+  },
+  {
+    "name": ":first",
+    "kind": "class",
+    "startLine": 956,
+    "endLine": 956
+  },
+  {
+    "name": ":dir(ltr)",
+    "kind": "class",
+    "startLine": 959,
+    "endLine": 959
+  },
+  {
+    "name": ":dir(rtl)",
+    "kind": "class",
+    "startLine": 960,
+    "endLine": 960
+  },
+  {
+    "name": "::view-transition",
+    "kind": "class",
+    "startLine": 963,
+    "endLine": 963
+  },
+  {
+    "name": "::view-transition-group(header)",
+    "kind": "class",
+    "startLine": 964,
+    "endLine": 964
+  },
+  {
+    "name": "::view-transition-image-pair(main)",
+    "kind": "class",
+    "startLine": 965,
+    "endLine": 965
+  },
+  {
+    "name": "::view-transition-old(main)",
+    "kind": "class",
+    "startLine": 966,
+    "endLine": 966
+  },
+  {
+    "name": "::view-transition-new(main)",
+    "kind": "class",
+    "startLine": 967,
+    "endLine": 967
+  },
+  {
+    "name": ":popover-open",
+    "kind": "class",
+    "startLine": 970,
+    "endLine": 970
+  },
+  {
+    "name": "p::first-line",
+    "kind": "class",
+    "startLine": 977,
+    "endLine": 980
+  },
+  {
+    "name": "p::first-letter",
+    "kind": "class",
+    "startLine": 982,
+    "endLine": 986
+  },
+  {
+    "name": ".required::before",
+    "kind": "class",
+    "startLine": 989,
+    "endLine": 992
+  },
+  {
+    "name": ".external-link::after",
+    "kind": "class",
+    "startLine": 994,
+    "endLine": 996
+  },
+  {
+    "name": "blockquote::before",
+    "kind": "class",
+    "startLine": 998,
+    "endLine": 1000
+  },
+  {
+    "name": "blockquote::after",
+    "kind": "class",
+    "startLine": 1002,
+    "endLine": 1004
+  },
+  {
+    "name": "a[href]::before",
+    "kind": "class",
+    "startLine": 1006,
+    "endLine": 1008
+  },
+  {
+    "name": "a[href^=\"mailto:\"]::before",
+    "kind": "class",
+    "startLine": 1010,
+    "endLine": 1012
+  },
+  {
+    "name": ".counter::before",
+    "kind": "class",
+    "startLine": 1014,
+    "endLine": 1017
+  },
+  {
+    "name": ".attr-content::after",
+    "kind": "class",
+    "startLine": 1019,
+    "endLine": 1021
+  },
+  {
+    "name": ".multi-content::before",
+    "kind": "class",
+    "startLine": 1023,
+    "endLine": 1025
+  },
+  {
+    "name": "::selection",
+    "kind": "class",
+    "startLine": 1028,
+    "endLine": 1031
+  },
+  {
+    "name": "::target-text",
+    "kind": "class",
+    "startLine": 1033,
+    "endLine": 1035
+  },
+  {
+    "name": "::spelling-error",
+    "kind": "class",
+    "startLine": 1037,
+    "endLine": 1039
+  },
+  {
+    "name": "::grammar-error",
+    "kind": "class",
+    "startLine": 1041,
+    "endLine": 1043
+  },
+  {
+    "name": "::highlight(custom-highlight)",
+    "kind": "class",
+    "startLine": 1046,
+    "endLine": 1049
+  },
+  {
+    "name": "input::placeholder",
+    "kind": "class",
+    "startLine": 1052,
+    "endLine": 1055
+  },
+  {
+    "name": "input[type=\"file\"]::file-selector-button",
+    "kind": "class",
+    "startLine": 1057,
+    "endLine": 1063
+  },
+  {
+    "name": "li::marker",
+    "kind": "class",
+    "startLine": 1066,
+    "endLine": 1069
+  },
+  {
+    "name": "progress::-webkit-progress-bar",
+    "kind": "class",
+    "startLine": 1072,
+    "endLine": 1074
+  },
+  {
+    "name": "progress::-webkit-progress-value",
+    "kind": "class",
+    "startLine": 1076,
+    "endLine": 1078
+  },
+  {
+    "name": "progress::-moz-progress-bar",
+    "kind": "class",
+    "startLine": 1080,
+    "endLine": 1082
+  },
+  {
+    "name": "input[type=\"range\"]::-webkit-slider-thumb",
+    "kind": "class",
+    "startLine": 1085,
+    "endLine": 1091
+  },
+  {
+    "name": "input[type=\"range\"]::-webkit-slider-runnable-track",
+    "kind": "class",
+    "startLine": 1093,
+    "endLine": 1097
+  },
+  {
+    "name": "::-webkit-scrollbar",
+    "kind": "class",
+    "startLine": 1100,
+    "endLine": 1103
+  },
+  {
+    "name": "::-webkit-scrollbar-track",
+    "kind": "class",
+    "startLine": 1105,
+    "endLine": 1107
+  },
+  {
+    "name": "::-webkit-scrollbar-thumb",
+    "kind": "class",
+    "startLine": 1109,
+    "endLine": 1112
+  },
+  {
+    "name": "::-webkit-scrollbar-thumb:hover",
+    "kind": "class",
+    "startLine": 1114,
+    "endLine": 1116
+  },
+  {
+    "name": "::-webkit-scrollbar-corner",
+    "kind": "class",
+    "startLine": 1118,
+    "endLine": 1120
+  },
+  {
+    "name": "dialog::backdrop",
+    "kind": "class",
+    "startLine": 1123,
+    "endLine": 1126
+  },
+  {
+    "name": ":fullscreen::backdrop",
+    "kind": "class",
+    "startLine": 1128,
+    "endLine": 1130
+  },
+  {
+    "name": "details > summary::-webkit-details-marker",
+    "kind": "class",
+    "startLine": 1133,
+    "endLine": 1135
+  },
+  {
+    "name": "details::details-content",
+    "kind": "class",
+    "startLine": 1137,
+    "endLine": 1139
+  },
+  {
+    "name": "::cue",
+    "kind": "class",
+    "startLine": 1142,
+    "endLine": 1145
+  },
+  {
+    "name": "::cue(b)",
+    "kind": "class",
+    "startLine": 1147,
+    "endLine": 1149
+  },
+  {
+    "name": "::cue-region",
+    "kind": "class",
+    "startLine": 1151,
+    "endLine": 1153
+  },
+  {
+    "name": ".values-demo",
+    "kind": "class",
+    "startLine": 1159,
+    "endLine": 1279
+  },
+  {
+    "name": "background-image",
+    "kind": "class",
+    "startLine": 1280,
+    "endLine": 1280
+  },
+  {
+    "name": "filter",
+    "kind": "class",
+    "startLine": 1283,
+    "endLine": 1283
+  },
+  {
+    "name": "filter",
+    "kind": "class",
+    "startLine": 1284,
+    "endLine": 1284
+  },
+  {
+    "name": "filter",
+    "kind": "class",
+    "startLine": 1285,
+    "endLine": 1285
+  },
+  {
+    "name": "filter",
+    "kind": "class",
+    "startLine": 1286,
+    "endLine": 1286
+  },
+  {
+    "name": "filter",
+    "kind": "class",
+    "startLine": 1287,
+    "endLine": 1287
+  },
+  {
+    "name": "filter",
+    "kind": "class",
+    "startLine": 1288,
+    "endLine": 1288
+  },
+  {
+    "name": "filter",
+    "kind": "class",
+    "startLine": 1289,
+    "endLine": 1289
+  },
+  {
+    "name": "filter",
+    "kind": "class",
+    "startLine": 1290,
+    "endLine": 1290
+  },
+  {
+    "name": "filter",
+    "kind": "class",
+    "startLine": 1291,
+    "endLine": 1291
+  },
+  {
+    "name": "filter",
+    "kind": "class",
+    "startLine": 1292,
+    "endLine": 1292
+  },
+  {
+    "name": "filter",
+    "kind": "class",
+    "startLine": 1293,
+    "endLine": 1293
+  },
+  {
+    "name": "filter",
+    "kind": "class",
+    "startLine": 1294,
+    "endLine": 1294
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1297,
+    "endLine": 1297
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1298,
+    "endLine": 1298
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1299,
+    "endLine": 1299
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1300,
+    "endLine": 1300
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1301,
+    "endLine": 1301
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1302,
+    "endLine": 1302
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1303,
+    "endLine": 1303
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1304,
+    "endLine": 1304
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1305,
+    "endLine": 1305
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1306,
+    "endLine": 1306
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1307,
+    "endLine": 1307
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1308,
+    "endLine": 1308
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1309,
+    "endLine": 1309
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1310,
+    "endLine": 1310
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1311,
+    "endLine": 1311
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1312,
+    "endLine": 1312
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1313,
+    "endLine": 1313
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1314,
+    "endLine": 1314
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1315,
+    "endLine": 1315
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1316,
+    "endLine": 1316
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1317,
+    "endLine": 1317
+  },
+  {
+    "name": "transform",
+    "kind": "class",
+    "startLine": 1318,
+    "endLine": 1318
+  },
+  {
+    "name": "transition-timing-function",
+    "kind": "class",
+    "startLine": 1321,
+    "endLine": 1321
+  },
+  {
+    "name": "transition-timing-function",
+    "kind": "class",
+    "startLine": 1322,
+    "endLine": 1322
+  },
+  {
+    "name": "transition-timing-function",
+    "kind": "class",
+    "startLine": 1323,
+    "endLine": 1323
+  },
+  {
+    "name": "transition-timing-function",
+    "kind": "class",
+    "startLine": 1324,
+    "endLine": 1324
+  },
+  {
+    "name": "transition-timing-function",
+    "kind": "class",
+    "startLine": 1325,
+    "endLine": 1325
+  },
+  {
+    "name": "transition-timing-function",
+    "kind": "class",
+    "startLine": 1326,
+    "endLine": 1326
+  },
+  {
+    "name": "transition-timing-function",
+    "kind": "class",
+    "startLine": 1327,
+    "endLine": 1327
+  },
+  {
+    "name": "transition-timing-function",
+    "kind": "class",
+    "startLine": 1328,
+    "endLine": 1328
+  },
+  {
+    "name": "transition-timing-function",
+    "kind": "class",
+    "startLine": 1329,
+    "endLine": 1329
+  },
+  {
+    "name": "transition-timing-function",
+    "kind": "class",
+    "startLine": 1330,
+    "endLine": 1330
+  },
+  {
+    "name": "transition-timing-function",
+    "kind": "class",
+    "startLine": 1331,
+    "endLine": 1331
+  },
+  {
+    "name": "transition-timing-function",
+    "kind": "class",
+    "startLine": 1332,
+    "endLine": 1332
+  },
+  {
+    "name": "transition-timing-function",
+    "kind": "class",
+    "startLine": 1333,
+    "endLine": 1333
+  },
+  {
+    "name": "animation-timing-function",
+    "kind": "class",
+    "startLine": 1334,
+    "endLine": 1334
+  },
+  {
+    "name": "clip-path",
+    "kind": "class",
+    "startLine": 1337,
+    "endLine": 1337
+  },
+  {
+    "name": "clip-path",
+    "kind": "class",
+    "startLine": 1338,
+    "endLine": 1338
+  },
+  {
+    "name": "clip-path",
+    "kind": "class",
+    "startLine": 1339,
+    "endLine": 1339
+  },
+  {
+    "name": "clip-path",
+    "kind": "class",
+    "startLine": 1340,
+    "endLine": 1340
+  },
+  {
+    "name": "clip-path",
+    "kind": "class",
+    "startLine": 1341,
+    "endLine": 1341
+  },
+  {
+    "name": "clip-path",
+    "kind": "class",
+    "startLine": 1342,
+    "endLine": 1342
+  },
+  {
+    "name": "clip-path",
+    "kind": "class",
+    "startLine": 1343,
+    "endLine": 1343
+  },
+  {
+    "name": "clip-path",
+    "kind": "class",
+    "startLine": 1344,
+    "endLine": 1344
+  },
+  {
+    "name": "clip-path",
+    "kind": "class",
+    "startLine": 1345,
+    "endLine": 1345
+  },
+  {
+    "name": "shape-outside",
+    "kind": "class",
+    "startLine": 1346,
+    "endLine": 1346
+  },
+  {
+    "name": "shape-outside",
+    "kind": "class",
+    "startLine": 1347,
+    "endLine": 1347
+  },
+  {
+    "name": "shape-outside",
+    "kind": "class",
+    "startLine": 1348,
+    "endLine": 1348
+  },
+  {
+    "name": "offset-path",
+    "kind": "class",
+    "startLine": 1349,
+    "endLine": 1349
+  },
+  {
+    "name": "offset-path",
+    "kind": "class",
+    "startLine": 1350,
+    "endLine": 1350
+  },
+  {
+    "name": "content",
+    "kind": "class",
+    "startLine": 1353,
+    "endLine": 1353
+  },
+  {
+    "name": "content",
+    "kind": "class",
+    "startLine": 1354,
+    "endLine": 1354
+  },
+  {
+    "name": "content",
+    "kind": "class",
+    "startLine": 1355,
+    "endLine": 1355
+  },
+  {
+    "name": "content",
+    "kind": "class",
+    "startLine": 1356,
+    "endLine": 1356
+  },
+  {
+    "name": "counter-reset",
+    "kind": "class",
+    "startLine": 1357,
+    "endLine": 1357
+  },
+  {
+    "name": "counter-increment",
+    "kind": "class",
+    "startLine": 1358,
+    "endLine": 1358
+  },
+  {
+    "name": "counter-set",
+    "kind": "class",
+    "startLine": 1359,
+    "endLine": 1359
+  },
+  {
+    "name": "content",
+    "kind": "class",
+    "startLine": 1362,
+    "endLine": 1362
+  },
+  {
+    "name": "content",
+    "kind": "class",
+    "startLine": 1363,
+    "endLine": 1363
+  },
+  {
+    "name": "width",
+    "kind": "class",
+    "startLine": 1364,
+    "endLine": 1364
+  },
+  {
+    "name": "padding-top",
+    "kind": "class",
+    "startLine": 1367,
+    "endLine": 1367
+  },
+  {
+    "name": "padding-bottom",
+    "kind": "class",
+    "startLine": 1368,
+    "endLine": 1368
+  },
+  {
+    "name": "padding-left",
+    "kind": "class",
+    "startLine": 1369,
+    "endLine": 1369
+  },
+  {
+    "name": "padding-right",
+    "kind": "class",
+    "startLine": 1370,
+    "endLine": 1370
+  },
+  {
+    "name": "padding",
+    "kind": "class",
+    "startLine": 1371,
+    "endLine": 1371
+  },
+  {
+    "name": "color",
+    "kind": "class",
+    "startLine": 1374,
+    "endLine": 1374
+  },
+  {
+    "name": "background",
+    "kind": "class",
+    "startLine": 1375,
+    "endLine": 1375
+  },
+  {
+    "name": "padding",
+    "kind": "class",
+    "startLine": 1376,
+    "endLine": 1376
+  },
+  {
+    "name": "border",
+    "kind": "class",
+    "startLine": 1377,
+    "endLine": 1377
+  },
+  {
+    "name": "top",
+    "kind": "class",
+    "startLine": 1383,
+    "endLine": 1383
+  },
+  {
+    "name": "left",
+    "kind": "class",
+    "startLine": 1384,
+    "endLine": 1384
+  },
+  {
+    "name": "width",
+    "kind": "class",
+    "startLine": 1385,
+    "endLine": 1385
+  },
+  {
+    "name": "height",
+    "kind": "class",
+    "startLine": 1386,
+    "endLine": 1386
+  },
+  {
+    "name": "width",
+    "kind": "class",
+    "startLine": 1389,
+    "endLine": 1389
+  },
+  {
+    "name": "width",
+    "kind": "class",
+    "startLine": 1390,
+    "endLine": 1390
+  },
+  {
+    "name": "font-size",
+    "kind": "class",
+    "startLine": 1391,
+    "endLine": 1391
+  },
+  {
+    "name": ".layout-demo",
+    "kind": "class",
+    "startLine": 1398,
+    "endLine": 1498
+  },
+  {
+    "name": ".flexbox-demo",
+    "kind": "class",
+    "startLine": 1501,
+    "endLine": 1550
+  },
+  {
+    "name": ".flex-item-demo",
+    "kind": "class",
+    "startLine": 1552,
+    "endLine": 1577
+  },
+  {
+    "name": ".grid-demo",
+    "kind": "class",
+    "startLine": 1580,
+    "endLine": 1661
+  },
+  {
+    "name": ".grid-item-demo",
+    "kind": "class",
+    "startLine": 1663,
+    "endLine": 1698
+  },
+  {
+    "name": ".multicol-demo",
+    "kind": "class",
+    "startLine": 1701,
+    "endLine": 1743
+  },
+  {
+    "name": ".container-demo",
+    "kind": "class",
+    "startLine": 1746,
+    "endLine": 1752
+  },
+  {
+    "name": ".typography-demo",
+    "kind": "class",
+    "startLine": 1758,
+    "endLine": 2132
+  },
+  {
+    "name": ".box-demo",
+    "kind": "class",
+    "startLine": 2138,
+    "endLine": 2343
+  },
+  {
+    "name": ".background-demo",
+    "kind": "class",
+    "startLine": 2349,
+    "endLine": 2483
+  },
+  {
+    "name": ".effects-demo",
+    "kind": "class",
+    "startLine": 2489,
+    "endLine": 2601
+  },
+  {
+    "name": ".animation-demo",
+    "kind": "class",
+    "startLine": 2607,
+    "endLine": 2753
+  },
+  {
+    "name": ".scroll-demo",
+    "kind": "class",
+    "startLine": 2759,
+    "endLine": 2840
+  },
+  {
+    "name": ".visual-demo",
+    "kind": "class",
+    "startLine": 2846,
+    "endLine": 3031
+  },
+  {
+    "name": ".list-demo",
+    "kind": "class",
+    "startLine": 3037,
+    "endLine": 3074
+  },
+  {
+    "name": ".table-demo",
+    "kind": "class",
+    "startLine": 3076,
+    "endLine": 3113
+  },
+  {
+    "name": ".svg-demo",
+    "kind": "class",
+    "startLine": 3119,
+    "endLine": 3313
+  },
+  {
+    "name": ".misc-demo",
+    "kind": "class",
+    "startLine": 3319,
+    "endLine": 3416
+  },
+  {
+    "name": ".vendor-demo",
+    "kind": "class",
+    "startLine": 3422,
+    "endLine": 3438
+  },
+  {
+    "name": ".global-values-demo",
+    "kind": "class",
+    "startLine": 3444,
+    "endLine": 3450
+  }
+]

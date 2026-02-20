@@ -1,0 +1,902 @@
+[
+  {
+    "name": "MAX_RETRIES",
+    "kind": "constant",
+    "startLine": 10,
+    "endLine": 10
+  },
+  {
+    "name": "BASE_URL",
+    "kind": "constant",
+    "startLine": 11,
+    "endLine": 11
+  },
+  {
+    "name": "EMPTY_OBJECT",
+    "kind": "constant",
+    "startLine": 12,
+    "endLine": 12
+  },
+  {
+    "name": "EMPTY_ARRAY",
+    "kind": "constant",
+    "startLine": 13,
+    "endLine": 13
+  },
+  {
+    "name": "PI_APPROX",
+    "kind": "constant",
+    "startLine": 14,
+    "endLine": 14
+  },
+  {
+    "name": "BIGINT_LARGE",
+    "kind": "constant",
+    "startLine": 15,
+    "endLine": 15
+  },
+  {
+    "name": "UNIQUE_KEY",
+    "kind": "constant",
+    "startLine": 16,
+    "endLine": 16
+  },
+  {
+    "name": "GLOBAL_SYMBOL",
+    "kind": "constant",
+    "startLine": 17,
+    "endLine": 17
+  },
+  {
+    "name": "REGEX_EMAIL",
+    "kind": "constant",
+    "startLine": 18,
+    "endLine": 18
+  },
+  {
+    "name": "REGEX_URL",
+    "kind": "constant",
+    "startLine": 19,
+    "endLine": 19
+  },
+  {
+    "name": "{ PI, E, SQRT2, LN2, LOG10E }",
+    "kind": "constant",
+    "startLine": 23,
+    "endLine": 23
+  },
+  {
+    "name": "coordinates",
+    "kind": "constant",
+    "startLine": 25,
+    "endLine": 25
+  },
+  {
+    "name": "{ x, y, z: depth }",
+    "kind": "constant",
+    "startLine": 26,
+    "endLine": 26
+  },
+  {
+    "name": "{ x: px = 0, y: py = 0, z: pz = 0, w: pw = 1 }",
+    "kind": "constant",
+    "startLine": 27,
+    "endLine": 27
+  },
+  {
+    "name": "matrix",
+    "kind": "constant",
+    "startLine": 29,
+    "endLine": 29
+  },
+  {
+    "name": "[[a, b, c], [d, e, f], [g, h, i]]",
+    "kind": "constant",
+    "startLine": 30,
+    "endLine": 30
+  },
+  {
+    "name": "[head, ...tail]",
+    "kind": "constant",
+    "startLine": 32,
+    "endLine": 32
+  },
+  {
+    "name": "[first, second, , fourth]",
+    "kind": "constant",
+    "startLine": 33,
+    "endLine": 33
+  },
+  {
+    "name": "processConfig",
+    "kind": "function",
+    "startLine": 35,
+    "endLine": 37
+  },
+  {
+    "name": "sql",
+    "kind": "function",
+    "startLine": 41,
+    "endLine": 52
+  },
+  {
+    "name": "html",
+    "kind": "function",
+    "startLine": 54,
+    "endLine": 59
+  },
+  {
+    "name": "escapeHtml",
+    "kind": "function",
+    "startLine": 61,
+    "endLine": 64
+  },
+  {
+    "name": "userName",
+    "kind": "constant",
+    "startLine": 66,
+    "endLine": 66
+  },
+  {
+    "name": "greeting",
+    "kind": "constant",
+    "startLine": 67,
+    "endLine": 67
+  },
+  {
+    "name": "queryResult",
+    "kind": "constant",
+    "startLine": 68,
+    "endLine": 68
+  },
+  {
+    "name": "EventEmitter",
+    "kind": "class",
+    "startLine": 72,
+    "endLine": 143,
+    "children": [
+      {
+        "name": "#listeners",
+        "kind": "property",
+        "startLine": 73,
+        "endLine": 73
+      },
+      {
+        "name": "#maxListeners",
+        "kind": "property",
+        "startLine": 74,
+        "endLine": 74
+      },
+      {
+        "name": "defaultMaxListeners",
+        "kind": "property",
+        "startLine": 76,
+        "endLine": 76
+      },
+      {
+        "name": "listenerCount",
+        "kind": "method",
+        "startLine": 78,
+        "endLine": 80
+      },
+      {
+        "name": "maxListeners",
+        "kind": "getter",
+        "startLine": 82,
+        "endLine": 84
+      },
+      {
+        "name": "maxListeners",
+        "kind": "setter",
+        "startLine": 86,
+        "endLine": 89
+      },
+      {
+        "name": "on",
+        "kind": "method",
+        "startLine": 91,
+        "endLine": 99
+      },
+      {
+        "name": "off",
+        "kind": "method",
+        "startLine": 101,
+        "endLine": 108
+      },
+      {
+        "name": "emit",
+        "kind": "method",
+        "startLine": 110,
+        "endLine": 116
+      },
+      {
+        "name": "once",
+        "kind": "method",
+        "startLine": 118,
+        "endLine": 125
+      },
+      {
+        "name": "removeAllListeners",
+        "kind": "method",
+        "startLine": 127,
+        "endLine": 134
+      },
+      {
+        "name": "listenerCount",
+        "kind": "method",
+        "startLine": 136,
+        "endLine": 138
+      },
+      {
+        "name": "eventNames",
+        "kind": "method",
+        "startLine": 140,
+        "endLine": 142
+      }
+    ]
+  },
+  {
+    "name": "TypedEmitter",
+    "kind": "class",
+    "startLine": 147,
+    "endLine": 166,
+    "children": [
+      {
+        "name": "#eventTypes",
+        "kind": "property",
+        "startLine": 148,
+        "endLine": 148
+      },
+      {
+        "name": "registerEvent",
+        "kind": "method",
+        "startLine": 150,
+        "endLine": 153
+      },
+      {
+        "name": "emit",
+        "kind": "method",
+        "startLine": 155,
+        "endLine": 165
+      }
+    ]
+  },
+  {
+    "name": "Logger",
+    "kind": "class",
+    "startLine": 168,
+    "endLine": 202,
+    "children": [
+      {
+        "name": "#prefix",
+        "kind": "property",
+        "startLine": 169,
+        "endLine": 169
+      },
+      {
+        "name": "#level",
+        "kind": "property",
+        "startLine": 170,
+        "endLine": 170
+      },
+      {
+        "name": "LEVELS",
+        "kind": "property",
+        "startLine": 172,
+        "endLine": 178
+      },
+      {
+        "name": "#log",
+        "kind": "method",
+        "startLine": 185,
+        "endLine": 191
+      },
+      {
+        "name": "debug",
+        "kind": "method",
+        "startLine": 193,
+        "endLine": 193
+      },
+      {
+        "name": "info",
+        "kind": "method",
+        "startLine": 194,
+        "endLine": 194
+      },
+      {
+        "name": "warn",
+        "kind": "method",
+        "startLine": 195,
+        "endLine": 195
+      },
+      {
+        "name": "error",
+        "kind": "method",
+        "startLine": 196,
+        "endLine": 196
+      },
+      {
+        "name": "fatal",
+        "kind": "method",
+        "startLine": 197,
+        "endLine": 197
+      },
+      {
+        "name": "child",
+        "kind": "method",
+        "startLine": 199,
+        "endLine": 201
+      }
+    ]
+  },
+  {
+    "name": "Iterable",
+    "kind": "constant",
+    "startLine": 206,
+    "endLine": 206
+  },
+  {
+    "name": "Serializable",
+    "kind": "constant",
+    "startLine": 207,
+    "endLine": 207
+  },
+  {
+    "name": "Disposable",
+    "kind": "constant",
+    "startLine": 208,
+    "endLine": 208
+  },
+  {
+    "name": "Comparable",
+    "kind": "constant",
+    "startLine": 209,
+    "endLine": 209
+  },
+  {
+    "name": "LinkedList",
+    "kind": "class",
+    "startLine": 211,
+    "endLine": 308,
+    "children": [
+      {
+        "name": "#head",
+        "kind": "property",
+        "startLine": 212,
+        "endLine": 212
+      },
+      {
+        "name": "#tail",
+        "kind": "property",
+        "startLine": 213,
+        "endLine": 213
+      },
+      {
+        "name": "#size",
+        "kind": "property",
+        "startLine": 214,
+        "endLine": 214
+      },
+      {
+        "name": "size",
+        "kind": "getter",
+        "startLine": 216,
+        "endLine": 218
+      },
+      {
+        "name": "isEmpty",
+        "kind": "getter",
+        "startLine": 220,
+        "endLine": 222
+      },
+      {
+        "name": "push",
+        "kind": "method",
+        "startLine": 224,
+        "endLine": 234
+      },
+      {
+        "name": "pop",
+        "kind": "method",
+        "startLine": 236,
+        "endLine": 247
+      },
+      {
+        "name": "unshift",
+        "kind": "method",
+        "startLine": 249,
+        "endLine": 259
+      },
+      {
+        "name": "shift",
+        "kind": "method",
+        "startLine": 261,
+        "endLine": 272
+      },
+      {
+        "name": "[Symbol.iterator]",
+        "kind": "method",
+        "startLine": 274,
+        "endLine": 280
+      },
+      {
+        "name": "[Serializable]",
+        "kind": "method",
+        "startLine": 282,
+        "endLine": 284
+      },
+      {
+        "name": "[Disposable]",
+        "kind": "method",
+        "startLine": 286,
+        "endLine": 290
+      },
+      {
+        "name": "[Comparable]",
+        "kind": "method",
+        "startLine": 292,
+        "endLine": 295
+      },
+      {
+        "name": "toArray",
+        "kind": "method",
+        "startLine": 297,
+        "endLine": 299
+      },
+      {
+        "name": "from",
+        "kind": "method",
+        "startLine": 301,
+        "endLine": 307
+      }
+    ]
+  },
+  {
+    "name": "range",
+    "kind": "function",
+    "startLine": 312,
+    "endLine": 318
+  },
+  {
+    "name": "fibonacci",
+    "kind": "function",
+    "startLine": 320,
+    "endLine": 328
+  },
+  {
+    "name": "zip",
+    "kind": "function",
+    "startLine": 330,
+    "endLine": 337
+  },
+  {
+    "name": "flatMap",
+    "kind": "function",
+    "startLine": 339,
+    "endLine": 348
+  },
+  {
+    "name": "chunk",
+    "kind": "function",
+    "startLine": 350,
+    "endLine": 360
+  },
+  {
+    "name": "asyncMap",
+    "kind": "function",
+    "startLine": 364,
+    "endLine": 368
+  },
+  {
+    "name": "asyncFilter",
+    "kind": "function",
+    "startLine": 370,
+    "endLine": 374
+  },
+  {
+    "name": "mergeAsyncIterables",
+    "kind": "function",
+    "startLine": 376,
+    "endLine": 401
+  },
+  {
+    "name": "createReactiveObject",
+    "kind": "function",
+    "startLine": 405,
+    "endLine": 438
+  },
+  {
+    "name": "createImmutableProxy",
+    "kind": "function",
+    "startLine": 440,
+    "endLine": 453
+  },
+  {
+    "name": "registry",
+    "kind": "constant",
+    "startLine": 457,
+    "endLine": 459
+  },
+  {
+    "name": "ObjectPool",
+    "kind": "class",
+    "startLine": 461,
+    "endLine": 503,
+    "children": [
+      {
+        "name": "#available",
+        "kind": "property",
+        "startLine": 462,
+        "endLine": 462
+      },
+      {
+        "name": "#inUse",
+        "kind": "property",
+        "startLine": 463,
+        "endLine": 463
+      },
+      {
+        "name": "#refs",
+        "kind": "property",
+        "startLine": 464,
+        "endLine": 464
+      },
+      {
+        "name": "#factory",
+        "kind": "property",
+        "startLine": 465,
+        "endLine": 465
+      },
+      {
+        "name": "#maxSize",
+        "kind": "property",
+        "startLine": 466,
+        "endLine": 466
+      },
+      {
+        "name": "acquire",
+        "kind": "method",
+        "startLine": 473,
+        "endLine": 486
+      },
+      {
+        "name": "release",
+        "kind": "method",
+        "startLine": 488,
+        "endLine": 494
+      },
+      {
+        "name": "activeCount",
+        "kind": "getter",
+        "startLine": 496,
+        "endLine": 498
+      },
+      {
+        "name": "availableCount",
+        "kind": "getter",
+        "startLine": 500,
+        "endLine": 502
+      }
+    ]
+  },
+  {
+    "name": "createCounter",
+    "kind": "function",
+    "startLine": 507,
+    "endLine": 515
+  },
+  {
+    "name": "compose",
+    "kind": "function",
+    "startLine": 517,
+    "endLine": 519
+  },
+  {
+    "name": "pipe",
+    "kind": "function",
+    "startLine": 521,
+    "endLine": 523
+  },
+  {
+    "name": "curry",
+    "kind": "function",
+    "startLine": 525,
+    "endLine": 533
+  },
+  {
+    "name": "partial",
+    "kind": "function",
+    "startLine": 535,
+    "endLine": 537
+  },
+  {
+    "name": "memoize",
+    "kind": "function",
+    "startLine": 539,
+    "endLine": 551
+  },
+  {
+    "name": "debounce",
+    "kind": "function",
+    "startLine": 553,
+    "endLine": 577
+  },
+  {
+    "name": "throttle",
+    "kind": "function",
+    "startLine": 579,
+    "endLine": 597
+  },
+  {
+    "name": "delay",
+    "kind": "function",
+    "startLine": 601,
+    "endLine": 603
+  },
+  {
+    "name": "timeout",
+    "kind": "function",
+    "startLine": 605,
+    "endLine": 610
+  },
+  {
+    "name": "retry",
+    "kind": "function",
+    "startLine": 612,
+    "endLine": 625
+  },
+  {
+    "name": "allSettled",
+    "kind": "function",
+    "startLine": 627,
+    "endLine": 629
+  },
+  {
+    "name": "deferred",
+    "kind": "function",
+    "startLine": 631,
+    "endLine": 638
+  },
+  {
+    "name": "BinarySearchTree",
+    "kind": "class",
+    "startLine": 642,
+    "endLine": 722,
+    "children": [
+      {
+        "name": "#root",
+        "kind": "property",
+        "startLine": 643,
+        "endLine": 643
+      },
+      {
+        "name": "#createNode",
+        "kind": "method",
+        "startLine": 645,
+        "endLine": 647
+      },
+      {
+        "name": "insert",
+        "kind": "method",
+        "startLine": 649,
+        "endLine": 675
+      },
+      {
+        "name": "find",
+        "kind": "method",
+        "startLine": 677,
+        "endLine": 684
+      },
+      {
+        "name": "inOrder",
+        "kind": "method",
+        "startLine": 686,
+        "endLine": 691
+      },
+      {
+        "name": "preOrder",
+        "kind": "method",
+        "startLine": 693,
+        "endLine": 698
+      },
+      {
+        "name": "postOrder",
+        "kind": "method",
+        "startLine": 700,
+        "endLine": 705
+      },
+      {
+        "name": "min",
+        "kind": "getter",
+        "startLine": 707,
+        "endLine": 711
+      },
+      {
+        "name": "max",
+        "kind": "getter",
+        "startLine": 713,
+        "endLine": 717
+      },
+      {
+        "name": "[Symbol.iterator]",
+        "kind": "method",
+        "startLine": 719,
+        "endLine": 721
+      }
+    ]
+  },
+  {
+    "name": "LRUCache",
+    "kind": "class",
+    "startLine": 724,
+    "endLine": 782,
+    "children": [
+      {
+        "name": "#capacity",
+        "kind": "property",
+        "startLine": 725,
+        "endLine": 725
+      },
+      {
+        "name": "#cache",
+        "kind": "property",
+        "startLine": 726,
+        "endLine": 726
+      },
+      {
+        "name": "get",
+        "kind": "method",
+        "startLine": 732,
+        "endLine": 738
+      },
+      {
+        "name": "set",
+        "kind": "method",
+        "startLine": 740,
+        "endLine": 749
+      },
+      {
+        "name": "has",
+        "kind": "method",
+        "startLine": 751,
+        "endLine": 753
+      },
+      {
+        "name": "delete",
+        "kind": "method",
+        "startLine": 755,
+        "endLine": 757
+      },
+      {
+        "name": "clear",
+        "kind": "method",
+        "startLine": 759,
+        "endLine": 761
+      },
+      {
+        "name": "size",
+        "kind": "getter",
+        "startLine": 763,
+        "endLine": 765
+      },
+      {
+        "name": "entries",
+        "kind": "method",
+        "startLine": 767,
+        "endLine": 769
+      },
+      {
+        "name": "keys",
+        "kind": "method",
+        "startLine": 771,
+        "endLine": 773
+      },
+      {
+        "name": "values",
+        "kind": "method",
+        "startLine": 775,
+        "endLine": 777
+      },
+      {
+        "name": "[Symbol.iterator]",
+        "kind": "method",
+        "startLine": 779,
+        "endLine": 781
+      }
+    ]
+  },
+  {
+    "name": "appConfig",
+    "kind": "constant",
+    "startLine": 786,
+    "endLine": 855
+  },
+  {
+    "name": "AppError",
+    "kind": "class",
+    "startLine": 859,
+    "endLine": 883,
+    "children": [
+      {
+        "name": "toJSON",
+        "kind": "method",
+        "startLine": 873,
+        "endLine": 882
+      }
+    ]
+  },
+  {
+    "name": "ValidationError",
+    "kind": "class",
+    "startLine": 885,
+    "endLine": 890
+  },
+  {
+    "name": "NotFoundError",
+    "kind": "class",
+    "startLine": 892,
+    "endLine": 899
+  },
+  {
+    "name": "AuthenticationError",
+    "kind": "class",
+    "startLine": 901,
+    "endLine": 906
+  },
+  {
+    "name": "AuthorizationError",
+    "kind": "class",
+    "startLine": 908,
+    "endLine": 913
+  },
+  {
+    "name": "StringUtils",
+    "kind": "constant",
+    "startLine": 917,
+    "endLine": 967
+  },
+  {
+    "name": "AsyncQueue",
+    "kind": "class",
+    "startLine": 971,
+    "endLine": 1009,
+    "children": [
+      {
+        "name": "#queue",
+        "kind": "property",
+        "startLine": 972,
+        "endLine": 972
+      },
+      {
+        "name": "#waiters",
+        "kind": "property",
+        "startLine": 973,
+        "endLine": 973
+      },
+      {
+        "name": "#closed",
+        "kind": "property",
+        "startLine": 974,
+        "endLine": 974
+      },
+      {
+        "name": "push",
+        "kind": "method",
+        "startLine": 976,
+        "endLine": 984
+      },
+      {
+        "name": "close",
+        "kind": "method",
+        "startLine": 986,
+        "endLine": 992
+      },
+      {
+        "name": "[Symbol.asyncIterator]",
+        "kind": "method",
+        "startLine": 994,
+        "endLine": 1008
+      }
+    ]
+  }
+]

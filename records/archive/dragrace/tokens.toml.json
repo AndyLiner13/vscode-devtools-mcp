@@ -1,0 +1,16 @@
+{
+  "totalTokens": 30,
+  "legend": {
+    "tokenTypes": [
+      "tomlArrayKey",
+      "tomlTableKey"
+    ],
+    "tokenModifiers": [
+      "readonly"
+    ]
+  },
+  "tokenTypeCounts": {
+    "tomlArrayKey": 16,
+    "tomlTableKey": 14
+  }
+}

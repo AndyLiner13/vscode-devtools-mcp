@@ -1,0 +1,1770 @@
+[
+  {
+    "name": "bare_key",
+    "kind": "string",
+    "startLine": 11,
+    "endLine": 11
+  },
+  {
+    "name": "bare-key",
+    "kind": "string",
+    "startLine": 12,
+    "endLine": 12
+  },
+  {
+    "name": "bare123",
+    "kind": "string",
+    "startLine": 13,
+    "endLine": 13
+  },
+  {
+    "name": "_underscore_start",
+    "kind": "string",
+    "startLine": 14,
+    "endLine": 14
+  },
+  {
+    "name": "UPPERCASE",
+    "kind": "string",
+    "startLine": 15,
+    "endLine": 15
+  },
+  {
+    "name": "snake_case",
+    "kind": "string",
+    "startLine": 16,
+    "endLine": 16
+  },
+  {
+    "name": "kebab-case",
+    "kind": "string",
+    "startLine": 17,
+    "endLine": 17
+  },
+  {
+    "name": "CamelCase",
+    "kind": "string",
+    "startLine": 18,
+    "endLine": 18
+  },
+  {
+    "name": "basic string key",
+    "kind": "string",
+    "startLine": 21,
+    "endLine": 21
+  },
+  {
+    "name": "''",
+    "kind": "string",
+    "startLine": 22,
+    "endLine": 22
+  },
+  {
+    "name": " ",
+    "kind": "string",
+    "startLine": 23,
+    "endLine": 23
+  },
+  {
+    "name": "key with spaces",
+    "kind": "string",
+    "startLine": 24,
+    "endLine": 24
+  },
+  {
+    "name": "key\twith\ttab",
+    "kind": "string",
+    "startLine": 25,
+    "endLine": 25
+  },
+  {
+    "name": "key\"with\"quotes",
+    "kind": "string",
+    "startLine": 26,
+    "endLine": 26
+  },
+  {
+    "name": "key\\with\\backslash",
+    "kind": "string",
+    "startLine": 27,
+    "endLine": 27
+  },
+  {
+    "name": "127.0.0.1",
+    "kind": "string",
+    "startLine": 28,
+    "endLine": 28
+  },
+  {
+    "name": "☃️",
+    "kind": "string",
+    "startLine": 29,
+    "endLine": 29
+  },
+  {
+    "name": "日本語キー",
+    "kind": "string",
+    "startLine": 30,
+    "endLine": 30
+  },
+  {
+    "name": "中文键",
+    "kind": "string",
+    "startLine": 31,
+    "endLine": 31
+  },
+  {
+    "name": "literal key",
+    "kind": "string",
+    "startLine": 34,
+    "endLine": 34
+  },
+  {
+    "name": "C:\\path\\to\\file",
+    "kind": "string",
+    "startLine": 35,
+    "endLine": 35
+  },
+  {
+    "name": "simple",
+    "kind": "object",
+    "startLine": 38,
+    "endLine": 38,
+    "children": [
+      {
+        "name": "dotted",
+        "kind": "string",
+        "startLine": 38,
+        "endLine": 38
+      }
+    ]
+  },
+  {
+    "name": "deep",
+    "kind": "object",
+    "startLine": 39,
+    "endLine": 39,
+    "children": [
+      {
+        "name": "nested",
+        "kind": "object",
+        "startLine": 39,
+        "endLine": 39,
+        "children": [
+          {
+            "name": "key",
+            "kind": "string",
+            "startLine": 39,
+            "endLine": 39
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "name",
+    "kind": "object",
+    "startLine": 40,
+    "endLine": 41,
+    "children": [
+      {
+        "name": "first",
+        "kind": "string",
+        "startLine": 40,
+        "endLine": 40
+      },
+      {
+        "name": "last",
+        "kind": "string",
+        "startLine": 41,
+        "endLine": 41
+      }
+    ]
+  },
+  {
+    "name": "quoted.key",
+    "kind": "object",
+    "startLine": 42,
+    "endLine": 42,
+    "children": [
+      {
+        "name": "subkey",
+        "kind": "string",
+        "startLine": 42,
+        "endLine": 42
+      }
+    ]
+  },
+  {
+    "name": "strings",
+    "kind": "object",
+    "startLine": 48,
+    "endLine": 95,
+    "children": [
+      {
+        "name": "basic",
+        "kind": "string",
+        "startLine": 50,
+        "endLine": 50
+      },
+      {
+        "name": "empty",
+        "kind": "string",
+        "startLine": 51,
+        "endLine": 51
+      },
+      {
+        "name": "single_char",
+        "kind": "string",
+        "startLine": 52,
+        "endLine": 52
+      },
+      {
+        "name": "with_spaces",
+        "kind": "string",
+        "startLine": 53,
+        "endLine": 53
+      },
+      {
+        "name": "escape_newline",
+        "kind": "string",
+        "startLine": 56,
+        "endLine": 56
+      },
+      {
+        "name": "escape_tab",
+        "kind": "string",
+        "startLine": 57,
+        "endLine": 57
+      },
+      {
+        "name": "escape_carriage",
+        "kind": "string",
+        "startLine": 58,
+        "endLine": 58
+      },
+      {
+        "name": "escape_backslash",
+        "kind": "string",
+        "startLine": 59,
+        "endLine": 59
+      },
+      {
+        "name": "escape_quote",
+        "kind": "string",
+        "startLine": 60,
+        "endLine": 60
+      },
+      {
+        "name": "escape_unicode_4",
+        "kind": "string",
+        "startLine": 61,
+        "endLine": 61
+      },
+      {
+        "name": "escape_unicode_8",
+        "kind": "string",
+        "startLine": 62,
+        "endLine": 62
+      },
+      {
+        "name": "multiline_basic",
+        "kind": "string",
+        "startLine": 65,
+        "endLine": 68
+      },
+      {
+        "name": "multiline_trim_newline",
+        "kind": "string",
+        "startLine": 70,
+        "endLine": 73
+      },
+      {
+        "name": "multiline_with_quotes",
+        "kind": "string",
+        "startLine": 75,
+        "endLine": 78
+      },
+      {
+        "name": "literal",
+        "kind": "string",
+        "startLine": 81,
+        "endLine": 81
+      },
+      {
+        "name": "literal_empty",
+        "kind": "string",
+        "startLine": 82,
+        "endLine": 82
+      },
+      {
+        "name": "literal_path",
+        "kind": "string",
+        "startLine": 83,
+        "endLine": 83
+      },
+      {
+        "name": "multiline_literal",
+        "kind": "string",
+        "startLine": 86,
+        "endLine": 90
+      },
+      {
+        "name": "multiline_literal_quotes",
+        "kind": "string",
+        "startLine": 92,
+        "endLine": 95
+      }
+    ]
+  },
+  {
+    "name": "numbers",
+    "kind": "object",
+    "startLine": 101,
+    "endLine": 129,
+    "children": [
+      {
+        "name": "integers",
+        "kind": "object",
+        "startLine": 101,
+        "endLine": 110,
+        "children": [
+          {
+            "name": "positive",
+            "kind": "number",
+            "startLine": 102,
+            "endLine": 102
+          },
+          {
+            "name": "negative",
+            "kind": "number",
+            "startLine": 103,
+            "endLine": 103
+          },
+          {
+            "name": "zero",
+            "kind": "number",
+            "startLine": 104,
+            "endLine": 104
+          },
+          {
+            "name": "large",
+            "kind": "number",
+            "startLine": 105,
+            "endLine": 105
+          },
+          {
+            "name": "with_underscores",
+            "kind": "number",
+            "startLine": 106,
+            "endLine": 106
+          },
+          {
+            "name": "hex_lower",
+            "kind": "number",
+            "startLine": 107,
+            "endLine": 107
+          },
+          {
+            "name": "hex_upper",
+            "kind": "number",
+            "startLine": 108,
+            "endLine": 108
+          },
+          {
+            "name": "octal",
+            "kind": "number",
+            "startLine": 109,
+            "endLine": 109
+          },
+          {
+            "name": "binary",
+            "kind": "number",
+            "startLine": 110,
+            "endLine": 110
+          }
+        ]
+      },
+      {
+        "name": "floats",
+        "kind": "object",
+        "startLine": 116,
+        "endLine": 129,
+        "children": [
+          {
+            "name": "simple",
+            "kind": "number",
+            "startLine": 117,
+            "endLine": 117
+          },
+          {
+            "name": "negative",
+            "kind": "number",
+            "startLine": 118,
+            "endLine": 118
+          },
+          {
+            "name": "exponent_lower",
+            "kind": "number",
+            "startLine": 119,
+            "endLine": 119
+          },
+          {
+            "name": "exponent_upper",
+            "kind": "number",
+            "startLine": 120,
+            "endLine": 120
+          },
+          {
+            "name": "exponent_positive",
+            "kind": "number",
+            "startLine": 121,
+            "endLine": 121
+          },
+          {
+            "name": "exponent_negative",
+            "kind": "number",
+            "startLine": 122,
+            "endLine": 122
+          },
+          {
+            "name": "with_underscores",
+            "kind": "number",
+            "startLine": 123,
+            "endLine": 123
+          },
+          {
+            "name": "infinity_lower",
+            "kind": "number",
+            "startLine": 126,
+            "endLine": 126
+          },
+          {
+            "name": "infinity_upper",
+            "kind": "number",
+            "startLine": 127,
+            "endLine": 127
+          },
+          {
+            "name": "neg_infinity",
+            "kind": "number",
+            "startLine": 128,
+            "endLine": 128
+          },
+          {
+            "name": "not_a_number",
+            "kind": "number",
+            "startLine": 129,
+            "endLine": 129
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "booleans",
+    "kind": "object",
+    "startLine": 135,
+    "endLine": 137,
+    "children": [
+      {
+        "name": "yes",
+        "kind": "boolean",
+        "startLine": 136,
+        "endLine": 136
+      },
+      {
+        "name": "no",
+        "kind": "boolean",
+        "startLine": 137,
+        "endLine": 137
+      }
+    ]
+  },
+  {
+    "name": "dates",
+    "kind": "object",
+    "startLine": 143,
+    "endLine": 159,
+    "children": [
+      {
+        "name": "odt_full",
+        "kind": "field",
+        "startLine": 145,
+        "endLine": 145
+      },
+      {
+        "name": "odt_offset",
+        "kind": "field",
+        "startLine": 146,
+        "endLine": 146
+      },
+      {
+        "name": "odt_with_ms",
+        "kind": "field",
+        "startLine": 147,
+        "endLine": 147
+      },
+      {
+        "name": "odt_space",
+        "kind": "field",
+        "startLine": 148,
+        "endLine": 148
+      },
+      {
+        "name": "ldt",
+        "kind": "field",
+        "startLine": 151,
+        "endLine": 151
+      },
+      {
+        "name": "ldt_with_ms",
+        "kind": "field",
+        "startLine": 152,
+        "endLine": 152
+      },
+      {
+        "name": "ld",
+        "kind": "field",
+        "startLine": 155,
+        "endLine": 155
+      },
+      {
+        "name": "lt",
+        "kind": "field",
+        "startLine": 158,
+        "endLine": 158
+      },
+      {
+        "name": "lt_with_ms",
+        "kind": "field",
+        "startLine": 159,
+        "endLine": 159
+      }
+    ]
+  },
+  {
+    "name": "arrays",
+    "kind": "object",
+    "startLine": 165,
+    "endLine": 199,
+    "children": [
+      {
+        "name": "integers",
+        "kind": "array",
+        "startLine": 167,
+        "endLine": 167,
+        "children": [
+          {
+            "name": "0",
+            "kind": "number",
+            "startLine": 167,
+            "endLine": 167
+          },
+          {
+            "name": "1",
+            "kind": "number",
+            "startLine": 167,
+            "endLine": 167
+          },
+          {
+            "name": "2",
+            "kind": "number",
+            "startLine": 167,
+            "endLine": 167
+          }
+        ]
+      },
+      {
+        "name": "strings",
+        "kind": "array",
+        "startLine": 168,
+        "endLine": 168,
+        "children": [
+          {
+            "name": "0",
+            "kind": "string",
+            "startLine": 168,
+            "endLine": 168
+          },
+          {
+            "name": "1",
+            "kind": "string",
+            "startLine": 168,
+            "endLine": 168
+          },
+          {
+            "name": "2",
+            "kind": "string",
+            "startLine": 168,
+            "endLine": 168
+          }
+        ]
+      },
+      {
+        "name": "floats",
+        "kind": "array",
+        "startLine": 169,
+        "endLine": 169,
+        "children": [
+          {
+            "name": "0",
+            "kind": "number",
+            "startLine": 169,
+            "endLine": 169
+          },
+          {
+            "name": "1",
+            "kind": "number",
+            "startLine": 169,
+            "endLine": 169
+          },
+          {
+            "name": "2",
+            "kind": "number",
+            "startLine": 169,
+            "endLine": 169
+          }
+        ]
+      },
+      {
+        "name": "booleans",
+        "kind": "array",
+        "startLine": 170,
+        "endLine": 170,
+        "children": [
+          {
+            "name": "0",
+            "kind": "boolean",
+            "startLine": 170,
+            "endLine": 170
+          },
+          {
+            "name": "1",
+            "kind": "boolean",
+            "startLine": 170,
+            "endLine": 170
+          },
+          {
+            "name": "2",
+            "kind": "boolean",
+            "startLine": 170,
+            "endLine": 170
+          }
+        ]
+      },
+      {
+        "name": "datetimes",
+        "kind": "array",
+        "startLine": 171,
+        "endLine": 171,
+        "children": [
+          {
+            "name": "0",
+            "kind": "field",
+            "startLine": 171,
+            "endLine": 171
+          },
+          {
+            "name": "1",
+            "kind": "field",
+            "startLine": 171,
+            "endLine": 171
+          }
+        ]
+      },
+      {
+        "name": "nested",
+        "kind": "array",
+        "startLine": 174,
+        "endLine": 174,
+        "children": [
+          {
+            "name": "0",
+            "kind": "array",
+            "startLine": 174,
+            "endLine": 174,
+            "children": [
+              {
+                "name": "0",
+                "kind": "number",
+                "startLine": 174,
+                "endLine": 174
+              },
+              {
+                "name": "1",
+                "kind": "number",
+                "startLine": 174,
+                "endLine": 174
+              }
+            ]
+          },
+          {
+            "name": "1",
+            "kind": "array",
+            "startLine": 174,
+            "endLine": 174,
+            "children": [
+              {
+                "name": "0",
+                "kind": "number",
+                "startLine": 174,
+                "endLine": 174
+              },
+              {
+                "name": "1",
+                "kind": "number",
+                "startLine": 174,
+                "endLine": 174
+              },
+              {
+                "name": "2",
+                "kind": "number",
+                "startLine": 174,
+                "endLine": 174
+              }
+            ]
+          },
+          {
+            "name": "2",
+            "kind": "array",
+            "startLine": 174,
+            "endLine": 174,
+            "children": [
+              {
+                "name": "0",
+                "kind": "number",
+                "startLine": 174,
+                "endLine": 174
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "deep_nested",
+        "kind": "array",
+        "startLine": 175,
+        "endLine": 175,
+        "children": [
+          {
+            "name": "0",
+            "kind": "array",
+            "startLine": 175,
+            "endLine": 175,
+            "children": [
+              {
+                "name": "0",
+                "kind": "array",
+                "startLine": 175,
+                "endLine": 175,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "number",
+                    "startLine": 175,
+                    "endLine": 175
+                  },
+                  {
+                    "name": "1",
+                    "kind": "number",
+                    "startLine": 175,
+                    "endLine": 175
+                  }
+                ]
+              },
+              {
+                "name": "1",
+                "kind": "array",
+                "startLine": 175,
+                "endLine": 175,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "number",
+                    "startLine": 175,
+                    "endLine": 175
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "1",
+            "kind": "array",
+            "startLine": 175,
+            "endLine": 175,
+            "children": [
+              {
+                "name": "0",
+                "kind": "array",
+                "startLine": 175,
+                "endLine": 175,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "number",
+                    "startLine": 175,
+                    "endLine": 175
+                  },
+                  {
+                    "name": "1",
+                    "kind": "number",
+                    "startLine": 175,
+                    "endLine": 175
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "empty",
+        "kind": "array",
+        "startLine": 178,
+        "endLine": 178
+      },
+      {
+        "name": "multiline",
+        "kind": "array",
+        "startLine": 181,
+        "endLine": 185,
+        "children": [
+          {
+            "name": "0",
+            "kind": "string",
+            "startLine": 182,
+            "endLine": 182
+          },
+          {
+            "name": "1",
+            "kind": "string",
+            "startLine": 183,
+            "endLine": 183
+          },
+          {
+            "name": "2",
+            "kind": "string",
+            "startLine": 184,
+            "endLine": 184
+          }
+        ]
+      },
+      {
+        "name": "multiline_trailing_comma",
+        "kind": "array",
+        "startLine": 187,
+        "endLine": 191,
+        "children": [
+          {
+            "name": "0",
+            "kind": "number",
+            "startLine": 188,
+            "endLine": 188
+          },
+          {
+            "name": "1",
+            "kind": "number",
+            "startLine": 189,
+            "endLine": 189
+          },
+          {
+            "name": "2",
+            "kind": "number",
+            "startLine": 190,
+            "endLine": 190
+          }
+        ]
+      },
+      {
+        "name": "with_comments",
+        "kind": "array",
+        "startLine": 194,
+        "endLine": 199,
+        "children": [
+          {
+            "name": "0",
+            "kind": "string",
+            "startLine": 196,
+            "endLine": 196
+          },
+          {
+            "name": "1",
+            "kind": "string",
+            "startLine": 198,
+            "endLine": 198
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "inline_tables",
+    "kind": "object",
+    "startLine": 205,
+    "endLine": 211,
+    "children": [
+      {
+        "name": "simple",
+        "kind": "object",
+        "startLine": 206,
+        "endLine": 206,
+        "children": [
+          {
+            "name": "key1",
+            "kind": "string",
+            "startLine": 206,
+            "endLine": 206
+          },
+          {
+            "name": "key2",
+            "kind": "string",
+            "startLine": 206,
+            "endLine": 206
+          }
+        ]
+      },
+      {
+        "name": "empty",
+        "kind": "object",
+        "startLine": 207,
+        "endLine": 207
+      },
+      {
+        "name": "single",
+        "kind": "object",
+        "startLine": 208,
+        "endLine": 208,
+        "children": [
+          {
+            "name": "only",
+            "kind": "string",
+            "startLine": 208,
+            "endLine": 208
+          }
+        ]
+      },
+      {
+        "name": "with_array",
+        "kind": "object",
+        "startLine": 209,
+        "endLine": 209,
+        "children": [
+          {
+            "name": "arr",
+            "kind": "array",
+            "startLine": 209,
+            "endLine": 209,
+            "children": [
+              {
+                "name": "0",
+                "kind": "number",
+                "startLine": 209,
+                "endLine": 209
+              },
+              {
+                "name": "1",
+                "kind": "number",
+                "startLine": 209,
+                "endLine": 209
+              },
+              {
+                "name": "2",
+                "kind": "number",
+                "startLine": 209,
+                "endLine": 209
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "nested",
+        "kind": "object",
+        "startLine": 210,
+        "endLine": 210,
+        "children": [
+          {
+            "name": "outer",
+            "kind": "object",
+            "startLine": 210,
+            "endLine": 210,
+            "children": [
+              {
+                "name": "inner",
+                "kind": "string",
+                "startLine": 210,
+                "endLine": 210
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "mixed_types",
+        "kind": "object",
+        "startLine": 211,
+        "endLine": 211,
+        "children": [
+          {
+            "name": "str",
+            "kind": "string",
+            "startLine": 211,
+            "endLine": 211
+          },
+          {
+            "name": "num",
+            "kind": "number",
+            "startLine": 211,
+            "endLine": 211
+          },
+          {
+            "name": "bool",
+            "kind": "boolean",
+            "startLine": 211,
+            "endLine": 211
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "table1",
+    "kind": "object",
+    "startLine": 217,
+    "endLine": 224,
+    "children": [
+      {
+        "name": "key",
+        "kind": "string",
+        "startLine": 218,
+        "endLine": 218
+      },
+      {
+        "name": "nested",
+        "kind": "object",
+        "startLine": 220,
+        "endLine": 224,
+        "children": [
+          {
+            "name": "key",
+            "kind": "string",
+            "startLine": 221,
+            "endLine": 221
+          },
+          {
+            "name": "deeper",
+            "kind": "object",
+            "startLine": 223,
+            "endLine": 224,
+            "children": [
+              {
+                "name": "key",
+                "kind": "string",
+                "startLine": 224,
+                "endLine": 224
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "quoted.table.name",
+    "kind": "object",
+    "startLine": 226,
+    "endLine": 227,
+    "children": [
+      {
+        "name": "key",
+        "kind": "string",
+        "startLine": 227,
+        "endLine": 227
+      }
+    ]
+  },
+  {
+    "name": "unicode_table_日本語",
+    "kind": "object",
+    "startLine": 229,
+    "endLine": 230,
+    "children": [
+      {
+        "name": "key",
+        "kind": "string",
+        "startLine": 230,
+        "endLine": 230
+      }
+    ]
+  },
+  {
+    "name": "products",
+    "kind": "array",
+    "startLine": 236,
+    "endLine": 248,
+    "children": [
+      {
+        "name": "0",
+        "kind": "object",
+        "startLine": 236,
+        "endLine": 238,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 237,
+            "endLine": 237
+          },
+          {
+            "name": "sku",
+            "kind": "number",
+            "startLine": 238,
+            "endLine": 238
+          }
+        ]
+      },
+      {
+        "name": "1",
+        "kind": "object",
+        "startLine": 240,
+        "endLine": 243,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 241,
+            "endLine": 241
+          },
+          {
+            "name": "sku",
+            "kind": "number",
+            "startLine": 242,
+            "endLine": 242
+          },
+          {
+            "name": "color",
+            "kind": "string",
+            "startLine": 243,
+            "endLine": 243
+          }
+        ]
+      },
+      {
+        "name": "2",
+        "kind": "object",
+        "startLine": 245,
+        "endLine": 248,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 246,
+            "endLine": 246
+          },
+          {
+            "name": "sku",
+            "kind": "number",
+            "startLine": 247,
+            "endLine": 247
+          },
+          {
+            "name": "sizes",
+            "kind": "array",
+            "startLine": 248,
+            "endLine": 248,
+            "children": [
+              {
+                "name": "0",
+                "kind": "string",
+                "startLine": 248,
+                "endLine": 248
+              },
+              {
+                "name": "1",
+                "kind": "string",
+                "startLine": 248,
+                "endLine": 248
+              },
+              {
+                "name": "2",
+                "kind": "string",
+                "startLine": 248,
+                "endLine": 248
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "servers",
+    "kind": "array",
+    "startLine": 251,
+    "endLine": 267,
+    "children": [
+      {
+        "name": "0",
+        "kind": "object",
+        "startLine": 251,
+        "endLine": 260,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 252,
+            "endLine": 252
+          },
+          {
+            "name": "ports",
+            "kind": "array",
+            "startLine": 254,
+            "endLine": 260,
+            "children": [
+              {
+                "name": "0",
+                "kind": "object",
+                "startLine": 254,
+                "endLine": 256,
+                "children": [
+                  {
+                    "name": "number",
+                    "kind": "number",
+                    "startLine": 255,
+                    "endLine": 255
+                  },
+                  {
+                    "name": "protocol",
+                    "kind": "string",
+                    "startLine": 256,
+                    "endLine": 256
+                  }
+                ]
+              },
+              {
+                "name": "1",
+                "kind": "object",
+                "startLine": 258,
+                "endLine": 260,
+                "children": [
+                  {
+                    "name": "number",
+                    "kind": "number",
+                    "startLine": 259,
+                    "endLine": 259
+                  },
+                  {
+                    "name": "protocol",
+                    "kind": "string",
+                    "startLine": 260,
+                    "endLine": 260
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "1",
+        "kind": "object",
+        "startLine": 262,
+        "endLine": 267,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 263,
+            "endLine": 263
+          },
+          {
+            "name": "ports",
+            "kind": "array",
+            "startLine": 265,
+            "endLine": 267,
+            "children": [
+              {
+                "name": "0",
+                "kind": "object",
+                "startLine": 265,
+                "endLine": 267,
+                "children": [
+                  {
+                    "name": "number",
+                    "kind": "number",
+                    "startLine": 266,
+                    "endLine": 266
+                  },
+                  {
+                    "name": "protocol",
+                    "kind": "string",
+                    "startLine": 267,
+                    "endLine": 267
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "complex",
+    "kind": "object",
+    "startLine": 273,
+    "endLine": 303,
+    "children": [
+      {
+        "name": "config_version",
+        "kind": "number",
+        "startLine": 275,
+        "endLine": 275
+      },
+      {
+        "name": "api_key",
+        "kind": "string",
+        "startLine": 276,
+        "endLine": 276
+      },
+      {
+        "name": "debug",
+        "kind": "boolean",
+        "startLine": 277,
+        "endLine": 277
+      },
+      {
+        "name": "timeout",
+        "kind": "number",
+        "startLine": 278,
+        "endLine": 278
+      },
+      {
+        "name": "database",
+        "kind": "object",
+        "startLine": 280,
+        "endLine": 289,
+        "children": [
+          {
+            "name": "host",
+            "kind": "string",
+            "startLine": 281,
+            "endLine": 281
+          },
+          {
+            "name": "port",
+            "kind": "number",
+            "startLine": 282,
+            "endLine": 282
+          },
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 283,
+            "endLine": 283
+          },
+          {
+            "name": "ssl",
+            "kind": "boolean",
+            "startLine": 284,
+            "endLine": 284
+          },
+          {
+            "name": "pool",
+            "kind": "object",
+            "startLine": 286,
+            "endLine": 289,
+            "children": [
+              {
+                "name": "min",
+                "kind": "number",
+                "startLine": 287,
+                "endLine": 287
+              },
+              {
+                "name": "max",
+                "kind": "number",
+                "startLine": 288,
+                "endLine": 288
+              },
+              {
+                "name": "idle_timeout",
+                "kind": "number",
+                "startLine": 289,
+                "endLine": 289
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "users",
+        "kind": "array",
+        "startLine": 291,
+        "endLine": 303,
+        "children": [
+          {
+            "name": "0",
+            "kind": "object",
+            "startLine": 291,
+            "endLine": 296,
+            "children": [
+              {
+                "name": "id",
+                "kind": "number",
+                "startLine": 292,
+                "endLine": 292
+              },
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 293,
+                "endLine": 293
+              },
+              {
+                "name": "roles",
+                "kind": "array",
+                "startLine": 294,
+                "endLine": 294,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "string",
+                    "startLine": 294,
+                    "endLine": 294
+                  },
+                  {
+                    "name": "1",
+                    "kind": "string",
+                    "startLine": 294,
+                    "endLine": 294
+                  }
+                ]
+              },
+              {
+                "name": "active",
+                "kind": "boolean",
+                "startLine": 295,
+                "endLine": 295
+              },
+              {
+                "name": "created",
+                "kind": "field",
+                "startLine": 296,
+                "endLine": 296
+              }
+            ]
+          },
+          {
+            "name": "1",
+            "kind": "object",
+            "startLine": 298,
+            "endLine": 303,
+            "children": [
+              {
+                "name": "id",
+                "kind": "number",
+                "startLine": 299,
+                "endLine": 299
+              },
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 300,
+                "endLine": 300
+              },
+              {
+                "name": "roles",
+                "kind": "array",
+                "startLine": 301,
+                "endLine": 301,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "string",
+                    "startLine": 301,
+                    "endLine": 301
+                  }
+                ]
+              },
+              {
+                "name": "active",
+                "kind": "boolean",
+                "startLine": 302,
+                "endLine": 302
+              },
+              {
+                "name": "metadata",
+                "kind": "object",
+                "startLine": 303,
+                "endLine": 303,
+                "children": [
+                  {
+                    "name": "department",
+                    "kind": "string",
+                    "startLine": 303,
+                    "endLine": 303
+                  },
+                  {
+                    "name": "level",
+                    "kind": "number",
+                    "startLine": 303,
+                    "endLine": 303
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "edge_cases",
+    "kind": "object",
+    "startLine": 309,
+    "endLine": 355,
+    "children": [
+      {
+        "name": "very_long",
+        "kind": "string",
+        "startLine": 311,
+        "endLine": 311
+      },
+      {
+        "name": "deep",
+        "kind": "object",
+        "startLine": 314,
+        "endLine": 314,
+        "children": [
+          {
+            "name": "l1",
+            "kind": "object",
+            "startLine": 314,
+            "endLine": 314,
+            "children": [
+              {
+                "name": "l2",
+                "kind": "object",
+                "startLine": 314,
+                "endLine": 314,
+                "children": [
+                  {
+                    "name": "l3",
+                    "kind": "object",
+                    "startLine": 314,
+                    "endLine": 314,
+                    "children": [
+                      {
+                        "name": "l4",
+                        "kind": "object",
+                        "startLine": 314,
+                        "endLine": 314,
+                        "children": [
+                          {
+                            "name": "l5",
+                            "kind": "string",
+                            "startLine": 314,
+                            "endLine": 314
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "emoji_value",
+        "kind": "string",
+        "startLine": 317,
+        "endLine": 317
+      },
+      {
+        "name": "chinese",
+        "kind": "string",
+        "startLine": 318,
+        "endLine": 318
+      },
+      {
+        "name": "japanese",
+        "kind": "string",
+        "startLine": 319,
+        "endLine": 319
+      },
+      {
+        "name": "korean",
+        "kind": "string",
+        "startLine": 320,
+        "endLine": 320
+      },
+      {
+        "name": "arabic",
+        "kind": "string",
+        "startLine": 321,
+        "endLine": 321
+      },
+      {
+        "name": "russian",
+        "kind": "string",
+        "startLine": 322,
+        "endLine": 322
+      },
+      {
+        "name": "string_number",
+        "kind": "string",
+        "startLine": 325,
+        "endLine": 325
+      },
+      {
+        "name": "string_bool",
+        "kind": "string",
+        "startLine": 326,
+        "endLine": 326
+      },
+      {
+        "name": "string_null",
+        "kind": "string",
+        "startLine": 327,
+        "endLine": 327
+      },
+      {
+        "name": "empty_string",
+        "kind": "string",
+        "startLine": 330,
+        "endLine": 330
+      },
+      {
+        "name": "empty_array",
+        "kind": "array",
+        "startLine": 331,
+        "endLine": 331
+      },
+      {
+        "name": "empty_inline_table",
+        "kind": "object",
+        "startLine": 332,
+        "endLine": 332
+      },
+      {
+        "name": "special_chars",
+        "kind": "string",
+        "startLine": 335,
+        "endLine": 335
+      },
+      {
+        "name": "tabs_and_spaces",
+        "kind": "string",
+        "startLine": 338,
+        "endLine": 338
+      },
+      {
+        "name": "max_int",
+        "kind": "number",
+        "startLine": 341,
+        "endLine": 341
+      },
+      {
+        "name": "min_int",
+        "kind": "number",
+        "startLine": 342,
+        "endLine": 342
+      },
+      {
+        "name": "precise_float",
+        "kind": "number",
+        "startLine": 345,
+        "endLine": 345
+      },
+      {
+        "name": "fruit",
+        "kind": "object",
+        "startLine": 352,
+        "endLine": 355,
+        "children": [
+          {
+            "name": "apple",
+            "kind": "object",
+            "startLine": 352,
+            "endLine": 353,
+            "children": [
+              {
+                "name": "color",
+                "kind": "string",
+                "startLine": 352,
+                "endLine": 352
+              },
+              {
+                "name": "taste",
+                "kind": "string",
+                "startLine": 353,
+                "endLine": 353
+              }
+            ]
+          },
+          {
+            "name": "orange",
+            "kind": "object",
+            "startLine": 354,
+            "endLine": 355,
+            "children": [
+              {
+                "name": "color",
+                "kind": "string",
+                "startLine": 354,
+                "endLine": 354
+              },
+              {
+                "name": "taste",
+                "kind": "string",
+                "startLine": 355,
+                "endLine": 355
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "x",
+    "kind": "object",
+    "startLine": 361,
+    "endLine": 365,
+    "children": [
+      {
+        "name": "y",
+        "kind": "object",
+        "startLine": 361,
+        "endLine": 362,
+        "children": [
+          {
+            "name": "z",
+            "kind": "object",
+            "startLine": 361,
+            "endLine": 362,
+            "children": [
+              {
+                "name": "value",
+                "kind": "string",
+                "startLine": 362,
+                "endLine": 362
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "direct_key",
+        "kind": "string",
+        "startLine": 365,
+        "endLine": 365
+      }
+    ]
+  }
+]

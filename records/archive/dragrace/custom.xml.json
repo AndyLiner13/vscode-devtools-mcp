@@ -1,0 +1,1752 @@
+[
+  {
+    "name": "<root>",
+    "kind": "element",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "xmlns=\"http://example.com/default-namespace\" xmlns:custom=\"http://example.com/custom\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xml=\"http://www.w3.org/XML/1998/namespace\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\" xmlns:math=\"http://www.w3.org/1998/Math/MathML\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xsi:schemaLocation=\"http://example.com/default-namespace schema.xsd\" xml:lang=\"en\" xml:space=\"preserve\" version=\"1.0\"",
+    "children": [
+      {
+        "name": "<section>",
+        "kind": "element",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "id=\"element-tests\" class=\"primary test-section\"",
+        "children": [
+          {
+            "name": "<title>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Element Structure Tests"
+          },
+          {
+            "name": "<empty-element>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0
+          },
+          {
+            "name": "<empty-element>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0
+          },
+          {
+            "name": "<empty-element>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0
+          },
+          {
+            "name": "<image>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "src=\"test.png\" alt=\"Test image\""
+          },
+          {
+            "name": "<self-closing-with-attrs>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "attr1=\"value1\" attr2=\"value2\""
+          },
+          {
+            "name": "<ns:empty-namespaced>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "xmlns:ns=\"http://example.com/ns\""
+          },
+          {
+            "name": "<paragraph>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Simple text content."
+          },
+          {
+            "name": "<paragraph>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Text with    multiple     spaces."
+          },
+          {
+            "name": "<paragraph>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Text with\nnewlines\npreserved."
+          },
+          {
+            "name": "<paragraph>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Text with tabs\tand more tabs\there."
+          },
+          {
+            "name": "<paragraph>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "<emphasis>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "mixed"
+              },
+              {
+                "name": "<strong>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "inline"
+              },
+              {
+                "name": "<code>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "code"
+              }
+            ]
+          },
+          {
+            "name": "<paragraph>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "<emphasis>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "<strong>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "<code>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "deeply"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "<container>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "<level1>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "<level2>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "<level3>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "children": [
+                          {
+                            "name": "<level4>",
+                            "kind": "element",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "children": [
+                              {
+                                "name": "<level5>",
+                                "kind": "element",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "children": [
+                                  {
+                                    "name": "<level6>",
+                                    "kind": "element",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "children": [
+                                      {
+                                        "name": "<level7>",
+                                        "kind": "element",
+                                        "startLine": 0,
+                                        "endLine": 0,
+                                        "detail": "1 children"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "<section>",
+        "kind": "element",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "id=\"attribute-tests\"",
+        "children": [
+          {
+            "name": "<title>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Attribute Tests"
+          },
+          {
+            "name": "<element>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "double=\"double quoted\" single=\"single quoted\""
+          },
+          {
+            "name": "<element>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "mixed=\"double\" another=\"single\" combined=\"both styles\""
+          },
+          {
+            "name": "<element>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "with-ampersand=\"A &amp; B\" with-lt=\"5 &lt; 10\" with-gt=\"10 &gt; 5\" with-apos=\"It&apos;s here\" with-quot=\"She said &quot;hello&quot;\" with-numeric=\"&#65;&#66;&#67;\" with-hex=\"&#x41;&#x42;&#x43;\" with-unicode=\"&#x4E2D;&#x6587;\""
+          },
+          {
+            "name": "<element>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "empty-attr=\"\" another-empty=\"\""
+          },
+          {
+            "name": "<element>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "leading-space=\"value\" trailing-space=\"value\" both-spaces=\"value\" with-newline=\"line1&#10;line2\" with-tab=\"col1&#9;col2\""
+          },
+          {
+            "name": "<element>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "data-value=\"1\" data-123=\"numeric\" data-test-item=\"dashed\""
+          },
+          {
+            "name": "<element>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "_underscore=\"valid\" xml:id=\"xml-prefixed\""
+          },
+          {
+            "name": "<element>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "custom:attr1=\"namespaced value 1\" custom:attr2=\"namespaced value 2\" xlink:href=\"#reference\" xlink:type=\"simple\""
+          },
+          {
+            "name": "<element>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "enabled=\"true\" disabled=\"false\" toggle=\"yes\" switch=\"no\" active=\"1\" inactive=\"0\""
+          },
+          {
+            "name": "<element>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "long-attr=\"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\""
+          },
+          {
+            "name": "<element>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "emoji=\"🎉🚀💡\" chinese=\"中文属性\" japanese=\"日本語属性\" arabic=\"قيمة عربية\" cyrillic=\"Кириллица\" greek=\"Ελληνικά\""
+          }
+        ]
+      },
+      {
+        "name": "<section>",
+        "kind": "element",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "id=\"text-tests\"",
+        "children": [
+          {
+            "name": "<title>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Text Content Tests"
+          },
+          {
+            "name": "<paragraph>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Simple plain text content."
+          },
+          {
+            "name": "<paragraph>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Ampersand: &amp; Less than: &lt; Greater than: &gt; Apostrop"
+          },
+          {
+            "name": "<paragraph>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Decimal: &#65;&#66;&#67; (ABC)\n            Hex: &#x41;&#x42;"
+          },
+          {
+            "name": "<paragraph>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Chinese: 中文测试\n            Japanese: 日本語テスト\n            Korea"
+          },
+          {
+            "name": "<paragraph>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "&copyright; &author; - &company;"
+          },
+          {
+            "name": "<paragraph>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "&longtext;"
+          },
+          {
+            "name": "<paragraph>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "xml:space=\"default\" → Default   whitespace   handling   normalizes    spaces."
+          },
+          {
+            "name": "<paragraph>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "xml:space=\"preserve\" → Preserved   whitespace   keeps    multiple   spaces."
+          },
+          {
+            "name": "<paragraph>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Before CDATAinside <CDATA> sectionafter CDATA text."
+          },
+          {
+            "name": "<code>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "\nfunction example() {\n    if (x < 10 && y > 5) {\n        ret"
+          },
+          {
+            "name": "<code>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "<root><child attr=\"value\">Text & more</child></root>"
+          },
+          {
+            "name": "<code>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0
+          },
+          {
+            "name": "<code>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Content with ]]> inside (split CDATA)"
+          }
+        ]
+      },
+      {
+        "name": "<section>",
+        "kind": "element",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "id=\"namespace-tests\"",
+        "children": [
+          {
+            "name": "<title>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Namespace Tests"
+          },
+          {
+            "name": "<paragraph>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Element in default namespace."
+          },
+          {
+            "name": "<custom:element>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Content in custom namespace"
+          },
+          {
+            "name": "<custom:parent>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "<custom:child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "Nested namespaced elements"
+              }
+            ]
+          },
+          {
+            "name": "<element>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "xmlns:local=\"http://example.com/local\"",
+            "children": [
+              {
+                "name": "<local:nested>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "Local namespace scope"
+              }
+            ]
+          },
+          {
+            "name": "<custom:mixed>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "xhtml:class=\"xhtml-attr\" svg:fill=\"red\" → Mixed namespace attributes"
+          },
+          {
+            "name": "<container>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "xmlns=\"http://example.com/overridden\"",
+            "children": [
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "In overridden namespace"
+              },
+              {
+                "name": "<nested>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "xmlns=\"\"",
+                "children": [
+                  {
+                    "name": "<child>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "Back to no namespace"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "<svg:svg>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "width=\"100\" height=\"100\"",
+            "children": [
+              {
+                "name": "<svg:circle>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "cx=\"50\" cy=\"50\" r=\"40\" svg:fill=\"red\""
+              },
+              {
+                "name": "<svg:text>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "x=\"50\" y=\"55\" → SVG"
+              }
+            ]
+          },
+          {
+            "name": "<math:math>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "<math:mrow>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "<math:mi>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "x"
+                  },
+                  {
+                    "name": "<math:mo>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "="
+                  },
+                  {
+                    "name": "<math:mfrac>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "<math:mrow>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "children": [
+                          {
+                            "name": "<math:mo>",
+                            "kind": "element",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "-"
+                          },
+                          {
+                            "name": "<math:mo>",
+                            "kind": "element",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "±"
+                          },
+                          {
+                            "name": "<math:mi>",
+                            "kind": "element",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "b"
+                          },
+                          {
+                            "name": "<math:msqrt>",
+                            "kind": "element",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "children": [
+                              {
+                                "name": "<math:mrow>",
+                                "kind": "element",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "children": [
+                                  {
+                                    "name": "<math:msup>",
+                                    "kind": "element",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "children": [
+                                      {
+                                        "name": "<math:mi>",
+                                        "kind": "element",
+                                        "startLine": 0,
+                                        "endLine": 0,
+                                        "detail": "b"
+                                      },
+                                      {
+                                        "name": "<math:mn>",
+                                        "kind": "element",
+                                        "startLine": 0,
+                                        "endLine": 0,
+                                        "detail": "2"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "name": "<math:mo>",
+                                    "kind": "element",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "-"
+                                  },
+                                  {
+                                    "name": "<math:mn>",
+                                    "kind": "element",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "4"
+                                  },
+                                  {
+                                    "name": "<math:mi>",
+                                    "kind": "element",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "a"
+                                  },
+                                  {
+                                    "name": "<math:mi>",
+                                    "kind": "element",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "detail": "c"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "<math:mrow>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "children": [
+                          {
+                            "name": "<math:mn>",
+                            "kind": "element",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "2"
+                          },
+                          {
+                            "name": "<math:mi>",
+                            "kind": "element",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "a"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "<section>",
+        "kind": "element",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "id=\"complex-structures\"",
+        "children": [
+          {
+            "name": "<title>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Complex Structure Tests"
+          },
+          {
+            "name": "<table>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "<thead>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "<tr>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "<th>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "Header 1"
+                      },
+                      {
+                        "name": "<th>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "Header 2"
+                      },
+                      {
+                        "name": "<th>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "Header 3"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "<tbody>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "<tr>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "<td>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "Cell 1.1"
+                      },
+                      {
+                        "name": "<td>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "Cell 1.2"
+                      },
+                      {
+                        "name": "<td>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "Cell 1.3"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<tr>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "<td>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "Cell 2.1"
+                      },
+                      {
+                        "name": "<td>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "Cell 2.2"
+                      },
+                      {
+                        "name": "<td>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "Cell 2.3"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "<list>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "<item>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "type=\"unordered\"",
+                "children": [
+                  {
+                    "name": "<list>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "<item>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "type=\"unordered\"",
+                        "children": [
+                          {
+                            "name": "<list>",
+                            "kind": "element",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "children": [
+                              {
+                                "name": "<item>",
+                                "kind": "element",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "detail": "type=\"unordered\" → Third level 1.1.1"
+                              },
+                              {
+                                "name": "<item>",
+                                "kind": "element",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "detail": "type=\"unordered\" → Third level 1.1.2"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "<item>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "type=\"unordered\" → Second level item 1.2"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "<item>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "type=\"unordered\" → First level item 2"
+              }
+            ]
+          },
+          {
+            "name": "<blockquote>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "<paragraph>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "<emphasis>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "emphasis"
+                  },
+                  {
+                    "name": "<strong>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "strong"
+                  }
+                ]
+              },
+              {
+                "name": "<paragraph>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "<link>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "href=\"http://example.com\" → a link"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "<section>",
+        "kind": "element",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "id=\"real-world-patterns\"",
+        "children": [
+          {
+            "name": "<title>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Real-World XML Patterns"
+          },
+          {
+            "name": "<custom:feed>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "<custom:channel>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "<custom:title>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "Sample Feed"
+                  },
+                  {
+                    "name": "<custom:link>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "http://example.com"
+                  },
+                  {
+                    "name": "<custom:description>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "A sample RSS-like feed"
+                  },
+                  {
+                    "name": "<custom:item>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "<custom:title>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "First Article"
+                      },
+                      {
+                        "name": "<custom:link>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "http://example.com/article1"
+                      },
+                      {
+                        "name": "<custom:pubDate>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "2024-02-14T12:00:00Z"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<custom:item>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "<custom:title>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "Second Article"
+                      },
+                      {
+                        "name": "<custom:link>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "http://example.com/article2"
+                      },
+                      {
+                        "name": "<custom:pubDate>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "2024-02-13T10:00:00Z"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "<custom:configuration>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "<custom:application>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "name=\"TestApp\" version=\"1.0.0\"",
+                "children": [
+                  {
+                    "name": "<custom:database>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "<custom:connection>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "host=\"localhost\" port=\"5432\" ssl=\"true\""
+                      },
+                      {
+                        "name": "<custom:credentials>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "user=\"admin\" password=\"secret\""
+                      },
+                      {
+                        "name": "<custom:pool>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "min=\"5\" max=\"20\" idle-timeout=\"300\""
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<custom:logging>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "level=\"INFO\"",
+                    "children": [
+                      {
+                        "name": "<custom:appender>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "type=\"console\""
+                      },
+                      {
+                        "name": "<custom:appender>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "type=\"file\" path=\"/var/log/app.log\""
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<custom:features>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "<custom:feature>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "name=\"dark-mode\" enabled=\"true\""
+                      },
+                      {
+                        "name": "<custom:feature>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "name=\"analytics\" enabled=\"false\""
+                      },
+                      {
+                        "name": "<custom:feature>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "name=\"beta\" enabled=\"true\" rollout=\"10%\""
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "<custom:Envelope>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "<custom:Header>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "<custom:Authentication>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "<custom:Token>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "abc123xyz"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "<custom:Body>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "<custom:Request>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "action=\"getUserInfo\"",
+                    "children": [
+                      {
+                        "name": "<custom:UserId>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "detail": "12345"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "<custom:LinearLayout>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "orientation=\"vertical\" width=\"match_parent\" height=\"wrap_content\"",
+            "children": [
+              {
+                "name": "<custom:TextView>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "text=\"Hello World\" textSize=\"18sp\" textColor=\"#333333\""
+              },
+              {
+                "name": "<custom:Button>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "text=\"Click Me\" onClick=\"handleClick\""
+              },
+              {
+                "name": "<custom:RecyclerView>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "layout_height=\"match_parent\" scrollbars=\"vertical\""
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "<section>",
+        "kind": "element",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "id=\"edge-cases\"",
+        "children": [
+          {
+            "name": "<title>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Edge Cases"
+          },
+          {
+            "name": "<element-1>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Element with number"
+          },
+          {
+            "name": "<element_with_underscores>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Underscore element"
+          },
+          {
+            "name": "<element.with.dots>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Dot element (valid XML)"
+          },
+          {
+            "name": "<a>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Single character element"
+          },
+          {
+            "name": "<_starts-with-underscore>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Underscore start"
+          },
+          {
+            "name": "<thisIsAVeryLongElementNameThatExceedsTypicalNamingConventionsForTestingPurposes>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Content in long-named element"
+          },
+          {
+            "name": "<日本語要素>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Japanese element name"
+          },
+          {
+            "name": "<中文元素>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Chinese element name"
+          },
+          {
+            "name": "<élément>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "French element name"
+          },
+          {
+            "name": "<αβγ>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Greek element name"
+          },
+          {
+            "name": "<empty-with-space>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0
+          },
+          {
+            "name": "<empty-with-newline>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0
+          },
+          {
+            "name": "<empty-truly>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0
+          },
+          {
+            "name": "<empty-self-close>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0
+          },
+          {
+            "name": "<whitespace-only>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0
+          },
+          {
+            "name": "<mixed>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0
+              },
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0
+              }
+            ]
+          },
+          {
+            "name": "<mixed>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0
+              },
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0
+              }
+            ]
+          },
+          {
+            "name": "<mixed>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "a"
+              },
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "b"
+              }
+            ]
+          },
+          {
+            "name": "<attr-test>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "a=\"1\" b=\"2\" c=\"3\" d=\"4\" e=\"5\" f=\"6\" g=\"7\" h=\"8\" i=\"9\" j=\"10\" k=\"11\" l=\"12\" m=\"13\" n=\"14\" o=\"15\""
+          },
+          {
+            "name": "<siblings>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1"
+              },
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2"
+              },
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3"
+              },
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "4"
+              },
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "5"
+              },
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "6"
+              },
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "7"
+              },
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "8"
+              },
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "9"
+              },
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "10"
+              },
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "11"
+              },
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "12"
+              }
+            ]
+          },
+          {
+            "name": "<container>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "Content after PI"
+              }
+            ]
+          },
+          {
+            "name": "<container>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "Content"
+              },
+              {
+                "name": "<child>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "More content"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "<section>",
+        "kind": "element",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "id=\"type-matrix\"",
+        "children": [
+          {
+            "name": "<title>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Type Matrix"
+          },
+          {
+            "name": "<types>",
+            "kind": "element",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "<type>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "name=\"element\"",
+                "children": [
+                  {
+                    "name": "<empty-element>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0
+                  },
+                  {
+                    "name": "<element-with-text>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "text"
+                  },
+                  {
+                    "name": "<element-with-mixed>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "<child>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "<type>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "name=\"attribute\"",
+                "children": [
+                  {
+                    "name": "<element>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "simple=\"value\""
+                  },
+                  {
+                    "name": "<element>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "numeric=\"123\" float=\"3.14\" boolean=\"true\""
+                  },
+                  {
+                    "name": "<element>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "namespaced=\"value\" custom:namespaced=\"value\""
+                  }
+                ]
+              },
+              {
+                "name": "<type>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "name=\"text\"",
+                "children": [
+                  {
+                    "name": "<plain>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "Plain text content"
+                  },
+                  {
+                    "name": "<entities>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "&amp; &lt; &gt; &apos; &quot;"
+                  },
+                  {
+                    "name": "<numeric-refs>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "&#65;&#x42;"
+                  },
+                  {
+                    "name": "<cdata>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "<raw>content</raw>"
+                  }
+                ]
+              },
+              {
+                "name": "<type>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "name=\"namespace\"",
+                "children": [
+                  {
+                    "name": "<default>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "In default namespace"
+                  },
+                  {
+                    "name": "<custom:prefixed>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "In custom namespace"
+                  }
+                ]
+              },
+              {
+                "name": "<type>",
+                "kind": "element",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "name=\"structure\"",
+                "children": [
+                  {
+                    "name": "<nested>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "<child>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "children": [
+                          {
+                            "name": "<grandchild>",
+                            "kind": "element",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "deep"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<siblings>",
+                    "kind": "element",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "<a>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0
+                      },
+                      {
+                        "name": "<b>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0
+                      },
+                      {
+                        "name": "<c>",
+                        "kind": "element",
+                        "startLine": 0,
+                        "endLine": 0
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

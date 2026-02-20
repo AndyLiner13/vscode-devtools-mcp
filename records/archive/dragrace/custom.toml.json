@@ -1,0 +1,2008 @@
+[
+  {
+    "name": "bare_key",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "value"
+  },
+  {
+    "name": "bare-key",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "dash key"
+  },
+  {
+    "name": "bare123",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "numbers in key"
+  },
+  {
+    "name": "_underscore_start",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "underscore start"
+  },
+  {
+    "name": "UPPERCASE",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "all uppercase"
+  },
+  {
+    "name": "snake_case",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "snake case"
+  },
+  {
+    "name": "kebab-case",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "kebab case"
+  },
+  {
+    "name": "CamelCase",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "camel case"
+  },
+  {
+    "name": "basic string key",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "basic string key value"
+  },
+  {
+    "name": "",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "empty key"
+  },
+  {
+    "name": " ",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "space key"
+  },
+  {
+    "name": "key with spaces",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "spaced key"
+  },
+  {
+    "name": "key\twith\ttab",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "tab in key"
+  },
+  {
+    "name": "key\"with\"quotes",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "quotes in key"
+  },
+  {
+    "name": "key\\with\\backslash",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "backslash in key"
+  },
+  {
+    "name": "127.0.0.1",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "IP address key"
+  },
+  {
+    "name": "☃️",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "emoji key"
+  },
+  {
+    "name": "日本語キー",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "japanese key"
+  },
+  {
+    "name": "中文键",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "chinese key"
+  },
+  {
+    "name": "literal key",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "simple literal key"
+  },
+  {
+    "name": "C:\\path\\to\\file",
+    "kind": "string",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "windows path key"
+  },
+  {
+    "name": "simple",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "dotted",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "two levels"
+      }
+    ]
+  },
+  {
+    "name": "deep",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "nested",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "key",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "three levels"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "name",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "first",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "Tom"
+      },
+      {
+        "name": "last",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "Smith"
+      }
+    ]
+  },
+  {
+    "name": "quoted.key",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "subkey",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "mixed quoted"
+      }
+    ]
+  },
+  {
+    "name": "strings",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "basic",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "Hello, World!"
+      },
+      {
+        "name": "empty",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0
+      },
+      {
+        "name": "single_char",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "x"
+      },
+      {
+        "name": "with_spaces",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "  leading and trailing  "
+      },
+      {
+        "name": "escape_newline",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "line1\nline2"
+      },
+      {
+        "name": "escape_tab",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "col1\tcol2"
+      },
+      {
+        "name": "escape_carriage",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "before\rafter"
+      },
+      {
+        "name": "escape_backslash",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "path\\to\\file"
+      },
+      {
+        "name": "escape_quote",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "she said \"hello\""
+      },
+      {
+        "name": "escape_unicode_4",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "中文"
+      },
+      {
+        "name": "escape_unicode_8",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "😀"
+      },
+      {
+        "name": "multiline_basic",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "This is a\r\nmulti-line string.\r\n"
+      },
+      {
+        "name": "multiline_trim_newline",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "This trims leading whitespace on continuation lines."
+      },
+      {
+        "name": "multiline_with_quotes",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "Contains \"quotes\" inside\r\nwithout escaping.\r\n"
+      },
+      {
+        "name": "literal",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "No escapes here: \\n \\t \\\\"
+      },
+      {
+        "name": "literal_empty",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0
+      },
+      {
+        "name": "literal_path",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "C:\\Users\\name\\file.txt"
+      },
+      {
+        "name": "multiline_literal",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "First line\r\nSecond line\r\nThird line\r\n"
+      },
+      {
+        "name": "multiline_literal_quotes",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "Can have up to 2 quotes: '' or '\r\nbut not three in a row\r\n"
+      }
+    ]
+  },
+  {
+    "name": "numbers",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "integers",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "positive",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "42"
+          },
+          {
+            "name": "negative",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "-17"
+          },
+          {
+            "name": "zero",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "large",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "9007199254740991"
+          },
+          {
+            "name": "with_underscores",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1000000"
+          },
+          {
+            "name": "hex_lower",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3735928559"
+          },
+          {
+            "name": "hex_upper",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3735928559"
+          },
+          {
+            "name": "octal",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "493"
+          },
+          {
+            "name": "binary",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "214"
+          }
+        ]
+      },
+      {
+        "name": "floats",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "simple",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3.14159"
+          },
+          {
+            "name": "negative",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "-0.001"
+          },
+          {
+            "name": "exponent_lower",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "6.022e+23"
+          },
+          {
+            "name": "exponent_upper",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "6.022e+23"
+          },
+          {
+            "name": "exponent_positive",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "12300000000"
+          },
+          {
+            "name": "exponent_negative",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1.23e-10"
+          },
+          {
+            "name": "with_underscores",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "9224617.445991227"
+          },
+          {
+            "name": "infinity_lower",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Infinity"
+          },
+          {
+            "name": "infinity_upper",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Infinity"
+          },
+          {
+            "name": "neg_infinity",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "-Infinity"
+          },
+          {
+            "name": "not_a_number",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "NaN"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "booleans",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "yes",
+        "kind": "boolean",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "true"
+      },
+      {
+        "name": "no",
+        "kind": "boolean",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "false"
+      }
+    ]
+  },
+  {
+    "name": "dates",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "odt_full",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0
+      },
+      {
+        "name": "odt_offset",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0
+      },
+      {
+        "name": "odt_with_ms",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0
+      },
+      {
+        "name": "odt_space",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0
+      },
+      {
+        "name": "ldt",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "isFloating",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "true"
+          }
+        ]
+      },
+      {
+        "name": "ldt_with_ms",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "isFloating",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "true"
+          }
+        ]
+      },
+      {
+        "name": "ld",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "isDate",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "true"
+          }
+        ]
+      },
+      {
+        "name": "lt",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "isTime",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "true"
+          }
+        ]
+      },
+      {
+        "name": "lt_with_ms",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "isTime",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "true"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "arrays",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "integers",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1"
+          },
+          {
+            "name": "[1]",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "2"
+          },
+          {
+            "name": "[2]",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3"
+          }
+        ]
+      },
+      {
+        "name": "strings",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "red"
+          },
+          {
+            "name": "[1]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "green"
+          },
+          {
+            "name": "[2]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "blue"
+          }
+        ]
+      },
+      {
+        "name": "floats",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1.1"
+          },
+          {
+            "name": "[1]",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "2.2"
+          },
+          {
+            "name": "[2]",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3.3"
+          }
+        ]
+      },
+      {
+        "name": "booleans",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "true"
+          },
+          {
+            "name": "[1]",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "false"
+          },
+          {
+            "name": "[2]",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "true"
+          }
+        ]
+      },
+      {
+        "name": "datetimes",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "2 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0
+          },
+          {
+            "name": "[1]",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0
+          }
+        ]
+      },
+      {
+        "name": "nested",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1"
+              },
+              {
+                "name": "[1]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2"
+              }
+            ]
+          },
+          {
+            "name": "[1]",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3"
+              },
+              {
+                "name": "[1]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "4"
+              },
+              {
+                "name": "[2]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "5"
+              }
+            ]
+          },
+          {
+            "name": "[2]",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "6"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "deep_nested",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "2 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "1"
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "2"
+                  }
+                ]
+              },
+              {
+                "name": "[1]",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "3"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "[1]",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "4"
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "5"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "empty",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "0 items"
+      },
+      {
+        "name": "multiline",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item1"
+          },
+          {
+            "name": "[1]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item2"
+          },
+          {
+            "name": "[2]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item3"
+          }
+        ]
+      },
+      {
+        "name": "multiline_trailing_comma",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1"
+          },
+          {
+            "name": "[1]",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "2"
+          },
+          {
+            "name": "[2]",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3"
+          }
+        ]
+      },
+      {
+        "name": "with_comments",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "2 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "first"
+          },
+          {
+            "name": "[1]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "second"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "inline_tables",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "simple",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "key1",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "value1"
+          },
+          {
+            "name": "key2",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "value2"
+          }
+        ]
+      },
+      {
+        "name": "empty",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0
+      },
+      {
+        "name": "single",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "only",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "one"
+          }
+        ]
+      },
+      {
+        "name": "with_array",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "arr",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1"
+              },
+              {
+                "name": "[1]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2"
+              },
+              {
+                "name": "[2]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "nested",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "outer",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "inner",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "deep"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "mixed_types",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "str",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "hello"
+          },
+          {
+            "name": "num",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "42"
+          },
+          {
+            "name": "bool",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "true"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "table1",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "key",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "value"
+      },
+      {
+        "name": "nested",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "key",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "nested value"
+          },
+          {
+            "name": "deeper",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "key",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "even deeper"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "quoted.table.name",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "key",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "value in quoted table"
+      }
+    ]
+  },
+  {
+    "name": "unicode_table_日本語",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "key",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "unicode table name"
+      }
+    ]
+  },
+  {
+    "name": "products",
+    "kind": "array",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "3 items",
+    "children": [
+      {
+        "name": "[0]",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Hammer"
+          },
+          {
+            "name": "sku",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "738594937"
+          }
+        ]
+      },
+      {
+        "name": "[1]",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Nail"
+          },
+          {
+            "name": "sku",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "284758393"
+          },
+          {
+            "name": "color",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "gray"
+          }
+        ]
+      },
+      {
+        "name": "[2]",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Screwdriver"
+          },
+          {
+            "name": "sku",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "938475920"
+          },
+          {
+            "name": "sizes",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "small"
+              },
+              {
+                "name": "[1]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "medium"
+              },
+              {
+                "name": "[2]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "large"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "servers",
+    "kind": "array",
+    "startLine": 0,
+    "endLine": 0,
+    "detail": "2 items",
+    "children": [
+      {
+        "name": "[0]",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "alpha"
+          },
+          {
+            "name": "ports",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "2 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "number",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "80"
+                  },
+                  {
+                    "name": "protocol",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "http"
+                  }
+                ]
+              },
+              {
+                "name": "[1]",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "number",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "443"
+                  },
+                  {
+                    "name": "protocol",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "https"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "[1]",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "beta"
+          },
+          {
+            "name": "ports",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "number",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "22"
+                  },
+                  {
+                    "name": "protocol",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "ssh"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "complex",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "config_version",
+        "kind": "number",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "1"
+      },
+      {
+        "name": "api_key",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0
+      },
+      {
+        "name": "debug",
+        "kind": "boolean",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "false"
+      },
+      {
+        "name": "timeout",
+        "kind": "number",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "30.5"
+      },
+      {
+        "name": "database",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "host",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "localhost"
+          },
+          {
+            "name": "port",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "5432"
+          },
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "mydb"
+          },
+          {
+            "name": "ssl",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "true"
+          },
+          {
+            "name": "pool",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "min",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "5"
+              },
+              {
+                "name": "max",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "20"
+              },
+              {
+                "name": "idle_timeout",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "300"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "users",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "2 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "id",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1"
+              },
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "Alice"
+              },
+              {
+                "name": "roles",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2 items",
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "admin"
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "user"
+                  }
+                ]
+              },
+              {
+                "name": "active",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "true"
+              },
+              {
+                "name": "created",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0
+              }
+            ]
+          },
+          {
+            "name": "[1]",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "id",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2"
+              },
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "Bob"
+              },
+              {
+                "name": "roles",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1 items",
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "user"
+                  }
+                ]
+              },
+              {
+                "name": "active",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "false"
+              },
+              {
+                "name": "metadata",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "department",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "engineering"
+                  },
+                  {
+                    "name": "level",
+                    "kind": "number",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "3"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "edge_cases",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "very_long",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ..."
+      },
+      {
+        "name": "deep",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "l1",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "l2",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "l3",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "l4",
+                        "kind": "object",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "children": [
+                          {
+                            "name": "l5",
+                            "kind": "string",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "five levels"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "emoji_value",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "🎉🚀💡"
+      },
+      {
+        "name": "chinese",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "中文内容"
+      },
+      {
+        "name": "japanese",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "日本語テキスト"
+      },
+      {
+        "name": "korean",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "한국어 텍스트"
+      },
+      {
+        "name": "arabic",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "نص عربي"
+      },
+      {
+        "name": "russian",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "Русский текст"
+      },
+      {
+        "name": "string_number",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "123"
+      },
+      {
+        "name": "string_bool",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "true"
+      },
+      {
+        "name": "string_null",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "null"
+      },
+      {
+        "name": "empty_string",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0
+      },
+      {
+        "name": "empty_array",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "0 items"
+      },
+      {
+        "name": "empty_inline_table",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0
+      },
+      {
+        "name": "special_chars",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "!@#$%^&*(){}[]|:;<>?,./"
+      },
+      {
+        "name": "tabs_and_spaces",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "\t \t mixed\t \t"
+      },
+      {
+        "name": "max_int",
+        "kind": "number",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "9007199254740991"
+      },
+      {
+        "name": "min_int",
+        "kind": "number",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "-9007199254740991"
+      },
+      {
+        "name": "precise_float",
+        "kind": "number",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3.141592653589793"
+      },
+      {
+        "name": "fruit",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "apple",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "color",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "red"
+              },
+              {
+                "name": "taste",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "sweet"
+              }
+            ]
+          },
+          {
+            "name": "orange",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "color",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "orange"
+              },
+              {
+                "name": "taste",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "tangy"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "x",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "y",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "z",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "value",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "defined after implicit creation allowed"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "direct_key",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "can add to parent after child defined"
+      }
+    ]
+  }
+]

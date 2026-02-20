@@ -1,0 +1,2876 @@
+[
+  {
+    "name": "StringAlias",
+    "kind": "variable",
+    "startLine": 10,
+    "endLine": 10
+  },
+  {
+    "name": "NumberAlias",
+    "kind": "variable",
+    "startLine": 11,
+    "endLine": 11
+  },
+  {
+    "name": "BooleanAlias",
+    "kind": "variable",
+    "startLine": 12,
+    "endLine": 12
+  },
+  {
+    "name": "BigIntAlias",
+    "kind": "variable",
+    "startLine": 13,
+    "endLine": 13
+  },
+  {
+    "name": "SymbolAlias",
+    "kind": "variable",
+    "startLine": 14,
+    "endLine": 14
+  },
+  {
+    "name": "VoidAlias",
+    "kind": "variable",
+    "startLine": 15,
+    "endLine": 15
+  },
+  {
+    "name": "NeverAlias",
+    "kind": "variable",
+    "startLine": 16,
+    "endLine": 16
+  },
+  {
+    "name": "UndefinedAlias",
+    "kind": "variable",
+    "startLine": 17,
+    "endLine": 17
+  },
+  {
+    "name": "NullAlias",
+    "kind": "variable",
+    "startLine": 18,
+    "endLine": 18
+  },
+  {
+    "name": "UnknownAlias",
+    "kind": "variable",
+    "startLine": 19,
+    "endLine": 19
+  },
+  {
+    "name": "Direction",
+    "kind": "variable",
+    "startLine": 23,
+    "endLine": 23
+  },
+  {
+    "name": "HTTPStatus",
+    "kind": "variable",
+    "startLine": 24,
+    "endLine": 24
+  },
+  {
+    "name": "Truthy",
+    "kind": "variable",
+    "startLine": 25,
+    "endLine": 25
+  },
+  {
+    "name": "Falsy",
+    "kind": "variable",
+    "startLine": 26,
+    "endLine": 26
+  },
+  {
+    "name": "MixedLiteral",
+    "kind": "variable",
+    "startLine": 27,
+    "endLine": 27
+  },
+  {
+    "name": "Pair",
+    "kind": "variable",
+    "startLine": 31,
+    "endLine": 31
+  },
+  {
+    "name": "Triple",
+    "kind": "variable",
+    "startLine": 32,
+    "endLine": 32
+  },
+  {
+    "name": "NamedTuple",
+    "kind": "variable",
+    "startLine": 33,
+    "endLine": 33
+  },
+  {
+    "name": "ReadonlyTuple",
+    "kind": "variable",
+    "startLine": 34,
+    "endLine": 34
+  },
+  {
+    "name": "OptionalTuple",
+    "kind": "variable",
+    "startLine": 35,
+    "endLine": 35
+  },
+  {
+    "name": "EventName",
+    "kind": "variable",
+    "startLine": 39,
+    "endLine": 39
+  },
+  {
+    "name": "CSSProperty",
+    "kind": "variable",
+    "startLine": 40,
+    "endLine": 40
+  },
+  {
+    "name": "Getters",
+    "kind": "variable",
+    "startLine": 41,
+    "endLine": 41
+  },
+  {
+    "name": "Setters",
+    "kind": "variable",
+    "startLine": 42,
+    "endLine": 42
+  },
+  {
+    "name": "HTTPMethod",
+    "kind": "variable",
+    "startLine": 43,
+    "endLine": 43
+  },
+  {
+    "name": "APIRoute",
+    "kind": "variable",
+    "startLine": 44,
+    "endLine": 44
+  },
+  {
+    "name": "APIEndpoint",
+    "kind": "variable",
+    "startLine": 45,
+    "endLine": 45
+  },
+  {
+    "name": "IsString",
+    "kind": "variable",
+    "startLine": 49,
+    "endLine": 49
+  },
+  {
+    "name": "IsArray",
+    "kind": "variable",
+    "startLine": 50,
+    "endLine": 50
+  },
+  {
+    "name": "Flatten",
+    "kind": "variable",
+    "startLine": 51,
+    "endLine": 51
+  },
+  {
+    "name": "UnpackPromise",
+    "kind": "variable",
+    "startLine": 52,
+    "endLine": 52
+  },
+  {
+    "name": "IsNullable",
+    "kind": "variable",
+    "startLine": 54,
+    "endLine": 54
+  },
+  {
+    "name": "NonNullableDeep",
+    "kind": "variable",
+    "startLine": 55,
+    "endLine": 57
+  },
+  {
+    "name": "Mutable",
+    "kind": "variable",
+    "startLine": 61,
+    "endLine": 61
+  },
+  {
+    "name": "DeepPartial",
+    "kind": "variable",
+    "startLine": 62,
+    "endLine": 64
+  },
+  {
+    "name": "DeepReadonly",
+    "kind": "variable",
+    "startLine": 65,
+    "endLine": 67
+  },
+  {
+    "name": "DeepRequired",
+    "kind": "variable",
+    "startLine": 68,
+    "endLine": 70
+  },
+  {
+    "name": "PickByType",
+    "kind": "variable",
+    "startLine": 71,
+    "endLine": 73
+  },
+  {
+    "name": "OmitByType",
+    "kind": "variable",
+    "startLine": 74,
+    "endLine": 76
+  },
+  {
+    "name": "UserProfile",
+    "kind": "interface",
+    "startLine": 80,
+    "endLine": 98,
+    "children": [
+      {
+        "name": "avatar",
+        "kind": "property",
+        "startLine": 84,
+        "endLine": 84
+      },
+      {
+        "name": "email",
+        "kind": "property",
+        "startLine": 83,
+        "endLine": 83
+      },
+      {
+        "name": "id",
+        "kind": "property",
+        "startLine": 81,
+        "endLine": 81
+      },
+      {
+        "name": "metadata",
+        "kind": "property",
+        "startLine": 97,
+        "endLine": 97
+      },
+      {
+        "name": "name",
+        "kind": "property",
+        "startLine": 82,
+        "endLine": 82
+      },
+      {
+        "name": "settings",
+        "kind": "property",
+        "startLine": 85,
+        "endLine": 96
+      }
+    ]
+  },
+  {
+    "name": "PartialUser",
+    "kind": "variable",
+    "startLine": 100,
+    "endLine": 100
+  },
+  {
+    "name": "RequiredUser",
+    "kind": "variable",
+    "startLine": 101,
+    "endLine": 101
+  },
+  {
+    "name": "ReadonlyUser",
+    "kind": "variable",
+    "startLine": 102,
+    "endLine": 102
+  },
+  {
+    "name": "UserKeys",
+    "kind": "variable",
+    "startLine": 103,
+    "endLine": 103
+  },
+  {
+    "name": "UserName",
+    "kind": "variable",
+    "startLine": 104,
+    "endLine": 104
+  },
+  {
+    "name": "UserWithoutMeta",
+    "kind": "variable",
+    "startLine": 105,
+    "endLine": 105
+  },
+  {
+    "name": "Color",
+    "kind": "enum",
+    "startLine": 109,
+    "endLine": 116,
+    "children": [
+      {
+        "name": "Blue",
+        "kind": "variable",
+        "startLine": 112,
+        "endLine": 112
+      },
+      {
+        "name": "Cyan",
+        "kind": "variable",
+        "startLine": 114,
+        "endLine": 114
+      },
+      {
+        "name": "Green",
+        "kind": "variable",
+        "startLine": 111,
+        "endLine": 111
+      },
+      {
+        "name": "Magenta",
+        "kind": "variable",
+        "startLine": 115,
+        "endLine": 115
+      },
+      {
+        "name": "Red",
+        "kind": "variable",
+        "startLine": 110,
+        "endLine": 110
+      },
+      {
+        "name": "Yellow",
+        "kind": "variable",
+        "startLine": 113,
+        "endLine": 113
+      }
+    ]
+  },
+  {
+    "name": "NumericStatus",
+    "kind": "enum",
+    "startLine": 118,
+    "endLine": 123,
+    "children": [
+      {
+        "name": "Active",
+        "kind": "variable",
+        "startLine": 120,
+        "endLine": 120
+      },
+      {
+        "name": "Deleted",
+        "kind": "variable",
+        "startLine": 122,
+        "endLine": 122
+      },
+      {
+        "name": "Pending",
+        "kind": "variable",
+        "startLine": 119,
+        "endLine": 119
+      },
+      {
+        "name": "Suspended",
+        "kind": "variable",
+        "startLine": 121,
+        "endLine": 121
+      }
+    ]
+  },
+  {
+    "name": "InlineDirection",
+    "kind": "enum",
+    "startLine": 125,
+    "endLine": 130,
+    "children": [
+      {
+        "name": "Down",
+        "kind": "variable",
+        "startLine": 127,
+        "endLine": 127
+      },
+      {
+        "name": "Left",
+        "kind": "variable",
+        "startLine": 128,
+        "endLine": 128
+      },
+      {
+        "name": "Right",
+        "kind": "variable",
+        "startLine": 129,
+        "endLine": 129
+      },
+      {
+        "name": "Up",
+        "kind": "variable",
+        "startLine": 126,
+        "endLine": 126
+      }
+    ]
+  },
+  {
+    "name": "ComputedEnum",
+    "kind": "enum",
+    "startLine": 132,
+    "endLine": 139,
+    "children": [
+      {
+        "name": "A",
+        "kind": "variable",
+        "startLine": 133,
+        "endLine": 133
+      },
+      {
+        "name": "All",
+        "kind": "variable",
+        "startLine": 138,
+        "endLine": 138
+      },
+      {
+        "name": "B",
+        "kind": "variable",
+        "startLine": 134,
+        "endLine": 134
+      },
+      {
+        "name": "C",
+        "kind": "variable",
+        "startLine": 135,
+        "endLine": 135
+      },
+      {
+        "name": "D",
+        "kind": "variable",
+        "startLine": 136,
+        "endLine": 136
+      },
+      {
+        "name": "E",
+        "kind": "variable",
+        "startLine": 137,
+        "endLine": 137
+      }
+    ]
+  },
+  {
+    "name": "DatabaseConfig",
+    "kind": "interface",
+    "startLine": 143,
+    "endLine": 175,
+    "children": [
+      {
+        "name": "credentials",
+        "kind": "property",
+        "startLine": 146,
+        "endLine": 156
+      },
+      {
+        "name": "host",
+        "kind": "property",
+        "startLine": 144,
+        "endLine": 144
+      },
+      {
+        "name": "pool",
+        "kind": "property",
+        "startLine": 157,
+        "endLine": 163
+      },
+      {
+        "name": "port",
+        "kind": "property",
+        "startLine": 145,
+        "endLine": 145
+      },
+      {
+        "name": "replication",
+        "kind": "property",
+        "startLine": 164,
+        "endLine": 174
+      }
+    ]
+  },
+  {
+    "name": "EventEmitter",
+    "kind": "interface",
+    "startLine": 177,
+    "endLine": 184,
+    "children": [
+      {
+        "name": "emit",
+        "kind": "method",
+        "startLine": 180,
+        "endLine": 180
+      },
+      {
+        "name": "listenerCount",
+        "kind": "method",
+        "startLine": 183,
+        "endLine": 183
+      },
+      {
+        "name": "off",
+        "kind": "method",
+        "startLine": 179,
+        "endLine": 179
+      },
+      {
+        "name": "on",
+        "kind": "method",
+        "startLine": 178,
+        "endLine": 178
+      },
+      {
+        "name": "once",
+        "kind": "method",
+        "startLine": 181,
+        "endLine": 181
+      },
+      {
+        "name": "removeAllListeners",
+        "kind": "method",
+        "startLine": 182,
+        "endLine": 182
+      }
+    ]
+  },
+  {
+    "name": "Serializable",
+    "kind": "interface",
+    "startLine": 186,
+    "endLine": 190,
+    "children": [
+      {
+        "name": "toJSON",
+        "kind": "method",
+        "startLine": 187,
+        "endLine": 187
+      },
+      {
+        "name": "toString",
+        "kind": "method",
+        "startLine": 188,
+        "endLine": 188
+      },
+      {
+        "name": "valueOf",
+        "kind": "method",
+        "startLine": 189,
+        "endLine": 189
+      }
+    ]
+  },
+  {
+    "name": "Cloneable",
+    "kind": "interface",
+    "startLine": 192,
+    "endLine": 195,
+    "children": [
+      {
+        "name": "clone",
+        "kind": "method",
+        "startLine": 193,
+        "endLine": 193
+      },
+      {
+        "name": "deepClone",
+        "kind": "method",
+        "startLine": 194,
+        "endLine": 194
+      }
+    ]
+  },
+  {
+    "name": "Comparable",
+    "kind": "interface",
+    "startLine": 197,
+    "endLine": 200,
+    "children": [
+      {
+        "name": "compareTo",
+        "kind": "method",
+        "startLine": 198,
+        "endLine": 198
+      },
+      {
+        "name": "equals",
+        "kind": "method",
+        "startLine": 199,
+        "endLine": 199
+      }
+    ]
+  },
+  {
+    "name": "Repository",
+    "kind": "interface",
+    "startLine": 204,
+    "endLine": 216,
+    "children": [
+      {
+        "name": "count",
+        "kind": "method",
+        "startLine": 214,
+        "endLine": 214
+      },
+      {
+        "name": "create",
+        "kind": "method",
+        "startLine": 211,
+        "endLine": 211
+      },
+      {
+        "name": "delete",
+        "kind": "method",
+        "startLine": 213,
+        "endLine": 213
+      },
+      {
+        "name": "exists",
+        "kind": "method",
+        "startLine": 215,
+        "endLine": 215
+      },
+      {
+        "name": "findAll",
+        "kind": "method",
+        "startLine": 210,
+        "endLine": 210
+      },
+      {
+        "name": "findById",
+        "kind": "method",
+        "startLine": 209,
+        "endLine": 209
+      },
+      {
+        "name": "update",
+        "kind": "method",
+        "startLine": 212,
+        "endLine": 212
+      }
+    ]
+  },
+  {
+    "name": "BaseEntity",
+    "kind": "class",
+    "startLine": 220,
+    "endLine": 244,
+    "children": [
+      {
+        "name": "compareTo",
+        "kind": "method",
+        "startLine": 235,
+        "endLine": 239
+      },
+      {
+        "name": "createdAt",
+        "kind": "property",
+        "startLine": 222,
+        "endLine": 222
+      },
+      {
+        "name": "equals",
+        "kind": "method",
+        "startLine": 241,
+        "endLine": 243
+      },
+      {
+        "name": "id",
+        "kind": "property",
+        "startLine": 221,
+        "endLine": 221
+      },
+      {
+        "name": "toJSON",
+        "kind": "method",
+        "startLine": 225,
+        "endLine": 225
+      },
+      {
+        "name": "toString",
+        "kind": "method",
+        "startLine": 227,
+        "endLine": 229
+      },
+      {
+        "name": "updatedAt",
+        "kind": "property",
+        "startLine": 223,
+        "endLine": 223
+      },
+      {
+        "name": "valueOf",
+        "kind": "method",
+        "startLine": 231,
+        "endLine": 233
+      }
+    ]
+  },
+  {
+    "name": "log",
+    "kind": "function",
+    "startLine": 248,
+    "endLine": 257,
+    "children": [
+      {
+        "name": "original",
+        "kind": "variable",
+        "startLine": 249,
+        "endLine": 249
+      },
+      {
+        "name": "value",
+        "kind": "function",
+        "startLine": 250,
+        "endLine": 255,
+        "children": [
+          {
+            "name": "result",
+            "kind": "variable",
+            "startLine": 252,
+            "endLine": 252
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "validate",
+    "kind": "function",
+    "startLine": 259,
+    "endLine": 273,
+    "children": [
+      {
+        "name": "<function>",
+        "kind": "function",
+        "startLine": 260,
+        "endLine": 272,
+        "children": [
+          {
+            "name": "original",
+            "kind": "variable",
+            "startLine": 261,
+            "endLine": 261
+          },
+          {
+            "name": "value",
+            "kind": "function",
+            "startLine": 262,
+            "endLine": 270,
+            "children": [
+              {
+                "name": "arg",
+                "kind": "variable",
+                "startLine": 264,
+                "endLine": 264
+              },
+              {
+                "name": "key",
+                "kind": "variable",
+                "startLine": 263,
+                "endLine": 263
+              },
+              {
+                "name": "type",
+                "kind": "variable",
+                "startLine": 263,
+                "endLine": 263
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "deprecated",
+    "kind": "function",
+    "startLine": 275,
+    "endLine": 279
+  },
+  {
+    "name": "UserService",
+    "kind": "class",
+    "startLine": 281,
+    "endLine": 428,
+    "children": [
+      {
+        "name": "constructor",
+        "kind": "constructor",
+        "startLine": 290,
+        "endLine": 299
+      },
+      {
+        "name": "cache",
+        "kind": "property",
+        "startLine": 287,
+        "endLine": 287
+      },
+      {
+        "name": "clone",
+        "kind": "method",
+        "startLine": 413,
+        "endLine": 419,
+        "children": [
+          {
+            "name": "user",
+            "kind": "property",
+            "startLine": 416,
+            "endLine": 416
+          },
+          {
+            "name": "cloned",
+            "kind": "variable",
+            "startLine": 414,
+            "endLine": 414
+          },
+          {
+            "name": "key",
+            "kind": "variable",
+            "startLine": 415,
+            "endLine": 415
+          },
+          {
+            "name": "user",
+            "kind": "variable",
+            "startLine": 415,
+            "endLine": 415
+          }
+        ]
+      },
+      {
+        "name": "createdAt",
+        "kind": "property",
+        "startLine": 283,
+        "endLine": 283
+      },
+      {
+        "name": "createUser",
+        "kind": "method",
+        "startLine": 321,
+        "endLine": 331,
+        "children": [
+          {
+            "name": "user",
+            "kind": "variable",
+            "startLine": 323,
+            "endLine": 327,
+            "children": [
+              {
+                "name": "data",
+                "kind": "property",
+                "startLine": 324,
+                "endLine": 324
+              },
+              {
+                "name": "id",
+                "kind": "property",
+                "startLine": 325,
+                "endLine": 325
+              },
+              {
+                "name": "metadata",
+                "kind": "property",
+                "startLine": 326,
+                "endLine": 326
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "dbConfig",
+        "kind": "property",
+        "startLine": 292,
+        "endLine": 292
+      },
+      {
+        "name": "deepClone",
+        "kind": "method",
+        "startLine": 421,
+        "endLine": 427,
+        "children": [
+          {
+            "name": "cloned",
+            "kind": "variable",
+            "startLine": 422,
+            "endLine": 422
+          },
+          {
+            "name": "key",
+            "kind": "variable",
+            "startLine": 423,
+            "endLine": 423
+          },
+          {
+            "name": "user",
+            "kind": "variable",
+            "startLine": 423,
+            "endLine": 423
+          }
+        ]
+      },
+      {
+        "name": "deepMerge",
+        "kind": "method",
+        "startLine": 354,
+        "endLine": 379,
+        "children": [
+          {
+            "name": "key",
+            "kind": "variable",
+            "startLine": 359,
+            "endLine": 359
+          },
+          {
+            "name": "result",
+            "kind": "variable",
+            "startLine": 358,
+            "endLine": 358,
+            "children": [
+              {
+                "name": "target",
+                "kind": "property",
+                "startLine": 358,
+                "endLine": 358
+              }
+            ]
+          },
+          {
+            "name": "sourceVal",
+            "kind": "variable",
+            "startLine": 360,
+            "endLine": 360
+          },
+          {
+            "name": "targetVal",
+            "kind": "variable",
+            "startLine": 361,
+            "endLine": 361
+          }
+        ]
+      },
+      {
+        "name": "delay",
+        "kind": "method",
+        "startLine": 385,
+        "endLine": 387
+      },
+      {
+        "name": "emit",
+        "kind": "method",
+        "startLine": 389,
+        "endLine": 396,
+        "children": [
+          {
+            "name": "handler",
+            "kind": "variable",
+            "startLine": 392,
+            "endLine": 392
+          },
+          {
+            "name": "handlers",
+            "kind": "variable",
+            "startLine": 390,
+            "endLine": 390
+          }
+        ]
+      },
+      {
+        "name": "eventHandlers",
+        "kind": "property",
+        "startLine": 288,
+        "endLine": 288
+      },
+      {
+        "name": "fetchFromDatabase",
+        "kind": "method",
+        "startLine": 381,
+        "endLine": 383
+      },
+      {
+        "name": "findUser",
+        "kind": "method",
+        "startLine": 301,
+        "endLine": 319,
+        "children": [
+          {
+            "name": "attempt",
+            "kind": "variable",
+            "startLine": 306,
+            "endLine": 306
+          },
+          {
+            "name": "cached",
+            "kind": "variable",
+            "startLine": 303,
+            "endLine": 303
+          },
+          {
+            "name": "error",
+            "kind": "variable",
+            "startLine": 313,
+            "endLine": 313
+          },
+          {
+            "name": "user",
+            "kind": "variable",
+            "startLine": 308,
+            "endLine": 308
+          }
+        ]
+      },
+      {
+        "name": "id",
+        "kind": "property",
+        "startLine": 282,
+        "endLine": 282
+      },
+      {
+        "name": "maxRetries",
+        "kind": "property",
+        "startLine": 293,
+        "endLine": 293
+      },
+      {
+        "name": "on",
+        "kind": "method",
+        "startLine": 398,
+        "endLine": 402,
+        "children": [
+          {
+            "name": "handlers",
+            "kind": "variable",
+            "startLine": 399,
+            "endLine": 399
+          }
+        ]
+      },
+      {
+        "name": "toJSON",
+        "kind": "method",
+        "startLine": 404,
+        "endLine": 411,
+        "children": [
+          {
+            "name": "createdAt",
+            "kind": "property",
+            "startLine": 408,
+            "endLine": 408
+          },
+          {
+            "name": "id",
+            "kind": "property",
+            "startLine": 406,
+            "endLine": 406
+          },
+          {
+            "name": "updatedAt",
+            "kind": "property",
+            "startLine": 409,
+            "endLine": 409
+          },
+          {
+            "name": "userCount",
+            "kind": "property",
+            "startLine": 407,
+            "endLine": 407
+          }
+        ]
+      },
+      {
+        "name": "updatedAt",
+        "kind": "property",
+        "startLine": 284,
+        "endLine": 284
+      },
+      {
+        "name": "updateUser",
+        "kind": "method",
+        "startLine": 333,
+        "endLine": 340,
+        "children": [
+          {
+            "name": "updated",
+            "kind": "variable",
+            "startLine": 337,
+            "endLine": 337,
+            "children": [
+              {
+                "name": "user",
+                "kind": "property",
+                "startLine": 337,
+                "endLine": 337
+              },
+              {
+                "name": "updates",
+                "kind": "property",
+                "startLine": 337,
+                "endLine": 337
+              }
+            ]
+          },
+          {
+            "name": "user",
+            "kind": "variable",
+            "startLine": 335,
+            "endLine": 335
+          }
+        ]
+      },
+      {
+        "name": "updateUserProfile",
+        "kind": "method",
+        "startLine": 342,
+        "endLine": 352,
+        "children": [
+          {
+            "name": "existing",
+            "kind": "variable",
+            "startLine": 346,
+            "endLine": 346
+          },
+          {
+            "name": "merged",
+            "kind": "variable",
+            "startLine": 348,
+            "endLine": 348
+          }
+        ]
+      },
+      {
+        "name": "users",
+        "kind": "property",
+        "startLine": 286,
+        "endLine": 286
+      }
+    ]
+  },
+  {
+    "name": "TypedEventEmitter",
+    "kind": "class",
+    "startLine": 432,
+    "endLine": 487,
+    "children": [
+      {
+        "name": "emit",
+        "kind": "method",
+        "startLine": 455,
+        "endLine": 462,
+        "children": [
+          {
+            "name": "listener",
+            "kind": "variable",
+            "startLine": 458,
+            "endLine": 458
+          },
+          {
+            "name": "set",
+            "kind": "variable",
+            "startLine": 456,
+            "endLine": 456
+          }
+        ]
+      },
+      {
+        "name": "listenerCount",
+        "kind": "method",
+        "startLine": 484,
+        "endLine": 486
+      },
+      {
+        "name": "listeners",
+        "kind": "property",
+        "startLine": 435,
+        "endLine": 435
+      },
+      {
+        "name": "off",
+        "kind": "method",
+        "startLine": 447,
+        "endLine": 453
+      },
+      {
+        "name": "on",
+        "kind": "method",
+        "startLine": 437,
+        "endLine": 445,
+        "children": [
+          {
+            "name": "set",
+            "kind": "variable",
+            "startLine": 441,
+            "endLine": 441
+          }
+        ]
+      },
+      {
+        "name": "once",
+        "kind": "method",
+        "startLine": 464,
+        "endLine": 473,
+        "children": [
+          {
+            "name": "wrapper",
+            "kind": "variable",
+            "startLine": 468,
+            "endLine": 471
+          }
+        ]
+      },
+      {
+        "name": "removeAllListeners",
+        "kind": "method",
+        "startLine": 475,
+        "endLine": 482
+      }
+    ]
+  },
+  {
+    "name": "Geometry",
+    "kind": "module",
+    "startLine": 491,
+    "endLine": 607,
+    "children": [
+      {
+        "name": "distance",
+        "kind": "function",
+        "startLine": 600,
+        "endLine": 602
+      },
+      {
+        "name": "midpoint",
+        "kind": "function",
+        "startLine": 604,
+        "endLine": 606,
+        "children": [
+          {
+            "name": "x",
+            "kind": "property",
+            "startLine": 605,
+            "endLine": 605
+          },
+          {
+            "name": "y",
+            "kind": "property",
+            "startLine": 605,
+            "endLine": 605
+          }
+        ]
+      },
+      {
+        "name": "Point",
+        "kind": "interface",
+        "startLine": 492,
+        "endLine": 495,
+        "children": [
+          {
+            "name": "x",
+            "kind": "property",
+            "startLine": 493,
+            "endLine": 493
+          },
+          {
+            "name": "y",
+            "kind": "property",
+            "startLine": 494,
+            "endLine": 494
+          }
+        ]
+      },
+      {
+        "name": "Point3D",
+        "kind": "interface",
+        "startLine": 497,
+        "endLine": 499,
+        "children": [
+          {
+            "name": "z",
+            "kind": "property",
+            "startLine": 498,
+            "endLine": 498
+          }
+        ]
+      },
+      {
+        "name": "Shapes",
+        "kind": "module",
+        "startLine": 501,
+        "endLine": 598,
+        "children": [
+          {
+            "name": "Circle",
+            "kind": "class",
+            "startLine": 502,
+            "endLine": 521,
+            "children": [
+              {
+                "name": "constructor",
+                "kind": "constructor",
+                "startLine": 503,
+                "endLine": 506
+              },
+              {
+                "name": "area",
+                "kind": "method",
+                "startLine": 508,
+                "endLine": 510
+              },
+              {
+                "name": "center",
+                "kind": "property",
+                "startLine": 504,
+                "endLine": 504
+              },
+              {
+                "name": "circumference",
+                "kind": "method",
+                "startLine": 512,
+                "endLine": 514
+              },
+              {
+                "name": "contains",
+                "kind": "method",
+                "startLine": 516,
+                "endLine": 520,
+                "children": [
+                  {
+                    "name": "dx",
+                    "kind": "variable",
+                    "startLine": 517,
+                    "endLine": 517
+                  },
+                  {
+                    "name": "dy",
+                    "kind": "variable",
+                    "startLine": 518,
+                    "endLine": 518
+                  }
+                ]
+              },
+              {
+                "name": "radius",
+                "kind": "property",
+                "startLine": 505,
+                "endLine": 505
+              }
+            ]
+          },
+          {
+            "name": "Polygon",
+            "kind": "class",
+            "startLine": 548,
+            "endLine": 565,
+            "children": [
+              {
+                "name": "constructor",
+                "kind": "constructor",
+                "startLine": 549,
+                "endLine": 553
+              },
+              {
+                "name": "area",
+                "kind": "method",
+                "startLine": 555,
+                "endLine": 564,
+                "children": [
+                  {
+                    "name": "i",
+                    "kind": "variable",
+                    "startLine": 558,
+                    "endLine": 558
+                  },
+                  {
+                    "name": "j",
+                    "kind": "variable",
+                    "startLine": 559,
+                    "endLine": 559
+                  },
+                  {
+                    "name": "n",
+                    "kind": "variable",
+                    "startLine": 557,
+                    "endLine": 557
+                  },
+                  {
+                    "name": "sum",
+                    "kind": "variable",
+                    "startLine": 556,
+                    "endLine": 556
+                  }
+                ]
+              },
+              {
+                "name": "vertices",
+                "kind": "property",
+                "startLine": 549,
+                "endLine": 549
+              }
+            ]
+          },
+          {
+            "name": "Rectangle",
+            "kind": "class",
+            "startLine": 523,
+            "endLine": 546,
+            "children": [
+              {
+                "name": "constructor",
+                "kind": "constructor",
+                "startLine": 524,
+                "endLine": 528
+              },
+              {
+                "name": "area",
+                "kind": "method",
+                "startLine": 530,
+                "endLine": 532
+              },
+              {
+                "name": "contains",
+                "kind": "method",
+                "startLine": 538,
+                "endLine": 545
+              },
+              {
+                "name": "height",
+                "kind": "property",
+                "startLine": 527,
+                "endLine": 527
+              },
+              {
+                "name": "origin",
+                "kind": "property",
+                "startLine": 525,
+                "endLine": 525
+              },
+              {
+                "name": "perimeter",
+                "kind": "method",
+                "startLine": 534,
+                "endLine": 536
+              },
+              {
+                "name": "width",
+                "kind": "property",
+                "startLine": 526,
+                "endLine": 526
+              }
+            ]
+          },
+          {
+            "name": "ThreeD",
+            "kind": "module",
+            "startLine": 567,
+            "endLine": 597,
+            "children": [
+              {
+                "name": "Cube",
+                "kind": "class",
+                "startLine": 583,
+                "endLine": 596,
+                "children": [
+                  {
+                    "name": "constructor",
+                    "kind": "constructor",
+                    "startLine": 584,
+                    "endLine": 587
+                  },
+                  {
+                    "name": "origin",
+                    "kind": "property",
+                    "startLine": 585,
+                    "endLine": 585
+                  },
+                  {
+                    "name": "side",
+                    "kind": "property",
+                    "startLine": 586,
+                    "endLine": 586
+                  },
+                  {
+                    "name": "surfaceArea",
+                    "kind": "method",
+                    "startLine": 593,
+                    "endLine": 595
+                  },
+                  {
+                    "name": "volume",
+                    "kind": "method",
+                    "startLine": 589,
+                    "endLine": 591
+                  }
+                ]
+              },
+              {
+                "name": "Sphere",
+                "kind": "class",
+                "startLine": 568,
+                "endLine": 581,
+                "children": [
+                  {
+                    "name": "constructor",
+                    "kind": "constructor",
+                    "startLine": 569,
+                    "endLine": 572
+                  },
+                  {
+                    "name": "center",
+                    "kind": "property",
+                    "startLine": 570,
+                    "endLine": 570
+                  },
+                  {
+                    "name": "radius",
+                    "kind": "property",
+                    "startLine": 571,
+                    "endLine": 571
+                  },
+                  {
+                    "name": "surfaceArea",
+                    "kind": "method",
+                    "startLine": 578,
+                    "endLine": 580
+                  },
+                  {
+                    "name": "volume",
+                    "kind": "method",
+                    "startLine": 574,
+                    "endLine": 576
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "createElement",
+    "kind": "function",
+    "startLine": 611,
+    "endLine": 611
+  },
+  {
+    "name": "createElement",
+    "kind": "function",
+    "startLine": 612,
+    "endLine": 612
+  },
+  {
+    "name": "createElement",
+    "kind": "function",
+    "startLine": 613,
+    "endLine": 613
+  },
+  {
+    "name": "createElement",
+    "kind": "function",
+    "startLine": 614,
+    "endLine": 614
+  },
+  {
+    "name": "createElement",
+    "kind": "function",
+    "startLine": 615,
+    "endLine": 615
+  },
+  {
+    "name": "createElement",
+    "kind": "function",
+    "startLine": 616,
+    "endLine": 618
+  },
+  {
+    "name": "parse",
+    "kind": "function",
+    "startLine": 620,
+    "endLine": 620
+  },
+  {
+    "name": "parse",
+    "kind": "function",
+    "startLine": 621,
+    "endLine": 621
+  },
+  {
+    "name": "parse",
+    "kind": "function",
+    "startLine": 622,
+    "endLine": 627,
+    "children": [
+      {
+        "name": "input.map() callback",
+        "kind": "function",
+        "startLine": 626,
+        "endLine": 626
+      }
+    ]
+  },
+  {
+    "name": "fibonacci",
+    "kind": "function",
+    "startLine": 631,
+    "endLine": 638,
+    "children": [
+      {
+        "name": "a",
+        "kind": "variable",
+        "startLine": 632,
+        "endLine": 632
+      },
+      {
+        "name": "b",
+        "kind": "variable",
+        "startLine": 633,
+        "endLine": 633
+      }
+    ]
+  },
+  {
+    "name": "asyncRange",
+    "kind": "function",
+    "startLine": 640,
+    "endLine": 649,
+    "children": [
+      {
+        "name": "i",
+        "kind": "variable",
+        "startLine": 645,
+        "endLine": 645
+      }
+    ]
+  },
+  {
+    "name": "enumerate",
+    "kind": "function",
+    "startLine": 651,
+    "endLine": 656,
+    "children": [
+      {
+        "name": "index",
+        "kind": "variable",
+        "startLine": 652,
+        "endLine": 652
+      },
+      {
+        "name": "value",
+        "kind": "variable",
+        "startLine": 653,
+        "endLine": 653
+      }
+    ]
+  },
+  {
+    "name": "SuccessResult",
+    "kind": "interface",
+    "startLine": 660,
+    "endLine": 664,
+    "children": [
+      {
+        "name": "data",
+        "kind": "property",
+        "startLine": 662,
+        "endLine": 662
+      },
+      {
+        "name": "status",
+        "kind": "property",
+        "startLine": 661,
+        "endLine": 661
+      },
+      {
+        "name": "timestamp",
+        "kind": "property",
+        "startLine": 663,
+        "endLine": 663
+      }
+    ]
+  },
+  {
+    "name": "ErrorResult",
+    "kind": "interface",
+    "startLine": 666,
+    "endLine": 675,
+    "children": [
+      {
+        "name": "error",
+        "kind": "property",
+        "startLine": 668,
+        "endLine": 673
+      },
+      {
+        "name": "status",
+        "kind": "property",
+        "startLine": 667,
+        "endLine": 667
+      },
+      {
+        "name": "timestamp",
+        "kind": "property",
+        "startLine": 674,
+        "endLine": 674
+      }
+    ]
+  },
+  {
+    "name": "LoadingResult",
+    "kind": "interface",
+    "startLine": 677,
+    "endLine": 681,
+    "children": [
+      {
+        "name": "progress",
+        "kind": "property",
+        "startLine": 679,
+        "endLine": 679
+      },
+      {
+        "name": "status",
+        "kind": "property",
+        "startLine": 678,
+        "endLine": 678
+      },
+      {
+        "name": "timestamp",
+        "kind": "property",
+        "startLine": 680,
+        "endLine": 680
+      }
+    ]
+  },
+  {
+    "name": "Result",
+    "kind": "variable",
+    "startLine": 683,
+    "endLine": 683
+  },
+  {
+    "name": "handleResult",
+    "kind": "function",
+    "startLine": 685,
+    "endLine": 694
+  },
+  {
+    "name": "Timestamped",
+    "kind": "variable",
+    "startLine": 698,
+    "endLine": 701
+  },
+  {
+    "name": "WithId",
+    "kind": "variable",
+    "startLine": 703,
+    "endLine": 705
+  },
+  {
+    "name": "Entity",
+    "kind": "variable",
+    "startLine": 707,
+    "endLine": 707
+  },
+  {
+    "name": "StringMap",
+    "kind": "interface",
+    "startLine": 711,
+    "endLine": 713,
+    "children": [
+      {
+        "name": "[]",
+        "kind": "variable",
+        "startLine": 712,
+        "endLine": 712
+      }
+    ]
+  },
+  {
+    "name": "NestedConfig",
+    "kind": "interface",
+    "startLine": 715,
+    "endLine": 719,
+    "children": [
+      {
+        "name": "[]",
+        "kind": "variable",
+        "startLine": 716,
+        "endLine": 718
+      }
+    ]
+  },
+  {
+    "name": "TypedRecord",
+    "kind": "variable",
+    "startLine": 721,
+    "endLine": 721
+  },
+  {
+    "name": "retryWithBackoff",
+    "kind": "function",
+    "startLine": 725,
+    "endLine": 743,
+    "children": [
+      {
+        "name": "attempt",
+        "kind": "variable",
+        "startLine": 731,
+        "endLine": 731
+      },
+      {
+        "name": "delay",
+        "kind": "variable",
+        "startLine": 737,
+        "endLine": 737
+      },
+      {
+        "name": "error",
+        "kind": "variable",
+        "startLine": 734,
+        "endLine": 734
+      },
+      {
+        "name": "lastError",
+        "kind": "variable",
+        "startLine": 730,
+        "endLine": 730
+      }
+    ]
+  },
+  {
+    "name": "parallel",
+    "kind": "function",
+    "startLine": 745,
+    "endLine": 750,
+    "children": [
+      {
+        "name": "results",
+        "kind": "variable",
+        "startLine": 748,
+        "endLine": 748,
+        "children": [
+          {
+            "name": "fns.map() callback",
+            "kind": "function",
+            "startLine": 748,
+            "endLine": 748
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "'./augmented'",
+    "kind": "module",
+    "startLine": 754,
+    "endLine": 759,
+    "children": [
+      {
+        "name": "AugmentedInterface",
+        "kind": "interface",
+        "startLine": 755,
+        "endLine": 758,
+        "children": [
+          {
+            "name": "newMethod",
+            "kind": "method",
+            "startLine": 756,
+            "endLine": 756
+          },
+          {
+            "name": "newProperty",
+            "kind": "property",
+            "startLine": 757,
+            "endLine": 757
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "global",
+    "kind": "module",
+    "startLine": 763,
+    "endLine": 774,
+    "children": [
+      {
+        "name": "Array",
+        "kind": "interface",
+        "startLine": 764,
+        "endLine": 768,
+        "children": [
+          {
+            "name": "customGroupBy",
+            "kind": "method",
+            "startLine": 765,
+            "endLine": 767
+          }
+        ]
+      },
+      {
+        "name": "Window",
+        "kind": "interface",
+        "startLine": 770,
+        "endLine": 773,
+        "children": [
+          {
+            "name": "__APP_VERSION__",
+            "kind": "property",
+            "startLine": 771,
+            "endLine": 771
+          },
+          {
+            "name": "__DEBUG_MODE__",
+            "kind": "property",
+            "startLine": 772,
+            "endLine": 772
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "CONFIG",
+    "kind": "variable",
+    "startLine": 778,
+    "endLine": 815,
+    "children": [
+      {
+        "name": "api",
+        "kind": "property",
+        "startLine": 779,
+        "endLine": 799,
+        "children": [
+          {
+            "name": "baseUrl",
+            "kind": "property",
+            "startLine": 780,
+            "endLine": 780
+          },
+          {
+            "name": "endpoints",
+            "kind": "property",
+            "startLine": 782,
+            "endLine": 792,
+            "children": [
+              {
+                "name": "auth",
+                "kind": "property",
+                "startLine": 786,
+                "endLine": 791,
+                "children": [
+                  {
+                    "name": "login",
+                    "kind": "property",
+                    "startLine": 787,
+                    "endLine": 787
+                  },
+                  {
+                    "name": "logout",
+                    "kind": "property",
+                    "startLine": 788,
+                    "endLine": 788
+                  },
+                  {
+                    "name": "refresh",
+                    "kind": "property",
+                    "startLine": 789,
+                    "endLine": 789
+                  },
+                  {
+                    "name": "register",
+                    "kind": "property",
+                    "startLine": 790,
+                    "endLine": 790
+                  }
+                ]
+              },
+              {
+                "name": "comments",
+                "kind": "property",
+                "startLine": 785,
+                "endLine": 785
+              },
+              {
+                "name": "posts",
+                "kind": "property",
+                "startLine": 784,
+                "endLine": 784
+              },
+              {
+                "name": "users",
+                "kind": "property",
+                "startLine": 783,
+                "endLine": 783
+              }
+            ]
+          },
+          {
+            "name": "headers",
+            "kind": "property",
+            "startLine": 793,
+            "endLine": 796,
+            "children": [
+              {
+                "name": "'Accept'",
+                "kind": "property",
+                "startLine": 795,
+                "endLine": 795
+              },
+              {
+                "name": "'Content-Type'",
+                "kind": "property",
+                "startLine": 794,
+                "endLine": 794
+              }
+            ]
+          },
+          {
+            "name": "retries",
+            "kind": "property",
+            "startLine": 798,
+            "endLine": 798
+          },
+          {
+            "name": "timeout",
+            "kind": "property",
+            "startLine": 797,
+            "endLine": 797
+          },
+          {
+            "name": "version",
+            "kind": "property",
+            "startLine": 781,
+            "endLine": 781
+          }
+        ]
+      },
+      {
+        "name": "database",
+        "kind": "property",
+        "startLine": 800,
+        "endLine": 805,
+        "children": [
+          {
+            "name": "host",
+            "kind": "property",
+            "startLine": 801,
+            "endLine": 801
+          },
+          {
+            "name": "name",
+            "kind": "property",
+            "startLine": 803,
+            "endLine": 803
+          },
+          {
+            "name": "pool",
+            "kind": "property",
+            "startLine": 804,
+            "endLine": 804,
+            "children": [
+              {
+                "name": "idle",
+                "kind": "property",
+                "startLine": 804,
+                "endLine": 804
+              },
+              {
+                "name": "max",
+                "kind": "property",
+                "startLine": 804,
+                "endLine": 804
+              },
+              {
+                "name": "min",
+                "kind": "property",
+                "startLine": 804,
+                "endLine": 804
+              }
+            ]
+          },
+          {
+            "name": "port",
+            "kind": "property",
+            "startLine": 802,
+            "endLine": 802
+          }
+        ]
+      },
+      {
+        "name": "features",
+        "kind": "property",
+        "startLine": 806,
+        "endLine": 814,
+        "children": [
+          {
+            "name": "analytics",
+            "kind": "property",
+            "startLine": 809,
+            "endLine": 809
+          },
+          {
+            "name": "darkMode",
+            "kind": "property",
+            "startLine": 807,
+            "endLine": 807
+          },
+          {
+            "name": "experimental",
+            "kind": "property",
+            "startLine": 810,
+            "endLine": 813,
+            "children": [
+              {
+                "name": "aiAssistant",
+                "kind": "property",
+                "startLine": 811,
+                "endLine": 811
+              },
+              {
+                "name": "realtimeSync",
+                "kind": "property",
+                "startLine": 812,
+                "endLine": 812
+              }
+            ]
+          },
+          {
+            "name": "notifications",
+            "kind": "property",
+            "startLine": 808,
+            "endLine": 808
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "STATUS_CODES",
+    "kind": "variable",
+    "startLine": 817,
+    "endLine": 829
+  },
+  {
+    "name": "pipe",
+    "kind": "function",
+    "startLine": 833,
+    "endLine": 833
+  },
+  {
+    "name": "pipe",
+    "kind": "function",
+    "startLine": 834,
+    "endLine": 834
+  },
+  {
+    "name": "pipe",
+    "kind": "function",
+    "startLine": 835,
+    "endLine": 835
+  },
+  {
+    "name": "pipe",
+    "kind": "function",
+    "startLine": 836,
+    "endLine": 838,
+    "children": [
+      {
+        "name": "<function>",
+        "kind": "function",
+        "startLine": 837,
+        "endLine": 837,
+        "children": [
+          {
+            "name": "fns.reduce() callback",
+            "kind": "function",
+            "startLine": 837,
+            "endLine": 837
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "memoize",
+    "kind": "function",
+    "startLine": 840,
+    "endLine": 852,
+    "children": [
+      {
+        "name": "<function>",
+        "kind": "function",
+        "startLine": 845,
+        "endLine": 851,
+        "children": [
+          {
+            "name": "key",
+            "kind": "variable",
+            "startLine": 846,
+            "endLine": 846
+          },
+          {
+            "name": "result",
+            "kind": "variable",
+            "startLine": 848,
+            "endLine": 848
+          }
+        ]
+      },
+      {
+        "name": "cache",
+        "kind": "variable",
+        "startLine": 844,
+        "endLine": 844
+      }
+    ]
+  },
+  {
+    "name": "debounce",
+    "kind": "function",
+    "startLine": 854,
+    "endLine": 863,
+    "children": [
+      {
+        "name": "<function>",
+        "kind": "function",
+        "startLine": 859,
+        "endLine": 862,
+        "children": [
+          {
+            "name": "setTimeout() callback",
+            "kind": "function",
+            "startLine": 861,
+            "endLine": 861
+          }
+        ]
+      },
+      {
+        "name": "timeoutId",
+        "kind": "variable",
+        "startLine": 858,
+        "endLine": 858
+      }
+    ]
+  },
+  {
+    "name": "throttle",
+    "kind": "function",
+    "startLine": 865,
+    "endLine": 877,
+    "children": [
+      {
+        "name": "<function>",
+        "kind": "function",
+        "startLine": 870,
+        "endLine": 876,
+        "children": [
+          {
+            "name": "now",
+            "kind": "variable",
+            "startLine": 871,
+            "endLine": 871
+          }
+        ]
+      },
+      {
+        "name": "lastCall",
+        "kind": "variable",
+        "startLine": 869,
+        "endLine": 869
+      }
+    ]
+  },
+  {
+    "name": "isString",
+    "kind": "function",
+    "startLine": 881,
+    "endLine": 883
+  },
+  {
+    "name": "isNumber",
+    "kind": "function",
+    "startLine": 885,
+    "endLine": 887
+  },
+  {
+    "name": "isNonNullable",
+    "kind": "function",
+    "startLine": 889,
+    "endLine": 891
+  },
+  {
+    "name": "isResult",
+    "kind": "function",
+    "startLine": 893,
+    "endLine": 900
+  },
+  {
+    "name": "assertNever",
+    "kind": "function",
+    "startLine": 902,
+    "endLine": 904
+  },
+  {
+    "name": "Brand",
+    "kind": "variable",
+    "startLine": 908,
+    "endLine": 908
+  },
+  {
+    "name": "UserId",
+    "kind": "variable",
+    "startLine": 909,
+    "endLine": 909
+  },
+  {
+    "name": "OrderId",
+    "kind": "variable",
+    "startLine": 910,
+    "endLine": 910
+  },
+  {
+    "name": "Email",
+    "kind": "variable",
+    "startLine": 911,
+    "endLine": 911
+  },
+  {
+    "name": "PositiveNumber",
+    "kind": "variable",
+    "startLine": 912,
+    "endLine": 912
+  },
+  {
+    "name": "createUserId",
+    "kind": "function",
+    "startLine": 914,
+    "endLine": 917
+  },
+  {
+    "name": "createEmail",
+    "kind": "function",
+    "startLine": 919,
+    "endLine": 922
+  },
+  {
+    "name": "QueryBuilder",
+    "kind": "class",
+    "startLine": 926,
+    "endLine": 989,
+    "children": [
+      {
+        "name": "build",
+        "kind": "method",
+        "startLine": 958,
+        "endLine": 988,
+        "children": [
+          {
+            "name": "fields",
+            "kind": "variable",
+            "startLine": 959,
+            "endLine": 961
+          },
+          {
+            "name": "orderBy",
+            "kind": "variable",
+            "startLine": 973,
+            "endLine": 975,
+            "children": [
+              {
+                "name": "sortFields.map() callback",
+                "kind": "function",
+                "startLine": 974,
+                "endLine": 974
+              }
+            ]
+          },
+          {
+            "name": "query",
+            "kind": "variable",
+            "startLine": 963,
+            "endLine": 963
+          },
+          {
+            "name": "where",
+            "kind": "variable",
+            "startLine": 966,
+            "endLine": 968,
+            "children": [
+              {
+                "name": "conditions.map() callback",
+                "kind": "function",
+                "startLine": 967,
+                "endLine": 967
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "conditions",
+        "kind": "property",
+        "startLine": 927,
+        "endLine": 927
+      },
+      {
+        "name": "limit",
+        "kind": "method",
+        "startLine": 948,
+        "endLine": 951
+      },
+      {
+        "name": "limitValue",
+        "kind": "property",
+        "startLine": 929,
+        "endLine": 929
+      },
+      {
+        "name": "offset",
+        "kind": "method",
+        "startLine": 953,
+        "endLine": 956
+      },
+      {
+        "name": "offsetValue",
+        "kind": "property",
+        "startLine": 930,
+        "endLine": 930
+      },
+      {
+        "name": "orderBy",
+        "kind": "method",
+        "startLine": 943,
+        "endLine": 946,
+        "children": [
+          {
+            "name": "direction",
+            "kind": "property",
+            "startLine": 944,
+            "endLine": 944
+          },
+          {
+            "name": "field",
+            "kind": "property",
+            "startLine": 944,
+            "endLine": 944
+          }
+        ]
+      },
+      {
+        "name": "select",
+        "kind": "method",
+        "startLine": 933,
+        "endLine": 936
+      },
+      {
+        "name": "selectedFields",
+        "kind": "property",
+        "startLine": 931,
+        "endLine": 931
+      },
+      {
+        "name": "sortFields",
+        "kind": "property",
+        "startLine": 928,
+        "endLine": 928
+      },
+      {
+        "name": "where",
+        "kind": "method",
+        "startLine": 938,
+        "endLine": 941,
+        "children": [
+          {
+            "name": "field",
+            "kind": "property",
+            "startLine": 939,
+            "endLine": 939
+          },
+          {
+            "name": "op",
+            "kind": "property",
+            "startLine": 939,
+            "endLine": 939
+          },
+          {
+            "name": "value",
+            "kind": "property",
+            "startLine": 939,
+            "endLine": 939
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Constructor",
+    "kind": "variable",
+    "startLine": 993,
+    "endLine": 993
+  },
+  {
+    "name": "Timestamped",
+    "kind": "function",
+    "startLine": 995,
+    "endLine": 1004,
+    "children": [
+      {
+        "name": "<class>",
+        "kind": "class",
+        "startLine": 996,
+        "endLine": 1003,
+        "children": [
+          {
+            "name": "createdAt",
+            "kind": "property",
+            "startLine": 997,
+            "endLine": 997
+          },
+          {
+            "name": "touch",
+            "kind": "method",
+            "startLine": 1000,
+            "endLine": 1002
+          },
+          {
+            "name": "updatedAt",
+            "kind": "property",
+            "startLine": 998,
+            "endLine": 998
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Loggable",
+    "kind": "function",
+    "startLine": 1006,
+    "endLine": 1020,
+    "children": [
+      {
+        "name": "<class>",
+        "kind": "class",
+        "startLine": 1007,
+        "endLine": 1019,
+        "children": [
+          {
+            "name": "error",
+            "kind": "method",
+            "startLine": 1016,
+            "endLine": 1018
+          },
+          {
+            "name": "log",
+            "kind": "method",
+            "startLine": 1008,
+            "endLine": 1010
+          },
+          {
+            "name": "warn",
+            "kind": "method",
+            "startLine": 1012,
+            "endLine": 1014
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "TimestampedLoggableService",
+    "kind": "class",
+    "startLine": 1022,
+    "endLine": 1028,
+    "children": [
+      {
+        "name": "doWork",
+        "kind": "method",
+        "startLine": 1023,
+        "endLine": 1027
+      }
+    ]
+  },
+  {
+    "name": "DISPOSE",
+    "kind": "variable",
+    "startLine": 1032,
+    "endLine": 1032
+  },
+  {
+    "name": "SERIALIZE",
+    "kind": "variable",
+    "startLine": 1033,
+    "endLine": 1033
+  },
+  {
+    "name": "METADATA",
+    "kind": "variable",
+    "startLine": 1034,
+    "endLine": 1034
+  },
+  {
+    "name": "Disposable",
+    "kind": "interface",
+    "startLine": 1036,
+    "endLine": 1038,
+    "children": [
+      {
+        "name": "[DISPOSE]",
+        "kind": "method",
+        "startLine": 1037,
+        "endLine": 1037
+      }
+    ]
+  },
+  {
+    "name": "CustomSerializable",
+    "kind": "interface",
+    "startLine": 1040,
+    "endLine": 1042,
+    "children": [
+      {
+        "name": "[SERIALIZE]",
+        "kind": "method",
+        "startLine": 1041,
+        "endLine": 1041
+      }
+    ]
+  },
+  {
+    "name": "Resource",
+    "kind": "class",
+    "startLine": 1044,
+    "endLine": 1063,
+    "children": [
+      {
+        "name": "[DISPOSE]",
+        "kind": "method",
+        "startLine": 1053,
+        "endLine": 1058
+      },
+      {
+        "name": "[SERIALIZE]",
+        "kind": "method",
+        "startLine": 1060,
+        "endLine": 1062,
+        "children": [
+          {
+            "name": "disposed",
+            "kind": "property",
+            "startLine": 1061,
+            "endLine": 1061
+          },
+          {
+            "name": "handle",
+            "kind": "property",
+            "startLine": 1061,
+            "endLine": 1061
+          }
+        ]
+      },
+      {
+        "name": "constructor",
+        "kind": "constructor",
+        "startLine": 1048,
+        "endLine": 1051
+      },
+      {
+        "name": "disposed",
+        "kind": "property",
+        "startLine": 1046,
+        "endLine": 1046
+      },
+      {
+        "name": "handle",
+        "kind": "property",
+        "startLine": 1045,
+        "endLine": 1045
+      }
+    ]
+  },
+  {
+    "name": "TreeNode",
+    "kind": "interface",
+    "startLine": 1067,
+    "endLine": 1072,
+    "children": [
+      {
+        "name": "children",
+        "kind": "property",
+        "startLine": 1069,
+        "endLine": 1069
+      },
+      {
+        "name": "metadata",
+        "kind": "property",
+        "startLine": 1071,
+        "endLine": 1071
+      },
+      {
+        "name": "parent",
+        "kind": "property",
+        "startLine": 1070,
+        "endLine": 1070
+      },
+      {
+        "name": "value",
+        "kind": "property",
+        "startLine": 1068,
+        "endLine": 1068
+      }
+    ]
+  },
+  {
+    "name": "LinkedListNode",
+    "kind": "interface",
+    "startLine": 1074,
+    "endLine": 1078,
+    "children": [
+      {
+        "name": "next",
+        "kind": "property",
+        "startLine": 1076,
+        "endLine": 1076
+      },
+      {
+        "name": "prev",
+        "kind": "property",
+        "startLine": 1077,
+        "endLine": 1077
+      },
+      {
+        "name": "value",
+        "kind": "property",
+        "startLine": 1075,
+        "endLine": 1075
+      }
+    ]
+  },
+  {
+    "name": "JSONValue",
+    "kind": "variable",
+    "startLine": 1080,
+    "endLine": 1086
+  },
+  {
+    "name": "DeepKeyOf",
+    "kind": "variable",
+    "startLine": 1088,
+    "endLine": 1096
+  },
+  {
+    "name": "createObservable",
+    "kind": "function",
+    "startLine": 1100,
+    "endLine": 1117,
+    "children": [
+      {
+        "name": "get",
+        "kind": "method",
+        "startLine": 1107,
+        "endLine": 1115,
+        "children": [
+          {
+            "name": "createObservable() callback",
+            "kind": "function",
+            "startLine": 1110,
+            "endLine": 1112
+          },
+          {
+            "name": "value",
+            "kind": "variable",
+            "startLine": 1108,
+            "endLine": 1108
+          }
+        ]
+      },
+      {
+        "name": "set",
+        "kind": "method",
+        "startLine": 1102,
+        "endLine": 1106,
+        "children": [
+          {
+            "name": "result",
+            "kind": "variable",
+            "startLine": 1103,
+            "endLine": 1103
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Concat",
+    "kind": "variable",
+    "startLine": 1121,
+    "endLine": 1121
+  },
+  {
+    "name": "Prepend",
+    "kind": "variable",
+    "startLine": 1122,
+    "endLine": 1122
+  },
+  {
+    "name": "Append",
+    "kind": "variable",
+    "startLine": 1123,
+    "endLine": 1123
+  },
+  {
+    "name": "Head",
+    "kind": "variable",
+    "startLine": 1124,
+    "endLine": 1124
+  },
+  {
+    "name": "Tail",
+    "kind": "variable",
+    "startLine": 1125,
+    "endLine": 1125
+  },
+  {
+    "name": "Last",
+    "kind": "variable",
+    "startLine": 1126,
+    "endLine": 1126
+  },
+  {
+    "name": "Length",
+    "kind": "variable",
+    "startLine": 1127,
+    "endLine": 1127
+  },
+  {
+    "name": "ReturnTypeOfPromise",
+    "kind": "variable",
+    "startLine": 1131,
+    "endLine": 1131
+  },
+  {
+    "name": "ExtractRouteParams",
+    "kind": "variable",
+    "startLine": 1132,
+    "endLine": 1137
+  },
+  {
+    "name": "Split",
+    "kind": "variable",
+    "startLine": 1139,
+    "endLine": 1142
+  }
+]

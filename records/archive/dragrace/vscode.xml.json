@@ -1,0 +1,1952 @@
+[
+  {
+    "name": "xml",
+    "kind": "property",
+    "startLine": 1,
+    "endLine": 1
+  },
+  {
+    "name": "xml-stylesheet",
+    "kind": "property",
+    "startLine": 17,
+    "endLine": 17
+  },
+  {
+    "name": "custom-pi",
+    "kind": "property",
+    "startLine": 18,
+    "endLine": 18
+  },
+  {
+    "name": "target",
+    "kind": "property",
+    "startLine": 19,
+    "endLine": 19
+  },
+  {
+    "name": "pi-with-special-chars",
+    "kind": "property",
+    "startLine": 20,
+    "endLine": 637,
+    "children": [
+      {
+        "name": "php",
+        "kind": "property",
+        "startLine": 22,
+        "endLine": 22
+      },
+      {
+        "name": "DOCTYPE:root",
+        "kind": "struct",
+        "startLine": 24,
+        "endLine": 91,
+        "children": [
+          {
+            "name": "root",
+            "kind": "property",
+            "startLine": 28,
+            "endLine": 28
+          },
+          {
+            "name": "section",
+            "kind": "property",
+            "startLine": 29,
+            "endLine": 29
+          },
+          {
+            "name": "title",
+            "kind": "property",
+            "startLine": 30,
+            "endLine": 30
+          },
+          {
+            "name": "paragraph",
+            "kind": "property",
+            "startLine": 31,
+            "endLine": 31
+          },
+          {
+            "name": "emphasis",
+            "kind": "property",
+            "startLine": 32,
+            "endLine": 32
+          },
+          {
+            "name": "strong",
+            "kind": "property",
+            "startLine": 33,
+            "endLine": 33
+          },
+          {
+            "name": "code",
+            "kind": "property",
+            "startLine": 34,
+            "endLine": 34
+          },
+          {
+            "name": "link",
+            "kind": "property",
+            "startLine": 35,
+            "endLine": 35
+          },
+          {
+            "name": "image",
+            "kind": "property",
+            "startLine": 36,
+            "endLine": 36
+          },
+          {
+            "name": "list",
+            "kind": "property",
+            "startLine": 37,
+            "endLine": 37
+          },
+          {
+            "name": "item",
+            "kind": "property",
+            "startLine": 38,
+            "endLine": 38
+          },
+          {
+            "name": "blockquote",
+            "kind": "property",
+            "startLine": 39,
+            "endLine": 39
+          },
+          {
+            "name": "table",
+            "kind": "property",
+            "startLine": 40,
+            "endLine": 40
+          },
+          {
+            "name": "thead",
+            "kind": "property",
+            "startLine": 41,
+            "endLine": 41
+          },
+          {
+            "name": "tbody",
+            "kind": "property",
+            "startLine": 42,
+            "endLine": 42
+          },
+          {
+            "name": "tr",
+            "kind": "property",
+            "startLine": 43,
+            "endLine": 43
+          },
+          {
+            "name": "th",
+            "kind": "property",
+            "startLine": 44,
+            "endLine": 44
+          },
+          {
+            "name": "td",
+            "kind": "property",
+            "startLine": 45,
+            "endLine": 45
+          },
+          {
+            "name": "container",
+            "kind": "property",
+            "startLine": 48,
+            "endLine": 48
+          },
+          {
+            "name": "section",
+            "kind": "key",
+            "startLine": 51,
+            "endLine": 55,
+            "children": [
+              {
+                "name": "id",
+                "kind": "key",
+                "startLine": 52,
+                "endLine": 52
+              },
+              {
+                "name": "class",
+                "kind": "key",
+                "startLine": 53,
+                "endLine": 53
+              },
+              {
+                "name": "lang",
+                "kind": "key",
+                "startLine": 54,
+                "endLine": 54
+              }
+            ]
+          },
+          {
+            "name": "link",
+            "kind": "key",
+            "startLine": 56,
+            "endLine": 60,
+            "children": [
+              {
+                "name": "href",
+                "kind": "key",
+                "startLine": 57,
+                "endLine": 57
+              },
+              {
+                "name": "target",
+                "kind": "key",
+                "startLine": 58,
+                "endLine": 58
+              },
+              {
+                "name": "rel",
+                "kind": "key",
+                "startLine": 59,
+                "endLine": 59
+              }
+            ]
+          },
+          {
+            "name": "image",
+            "kind": "key",
+            "startLine": 61,
+            "endLine": 66,
+            "children": [
+              {
+                "name": "src",
+                "kind": "key",
+                "startLine": 62,
+                "endLine": 62
+              },
+              {
+                "name": "alt",
+                "kind": "key",
+                "startLine": 63,
+                "endLine": 63
+              },
+              {
+                "name": "width",
+                "kind": "key",
+                "startLine": 64,
+                "endLine": 64
+              },
+              {
+                "name": "height",
+                "kind": "key",
+                "startLine": 65,
+                "endLine": 65
+              }
+            ]
+          },
+          {
+            "name": "item",
+            "kind": "key",
+            "startLine": 67,
+            "endLine": 70,
+            "children": [
+              {
+                "name": "type",
+                "kind": "key",
+                "startLine": 68,
+                "endLine": 68
+              },
+              {
+                "name": "value",
+                "kind": "key",
+                "startLine": 69,
+                "endLine": 69
+              }
+            ]
+          },
+          {
+            "name": "copyright",
+            "kind": "namespace",
+            "startLine": 73,
+            "endLine": 73
+          },
+          {
+            "name": "author",
+            "kind": "namespace",
+            "startLine": 74,
+            "endLine": 74
+          },
+          {
+            "name": "company",
+            "kind": "namespace",
+            "startLine": 75,
+            "endLine": 75
+          },
+          {
+            "name": "registered",
+            "kind": "namespace",
+            "startLine": 76,
+            "endLine": 76
+          },
+          {
+            "name": "trademark",
+            "kind": "namespace",
+            "startLine": 77,
+            "endLine": 77
+          },
+          {
+            "name": "longtext",
+            "kind": "namespace",
+            "startLine": 78,
+            "endLine": 78
+          },
+          {
+            "name": "common.attributes",
+            "kind": "namespace",
+            "startLine": 81,
+            "endLine": 81
+          },
+          {
+            "name": "inline",
+            "kind": "namespace",
+            "startLine": 82,
+            "endLine": 82
+          },
+          {
+            "name": "gif",
+            "kind": "variable",
+            "startLine": 88,
+            "endLine": 88
+          },
+          {
+            "name": "png",
+            "kind": "variable",
+            "startLine": 89,
+            "endLine": 89
+          },
+          {
+            "name": "jpeg",
+            "kind": "variable",
+            "startLine": 90,
+            "endLine": 90
+          }
+        ]
+      },
+      {
+        "name": "root",
+        "kind": "field",
+        "startLine": 93,
+        "endLine": 636,
+        "children": [
+          {
+            "name": "section",
+            "kind": "field",
+            "startLine": 110,
+            "endLine": 164,
+            "children": [
+              {
+                "name": "title",
+                "kind": "field",
+                "startLine": 111,
+                "endLine": 111
+              },
+              {
+                "name": "empty-element",
+                "kind": "field",
+                "startLine": 114,
+                "endLine": 114
+              },
+              {
+                "name": "empty-element",
+                "kind": "field",
+                "startLine": 115,
+                "endLine": 115
+              },
+              {
+                "name": "empty-element",
+                "kind": "field",
+                "startLine": 116,
+                "endLine": 116
+              },
+              {
+                "name": "image",
+                "kind": "field",
+                "startLine": 117,
+                "endLine": 117
+              },
+              {
+                "name": "self-closing-with-attrs",
+                "kind": "field",
+                "startLine": 118,
+                "endLine": 118
+              },
+              {
+                "name": "ns:empty-namespaced",
+                "kind": "field",
+                "startLine": 119,
+                "endLine": 119
+              },
+              {
+                "name": "paragraph",
+                "kind": "field",
+                "startLine": 122,
+                "endLine": 122
+              },
+              {
+                "name": "paragraph",
+                "kind": "field",
+                "startLine": 123,
+                "endLine": 123
+              },
+              {
+                "name": "paragraph",
+                "kind": "field",
+                "startLine": 124,
+                "endLine": 126
+              },
+              {
+                "name": "paragraph",
+                "kind": "field",
+                "startLine": 127,
+                "endLine": 127
+              },
+              {
+                "name": "container",
+                "kind": "field",
+                "startLine": 130,
+                "endLine": 152,
+                "children": [
+                  {
+                    "name": "level1",
+                    "kind": "field",
+                    "startLine": 131,
+                    "endLine": 151,
+                    "children": [
+                      {
+                        "name": "level2",
+                        "kind": "field",
+                        "startLine": 132,
+                        "endLine": 150,
+                        "children": [
+                          {
+                            "name": "level3",
+                            "kind": "field",
+                            "startLine": 133,
+                            "endLine": 149,
+                            "children": [
+                              {
+                                "name": "level4",
+                                "kind": "field",
+                                "startLine": 134,
+                                "endLine": 148,
+                                "children": [
+                                  {
+                                    "name": "level5",
+                                    "kind": "field",
+                                    "startLine": 135,
+                                    "endLine": 147,
+                                    "children": [
+                                      {
+                                        "name": "level6",
+                                        "kind": "field",
+                                        "startLine": 136,
+                                        "endLine": 146,
+                                        "children": [
+                                          {
+                                            "name": "level7",
+                                            "kind": "field",
+                                            "startLine": 137,
+                                            "endLine": 145,
+                                            "children": [
+                                              {
+                                                "name": "level8",
+                                                "kind": "field",
+                                                "startLine": 138,
+                                                "endLine": 144,
+                                                "children": [
+                                                  {
+                                                    "name": "level9",
+                                                    "kind": "field",
+                                                    "startLine": 139,
+                                                    "endLine": 143,
+                                                    "children": [
+                                                      {
+                                                        "name": "level10",
+                                                        "kind": "field",
+                                                        "startLine": 140,
+                                                        "endLine": 142
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "paragraph",
+                "kind": "field",
+                "startLine": 155,
+                "endLine": 159,
+                "children": [
+                  {
+                    "name": "emphasis",
+                    "kind": "field",
+                    "startLine": 156,
+                    "endLine": 156
+                  },
+                  {
+                    "name": "strong",
+                    "kind": "field",
+                    "startLine": 157,
+                    "endLine": 157
+                  },
+                  {
+                    "name": "code",
+                    "kind": "field",
+                    "startLine": 158,
+                    "endLine": 158
+                  }
+                ]
+              },
+              {
+                "name": "paragraph",
+                "kind": "field",
+                "startLine": 161,
+                "endLine": 163,
+                "children": [
+                  {
+                    "name": "emphasis",
+                    "kind": "field",
+                    "startLine": 162,
+                    "endLine": 162,
+                    "children": [
+                      {
+                        "name": "strong",
+                        "kind": "field",
+                        "startLine": 162,
+                        "endLine": 162,
+                        "children": [
+                          {
+                            "name": "code",
+                            "kind": "field",
+                            "startLine": 162,
+                            "endLine": 162
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "section",
+            "kind": "field",
+            "startLine": 170,
+            "endLine": 235,
+            "children": [
+              {
+                "name": "title",
+                "kind": "field",
+                "startLine": 171,
+                "endLine": 171
+              },
+              {
+                "name": "element",
+                "kind": "field",
+                "startLine": 174,
+                "endLine": 174
+              },
+              {
+                "name": "element",
+                "kind": "field",
+                "startLine": 175,
+                "endLine": 175
+              },
+              {
+                "name": "element",
+                "kind": "field",
+                "startLine": 178,
+                "endLine": 187
+              },
+              {
+                "name": "element",
+                "kind": "field",
+                "startLine": 190,
+                "endLine": 190
+              },
+              {
+                "name": "element",
+                "kind": "field",
+                "startLine": 193,
+                "endLine": 199
+              },
+              {
+                "name": "element",
+                "kind": "field",
+                "startLine": 202,
+                "endLine": 202
+              },
+              {
+                "name": "element",
+                "kind": "field",
+                "startLine": 203,
+                "endLine": 203
+              },
+              {
+                "name": "element",
+                "kind": "field",
+                "startLine": 206,
+                "endLine": 211
+              },
+              {
+                "name": "element",
+                "kind": "field",
+                "startLine": 214,
+                "endLine": 221
+              },
+              {
+                "name": "element",
+                "kind": "field",
+                "startLine": 224,
+                "endLine": 224
+              },
+              {
+                "name": "element",
+                "kind": "field",
+                "startLine": 227,
+                "endLine": 234
+              }
+            ]
+          },
+          {
+            "name": "section",
+            "kind": "field",
+            "startLine": 241,
+            "endLine": 309,
+            "children": [
+              {
+                "name": "title",
+                "kind": "field",
+                "startLine": 242,
+                "endLine": 242
+              },
+              {
+                "name": "paragraph",
+                "kind": "field",
+                "startLine": 245,
+                "endLine": 245
+              },
+              {
+                "name": "paragraph",
+                "kind": "field",
+                "startLine": 248,
+                "endLine": 248
+              },
+              {
+                "name": "paragraph",
+                "kind": "field",
+                "startLine": 251,
+                "endLine": 260
+              },
+              {
+                "name": "paragraph",
+                "kind": "field",
+                "startLine": 263,
+                "endLine": 273
+              },
+              {
+                "name": "paragraph",
+                "kind": "field",
+                "startLine": 276,
+                "endLine": 276
+              },
+              {
+                "name": "paragraph",
+                "kind": "field",
+                "startLine": 277,
+                "endLine": 277
+              },
+              {
+                "name": "paragraph",
+                "kind": "field",
+                "startLine": 280,
+                "endLine": 282
+              },
+              {
+                "name": "paragraph",
+                "kind": "field",
+                "startLine": 283,
+                "endLine": 285
+              },
+              {
+                "name": "code",
+                "kind": "field",
+                "startLine": 288,
+                "endLine": 297
+              },
+              {
+                "name": "code",
+                "kind": "field",
+                "startLine": 299,
+                "endLine": 299
+              },
+              {
+                "name": "code",
+                "kind": "field",
+                "startLine": 301,
+                "endLine": 301
+              },
+              {
+                "name": "code",
+                "kind": "field",
+                "startLine": 303,
+                "endLine": 303
+              },
+              {
+                "name": "paragraph",
+                "kind": "field",
+                "startLine": 306,
+                "endLine": 308
+              }
+            ]
+          },
+          {
+            "name": "section",
+            "kind": "field",
+            "startLine": 315,
+            "endLine": 382,
+            "children": [
+              {
+                "name": "title",
+                "kind": "field",
+                "startLine": 316,
+                "endLine": 316
+              },
+              {
+                "name": "paragraph",
+                "kind": "field",
+                "startLine": 319,
+                "endLine": 319
+              },
+              {
+                "name": "custom:element",
+                "kind": "field",
+                "startLine": 322,
+                "endLine": 322
+              },
+              {
+                "name": "custom:parent",
+                "kind": "field",
+                "startLine": 324,
+                "endLine": 326,
+                "children": [
+                  {
+                    "name": "custom:child",
+                    "kind": "field",
+                    "startLine": 325,
+                    "endLine": 325
+                  }
+                ]
+              },
+              {
+                "name": "element",
+                "kind": "field",
+                "startLine": 329,
+                "endLine": 331,
+                "children": [
+                  {
+                    "name": "local:nested",
+                    "kind": "field",
+                    "startLine": 330,
+                    "endLine": 330
+                  }
+                ]
+              },
+              {
+                "name": "custom:mixed",
+                "kind": "field",
+                "startLine": 334,
+                "endLine": 336
+              },
+              {
+                "name": "container",
+                "kind": "field",
+                "startLine": 339,
+                "endLine": 344,
+                "children": [
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 340,
+                    "endLine": 340
+                  },
+                  {
+                    "name": "nested",
+                    "kind": "field",
+                    "startLine": 341,
+                    "endLine": 343,
+                    "children": [
+                      {
+                        "name": "child",
+                        "kind": "field",
+                        "startLine": 342,
+                        "endLine": 342
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "svg:svg",
+                "kind": "field",
+                "startLine": 347,
+                "endLine": 350,
+                "children": [
+                  {
+                    "name": "svg:circle",
+                    "kind": "field",
+                    "startLine": 348,
+                    "endLine": 348
+                  },
+                  {
+                    "name": "svg:text",
+                    "kind": "field",
+                    "startLine": 349,
+                    "endLine": 349
+                  }
+                ]
+              },
+              {
+                "name": "math:math",
+                "kind": "field",
+                "startLine": 353,
+                "endLine": 381,
+                "children": [
+                  {
+                    "name": "math:mrow",
+                    "kind": "field",
+                    "startLine": 354,
+                    "endLine": 380,
+                    "children": [
+                      {
+                        "name": "math:mi",
+                        "kind": "field",
+                        "startLine": 355,
+                        "endLine": 355
+                      },
+                      {
+                        "name": "math:mo",
+                        "kind": "field",
+                        "startLine": 356,
+                        "endLine": 356
+                      },
+                      {
+                        "name": "math:mfrac",
+                        "kind": "field",
+                        "startLine": 357,
+                        "endLine": 379,
+                        "children": [
+                          {
+                            "name": "math:mrow",
+                            "kind": "field",
+                            "startLine": 358,
+                            "endLine": 374,
+                            "children": [
+                              {
+                                "name": "math:mo",
+                                "kind": "field",
+                                "startLine": 359,
+                                "endLine": 359
+                              },
+                              {
+                                "name": "math:mi",
+                                "kind": "field",
+                                "startLine": 360,
+                                "endLine": 360
+                              },
+                              {
+                                "name": "math:mo",
+                                "kind": "field",
+                                "startLine": 361,
+                                "endLine": 361
+                              },
+                              {
+                                "name": "math:msqrt",
+                                "kind": "field",
+                                "startLine": 362,
+                                "endLine": 373,
+                                "children": [
+                                  {
+                                    "name": "math:mrow",
+                                    "kind": "field",
+                                    "startLine": 363,
+                                    "endLine": 372,
+                                    "children": [
+                                      {
+                                        "name": "math:msup",
+                                        "kind": "field",
+                                        "startLine": 364,
+                                        "endLine": 367,
+                                        "children": [
+                                          {
+                                            "name": "math:mi",
+                                            "kind": "field",
+                                            "startLine": 365,
+                                            "endLine": 365
+                                          },
+                                          {
+                                            "name": "math:mn",
+                                            "kind": "field",
+                                            "startLine": 366,
+                                            "endLine": 366
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "name": "math:mo",
+                                        "kind": "field",
+                                        "startLine": 368,
+                                        "endLine": 368
+                                      },
+                                      {
+                                        "name": "math:mn",
+                                        "kind": "field",
+                                        "startLine": 369,
+                                        "endLine": 369
+                                      },
+                                      {
+                                        "name": "math:mi",
+                                        "kind": "field",
+                                        "startLine": 370,
+                                        "endLine": 370
+                                      },
+                                      {
+                                        "name": "math:mi",
+                                        "kind": "field",
+                                        "startLine": 371,
+                                        "endLine": 371
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "name": "math:mrow",
+                            "kind": "field",
+                            "startLine": 375,
+                            "endLine": 378,
+                            "children": [
+                              {
+                                "name": "math:mn",
+                                "kind": "field",
+                                "startLine": 376,
+                                "endLine": 376
+                              },
+                              {
+                                "name": "math:mi",
+                                "kind": "field",
+                                "startLine": 377,
+                                "endLine": 377
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "section",
+            "kind": "field",
+            "startLine": 388,
+            "endLine": 442,
+            "children": [
+              {
+                "name": "title",
+                "kind": "field",
+                "startLine": 389,
+                "endLine": 389
+              },
+              {
+                "name": "table",
+                "kind": "field",
+                "startLine": 392,
+                "endLine": 412,
+                "children": [
+                  {
+                    "name": "thead",
+                    "kind": "field",
+                    "startLine": 393,
+                    "endLine": 399,
+                    "children": [
+                      {
+                        "name": "tr",
+                        "kind": "field",
+                        "startLine": 394,
+                        "endLine": 398,
+                        "children": [
+                          {
+                            "name": "th",
+                            "kind": "field",
+                            "startLine": 395,
+                            "endLine": 395
+                          },
+                          {
+                            "name": "th",
+                            "kind": "field",
+                            "startLine": 396,
+                            "endLine": 396
+                          },
+                          {
+                            "name": "th",
+                            "kind": "field",
+                            "startLine": 397,
+                            "endLine": 397
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "tbody",
+                    "kind": "field",
+                    "startLine": 400,
+                    "endLine": 411,
+                    "children": [
+                      {
+                        "name": "tr",
+                        "kind": "field",
+                        "startLine": 401,
+                        "endLine": 405,
+                        "children": [
+                          {
+                            "name": "td",
+                            "kind": "field",
+                            "startLine": 402,
+                            "endLine": 402
+                          },
+                          {
+                            "name": "td",
+                            "kind": "field",
+                            "startLine": 403,
+                            "endLine": 403
+                          },
+                          {
+                            "name": "td",
+                            "kind": "field",
+                            "startLine": 404,
+                            "endLine": 404
+                          }
+                        ]
+                      },
+                      {
+                        "name": "tr",
+                        "kind": "field",
+                        "startLine": 406,
+                        "endLine": 410,
+                        "children": [
+                          {
+                            "name": "td",
+                            "kind": "field",
+                            "startLine": 407,
+                            "endLine": 407
+                          },
+                          {
+                            "name": "td",
+                            "kind": "field",
+                            "startLine": 408,
+                            "endLine": 408
+                          },
+                          {
+                            "name": "td",
+                            "kind": "field",
+                            "startLine": 409,
+                            "endLine": 409
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "list",
+                "kind": "field",
+                "startLine": 415,
+                "endLine": 430,
+                "children": [
+                  {
+                    "name": "item",
+                    "kind": "field",
+                    "startLine": 416,
+                    "endLine": 428,
+                    "children": [
+                      {
+                        "name": "list",
+                        "kind": "field",
+                        "startLine": 418,
+                        "endLine": 427,
+                        "children": [
+                          {
+                            "name": "item",
+                            "kind": "field",
+                            "startLine": 419,
+                            "endLine": 425,
+                            "children": [
+                              {
+                                "name": "list",
+                                "kind": "field",
+                                "startLine": 421,
+                                "endLine": 424,
+                                "children": [
+                                  {
+                                    "name": "item",
+                                    "kind": "field",
+                                    "startLine": 422,
+                                    "endLine": 422
+                                  },
+                                  {
+                                    "name": "item",
+                                    "kind": "field",
+                                    "startLine": 423,
+                                    "endLine": 423
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "name": "item",
+                            "kind": "field",
+                            "startLine": 426,
+                            "endLine": 426
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "item",
+                    "kind": "field",
+                    "startLine": 429,
+                    "endLine": 429
+                  }
+                ]
+              },
+              {
+                "name": "blockquote",
+                "kind": "field",
+                "startLine": 433,
+                "endLine": 441,
+                "children": [
+                  {
+                    "name": "paragraph",
+                    "kind": "field",
+                    "startLine": 434,
+                    "endLine": 437,
+                    "children": [
+                      {
+                        "name": "emphasis",
+                        "kind": "field",
+                        "startLine": 435,
+                        "endLine": 435
+                      },
+                      {
+                        "name": "strong",
+                        "kind": "field",
+                        "startLine": 436,
+                        "endLine": 436
+                      }
+                    ]
+                  },
+                  {
+                    "name": "paragraph",
+                    "kind": "field",
+                    "startLine": 438,
+                    "endLine": 440,
+                    "children": [
+                      {
+                        "name": "link",
+                        "kind": "field",
+                        "startLine": 439,
+                        "endLine": 439
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "section",
+            "kind": "field",
+            "startLine": 448,
+            "endLine": 520,
+            "children": [
+              {
+                "name": "title",
+                "kind": "field",
+                "startLine": 449,
+                "endLine": 449
+              },
+              {
+                "name": "custom:feed",
+                "kind": "field",
+                "startLine": 452,
+                "endLine": 468,
+                "children": [
+                  {
+                    "name": "custom:channel",
+                    "kind": "field",
+                    "startLine": 453,
+                    "endLine": 467,
+                    "children": [
+                      {
+                        "name": "custom:title",
+                        "kind": "field",
+                        "startLine": 454,
+                        "endLine": 454
+                      },
+                      {
+                        "name": "custom:link",
+                        "kind": "field",
+                        "startLine": 455,
+                        "endLine": 455
+                      },
+                      {
+                        "name": "custom:description",
+                        "kind": "field",
+                        "startLine": 456,
+                        "endLine": 456
+                      },
+                      {
+                        "name": "custom:item",
+                        "kind": "field",
+                        "startLine": 457,
+                        "endLine": 461,
+                        "children": [
+                          {
+                            "name": "custom:title",
+                            "kind": "field",
+                            "startLine": 458,
+                            "endLine": 458
+                          },
+                          {
+                            "name": "custom:link",
+                            "kind": "field",
+                            "startLine": 459,
+                            "endLine": 459
+                          },
+                          {
+                            "name": "custom:pubDate",
+                            "kind": "field",
+                            "startLine": 460,
+                            "endLine": 460
+                          }
+                        ]
+                      },
+                      {
+                        "name": "custom:item",
+                        "kind": "field",
+                        "startLine": 462,
+                        "endLine": 466,
+                        "children": [
+                          {
+                            "name": "custom:title",
+                            "kind": "field",
+                            "startLine": 463,
+                            "endLine": 463
+                          },
+                          {
+                            "name": "custom:link",
+                            "kind": "field",
+                            "startLine": 464,
+                            "endLine": 464
+                          },
+                          {
+                            "name": "custom:pubDate",
+                            "kind": "field",
+                            "startLine": 465,
+                            "endLine": 465
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "custom:configuration",
+                "kind": "field",
+                "startLine": 471,
+                "endLine": 488,
+                "children": [
+                  {
+                    "name": "custom:application",
+                    "kind": "field",
+                    "startLine": 472,
+                    "endLine": 487,
+                    "children": [
+                      {
+                        "name": "custom:database",
+                        "kind": "field",
+                        "startLine": 473,
+                        "endLine": 477,
+                        "children": [
+                          {
+                            "name": "custom:connection",
+                            "kind": "field",
+                            "startLine": 474,
+                            "endLine": 474
+                          },
+                          {
+                            "name": "custom:credentials",
+                            "kind": "field",
+                            "startLine": 475,
+                            "endLine": 475
+                          },
+                          {
+                            "name": "custom:pool",
+                            "kind": "field",
+                            "startLine": 476,
+                            "endLine": 476
+                          }
+                        ]
+                      },
+                      {
+                        "name": "custom:logging",
+                        "kind": "field",
+                        "startLine": 478,
+                        "endLine": 481,
+                        "children": [
+                          {
+                            "name": "custom:appender",
+                            "kind": "field",
+                            "startLine": 479,
+                            "endLine": 479
+                          },
+                          {
+                            "name": "custom:appender",
+                            "kind": "field",
+                            "startLine": 480,
+                            "endLine": 480
+                          }
+                        ]
+                      },
+                      {
+                        "name": "custom:features",
+                        "kind": "field",
+                        "startLine": 482,
+                        "endLine": 486,
+                        "children": [
+                          {
+                            "name": "custom:feature",
+                            "kind": "field",
+                            "startLine": 483,
+                            "endLine": 483
+                          },
+                          {
+                            "name": "custom:feature",
+                            "kind": "field",
+                            "startLine": 484,
+                            "endLine": 484
+                          },
+                          {
+                            "name": "custom:feature",
+                            "kind": "field",
+                            "startLine": 485,
+                            "endLine": 485
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "custom:Envelope",
+                "kind": "field",
+                "startLine": 491,
+                "endLine": 502,
+                "children": [
+                  {
+                    "name": "custom:Header",
+                    "kind": "field",
+                    "startLine": 492,
+                    "endLine": 496,
+                    "children": [
+                      {
+                        "name": "custom:Authentication",
+                        "kind": "field",
+                        "startLine": 493,
+                        "endLine": 495,
+                        "children": [
+                          {
+                            "name": "custom:Token",
+                            "kind": "field",
+                            "startLine": 494,
+                            "endLine": 494
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "custom:Body",
+                    "kind": "field",
+                    "startLine": 497,
+                    "endLine": 501,
+                    "children": [
+                      {
+                        "name": "custom:Request",
+                        "kind": "field",
+                        "startLine": 498,
+                        "endLine": 500,
+                        "children": [
+                          {
+                            "name": "custom:UserId",
+                            "kind": "field",
+                            "startLine": 499,
+                            "endLine": 499
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "custom:LinearLayout",
+                "kind": "field",
+                "startLine": 505,
+                "endLine": 519,
+                "children": [
+                  {
+                    "name": "custom:TextView",
+                    "kind": "field",
+                    "startLine": 509,
+                    "endLine": 512
+                  },
+                  {
+                    "name": "custom:Button",
+                    "kind": "field",
+                    "startLine": 513,
+                    "endLine": 515
+                  },
+                  {
+                    "name": "custom:RecyclerView",
+                    "kind": "field",
+                    "startLine": 516,
+                    "endLine": 518
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "section",
+            "kind": "field",
+            "startLine": 526,
+            "endLine": 595,
+            "children": [
+              {
+                "name": "title",
+                "kind": "field",
+                "startLine": 527,
+                "endLine": 527
+              },
+              {
+                "name": "element-1",
+                "kind": "field",
+                "startLine": 530,
+                "endLine": 530
+              },
+              {
+                "name": "element_with_underscores",
+                "kind": "field",
+                "startLine": 531,
+                "endLine": 531
+              },
+              {
+                "name": "element.with.dots",
+                "kind": "field",
+                "startLine": 532,
+                "endLine": 532
+              },
+              {
+                "name": "a",
+                "kind": "field",
+                "startLine": 533,
+                "endLine": 533
+              },
+              {
+                "name": "_starts-with-underscore",
+                "kind": "field",
+                "startLine": 534,
+                "endLine": 534
+              },
+              {
+                "name": "thisIsAVeryLongElementNameThatExceedsTypicalNamingConventionsForTestingPurposes",
+                "kind": "field",
+                "startLine": 537,
+                "endLine": 539
+              },
+              {
+                "name": "日本語要素",
+                "kind": "field",
+                "startLine": 542,
+                "endLine": 542
+              },
+              {
+                "name": "中文元素",
+                "kind": "field",
+                "startLine": 543,
+                "endLine": 543
+              },
+              {
+                "name": "élément",
+                "kind": "field",
+                "startLine": 544,
+                "endLine": 544
+              },
+              {
+                "name": "αβγ",
+                "kind": "field",
+                "startLine": 545,
+                "endLine": 545
+              },
+              {
+                "name": "empty-with-space",
+                "kind": "field",
+                "startLine": 548,
+                "endLine": 548
+              },
+              {
+                "name": "empty-with-newline",
+                "kind": "field",
+                "startLine": 549,
+                "endLine": 550
+              },
+              {
+                "name": "empty-truly",
+                "kind": "field",
+                "startLine": 551,
+                "endLine": 551
+              },
+              {
+                "name": "empty-self-close",
+                "kind": "field",
+                "startLine": 552,
+                "endLine": 552
+              },
+              {
+                "name": "whitespace-only",
+                "kind": "field",
+                "startLine": 555,
+                "endLine": 559
+              },
+              {
+                "name": "mixed",
+                "kind": "field",
+                "startLine": 562,
+                "endLine": 562,
+                "children": [
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 562,
+                    "endLine": 562
+                  },
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 562,
+                    "endLine": 562
+                  }
+                ]
+              },
+              {
+                "name": "mixed",
+                "kind": "field",
+                "startLine": 563,
+                "endLine": 563,
+                "children": [
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 563,
+                    "endLine": 563
+                  },
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 563,
+                    "endLine": 563
+                  }
+                ]
+              },
+              {
+                "name": "mixed",
+                "kind": "field",
+                "startLine": 564,
+                "endLine": 564,
+                "children": [
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 564,
+                    "endLine": 564
+                  },
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 564,
+                    "endLine": 564
+                  }
+                ]
+              },
+              {
+                "name": "attr-test",
+                "kind": "field",
+                "startLine": 567,
+                "endLine": 570
+              },
+              {
+                "name": "siblings",
+                "kind": "field",
+                "startLine": 573,
+                "endLine": 578,
+                "children": [
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 574,
+                    "endLine": 574
+                  },
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 574,
+                    "endLine": 574
+                  },
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 574,
+                    "endLine": 574
+                  },
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 575,
+                    "endLine": 575
+                  },
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 575,
+                    "endLine": 575
+                  },
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 575,
+                    "endLine": 575
+                  },
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 576,
+                    "endLine": 576
+                  },
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 576,
+                    "endLine": 576
+                  },
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 576,
+                    "endLine": 576
+                  },
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 577,
+                    "endLine": 577
+                  },
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 577,
+                    "endLine": 577
+                  },
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 577,
+                    "endLine": 577
+                  }
+                ]
+              },
+              {
+                "name": "container",
+                "kind": "field",
+                "startLine": 581,
+                "endLine": 585,
+                "children": [
+                  {
+                    "name": "process",
+                    "kind": "property",
+                    "startLine": 582,
+                    "endLine": 582
+                  },
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 583,
+                    "endLine": 583
+                  },
+                  {
+                    "name": "another",
+                    "kind": "property",
+                    "startLine": 584,
+                    "endLine": 584
+                  }
+                ]
+              },
+              {
+                "name": "container",
+                "kind": "field",
+                "startLine": 588,
+                "endLine": 594,
+                "children": [
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 590,
+                    "endLine": 590
+                  },
+                  {
+                    "name": "child",
+                    "kind": "field",
+                    "startLine": 592,
+                    "endLine": 592
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "section",
+            "kind": "field",
+            "startLine": 601,
+            "endLine": 634,
+            "children": [
+              {
+                "name": "title",
+                "kind": "field",
+                "startLine": 602,
+                "endLine": 602
+              },
+              {
+                "name": "types",
+                "kind": "field",
+                "startLine": 604,
+                "endLine": 633,
+                "children": [
+                  {
+                    "name": "type",
+                    "kind": "field",
+                    "startLine": 605,
+                    "endLine": 609,
+                    "children": [
+                      {
+                        "name": "empty-element",
+                        "kind": "field",
+                        "startLine": 606,
+                        "endLine": 606
+                      },
+                      {
+                        "name": "element-with-text",
+                        "kind": "field",
+                        "startLine": 607,
+                        "endLine": 607
+                      },
+                      {
+                        "name": "element-with-mixed",
+                        "kind": "field",
+                        "startLine": 608,
+                        "endLine": 608,
+                        "children": [
+                          {
+                            "name": "child",
+                            "kind": "field",
+                            "startLine": 608,
+                            "endLine": 608
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "type",
+                    "kind": "field",
+                    "startLine": 611,
+                    "endLine": 615,
+                    "children": [
+                      {
+                        "name": "element",
+                        "kind": "field",
+                        "startLine": 612,
+                        "endLine": 612
+                      },
+                      {
+                        "name": "element",
+                        "kind": "field",
+                        "startLine": 613,
+                        "endLine": 613
+                      },
+                      {
+                        "name": "element",
+                        "kind": "field",
+                        "startLine": 614,
+                        "endLine": 614
+                      }
+                    ]
+                  },
+                  {
+                    "name": "type",
+                    "kind": "field",
+                    "startLine": 617,
+                    "endLine": 622,
+                    "children": [
+                      {
+                        "name": "plain",
+                        "kind": "field",
+                        "startLine": 618,
+                        "endLine": 618
+                      },
+                      {
+                        "name": "entities",
+                        "kind": "field",
+                        "startLine": 619,
+                        "endLine": 619
+                      },
+                      {
+                        "name": "numeric-refs",
+                        "kind": "field",
+                        "startLine": 620,
+                        "endLine": 620
+                      },
+                      {
+                        "name": "cdata",
+                        "kind": "field",
+                        "startLine": 621,
+                        "endLine": 621
+                      }
+                    ]
+                  },
+                  {
+                    "name": "type",
+                    "kind": "field",
+                    "startLine": 624,
+                    "endLine": 627,
+                    "children": [
+                      {
+                        "name": "default",
+                        "kind": "field",
+                        "startLine": 625,
+                        "endLine": 625
+                      },
+                      {
+                        "name": "custom:prefixed",
+                        "kind": "field",
+                        "startLine": 626,
+                        "endLine": 626
+                      }
+                    ]
+                  },
+                  {
+                    "name": "type",
+                    "kind": "field",
+                    "startLine": 629,
+                    "endLine": 632,
+                    "children": [
+                      {
+                        "name": "nested",
+                        "kind": "field",
+                        "startLine": 630,
+                        "endLine": 630,
+                        "children": [
+                          {
+                            "name": "child",
+                            "kind": "field",
+                            "startLine": 630,
+                            "endLine": 630,
+                            "children": [
+                              {
+                                "name": "grandchild",
+                                "kind": "field",
+                                "startLine": 630,
+                                "endLine": 630
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "siblings",
+                        "kind": "field",
+                        "startLine": 631,
+                        "endLine": 631,
+                        "children": [
+                          {
+                            "name": "a",
+                            "kind": "field",
+                            "startLine": 631,
+                            "endLine": 631
+                          },
+                          {
+                            "name": "b",
+                            "kind": "field",
+                            "startLine": 631,
+                            "endLine": 631
+                          },
+                          {
+                            "name": "c",
+                            "kind": "field",
+                            "startLine": 631,
+                            "endLine": 631
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

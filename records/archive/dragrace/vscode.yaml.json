@@ -1,0 +1,5304 @@
+[
+  {
+    "name": "strings",
+    "kind": "module",
+    "startLine": 13,
+    "endLine": 139,
+    "children": [
+      {
+        "name": "plain_simple",
+        "kind": "string",
+        "startLine": 15,
+        "endLine": 15,
+        "detail": "hello world"
+      },
+      {
+        "name": "plain_with_numbers",
+        "kind": "string",
+        "startLine": 16,
+        "endLine": 16,
+        "detail": "abc123"
+      },
+      {
+        "name": "plain_starting_with_number",
+        "kind": "string",
+        "startLine": 17,
+        "endLine": 17,
+        "detail": "123abc"
+      },
+      {
+        "name": "plain_with_special",
+        "kind": "string",
+        "startLine": 18,
+        "endLine": 18,
+        "detail": "hello-world_test"
+      },
+      {
+        "name": "plain_colon_space",
+        "kind": "string",
+        "startLine": 19,
+        "endLine": 19,
+        "detail": "need quotes: for this"
+      },
+      {
+        "name": "single_quoted",
+        "kind": "string",
+        "startLine": 22,
+        "endLine": 22,
+        "detail": "single quoted string"
+      },
+      {
+        "name": "single_empty",
+        "kind": "string",
+        "startLine": 23,
+        "endLine": 23
+      },
+      {
+        "name": "single_with_spaces",
+        "kind": "string",
+        "startLine": 24,
+        "endLine": 24,
+        "detail": "  spaces preserved  "
+      },
+      {
+        "name": "single_escaped_quote",
+        "kind": "string",
+        "startLine": 25,
+        "endLine": 25,
+        "detail": "it's working"
+      },
+      {
+        "name": "single_special_chars",
+        "kind": "string",
+        "startLine": 26,
+        "endLine": 26,
+        "detail": "colon: and dash- ok"
+      },
+      {
+        "name": "single_newlines_preserved",
+        "kind": "string",
+        "startLine": 27,
+        "endLine": 28,
+        "detail": "line1 line2"
+      },
+      {
+        "name": "single_with_unicode",
+        "kind": "string",
+        "startLine": 29,
+        "endLine": 29,
+        "detail": "日本語 中文 한국어"
+      },
+      {
+        "name": "double_quoted",
+        "kind": "string",
+        "startLine": 32,
+        "endLine": 32,
+        "detail": "double quoted string"
+      },
+      {
+        "name": "double_empty",
+        "kind": "string",
+        "startLine": 33,
+        "endLine": 33
+      },
+      {
+        "name": "double_with_escapes",
+        "kind": "module",
+        "startLine": 34,
+        "endLine": 55,
+        "children": [
+          {
+            "name": "newline",
+            "kind": "string",
+            "startLine": 35,
+            "endLine": 35,
+            "detail": "line1\nline2"
+          },
+          {
+            "name": "tab",
+            "kind": "string",
+            "startLine": 36,
+            "endLine": 36,
+            "detail": "col1\tcol2"
+          },
+          {
+            "name": "carriage_return",
+            "kind": "string",
+            "startLine": 37,
+            "endLine": 37,
+            "detail": "before\rafter"
+          },
+          {
+            "name": "backslash",
+            "kind": "string",
+            "startLine": 38,
+            "endLine": 38,
+            "detail": "path\\to\\file"
+          },
+          {
+            "name": "double_quote",
+            "kind": "string",
+            "startLine": 39,
+            "endLine": 39,
+            "detail": "she said \"hello\""
+          },
+          {
+            "name": "single_quote",
+            "kind": "string",
+            "startLine": 40,
+            "endLine": 40,
+            "detail": "it\\'s fine"
+          },
+          {
+            "name": "null_char",
+            "kind": "string",
+            "startLine": 41,
+            "endLine": 41,
+            "detail": "null\u0000char"
+          },
+          {
+            "name": "bell",
+            "kind": "string",
+            "startLine": 42,
+            "endLine": 42,
+            "detail": "bell\u0007char"
+          },
+          {
+            "name": "backspace",
+            "kind": "string",
+            "startLine": 43,
+            "endLine": 43,
+            "detail": "back\bspace"
+          },
+          {
+            "name": "form_feed",
+            "kind": "string",
+            "startLine": 44,
+            "endLine": 44,
+            "detail": "page\fbreak"
+          },
+          {
+            "name": "escape",
+            "kind": "string",
+            "startLine": 45,
+            "endLine": 45,
+            "detail": "escape\u001bchar"
+          },
+          {
+            "name": "vertical_tab",
+            "kind": "string",
+            "startLine": 46,
+            "endLine": 46,
+            "detail": "vtab\u000bchar"
+          },
+          {
+            "name": "next_line",
+            "kind": "string",
+            "startLine": 47,
+            "endLine": 47,
+            "detail": "nextline"
+          },
+          {
+            "name": "non_breaking_space",
+            "kind": "string",
+            "startLine": 48,
+            "endLine": 48,
+            "detail": "non breaking"
+          },
+          {
+            "name": "line_separator",
+            "kind": "string",
+            "startLine": 49,
+            "endLine": 49,
+            "detail": "line sep"
+          },
+          {
+            "name": "paragraph_separator",
+            "kind": "string",
+            "startLine": 50,
+            "endLine": 50,
+            "detail": "para sep"
+          },
+          {
+            "name": "hex_escape",
+            "kind": "string",
+            "startLine": 51,
+            "endLine": 51,
+            "detail": "ABC"
+          },
+          {
+            "name": "unicode_2digit",
+            "kind": "string",
+            "startLine": 52,
+            "endLine": 52,
+            "detail": "AB"
+          },
+          {
+            "name": "unicode_4digit",
+            "kind": "string",
+            "startLine": 53,
+            "endLine": 53,
+            "detail": "中文"
+          },
+          {
+            "name": "unicode_8digit",
+            "kind": "string",
+            "startLine": 54,
+            "endLine": 54,
+            "detail": "😀"
+          }
+        ]
+      },
+      {
+        "name": "double_multiline",
+        "kind": "string",
+        "startLine": 55,
+        "endLine": 57,
+        "detail": "This is a long string that continues on the next line with backslash continuation"
+      },
+      {
+        "name": "literal_default",
+        "kind": "string",
+        "startLine": 60,
+        "endLine": 64,
+        "detail": "Line one\nLine two\nLine three\n"
+      },
+      {
+        "name": "literal_strip",
+        "kind": "string",
+        "startLine": 65,
+        "endLine": 69,
+        "detail": "Line one\nLine two\nNo trailing newline"
+      },
+      {
+        "name": "literal_keep",
+        "kind": "string",
+        "startLine": 70,
+        "endLine": 77,
+        "detail": "Line one\nLine two\nKeep trailing newlines\n\n\n\n"
+      },
+      {
+        "name": "literal_indented",
+        "kind": "string",
+        "startLine": 77,
+        "endLine": 81,
+        "detail": "  Two space indent indicator\n  Content starts here\n  Preserving internal indent\n"
+      },
+      {
+        "name": "literal_with_indent_and_strip",
+        "kind": "string",
+        "startLine": 82,
+        "endLine": 85,
+        "detail": "  Indent indicator with strip\n  No trailing newline"
+      },
+      {
+        "name": "literal_empty_lines",
+        "kind": "string",
+        "startLine": 86,
+        "endLine": 91,
+        "detail": "Line before empty\n\n\nLine after empty lines\n"
+      },
+      {
+        "name": "literal_special_chars",
+        "kind": "string",
+        "startLine": 92,
+        "endLine": 97,
+        "detail": "Contains: colons\nAnd - dashes\nAnd # comments (not really)\nAnd 'quotes' \"too\"\n"
+      },
+      {
+        "name": "folded_default",
+        "kind": "string",
+        "startLine": 99,
+        "endLine": 103,
+        "detail": "This is a folded block scalar that becomes one line.\n"
+      },
+      {
+        "name": "folded_strip",
+        "kind": "string",
+        "startLine": 104,
+        "endLine": 108,
+        "detail": "Folded content without trailing newline"
+      },
+      {
+        "name": "folded_keep",
+        "kind": "string",
+        "startLine": 109,
+        "endLine": 115,
+        "detail": "Folded with trailing newlines\n\n\n\n"
+      },
+      {
+        "name": "folded_with_breaks",
+        "kind": "string",
+        "startLine": 115,
+        "endLine": 123,
+        "detail": "First paragraph continues here.\nSecond paragraph after blank line.\nThird paragraph.\n"
+      },
+      {
+        "name": "folded_indented",
+        "kind": "string",
+        "startLine": 124,
+        "endLine": 127,
+        "detail": "  Two space indent\n  Content here\n"
+      },
+      {
+        "name": "edge_cases",
+        "kind": "module",
+        "startLine": 129,
+        "endLine": 139,
+        "children": [
+          {
+            "name": "looks_like_number",
+            "kind": "string",
+            "startLine": 130,
+            "endLine": 130,
+            "detail": "123"
+          },
+          {
+            "name": "looks_like_bool",
+            "kind": "string",
+            "startLine": 131,
+            "endLine": 131,
+            "detail": "true"
+          },
+          {
+            "name": "looks_like_null",
+            "kind": "string",
+            "startLine": 132,
+            "endLine": 132,
+            "detail": "null"
+          },
+          {
+            "name": "empty_string",
+            "kind": "string",
+            "startLine": 133,
+            "endLine": 133
+          },
+          {
+            "name": "space_only",
+            "kind": "string",
+            "startLine": 134,
+            "endLine": 134,
+            "detail": "   "
+          },
+          {
+            "name": "starts_with_indicator",
+            "kind": "string",
+            "startLine": 135,
+            "endLine": 135,
+            "detail": "-not a list"
+          },
+          {
+            "name": "contains_colon",
+            "kind": "string",
+            "startLine": 136,
+            "endLine": 136,
+            "detail": "key: value like"
+          },
+          {
+            "name": "unicode_emoji",
+            "kind": "string",
+            "startLine": 137,
+            "endLine": 137,
+            "detail": "🎉🚀💡"
+          },
+          {
+            "name": "very_long",
+            "kind": "string",
+            "startLine": 138,
+            "endLine": 138,
+            "detail": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "numbers",
+    "kind": "module",
+    "startLine": 144,
+    "endLine": 176,
+    "children": [
+      {
+        "name": "integers",
+        "kind": "module",
+        "startLine": 145,
+        "endLine": 152,
+        "children": [
+          {
+            "name": "positive",
+            "kind": "number",
+            "startLine": 146,
+            "endLine": 146,
+            "detail": "42"
+          },
+          {
+            "name": "negative",
+            "kind": "number",
+            "startLine": 147,
+            "endLine": 147,
+            "detail": "-42"
+          },
+          {
+            "name": "zero",
+            "kind": "number",
+            "startLine": 148,
+            "endLine": 148,
+            "detail": "0"
+          },
+          {
+            "name": "large",
+            "kind": "number",
+            "startLine": 149,
+            "endLine": 149,
+            "detail": "9007199254740991"
+          },
+          {
+            "name": "negative_large",
+            "kind": "number",
+            "startLine": 150,
+            "endLine": 150,
+            "detail": "-9007199254740991"
+          },
+          {
+            "name": "with_underscores",
+            "kind": "string",
+            "startLine": 151,
+            "endLine": 151,
+            "detail": "1_000_000"
+          }
+        ]
+      },
+      {
+        "name": "floats",
+        "kind": "module",
+        "startLine": 153,
+        "endLine": 162,
+        "children": [
+          {
+            "name": "simple",
+            "kind": "number",
+            "startLine": 154,
+            "endLine": 154,
+            "detail": "3.14"
+          },
+          {
+            "name": "negative",
+            "kind": "number",
+            "startLine": 155,
+            "endLine": 155,
+            "detail": "-3.14"
+          },
+          {
+            "name": "leading_zero",
+            "kind": "number",
+            "startLine": 156,
+            "endLine": 156,
+            "detail": "0.123"
+          },
+          {
+            "name": "scientific_lower",
+            "kind": "number",
+            "startLine": 157,
+            "endLine": 157,
+            "detail": "6.022e+23"
+          },
+          {
+            "name": "scientific_upper",
+            "kind": "number",
+            "startLine": 158,
+            "endLine": 158,
+            "detail": "6.022e+23"
+          },
+          {
+            "name": "scientific_negative_exp",
+            "kind": "number",
+            "startLine": 159,
+            "endLine": 159,
+            "detail": "1.23e-10"
+          },
+          {
+            "name": "scientific_positive_exp",
+            "kind": "number",
+            "startLine": 160,
+            "endLine": 160,
+            "detail": "12300000000"
+          },
+          {
+            "name": "with_underscores",
+            "kind": "string",
+            "startLine": 161,
+            "endLine": 161,
+            "detail": "1_000.000_001"
+          }
+        ]
+      },
+      {
+        "name": "special_floats",
+        "kind": "module",
+        "startLine": 163,
+        "endLine": 171,
+        "children": [
+          {
+            "name": "infinity_lower",
+            "kind": "number",
+            "startLine": 164,
+            "endLine": 164,
+            "detail": "Infinity"
+          },
+          {
+            "name": "infinity_upper",
+            "kind": "number",
+            "startLine": 165,
+            "endLine": 165,
+            "detail": "Infinity"
+          },
+          {
+            "name": "infinity_caps",
+            "kind": "number",
+            "startLine": 166,
+            "endLine": 166,
+            "detail": "Infinity"
+          },
+          {
+            "name": "negative_infinity",
+            "kind": "number",
+            "startLine": 167,
+            "endLine": 167,
+            "detail": "-Infinity"
+          },
+          {
+            "name": "not_a_number_lower",
+            "kind": "number",
+            "startLine": 168,
+            "endLine": 168,
+            "detail": "NaN"
+          },
+          {
+            "name": "not_a_number_upper",
+            "kind": "number",
+            "startLine": 169,
+            "endLine": 169,
+            "detail": "NaN"
+          },
+          {
+            "name": "not_a_number_caps",
+            "kind": "number",
+            "startLine": 170,
+            "endLine": 170,
+            "detail": "NaN"
+          }
+        ]
+      },
+      {
+        "name": "alternate_bases",
+        "kind": "module",
+        "startLine": 172,
+        "endLine": 176,
+        "children": [
+          {
+            "name": "octal",
+            "kind": "number",
+            "startLine": 173,
+            "endLine": 173,
+            "detail": "493"
+          },
+          {
+            "name": "hexadecimal",
+            "kind": "number",
+            "startLine": 174,
+            "endLine": 174,
+            "detail": "255"
+          },
+          {
+            "name": "hexadecimal_upper",
+            "kind": "string",
+            "startLine": 175,
+            "endLine": 175,
+            "detail": "0XFF"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "booleans",
+    "kind": "module",
+    "startLine": 181,
+    "endLine": 201,
+    "children": [
+      {
+        "name": "yaml_1_1_legacy",
+        "kind": "module",
+        "startLine": 182,
+        "endLine": 191,
+        "children": [
+          {
+            "name": "true_forms",
+            "kind": "array",
+            "startLine": 183,
+            "endLine": 187,
+            "children": [
+              {
+                "name": "0",
+                "kind": "boolean",
+                "startLine": 184,
+                "endLine": 184
+              },
+              {
+                "name": "1",
+                "kind": "boolean",
+                "startLine": 185,
+                "endLine": 185
+              },
+              {
+                "name": "2",
+                "kind": "boolean",
+                "startLine": 186,
+                "endLine": 186
+              }
+            ]
+          },
+          {
+            "name": "false_forms",
+            "kind": "array",
+            "startLine": 187,
+            "endLine": 191,
+            "children": [
+              {
+                "name": "0",
+                "kind": "boolean",
+                "startLine": 188,
+                "endLine": 188
+              },
+              {
+                "name": "1",
+                "kind": "boolean",
+                "startLine": 189,
+                "endLine": 189
+              },
+              {
+                "name": "2",
+                "kind": "boolean",
+                "startLine": 190,
+                "endLine": 190
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "string_booleans",
+        "kind": "module",
+        "startLine": 194,
+        "endLine": 201,
+        "children": [
+          {
+            "name": "yes_word",
+            "kind": "string",
+            "startLine": 195,
+            "endLine": 195,
+            "detail": "yes"
+          },
+          {
+            "name": "no_word",
+            "kind": "string",
+            "startLine": 196,
+            "endLine": 196,
+            "detail": "no"
+          },
+          {
+            "name": "on_word",
+            "kind": "string",
+            "startLine": 197,
+            "endLine": 197,
+            "detail": "on"
+          },
+          {
+            "name": "off_word",
+            "kind": "string",
+            "startLine": 198,
+            "endLine": 198,
+            "detail": "off"
+          },
+          {
+            "name": "y_letter",
+            "kind": "string",
+            "startLine": 199,
+            "endLine": 199,
+            "detail": "y"
+          },
+          {
+            "name": "n_letter",
+            "kind": "string",
+            "startLine": 200,
+            "endLine": 200,
+            "detail": "n"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "nulls",
+    "kind": "module",
+    "startLine": 206,
+    "endLine": 213,
+    "children": [
+      {
+        "name": "tilde",
+        "kind": "variable",
+        "startLine": 207,
+        "endLine": 207,
+        "detail": "null"
+      },
+      {
+        "name": "null_word",
+        "kind": "variable",
+        "startLine": 208,
+        "endLine": 208,
+        "detail": "null"
+      },
+      {
+        "name": "null_upper",
+        "kind": "variable",
+        "startLine": 209,
+        "endLine": 209,
+        "detail": "null"
+      },
+      {
+        "name": "null_caps",
+        "kind": "variable",
+        "startLine": 210,
+        "endLine": 210,
+        "detail": "null"
+      },
+      {
+        "name": "empty_value",
+        "kind": "variable",
+        "startLine": 211,
+        "endLine": 211,
+        "detail": "null"
+      },
+      {
+        "name": "explicit_null",
+        "kind": "variable",
+        "startLine": 212,
+        "endLine": 212,
+        "detail": "null"
+      }
+    ]
+  },
+  {
+    "name": "timestamps",
+    "kind": "module",
+    "startLine": 218,
+    "endLine": 226,
+    "children": [
+      {
+        "name": "canonical",
+        "kind": "string",
+        "startLine": 219,
+        "endLine": 219,
+        "detail": "2024-02-14T12:30:00.123Z"
+      },
+      {
+        "name": "iso8601",
+        "kind": "string",
+        "startLine": 220,
+        "endLine": 220,
+        "detail": "2024-02-14T12:30:00+05:30"
+      },
+      {
+        "name": "spaced",
+        "kind": "string",
+        "startLine": 221,
+        "endLine": 221,
+        "detail": "2024-02-14 12:30:00"
+      },
+      {
+        "name": "date_only",
+        "kind": "string",
+        "startLine": 222,
+        "endLine": 222,
+        "detail": "2024-02-14"
+      },
+      {
+        "name": "relaxed",
+        "kind": "string",
+        "startLine": 223,
+        "endLine": 223,
+        "detail": "2024-2-14"
+      },
+      {
+        "name": "with_timezone",
+        "kind": "string",
+        "startLine": 224,
+        "endLine": 224,
+        "detail": "2024-02-14T12:30:00-08:00"
+      },
+      {
+        "name": "milliseconds",
+        "kind": "string",
+        "startLine": 225,
+        "endLine": 225,
+        "detail": "2024-02-14T12:30:00.999Z"
+      }
+    ]
+  },
+  {
+    "name": "sequences",
+    "kind": "module",
+    "startLine": 231,
+    "endLine": 313,
+    "children": [
+      {
+        "name": "block_simple",
+        "kind": "array",
+        "startLine": 233,
+        "endLine": 237,
+        "children": [
+          {
+            "name": "0",
+            "kind": "string",
+            "startLine": 234,
+            "endLine": 234
+          },
+          {
+            "name": "1",
+            "kind": "string",
+            "startLine": 235,
+            "endLine": 235
+          },
+          {
+            "name": "2",
+            "kind": "string",
+            "startLine": 236,
+            "endLine": 236
+          }
+        ]
+      },
+      {
+        "name": "block_mixed_types",
+        "kind": "array",
+        "startLine": 238,
+        "endLine": 246,
+        "children": [
+          {
+            "name": "0",
+            "kind": "string",
+            "startLine": 239,
+            "endLine": 239
+          },
+          {
+            "name": "1",
+            "kind": "number",
+            "startLine": 240,
+            "endLine": 240
+          },
+          {
+            "name": "2",
+            "kind": "number",
+            "startLine": 241,
+            "endLine": 241
+          },
+          {
+            "name": "3",
+            "kind": "boolean",
+            "startLine": 242,
+            "endLine": 242
+          },
+          {
+            "name": "4",
+            "kind": "boolean",
+            "startLine": 243,
+            "endLine": 243
+          },
+          {
+            "name": "5",
+            "kind": "variable",
+            "startLine": 244,
+            "endLine": 244
+          },
+          {
+            "name": "6",
+            "kind": "string",
+            "startLine": 245,
+            "endLine": 245
+          }
+        ]
+      },
+      {
+        "name": "block_multiline_items",
+        "kind": "array",
+        "startLine": 247,
+        "endLine": 254,
+        "children": [
+          {
+            "name": "0",
+            "kind": "string",
+            "startLine": 248,
+            "endLine": 251
+          },
+          {
+            "name": "1",
+            "kind": "string",
+            "startLine": 251,
+            "endLine": 254
+          }
+        ]
+      },
+      {
+        "name": "flow_simple",
+        "kind": "array",
+        "startLine": 256,
+        "endLine": 256,
+        "children": [
+          {
+            "name": "0",
+            "kind": "string",
+            "startLine": 256,
+            "endLine": 256
+          },
+          {
+            "name": "1",
+            "kind": "string",
+            "startLine": 256,
+            "endLine": 256
+          },
+          {
+            "name": "2",
+            "kind": "string",
+            "startLine": 256,
+            "endLine": 256
+          }
+        ]
+      },
+      {
+        "name": "flow_mixed",
+        "kind": "array",
+        "startLine": 257,
+        "endLine": 257,
+        "children": [
+          {
+            "name": "0",
+            "kind": "string",
+            "startLine": 257,
+            "endLine": 257
+          },
+          {
+            "name": "1",
+            "kind": "number",
+            "startLine": 257,
+            "endLine": 257
+          },
+          {
+            "name": "2",
+            "kind": "number",
+            "startLine": 257,
+            "endLine": 257
+          },
+          {
+            "name": "3",
+            "kind": "boolean",
+            "startLine": 257,
+            "endLine": 257
+          },
+          {
+            "name": "4",
+            "kind": "boolean",
+            "startLine": 257,
+            "endLine": 257
+          },
+          {
+            "name": "5",
+            "kind": "variable",
+            "startLine": 257,
+            "endLine": 257
+          }
+        ]
+      },
+      {
+        "name": "flow_nested",
+        "kind": "array",
+        "startLine": 258,
+        "endLine": 258,
+        "children": [
+          {
+            "name": "0",
+            "kind": "array",
+            "startLine": 258,
+            "endLine": 258,
+            "children": [
+              {
+                "name": "0",
+                "kind": "number",
+                "startLine": 258,
+                "endLine": 258
+              },
+              {
+                "name": "1",
+                "kind": "number",
+                "startLine": 258,
+                "endLine": 258
+              }
+            ]
+          },
+          {
+            "name": "1",
+            "kind": "array",
+            "startLine": 258,
+            "endLine": 258,
+            "children": [
+              {
+                "name": "0",
+                "kind": "number",
+                "startLine": 258,
+                "endLine": 258
+              },
+              {
+                "name": "1",
+                "kind": "number",
+                "startLine": 258,
+                "endLine": 258
+              }
+            ]
+          },
+          {
+            "name": "2",
+            "kind": "array",
+            "startLine": 258,
+            "endLine": 258,
+            "children": [
+              {
+                "name": "0",
+                "kind": "number",
+                "startLine": 258,
+                "endLine": 258
+              },
+              {
+                "name": "1",
+                "kind": "number",
+                "startLine": 258,
+                "endLine": 258
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "flow_empty",
+        "kind": "array",
+        "startLine": 259,
+        "endLine": 259,
+        "detail": "[]"
+      },
+      {
+        "name": "flow_single",
+        "kind": "array",
+        "startLine": 260,
+        "endLine": 260,
+        "children": [
+          {
+            "name": "0",
+            "kind": "string",
+            "startLine": 260,
+            "endLine": 260
+          }
+        ]
+      },
+      {
+        "name": "flow_with_spaces",
+        "kind": "array",
+        "startLine": 261,
+        "endLine": 261,
+        "children": [
+          {
+            "name": "0",
+            "kind": "string",
+            "startLine": 261,
+            "endLine": 261
+          },
+          {
+            "name": "1",
+            "kind": "string",
+            "startLine": 261,
+            "endLine": 261
+          },
+          {
+            "name": "2",
+            "kind": "string",
+            "startLine": 261,
+            "endLine": 261
+          }
+        ]
+      },
+      {
+        "name": "flow_multiline",
+        "kind": "array",
+        "startLine": 262,
+        "endLine": 266,
+        "children": [
+          {
+            "name": "0",
+            "kind": "string",
+            "startLine": 263,
+            "endLine": 263
+          },
+          {
+            "name": "1",
+            "kind": "string",
+            "startLine": 264,
+            "endLine": 264
+          },
+          {
+            "name": "2",
+            "kind": "string",
+            "startLine": 265,
+            "endLine": 265
+          }
+        ]
+      },
+      {
+        "name": "nested_depth_2",
+        "kind": "array",
+        "startLine": 269,
+        "endLine": 276,
+        "children": [
+          {
+            "name": "0",
+            "kind": "array",
+            "startLine": 271,
+            "endLine": 273,
+            "children": [
+              {
+                "name": "0",
+                "kind": "string",
+                "startLine": 271,
+                "endLine": 271
+              },
+              {
+                "name": "1",
+                "kind": "string",
+                "startLine": 272,
+                "endLine": 272
+              }
+            ]
+          },
+          {
+            "name": "1",
+            "kind": "array",
+            "startLine": 274,
+            "endLine": 276,
+            "children": [
+              {
+                "name": "0",
+                "kind": "string",
+                "startLine": 274,
+                "endLine": 274
+              },
+              {
+                "name": "1",
+                "kind": "string",
+                "startLine": 275,
+                "endLine": 275
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "nested_depth_3",
+        "kind": "array",
+        "startLine": 277,
+        "endLine": 284,
+        "children": [
+          {
+            "name": "0",
+            "kind": "array",
+            "startLine": 279,
+            "endLine": 284,
+            "children": [
+              {
+                "name": "0",
+                "kind": "array",
+                "startLine": 280,
+                "endLine": 282,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "string",
+                    "startLine": 280,
+                    "endLine": 280
+                  },
+                  {
+                    "name": "1",
+                    "kind": "string",
+                    "startLine": 281,
+                    "endLine": 281
+                  }
+                ]
+              },
+              {
+                "name": "1",
+                "kind": "array",
+                "startLine": 283,
+                "endLine": 284,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "string",
+                    "startLine": 283,
+                    "endLine": 283
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "nested_depth_5",
+        "kind": "array",
+        "startLine": 285,
+        "endLine": 291,
+        "children": [
+          {
+            "name": "0",
+            "kind": "array",
+            "startLine": 287,
+            "endLine": 291,
+            "children": [
+              {
+                "name": "0",
+                "kind": "array",
+                "startLine": 288,
+                "endLine": 291,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "array",
+                    "startLine": 289,
+                    "endLine": 291,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "array",
+                        "startLine": 290,
+                        "endLine": 291,
+                        "children": [
+                          {
+                            "name": "0",
+                            "kind": "string",
+                            "startLine": 290,
+                            "endLine": 290
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "sequence_of_mappings",
+        "kind": "array",
+        "startLine": 293,
+        "endLine": 300,
+        "children": [
+          {
+            "name": "0",
+            "kind": "module",
+            "startLine": 294,
+            "endLine": 296,
+            "children": [
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 294,
+                "endLine": 294,
+                "detail": "Alice"
+              },
+              {
+                "name": "age",
+                "kind": "number",
+                "startLine": 295,
+                "endLine": 295,
+                "detail": "30"
+              }
+            ]
+          },
+          {
+            "name": "1",
+            "kind": "module",
+            "startLine": 296,
+            "endLine": 298,
+            "children": [
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 296,
+                "endLine": 296,
+                "detail": "Bob"
+              },
+              {
+                "name": "age",
+                "kind": "number",
+                "startLine": 297,
+                "endLine": 297,
+                "detail": "25"
+              }
+            ]
+          },
+          {
+            "name": "2",
+            "kind": "module",
+            "startLine": 298,
+            "endLine": 300,
+            "children": [
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 298,
+                "endLine": 298,
+                "detail": "Charlie"
+              },
+              {
+                "name": "age",
+                "kind": "number",
+                "startLine": 299,
+                "endLine": 299,
+                "detail": "35"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "compact_nested",
+        "kind": "array",
+        "startLine": 302,
+        "endLine": 307,
+        "children": [
+          {
+            "name": "0",
+            "kind": "array",
+            "startLine": 303,
+            "endLine": 305,
+            "children": [
+              {
+                "name": "0",
+                "kind": "string",
+                "startLine": 303,
+                "endLine": 303
+              },
+              {
+                "name": "1",
+                "kind": "string",
+                "startLine": 304,
+                "endLine": 304
+              }
+            ]
+          },
+          {
+            "name": "1",
+            "kind": "array",
+            "startLine": 305,
+            "endLine": 307,
+            "children": [
+              {
+                "name": "0",
+                "kind": "string",
+                "startLine": 305,
+                "endLine": 305
+              },
+              {
+                "name": "1",
+                "kind": "string",
+                "startLine": 306,
+                "endLine": 306
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "mixed_styles",
+        "kind": "array",
+        "startLine": 309,
+        "endLine": 313,
+        "children": [
+          {
+            "name": "0",
+            "kind": "array",
+            "startLine": 310,
+            "endLine": 310,
+            "children": [
+              {
+                "name": "0",
+                "kind": "string",
+                "startLine": 310,
+                "endLine": 310
+              },
+              {
+                "name": "1",
+                "kind": "string",
+                "startLine": 310,
+                "endLine": 310
+              }
+            ]
+          },
+          {
+            "name": "1",
+            "kind": "module",
+            "startLine": 311,
+            "endLine": 312,
+            "children": [
+              {
+                "name": "block",
+                "kind": "string",
+                "startLine": 311,
+                "endLine": 311,
+                "detail": "item"
+              }
+            ]
+          },
+          {
+            "name": "2",
+            "kind": "module",
+            "startLine": 312,
+            "endLine": 312,
+            "children": [
+              {
+                "name": "inline",
+                "kind": "string",
+                "startLine": 312,
+                "endLine": 312,
+                "detail": "mapping"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "mappings",
+    "kind": "module",
+    "startLine": 318,
+    "endLine": 406,
+    "children": [
+      {
+        "name": "block_simple",
+        "kind": "module",
+        "startLine": 320,
+        "endLine": 324,
+        "children": [
+          {
+            "name": "key1",
+            "kind": "string",
+            "startLine": 321,
+            "endLine": 321,
+            "detail": "value1"
+          },
+          {
+            "name": "key2",
+            "kind": "string",
+            "startLine": 322,
+            "endLine": 322,
+            "detail": "value2"
+          },
+          {
+            "name": "key3",
+            "kind": "string",
+            "startLine": 323,
+            "endLine": 323,
+            "detail": "value3"
+          }
+        ]
+      },
+      {
+        "name": "flow_simple",
+        "kind": "module",
+        "startLine": 326,
+        "endLine": 326,
+        "children": [
+          {
+            "name": "key1",
+            "kind": "string",
+            "startLine": 326,
+            "endLine": 326,
+            "detail": "value1"
+          },
+          {
+            "name": "key2",
+            "kind": "string",
+            "startLine": 326,
+            "endLine": 326,
+            "detail": "value2"
+          }
+        ]
+      },
+      {
+        "name": "flow_empty",
+        "kind": "module",
+        "startLine": 327,
+        "endLine": 327,
+        "detail": "{}"
+      },
+      {
+        "name": "flow_single",
+        "kind": "module",
+        "startLine": 328,
+        "endLine": 328,
+        "children": [
+          {
+            "name": "only",
+            "kind": "string",
+            "startLine": 328,
+            "endLine": 328,
+            "detail": "one"
+          }
+        ]
+      },
+      {
+        "name": "flow_with_spaces",
+        "kind": "module",
+        "startLine": 329,
+        "endLine": 329,
+        "children": [
+          {
+            "name": "spaced",
+            "kind": "string",
+            "startLine": 329,
+            "endLine": 329,
+            "detail": "values"
+          },
+          {
+            "name": "here",
+            "kind": "string",
+            "startLine": 329,
+            "endLine": 329,
+            "detail": "too"
+          }
+        ]
+      },
+      {
+        "name": "flow_multiline",
+        "kind": "module",
+        "startLine": 330,
+        "endLine": 334,
+        "children": [
+          {
+            "name": "key1",
+            "kind": "string",
+            "startLine": 331,
+            "endLine": 331,
+            "detail": "value1"
+          },
+          {
+            "name": "key2",
+            "kind": "string",
+            "startLine": 332,
+            "endLine": 332,
+            "detail": "value2"
+          },
+          {
+            "name": "key3",
+            "kind": "string",
+            "startLine": 333,
+            "endLine": 333,
+            "detail": "value3"
+          }
+        ]
+      },
+      {
+        "name": "flow_nested",
+        "kind": "module",
+        "startLine": 335,
+        "endLine": 335,
+        "children": [
+          {
+            "name": "outer",
+            "kind": "module",
+            "startLine": 335,
+            "endLine": 335,
+            "children": [
+              {
+                "name": "inner",
+                "kind": "module",
+                "startLine": 335,
+                "endLine": 335,
+                "children": [
+                  {
+                    "name": "deep",
+                    "kind": "string",
+                    "startLine": 335,
+                    "endLine": 335,
+                    "detail": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "special_keys",
+        "kind": "module",
+        "startLine": 338,
+        "endLine": 348,
+        "children": [
+          {
+            "name": "_empty_placeholder",
+            "kind": "string",
+            "startLine": 339,
+            "endLine": 339,
+            "detail": "empty_string_key_workaround"
+          },
+          {
+            "name": " ",
+            "kind": "string",
+            "startLine": 340,
+            "endLine": 340,
+            "detail": "space_key"
+          },
+          {
+            "name": "key with spaces",
+            "kind": "string",
+            "startLine": 341,
+            "endLine": 341,
+            "detail": "spaced_key"
+          },
+          {
+            "name": "key:with:colons",
+            "kind": "string",
+            "startLine": 342,
+            "endLine": 342,
+            "detail": "colon_key"
+          },
+          {
+            "name": "123",
+            "kind": "string",
+            "startLine": 343,
+            "endLine": 343,
+            "detail": "numeric_string_key"
+          },
+          {
+            "name": "123",
+            "kind": "string",
+            "startLine": 344,
+            "endLine": 344,
+            "detail": "actual_numeric_key"
+          },
+          {
+            "name": "true",
+            "kind": "string",
+            "startLine": 345,
+            "endLine": 345,
+            "detail": "boolean_key"
+          },
+          {
+            "name": "null_as_string",
+            "kind": "string",
+            "startLine": 346,
+            "endLine": 346,
+            "detail": "null_key_workaround"
+          },
+          {
+            "name": "3.14",
+            "kind": "string",
+            "startLine": 347,
+            "endLine": 347,
+            "detail": "float_key"
+          }
+        ]
+      },
+      {
+        "name": "unicode_keys",
+        "kind": "module",
+        "startLine": 350,
+        "endLine": 355,
+        "children": [
+          {
+            "name": "日本語キー",
+            "kind": "string",
+            "startLine": 351,
+            "endLine": 351,
+            "detail": "japanese_value"
+          },
+          {
+            "name": "中文键",
+            "kind": "string",
+            "startLine": 352,
+            "endLine": 352,
+            "detail": "chinese_value"
+          },
+          {
+            "name": "키",
+            "kind": "string",
+            "startLine": 353,
+            "endLine": 353,
+            "detail": "korean_value"
+          },
+          {
+            "name": "🔑",
+            "kind": "string",
+            "startLine": 354,
+            "endLine": 354,
+            "detail": "emoji_key"
+          }
+        ]
+      },
+      {
+        "name": "nested_depth_2",
+        "kind": "module",
+        "startLine": 357,
+        "endLine": 360,
+        "children": [
+          {
+            "name": "level1",
+            "kind": "module",
+            "startLine": 358,
+            "endLine": 360,
+            "children": [
+              {
+                "name": "level2",
+                "kind": "string",
+                "startLine": 359,
+                "endLine": 359,
+                "detail": "value"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "nested_depth_3",
+        "kind": "module",
+        "startLine": 361,
+        "endLine": 365,
+        "children": [
+          {
+            "name": "level1",
+            "kind": "module",
+            "startLine": 362,
+            "endLine": 365,
+            "children": [
+              {
+                "name": "level2",
+                "kind": "module",
+                "startLine": 363,
+                "endLine": 365,
+                "children": [
+                  {
+                    "name": "level3",
+                    "kind": "string",
+                    "startLine": 364,
+                    "endLine": 364,
+                    "detail": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "nested_depth_5",
+        "kind": "module",
+        "startLine": 366,
+        "endLine": 372,
+        "children": [
+          {
+            "name": "l1",
+            "kind": "module",
+            "startLine": 367,
+            "endLine": 372,
+            "children": [
+              {
+                "name": "l2",
+                "kind": "module",
+                "startLine": 368,
+                "endLine": 372,
+                "children": [
+                  {
+                    "name": "l3",
+                    "kind": "module",
+                    "startLine": 369,
+                    "endLine": 372,
+                    "children": [
+                      {
+                        "name": "l4",
+                        "kind": "module",
+                        "startLine": 370,
+                        "endLine": 372,
+                        "children": [
+                          {
+                            "name": "l5",
+                            "kind": "string",
+                            "startLine": 371,
+                            "endLine": 371,
+                            "detail": "deepest"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "nested_depth_10",
+        "kind": "module",
+        "startLine": 373,
+        "endLine": 384,
+        "children": [
+          {
+            "name": "a",
+            "kind": "module",
+            "startLine": 374,
+            "endLine": 384,
+            "children": [
+              {
+                "name": "b",
+                "kind": "module",
+                "startLine": 375,
+                "endLine": 384,
+                "children": [
+                  {
+                    "name": "c",
+                    "kind": "module",
+                    "startLine": 376,
+                    "endLine": 384,
+                    "children": [
+                      {
+                        "name": "d",
+                        "kind": "module",
+                        "startLine": 377,
+                        "endLine": 384,
+                        "children": [
+                          {
+                            "name": "e",
+                            "kind": "module",
+                            "startLine": 378,
+                            "endLine": 384,
+                            "children": [
+                              {
+                                "name": "f",
+                                "kind": "module",
+                                "startLine": 379,
+                                "endLine": 384,
+                                "children": [
+                                  {
+                                    "name": "g",
+                                    "kind": "module",
+                                    "startLine": 380,
+                                    "endLine": 384,
+                                    "children": [
+                                      {
+                                        "name": "h",
+                                        "kind": "module",
+                                        "startLine": 381,
+                                        "endLine": 384,
+                                        "children": [
+                                          {
+                                            "name": "i",
+                                            "kind": "module",
+                                            "startLine": 382,
+                                            "endLine": 384,
+                                            "children": [
+                                              {
+                                                "name": "j",
+                                                "kind": "string",
+                                                "startLine": 383,
+                                                "endLine": 383,
+                                                "detail": "very_deep"
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "mapping_with_sequences",
+        "kind": "module",
+        "startLine": 386,
+        "endLine": 395,
+        "children": [
+          {
+            "name": "list1",
+            "kind": "array",
+            "startLine": 387,
+            "endLine": 391,
+            "children": [
+              {
+                "name": "0",
+                "kind": "string",
+                "startLine": 388,
+                "endLine": 388
+              },
+              {
+                "name": "1",
+                "kind": "string",
+                "startLine": 389,
+                "endLine": 389
+              },
+              {
+                "name": "2",
+                "kind": "string",
+                "startLine": 390,
+                "endLine": 390
+              }
+            ]
+          },
+          {
+            "name": "list2",
+            "kind": "array",
+            "startLine": 391,
+            "endLine": 395,
+            "children": [
+              {
+                "name": "0",
+                "kind": "number",
+                "startLine": 392,
+                "endLine": 392
+              },
+              {
+                "name": "1",
+                "kind": "number",
+                "startLine": 393,
+                "endLine": 393
+              },
+              {
+                "name": "2",
+                "kind": "number",
+                "startLine": 394,
+                "endLine": 394
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "mixed_styles",
+        "kind": "module",
+        "startLine": 397,
+        "endLine": 406,
+        "children": [
+          {
+            "name": "block_key",
+            "kind": "module",
+            "startLine": 398,
+            "endLine": 400,
+            "children": [
+              {
+                "name": "nested",
+                "kind": "string",
+                "startLine": 399,
+                "endLine": 399,
+                "detail": "value"
+              }
+            ]
+          },
+          {
+            "name": "inline_key",
+            "kind": "module",
+            "startLine": 400,
+            "endLine": 400,
+            "children": [
+              {
+                "name": "nested",
+                "kind": "string",
+                "startLine": 400,
+                "endLine": 400,
+                "detail": "value"
+              }
+            ]
+          },
+          {
+            "name": "array_inline",
+            "kind": "array",
+            "startLine": 401,
+            "endLine": 401,
+            "children": [
+              {
+                "name": "0",
+                "kind": "number",
+                "startLine": 401,
+                "endLine": 401
+              },
+              {
+                "name": "1",
+                "kind": "number",
+                "startLine": 401,
+                "endLine": 401
+              },
+              {
+                "name": "2",
+                "kind": "number",
+                "startLine": 401,
+                "endLine": 401
+              }
+            ]
+          },
+          {
+            "name": "array_block",
+            "kind": "array",
+            "startLine": 402,
+            "endLine": 406,
+            "children": [
+              {
+                "name": "0",
+                "kind": "number",
+                "startLine": 403,
+                "endLine": 403
+              },
+              {
+                "name": "1",
+                "kind": "number",
+                "startLine": 404,
+                "endLine": 404
+              },
+              {
+                "name": "2",
+                "kind": "number",
+                "startLine": 405,
+                "endLine": 405
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "complex_keys",
+    "kind": "module",
+    "startLine": 411,
+    "endLine": 431,
+    "children": [
+      {
+        "name": "explicit_key",
+        "kind": "string",
+        "startLine": 413,
+        "endLine": 414,
+        "detail": "explicit_value"
+      },
+      {
+        "name": "multiline_key_placeholder",
+        "kind": "string",
+        "startLine": 416,
+        "endLine": 417,
+        "detail": "value_for_multiline_key"
+      },
+      {
+        "name": "array_as_key",
+        "kind": "string",
+        "startLine": 419,
+        "endLine": 420,
+        "detail": "array_key_value"
+      },
+      {
+        "name": "mapping_as_key",
+        "kind": "string",
+        "startLine": 422,
+        "endLine": 423,
+        "detail": "mapping_key_value"
+      },
+      {
+        "name": "sequence_as_key",
+        "kind": "string",
+        "startLine": 425,
+        "endLine": 426,
+        "detail": "sequence_key_value"
+      },
+      {
+        "name": "complex_nested",
+        "kind": "string",
+        "startLine": 429,
+        "endLine": 430,
+        "detail": "complex_nested_key_value"
+      }
+    ]
+  },
+  {
+    "name": "anchors_and_aliases",
+    "kind": "module",
+    "startLine": 436,
+    "endLine": 482,
+    "children": [
+      {
+        "name": "original",
+        "kind": "module",
+        "startLine": 438,
+        "endLine": 441,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 439,
+            "endLine": 439,
+            "detail": "Original"
+          },
+          {
+            "name": "value",
+            "kind": "number",
+            "startLine": 440,
+            "endLine": 440,
+            "detail": "100"
+          }
+        ]
+      },
+      {
+        "name": "copy",
+        "kind": "module",
+        "startLine": 443,
+        "endLine": 443,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 439,
+            "endLine": 439,
+            "detail": "Original"
+          },
+          {
+            "name": "value",
+            "kind": "number",
+            "startLine": 440,
+            "endLine": 440,
+            "detail": "100"
+          }
+        ]
+      },
+      {
+        "name": "first",
+        "kind": "module",
+        "startLine": 446,
+        "endLine": 449,
+        "children": [
+          {
+            "name": "id",
+            "kind": "number",
+            "startLine": 447,
+            "endLine": 447,
+            "detail": "1"
+          },
+          {
+            "name": "label",
+            "kind": "string",
+            "startLine": 448,
+            "endLine": 448,
+            "detail": "First Item"
+          }
+        ]
+      },
+      {
+        "name": "second",
+        "kind": "module",
+        "startLine": 450,
+        "endLine": 453,
+        "children": [
+          {
+            "name": "id",
+            "kind": "number",
+            "startLine": 451,
+            "endLine": 451,
+            "detail": "2"
+          },
+          {
+            "name": "label",
+            "kind": "string",
+            "startLine": 452,
+            "endLine": 452,
+            "detail": "Second Item"
+          }
+        ]
+      },
+      {
+        "name": "references",
+        "kind": "module",
+        "startLine": 454,
+        "endLine": 457,
+        "children": [
+          {
+            "name": "ref_to_first",
+            "kind": "module",
+            "startLine": 455,
+            "endLine": 455,
+            "children": [
+              {
+                "name": "id",
+                "kind": "number",
+                "startLine": 447,
+                "endLine": 447,
+                "detail": "1"
+              },
+              {
+                "name": "label",
+                "kind": "string",
+                "startLine": 448,
+                "endLine": 448,
+                "detail": "First Item"
+              }
+            ]
+          },
+          {
+            "name": "ref_to_second",
+            "kind": "module",
+            "startLine": 456,
+            "endLine": 456,
+            "children": [
+              {
+                "name": "id",
+                "kind": "number",
+                "startLine": 451,
+                "endLine": 451,
+                "detail": "2"
+              },
+              {
+                "name": "label",
+                "kind": "string",
+                "startLine": 452,
+                "endLine": 452,
+                "detail": "Second Item"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "scalar_anchor",
+        "kind": "string",
+        "startLine": 459,
+        "endLine": 459,
+        "detail": "important_string"
+      },
+      {
+        "name": "scalar_alias",
+        "kind": "string",
+        "startLine": 460,
+        "endLine": 460,
+        "detail": "important_string"
+      },
+      {
+        "name": "array_anchor",
+        "kind": "array",
+        "startLine": 463,
+        "endLine": 467,
+        "children": [
+          {
+            "name": "0",
+            "kind": "string",
+            "startLine": 464,
+            "endLine": 464
+          },
+          {
+            "name": "1",
+            "kind": "string",
+            "startLine": 465,
+            "endLine": 465
+          },
+          {
+            "name": "2",
+            "kind": "string",
+            "startLine": 466,
+            "endLine": 466
+          }
+        ]
+      },
+      {
+        "name": "array_alias",
+        "kind": "array",
+        "startLine": 467,
+        "endLine": 467,
+        "children": [
+          {
+            "name": "0",
+            "kind": "string",
+            "startLine": 464,
+            "endLine": 464
+          },
+          {
+            "name": "1",
+            "kind": "string",
+            "startLine": 465,
+            "endLine": 465
+          },
+          {
+            "name": "2",
+            "kind": "string",
+            "startLine": 466,
+            "endLine": 466
+          }
+        ]
+      },
+      {
+        "name": "nested_anchor",
+        "kind": "module",
+        "startLine": 470,
+        "endLine": 474,
+        "children": [
+          {
+            "name": "level1",
+            "kind": "module",
+            "startLine": 471,
+            "endLine": 474,
+            "children": [
+              {
+                "name": "level2",
+                "kind": "module",
+                "startLine": 472,
+                "endLine": 474,
+                "children": [
+                  {
+                    "name": "data",
+                    "kind": "string",
+                    "startLine": 473,
+                    "endLine": 473,
+                    "detail": "nested_data"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "nested_alias",
+        "kind": "module",
+        "startLine": 474,
+        "endLine": 474,
+        "children": [
+          {
+            "name": "level1",
+            "kind": "module",
+            "startLine": 471,
+            "endLine": 474,
+            "children": [
+              {
+                "name": "level2",
+                "kind": "module",
+                "startLine": 472,
+                "endLine": 474,
+                "children": [
+                  {
+                    "name": "data",
+                    "kind": "string",
+                    "startLine": 473,
+                    "endLine": 473,
+                    "detail": "nested_data"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "list_with_anchors",
+        "kind": "array",
+        "startLine": 477,
+        "endLine": 482,
+        "children": [
+          {
+            "name": "0",
+            "kind": "module",
+            "startLine": 479,
+            "endLine": 480,
+            "children": [
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 479,
+                "endLine": 479,
+                "detail": "Anchored Item"
+              }
+            ]
+          },
+          {
+            "name": "1",
+            "kind": "string",
+            "startLine": 480,
+            "endLine": 480
+          },
+          {
+            "name": "2",
+            "kind": "module",
+            "startLine": 479,
+            "endLine": 480,
+            "children": [
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 479,
+                "endLine": 479,
+                "detail": "Anchored Item"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "merge_keys",
+    "kind": "module",
+    "startLine": 487,
+    "endLine": 519,
+    "children": [
+      {
+        "name": "defaults",
+        "kind": "module",
+        "startLine": 488,
+        "endLine": 492,
+        "children": [
+          {
+            "name": "adapter",
+            "kind": "string",
+            "startLine": 489,
+            "endLine": 489,
+            "detail": "postgres"
+          },
+          {
+            "name": "host",
+            "kind": "string",
+            "startLine": 490,
+            "endLine": 490,
+            "detail": "localhost"
+          },
+          {
+            "name": "port",
+            "kind": "number",
+            "startLine": 491,
+            "endLine": 491,
+            "detail": "5432"
+          }
+        ]
+      },
+      {
+        "name": "development",
+        "kind": "module",
+        "startLine": 493,
+        "endLine": 497,
+        "children": [
+          {
+            "name": "<<",
+            "kind": "module",
+            "startLine": 494,
+            "endLine": 494,
+            "children": [
+              {
+                "name": "adapter",
+                "kind": "string",
+                "startLine": 489,
+                "endLine": 489,
+                "detail": "postgres"
+              },
+              {
+                "name": "host",
+                "kind": "string",
+                "startLine": 490,
+                "endLine": 490,
+                "detail": "localhost"
+              },
+              {
+                "name": "port",
+                "kind": "number",
+                "startLine": 491,
+                "endLine": 491,
+                "detail": "5432"
+              }
+            ]
+          },
+          {
+            "name": "database",
+            "kind": "string",
+            "startLine": 495,
+            "endLine": 495,
+            "detail": "dev_db"
+          },
+          {
+            "name": "debug",
+            "kind": "boolean",
+            "startLine": 496,
+            "endLine": 496,
+            "detail": "true"
+          }
+        ]
+      },
+      {
+        "name": "production",
+        "kind": "module",
+        "startLine": 498,
+        "endLine": 503,
+        "children": [
+          {
+            "name": "<<",
+            "kind": "module",
+            "startLine": 499,
+            "endLine": 499,
+            "children": [
+              {
+                "name": "adapter",
+                "kind": "string",
+                "startLine": 489,
+                "endLine": 489,
+                "detail": "postgres"
+              },
+              {
+                "name": "host",
+                "kind": "string",
+                "startLine": 490,
+                "endLine": 490,
+                "detail": "localhost"
+              },
+              {
+                "name": "port",
+                "kind": "number",
+                "startLine": 491,
+                "endLine": 491,
+                "detail": "5432"
+              }
+            ]
+          },
+          {
+            "name": "database",
+            "kind": "string",
+            "startLine": 500,
+            "endLine": 500,
+            "detail": "prod_db"
+          },
+          {
+            "name": "host",
+            "kind": "string",
+            "startLine": 501,
+            "endLine": 501,
+            "detail": "prod.server.com"
+          },
+          {
+            "name": "debug",
+            "kind": "boolean",
+            "startLine": 502,
+            "endLine": 502,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "base1",
+        "kind": "module",
+        "startLine": 505,
+        "endLine": 507,
+        "children": [
+          {
+            "name": "key1",
+            "kind": "string",
+            "startLine": 506,
+            "endLine": 506,
+            "detail": "value1"
+          }
+        ]
+      },
+      {
+        "name": "base2",
+        "kind": "module",
+        "startLine": 508,
+        "endLine": 510,
+        "children": [
+          {
+            "name": "key2",
+            "kind": "string",
+            "startLine": 509,
+            "endLine": 509,
+            "detail": "value2"
+          }
+        ]
+      },
+      {
+        "name": "merged_multiple",
+        "kind": "module",
+        "startLine": 511,
+        "endLine": 514,
+        "children": [
+          {
+            "name": "<<",
+            "kind": "array",
+            "startLine": 512,
+            "endLine": 512,
+            "children": [
+              {
+                "name": "0",
+                "kind": "module",
+                "startLine": 506,
+                "endLine": 507,
+                "children": [
+                  {
+                    "name": "key1",
+                    "kind": "string",
+                    "startLine": 506,
+                    "endLine": 506,
+                    "detail": "value1"
+                  }
+                ]
+              },
+              {
+                "name": "1",
+                "kind": "module",
+                "startLine": 509,
+                "endLine": 510,
+                "children": [
+                  {
+                    "name": "key2",
+                    "kind": "string",
+                    "startLine": 509,
+                    "endLine": 509,
+                    "detail": "value2"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "key3",
+            "kind": "string",
+            "startLine": 513,
+            "endLine": 513,
+            "detail": "value3"
+          }
+        ]
+      },
+      {
+        "name": "override_merge",
+        "kind": "module",
+        "startLine": 516,
+        "endLine": 519,
+        "children": [
+          {
+            "name": "<<",
+            "kind": "module",
+            "startLine": 517,
+            "endLine": 517,
+            "children": [
+              {
+                "name": "adapter",
+                "kind": "string",
+                "startLine": 489,
+                "endLine": 489,
+                "detail": "postgres"
+              },
+              {
+                "name": "host",
+                "kind": "string",
+                "startLine": 490,
+                "endLine": 490,
+                "detail": "localhost"
+              },
+              {
+                "name": "port",
+                "kind": "number",
+                "startLine": 491,
+                "endLine": 491,
+                "detail": "5432"
+              }
+            ]
+          },
+          {
+            "name": "host",
+            "kind": "string",
+            "startLine": 518,
+            "endLine": 518,
+            "detail": "override.host.com"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "tags",
+    "kind": "module",
+    "startLine": 524,
+    "endLine": 569,
+    "children": [
+      {
+        "name": "explicit_string",
+        "kind": "string",
+        "startLine": 526,
+        "endLine": 526,
+        "detail": "123"
+      },
+      {
+        "name": "explicit_int",
+        "kind": "number",
+        "startLine": 527,
+        "endLine": 527,
+        "detail": "456"
+      },
+      {
+        "name": "explicit_float",
+        "kind": "number",
+        "startLine": 528,
+        "endLine": 528,
+        "detail": "3.14"
+      },
+      {
+        "name": "explicit_bool",
+        "kind": "boolean",
+        "startLine": 529,
+        "endLine": 529,
+        "detail": "true"
+      },
+      {
+        "name": "explicit_null",
+        "kind": "variable",
+        "startLine": 530,
+        "endLine": 530,
+        "detail": "null"
+      },
+      {
+        "name": "explicit_seq",
+        "kind": "array",
+        "startLine": 533,
+        "endLine": 536,
+        "children": [
+          {
+            "name": "0",
+            "kind": "string",
+            "startLine": 534,
+            "endLine": 534
+          },
+          {
+            "name": "1",
+            "kind": "string",
+            "startLine": 535,
+            "endLine": 535
+          }
+        ]
+      },
+      {
+        "name": "explicit_map",
+        "kind": "module",
+        "startLine": 537,
+        "endLine": 539,
+        "children": [
+          {
+            "name": "key",
+            "kind": "string",
+            "startLine": 538,
+            "endLine": 538,
+            "detail": "value"
+          }
+        ]
+      },
+      {
+        "name": "binary_data",
+        "kind": "string",
+        "startLine": 541,
+        "endLine": 543,
+        "detail": "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7\n"
+      },
+      {
+        "name": "omap_example",
+        "kind": "array",
+        "startLine": 545,
+        "endLine": 548,
+        "detail": "[]"
+      },
+      {
+        "name": "pairs_example",
+        "kind": "array",
+        "startLine": 550,
+        "endLine": 553,
+        "detail": "[]"
+      },
+      {
+        "name": "set_example",
+        "kind": "module",
+        "startLine": 555,
+        "endLine": 559,
+        "children": [
+          {
+            "name": "item1",
+            "kind": "variable",
+            "startLine": 556,
+            "endLine": 556,
+            "detail": "null"
+          },
+          {
+            "name": "item2",
+            "kind": "variable",
+            "startLine": 557,
+            "endLine": 557,
+            "detail": "null"
+          },
+          {
+            "name": "item3",
+            "kind": "variable",
+            "startLine": 558,
+            "endLine": 558,
+            "detail": "null"
+          }
+        ]
+      },
+      {
+        "name": "custom_tagged",
+        "kind": "module",
+        "startLine": 561,
+        "endLine": 563,
+        "children": [
+          {
+            "name": "data",
+            "kind": "string",
+            "startLine": 562,
+            "endLine": 562,
+            "detail": "custom_value"
+          }
+        ]
+      },
+      {
+        "name": "local_tag",
+        "kind": "string",
+        "startLine": 565,
+        "endLine": 565,
+        "detail": "value"
+      },
+      {
+        "name": "verbatim_tag",
+        "kind": "string",
+        "startLine": 568,
+        "endLine": 568,
+        "detail": "value"
+      }
+    ]
+  },
+  {
+    "name": "document_markers",
+    "kind": "module",
+    "startLine": 574,
+    "endLine": 576,
+    "children": [
+      {
+        "name": "note",
+        "kind": "string",
+        "startLine": 575,
+        "endLine": 575,
+        "detail": "Document start (---) and end (...) markers are demonstrated by this file structure"
+      }
+    ]
+  },
+  {
+    "name": "second_document",
+    "kind": "module",
+    "startLine": 581,
+    "endLine": 584,
+    "children": [
+      {
+        "name": "name",
+        "kind": "string",
+        "startLine": 582,
+        "endLine": 582,
+        "detail": "Second Document"
+      },
+      {
+        "name": "purpose",
+        "kind": "string",
+        "startLine": 583,
+        "endLine": 583,
+        "detail": "Testing multi-document YAML"
+      }
+    ]
+  },
+  {
+    "name": "items",
+    "kind": "array",
+    "startLine": 585,
+    "endLine": 588,
+    "children": [
+      {
+        "name": "0",
+        "kind": "module",
+        "startLine": 586,
+        "endLine": 587,
+        "children": [
+          {
+            "name": "from",
+            "kind": "string",
+            "startLine": 586,
+            "endLine": 586,
+            "detail": "second"
+          }
+        ]
+      },
+      {
+        "name": "1",
+        "kind": "module",
+        "startLine": 587,
+        "endLine": 588,
+        "children": [
+          {
+            "name": "document",
+            "kind": "string",
+            "startLine": 587,
+            "endLine": 587,
+            "detail": "here"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "minimal",
+    "kind": "boolean",
+    "startLine": 593,
+    "endLine": 593,
+    "detail": "true"
+  },
+  {
+    "name": "count",
+    "kind": "number",
+    "startLine": 594,
+    "endLine": 594,
+    "detail": "3"
+  },
+  {
+    "name": "fourth_doc",
+    "kind": "module",
+    "startLine": 600,
+    "endLine": 604,
+    "children": [
+      {
+        "name": "anchor",
+        "kind": "module",
+        "startLine": 601,
+        "endLine": 603,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 602,
+            "endLine": 602,
+            "detail": "Fourth Doc Anchor"
+          }
+        ]
+      },
+      {
+        "name": "alias",
+        "kind": "module",
+        "startLine": 603,
+        "endLine": 603,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 602,
+            "endLine": 602,
+            "detail": "Fourth Doc Anchor"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "complex_fifth_doc",
+    "kind": "module",
+    "startLine": 609,
+    "endLine": 632,
+    "children": [
+      {
+        "name": "config",
+        "kind": "module",
+        "startLine": 610,
+        "endLine": 622,
+        "children": [
+          {
+            "name": "database",
+            "kind": "module",
+            "startLine": 611,
+            "endLine": 622,
+            "children": [
+              {
+                "name": "<<",
+                "kind": "module",
+                "startLine": 612,
+                "endLine": 615,
+                "children": [
+                  {
+                    "name": "adapter",
+                    "kind": "string",
+                    "startLine": 613,
+                    "endLine": 613,
+                    "detail": "postgresql"
+                  },
+                  {
+                    "name": "pool",
+                    "kind": "number",
+                    "startLine": 614,
+                    "endLine": 614,
+                    "detail": "5"
+                  }
+                ]
+              },
+              {
+                "name": "development",
+                "kind": "module",
+                "startLine": 615,
+                "endLine": 618,
+                "children": [
+                  {
+                    "name": "<<",
+                    "kind": "module",
+                    "startLine": 616,
+                    "endLine": 616,
+                    "children": [
+                      {
+                        "name": "adapter",
+                        "kind": "string",
+                        "startLine": 613,
+                        "endLine": 613,
+                        "detail": "postgresql"
+                      },
+                      {
+                        "name": "pool",
+                        "kind": "number",
+                        "startLine": 614,
+                        "endLine": 614,
+                        "detail": "5"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "database",
+                    "kind": "string",
+                    "startLine": 617,
+                    "endLine": 617,
+                    "detail": "dev"
+                  }
+                ]
+              },
+              {
+                "name": "production",
+                "kind": "module",
+                "startLine": 618,
+                "endLine": 622,
+                "children": [
+                  {
+                    "name": "<<",
+                    "kind": "module",
+                    "startLine": 619,
+                    "endLine": 619,
+                    "children": [
+                      {
+                        "name": "adapter",
+                        "kind": "string",
+                        "startLine": 613,
+                        "endLine": 613,
+                        "detail": "postgresql"
+                      },
+                      {
+                        "name": "pool",
+                        "kind": "number",
+                        "startLine": 614,
+                        "endLine": 614,
+                        "detail": "5"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "database",
+                    "kind": "string",
+                    "startLine": 620,
+                    "endLine": 620,
+                    "detail": "prod"
+                  },
+                  {
+                    "name": "pool",
+                    "kind": "number",
+                    "startLine": 621,
+                    "endLine": 621,
+                    "detail": "25"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "features",
+        "kind": "array",
+        "startLine": 623,
+        "endLine": 632,
+        "children": [
+          {
+            "name": "0",
+            "kind": "module",
+            "startLine": 625,
+            "endLine": 627,
+            "children": [
+              {
+                "name": "enabled",
+                "kind": "boolean",
+                "startLine": 625,
+                "endLine": 625,
+                "detail": "true"
+              },
+              {
+                "name": "version",
+                "kind": "string",
+                "startLine": 626,
+                "endLine": 626,
+                "detail": "1.0"
+              }
+            ]
+          },
+          {
+            "name": "1",
+            "kind": "module",
+            "startLine": 627,
+            "endLine": 629,
+            "children": [
+              {
+                "name": "<<",
+                "kind": "module",
+                "startLine": 627,
+                "endLine": 627,
+                "children": [
+                  {
+                    "name": "enabled",
+                    "kind": "boolean",
+                    "startLine": 625,
+                    "endLine": 625,
+                    "detail": "true"
+                  },
+                  {
+                    "name": "version",
+                    "kind": "string",
+                    "startLine": 626,
+                    "endLine": 626,
+                    "detail": "1.0"
+                  }
+                ]
+              },
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 628,
+                "endLine": 628,
+                "detail": "feature_a"
+              }
+            ]
+          },
+          {
+            "name": "2",
+            "kind": "module",
+            "startLine": 629,
+            "endLine": 632,
+            "children": [
+              {
+                "name": "<<",
+                "kind": "module",
+                "startLine": 629,
+                "endLine": 629,
+                "children": [
+                  {
+                    "name": "enabled",
+                    "kind": "boolean",
+                    "startLine": 625,
+                    "endLine": 625,
+                    "detail": "true"
+                  },
+                  {
+                    "name": "version",
+                    "kind": "string",
+                    "startLine": 626,
+                    "endLine": 626,
+                    "detail": "1.0"
+                  }
+                ]
+              },
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 630,
+                "endLine": 630,
+                "detail": "feature_b"
+              },
+              {
+                "name": "enabled",
+                "kind": "boolean",
+                "startLine": 631,
+                "endLine": 631,
+                "detail": "false"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "edge_cases",
+    "kind": "module",
+    "startLine": 639,
+    "endLine": 739,
+    "children": [
+      {
+        "name": "empty_mapping",
+        "kind": "module",
+        "startLine": 641,
+        "endLine": 641,
+        "detail": "{}"
+      },
+      {
+        "name": "empty_sequence",
+        "kind": "array",
+        "startLine": 642,
+        "endLine": 642,
+        "detail": "[]"
+      },
+      {
+        "name": "empty_string",
+        "kind": "string",
+        "startLine": 643,
+        "endLine": 643
+      },
+      {
+        "name": "null_value",
+        "kind": "variable",
+        "startLine": 644,
+        "endLine": 644,
+        "detail": "null"
+      },
+      {
+        "name": "whitespace",
+        "kind": "module",
+        "startLine": 647,
+        "endLine": 653,
+        "children": [
+          {
+            "name": "leading_spaces",
+            "kind": "string",
+            "startLine": 648,
+            "endLine": 648,
+            "detail": "   leading"
+          },
+          {
+            "name": "trailing_spaces",
+            "kind": "string",
+            "startLine": 649,
+            "endLine": 649,
+            "detail": "trailing   "
+          },
+          {
+            "name": "both_spaces",
+            "kind": "string",
+            "startLine": 650,
+            "endLine": 650,
+            "detail": "   both   "
+          },
+          {
+            "name": "tabs",
+            "kind": "string",
+            "startLine": 651,
+            "endLine": 651,
+            "detail": "with\ttabs"
+          },
+          {
+            "name": "internal_spaces",
+            "kind": "string",
+            "startLine": 652,
+            "endLine": 652,
+            "detail": "multiple   internal   spaces"
+          }
+        ]
+      },
+      {
+        "name": "special_chars",
+        "kind": "module",
+        "startLine": 655,
+        "endLine": 670,
+        "children": [
+          {
+            "name": "ampersand",
+            "kind": "string",
+            "startLine": 656,
+            "endLine": 656,
+            "detail": "A & B"
+          },
+          {
+            "name": "asterisk",
+            "kind": "string",
+            "startLine": 657,
+            "endLine": 657,
+            "detail": "item*"
+          },
+          {
+            "name": "at_sign",
+            "kind": "string",
+            "startLine": 658,
+            "endLine": 658,
+            "detail": "user@domain"
+          },
+          {
+            "name": "percent",
+            "kind": "string",
+            "startLine": 659,
+            "endLine": 659,
+            "detail": "100%"
+          },
+          {
+            "name": "dollar",
+            "kind": "string",
+            "startLine": 660,
+            "endLine": 660,
+            "detail": "$100"
+          },
+          {
+            "name": "exclamation",
+            "kind": "string",
+            "startLine": 661,
+            "endLine": 661,
+            "detail": "Hello!"
+          },
+          {
+            "name": "question",
+            "kind": "string",
+            "startLine": 662,
+            "endLine": 662,
+            "detail": "Really?"
+          },
+          {
+            "name": "hash",
+            "kind": "string",
+            "startLine": 663,
+            "endLine": 663,
+            "detail": "#hashtag in quotes"
+          },
+          {
+            "name": "brackets",
+            "kind": "string",
+            "startLine": 664,
+            "endLine": 664,
+            "detail": "[not array]"
+          },
+          {
+            "name": "braces",
+            "kind": "string",
+            "startLine": 665,
+            "endLine": 665,
+            "detail": "{not mapping}"
+          },
+          {
+            "name": "pipe",
+            "kind": "string",
+            "startLine": 666,
+            "endLine": 666,
+            "detail": "a|b|c"
+          },
+          {
+            "name": "tilde",
+            "kind": "string",
+            "startLine": 667,
+            "endLine": 667,
+            "detail": "~user"
+          },
+          {
+            "name": "caret",
+            "kind": "string",
+            "startLine": 668,
+            "endLine": 668,
+            "detail": "2^3"
+          },
+          {
+            "name": "backtick",
+            "kind": "string",
+            "startLine": 669,
+            "endLine": 669,
+            "detail": "`code`"
+          }
+        ]
+      },
+      {
+        "name": "number_strings",
+        "kind": "module",
+        "startLine": 672,
+        "endLine": 681,
+        "children": [
+          {
+            "name": "quoted_int",
+            "kind": "string",
+            "startLine": 673,
+            "endLine": 673,
+            "detail": "42"
+          },
+          {
+            "name": "quoted_float",
+            "kind": "string",
+            "startLine": 674,
+            "endLine": 674,
+            "detail": "3.14"
+          },
+          {
+            "name": "quoted_scientific",
+            "kind": "string",
+            "startLine": 675,
+            "endLine": 675,
+            "detail": "1e10"
+          },
+          {
+            "name": "quoted_hex",
+            "kind": "string",
+            "startLine": 676,
+            "endLine": 676,
+            "detail": "0xFF"
+          },
+          {
+            "name": "quoted_octal",
+            "kind": "string",
+            "startLine": 677,
+            "endLine": 677,
+            "detail": "0o755"
+          },
+          {
+            "name": "leading_zeros",
+            "kind": "string",
+            "startLine": 678,
+            "endLine": 678,
+            "detail": "007"
+          },
+          {
+            "name": "phone_number",
+            "kind": "string",
+            "startLine": 679,
+            "endLine": 679,
+            "detail": "+1-555-123-4567"
+          },
+          {
+            "name": "version",
+            "kind": "string",
+            "startLine": 680,
+            "endLine": 680,
+            "detail": "1.2.3"
+          }
+        ]
+      },
+      {
+        "name": "bool_strings",
+        "kind": "module",
+        "startLine": 683,
+        "endLine": 688,
+        "children": [
+          {
+            "name": "quoted_true",
+            "kind": "string",
+            "startLine": 684,
+            "endLine": 684,
+            "detail": "true"
+          },
+          {
+            "name": "quoted_false",
+            "kind": "string",
+            "startLine": 685,
+            "endLine": 685,
+            "detail": "false"
+          },
+          {
+            "name": "quoted_yes",
+            "kind": "string",
+            "startLine": 686,
+            "endLine": 686,
+            "detail": "yes"
+          },
+          {
+            "name": "quoted_no",
+            "kind": "string",
+            "startLine": 687,
+            "endLine": 687,
+            "detail": "no"
+          }
+        ]
+      },
+      {
+        "name": "multiline",
+        "kind": "module",
+        "startLine": 690,
+        "endLine": 705,
+        "children": [
+          {
+            "name": "literal_empty_first",
+            "kind": "string",
+            "startLine": 691,
+            "endLine": 694,
+            "detail": "\nContent after empty first line\n"
+          },
+          {
+            "name": "folded_long_line",
+            "kind": "string",
+            "startLine": 695,
+            "endLine": 699,
+            "detail": "This is a very long line that should be folded properly when parsed and the resulting text should flow naturally as a single paragraph without any explicit line breaks unless there are blank lines.\n"
+          },
+          {
+            "name": "literal_mixed_indent",
+            "kind": "string",
+            "startLine": 700,
+            "endLine": 705,
+            "detail": "No indent\n  Two spaces\n    Four spaces\nBack to none\n"
+          }
+        ]
+      },
+      {
+        "name": "comments",
+        "kind": "module",
+        "startLine": 707,
+        "endLine": 711,
+        "children": [
+          {
+            "name": "inline_comment",
+            "kind": "string",
+            "startLine": 708,
+            "endLine": 708,
+            "detail": "value"
+          },
+          {
+            "name": "hash_in_quotes",
+            "kind": "string",
+            "startLine": 709,
+            "endLine": 709,
+            "detail": "#notacomment"
+          },
+          {
+            "name": "url_with_hash",
+            "kind": "string",
+            "startLine": 710,
+            "endLine": 710,
+            "detail": "https://example.com/page#section"
+          }
+        ]
+      },
+      {
+        "name": "indicators",
+        "kind": "module",
+        "startLine": 713,
+        "endLine": 724,
+        "children": [
+          {
+            "name": "dash_start",
+            "kind": "string",
+            "startLine": 714,
+            "endLine": 714,
+            "detail": "- not list"
+          },
+          {
+            "name": "colon_start",
+            "kind": "string",
+            "startLine": 715,
+            "endLine": 715,
+            "detail": ": not mapping"
+          },
+          {
+            "name": "question_start",
+            "kind": "string",
+            "startLine": 716,
+            "endLine": 716,
+            "detail": "? not key"
+          },
+          {
+            "name": "ampersand_start",
+            "kind": "string",
+            "startLine": 717,
+            "endLine": 717,
+            "detail": "& not anchor"
+          },
+          {
+            "name": "asterisk_start",
+            "kind": "string",
+            "startLine": 718,
+            "endLine": 718,
+            "detail": "* not alias"
+          },
+          {
+            "name": "pipe_start",
+            "kind": "string",
+            "startLine": 719,
+            "endLine": 719,
+            "detail": "| not literal"
+          },
+          {
+            "name": "greater_start",
+            "kind": "string",
+            "startLine": 720,
+            "endLine": 720,
+            "detail": "> not folded"
+          },
+          {
+            "name": "at_start",
+            "kind": "string",
+            "startLine": 721,
+            "endLine": 721,
+            "detail": "@ value"
+          },
+          {
+            "name": "backtick_start",
+            "kind": "string",
+            "startLine": 722,
+            "endLine": 722,
+            "detail": "` value"
+          },
+          {
+            "name": "percent_start",
+            "kind": "string",
+            "startLine": 723,
+            "endLine": 723,
+            "detail": "% not directive"
+          }
+        ]
+      },
+      {
+        "name": "deep_nesting",
+        "kind": "module",
+        "startLine": 726,
+        "endLine": 739,
+        "children": [
+          {
+            "name": "l1",
+            "kind": "module",
+            "startLine": 727,
+            "endLine": 739,
+            "children": [
+              {
+                "name": "l2",
+                "kind": "module",
+                "startLine": 728,
+                "endLine": 739,
+                "children": [
+                  {
+                    "name": "l3",
+                    "kind": "module",
+                    "startLine": 729,
+                    "endLine": 739,
+                    "children": [
+                      {
+                        "name": "l4",
+                        "kind": "module",
+                        "startLine": 730,
+                        "endLine": 739,
+                        "children": [
+                          {
+                            "name": "l5",
+                            "kind": "module",
+                            "startLine": 731,
+                            "endLine": 739,
+                            "children": [
+                              {
+                                "name": "l6",
+                                "kind": "module",
+                                "startLine": 732,
+                                "endLine": 739,
+                                "children": [
+                                  {
+                                    "name": "l7",
+                                    "kind": "module",
+                                    "startLine": 733,
+                                    "endLine": 739,
+                                    "children": [
+                                      {
+                                        "name": "l8",
+                                        "kind": "module",
+                                        "startLine": 734,
+                                        "endLine": 739,
+                                        "children": [
+                                          {
+                                            "name": "l9",
+                                            "kind": "module",
+                                            "startLine": 735,
+                                            "endLine": 739,
+                                            "children": [
+                                              {
+                                                "name": "l10",
+                                                "kind": "module",
+                                                "startLine": 736,
+                                                "endLine": 739,
+                                                "children": [
+                                                  {
+                                                    "name": "l11",
+                                                    "kind": "module",
+                                                    "startLine": 737,
+                                                    "endLine": 739,
+                                                    "children": [
+                                                      {
+                                                        "name": "l12",
+                                                        "kind": "string",
+                                                        "startLine": 738,
+                                                        "endLine": 738,
+                                                        "detail": "very_deep_value"
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "real_world",
+    "kind": "module",
+    "startLine": 744,
+    "endLine": 898,
+    "children": [
+      {
+        "name": "docker_compose",
+        "kind": "module",
+        "startLine": 746,
+        "endLine": 777,
+        "children": [
+          {
+            "name": "version",
+            "kind": "string",
+            "startLine": 747,
+            "endLine": 747,
+            "detail": "3.8"
+          },
+          {
+            "name": "services",
+            "kind": "module",
+            "startLine": 748,
+            "endLine": 769,
+            "children": [
+              {
+                "name": "web",
+                "kind": "module",
+                "startLine": 749,
+                "endLine": 761,
+                "children": [
+                  {
+                    "name": "build",
+                    "kind": "string",
+                    "startLine": 750,
+                    "endLine": 750,
+                    "detail": "."
+                  },
+                  {
+                    "name": "ports",
+                    "kind": "array",
+                    "startLine": 751,
+                    "endLine": 753,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "string",
+                        "startLine": 752,
+                        "endLine": 752
+                      }
+                    ]
+                  },
+                  {
+                    "name": "environment",
+                    "kind": "array",
+                    "startLine": 753,
+                    "endLine": 756,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "string",
+                        "startLine": 754,
+                        "endLine": 754
+                      },
+                      {
+                        "name": "1",
+                        "kind": "string",
+                        "startLine": 755,
+                        "endLine": 755
+                      }
+                    ]
+                  },
+                  {
+                    "name": "depends_on",
+                    "kind": "array",
+                    "startLine": 756,
+                    "endLine": 758,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "string",
+                        "startLine": 757,
+                        "endLine": 757
+                      }
+                    ]
+                  },
+                  {
+                    "name": "volumes",
+                    "kind": "array",
+                    "startLine": 758,
+                    "endLine": 761,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "string",
+                        "startLine": 759,
+                        "endLine": 759
+                      },
+                      {
+                        "name": "1",
+                        "kind": "string",
+                        "startLine": 760,
+                        "endLine": 760
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "db",
+                "kind": "module",
+                "startLine": 761,
+                "endLine": 769,
+                "children": [
+                  {
+                    "name": "image",
+                    "kind": "string",
+                    "startLine": 762,
+                    "endLine": 762,
+                    "detail": "postgres:14"
+                  },
+                  {
+                    "name": "environment",
+                    "kind": "module",
+                    "startLine": 763,
+                    "endLine": 767,
+                    "children": [
+                      {
+                        "name": "POSTGRES_DB",
+                        "kind": "string",
+                        "startLine": 764,
+                        "endLine": 764,
+                        "detail": "myapp"
+                      },
+                      {
+                        "name": "POSTGRES_USER",
+                        "kind": "string",
+                        "startLine": 765,
+                        "endLine": 765,
+                        "detail": "user"
+                      },
+                      {
+                        "name": "POSTGRES_PASSWORD",
+                        "kind": "string",
+                        "startLine": 766,
+                        "endLine": 766,
+                        "detail": "secret"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "volumes",
+                    "kind": "array",
+                    "startLine": 767,
+                    "endLine": 769,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "string",
+                        "startLine": 768,
+                        "endLine": 768
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "volumes",
+            "kind": "module",
+            "startLine": 770,
+            "endLine": 772,
+            "children": [
+              {
+                "name": "node_modules",
+                "kind": "variable",
+                "startLine": 771,
+                "endLine": 771,
+                "detail": "null"
+              },
+              {
+                "name": "postgres_data",
+                "kind": "variable",
+                "startLine": 772,
+                "endLine": 772,
+                "detail": "null"
+              }
+            ]
+          },
+          {
+            "name": "networks",
+            "kind": "module",
+            "startLine": 774,
+            "endLine": 777,
+            "children": [
+              {
+                "name": "default",
+                "kind": "module",
+                "startLine": 775,
+                "endLine": 777,
+                "children": [
+                  {
+                    "name": "driver",
+                    "kind": "string",
+                    "startLine": 776,
+                    "endLine": 776,
+                    "detail": "bridge"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "github_actions",
+        "kind": "module",
+        "startLine": 779,
+        "endLine": 805,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 780,
+            "endLine": 780,
+            "detail": "CI Pipeline"
+          },
+          {
+            "name": "on",
+            "kind": "module",
+            "startLine": 781,
+            "endLine": 786,
+            "children": [
+              {
+                "name": "push",
+                "kind": "module",
+                "startLine": 782,
+                "endLine": 784,
+                "children": [
+                  {
+                    "name": "branches",
+                    "kind": "array",
+                    "startLine": 783,
+                    "endLine": 783,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "string",
+                        "startLine": 783,
+                        "endLine": 783
+                      },
+                      {
+                        "name": "1",
+                        "kind": "string",
+                        "startLine": 783,
+                        "endLine": 783
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "pull_request",
+                "kind": "module",
+                "startLine": 784,
+                "endLine": 786,
+                "children": [
+                  {
+                    "name": "branches",
+                    "kind": "array",
+                    "startLine": 785,
+                    "endLine": 785,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "string",
+                        "startLine": 785,
+                        "endLine": 785
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "workflow_dispatch",
+                "kind": "variable",
+                "startLine": 786,
+                "endLine": 786,
+                "detail": "null"
+              }
+            ]
+          },
+          {
+            "name": "jobs",
+            "kind": "module",
+            "startLine": 788,
+            "endLine": 805,
+            "children": [
+              {
+                "name": "build",
+                "kind": "module",
+                "startLine": 789,
+                "endLine": 805,
+                "children": [
+                  {
+                    "name": "runs-on",
+                    "kind": "string",
+                    "startLine": 790,
+                    "endLine": 790,
+                    "detail": "ubuntu-latest"
+                  },
+                  {
+                    "name": "strategy",
+                    "kind": "module",
+                    "startLine": 791,
+                    "endLine": 794,
+                    "children": [
+                      {
+                        "name": "matrix",
+                        "kind": "module",
+                        "startLine": 792,
+                        "endLine": 794,
+                        "children": [
+                          {
+                            "name": "node-version",
+                            "kind": "array",
+                            "startLine": 793,
+                            "endLine": 793,
+                            "children": [
+                              {
+                                "name": "0",
+                                "kind": "number",
+                                "startLine": 793,
+                                "endLine": 793
+                              },
+                              {
+                                "name": "1",
+                                "kind": "number",
+                                "startLine": 793,
+                                "endLine": 793
+                              },
+                              {
+                                "name": "2",
+                                "kind": "number",
+                                "startLine": 793,
+                                "endLine": 793
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "steps",
+                    "kind": "array",
+                    "startLine": 795,
+                    "endLine": 805,
+                    "children": [
+                      {
+                        "name": "0",
+                        "kind": "module",
+                        "startLine": 796,
+                        "endLine": 797,
+                        "children": [
+                          {
+                            "name": "uses",
+                            "kind": "string",
+                            "startLine": 796,
+                            "endLine": 796,
+                            "detail": "actions/checkout@v4"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "1",
+                        "kind": "module",
+                        "startLine": 797,
+                        "endLine": 802,
+                        "children": [
+                          {
+                            "name": "name",
+                            "kind": "string",
+                            "startLine": 797,
+                            "endLine": 797,
+                            "detail": "Setup Node.js ${{ matrix.node-version }}"
+                          },
+                          {
+                            "name": "uses",
+                            "kind": "string",
+                            "startLine": 798,
+                            "endLine": 798,
+                            "detail": "actions/setup-node@v4"
+                          },
+                          {
+                            "name": "with",
+                            "kind": "module",
+                            "startLine": 799,
+                            "endLine": 802,
+                            "children": [
+                              {
+                                "name": "node-version",
+                                "kind": "string",
+                                "startLine": 800,
+                                "endLine": 800,
+                                "detail": "${{ matrix.node-version }}"
+                              },
+                              {
+                                "name": "cache",
+                                "kind": "string",
+                                "startLine": 801,
+                                "endLine": 801,
+                                "detail": "npm"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "2",
+                        "kind": "module",
+                        "startLine": 802,
+                        "endLine": 803,
+                        "children": [
+                          {
+                            "name": "run",
+                            "kind": "string",
+                            "startLine": 802,
+                            "endLine": 802,
+                            "detail": "npm ci"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "3",
+                        "kind": "module",
+                        "startLine": 803,
+                        "endLine": 804,
+                        "children": [
+                          {
+                            "name": "run",
+                            "kind": "string",
+                            "startLine": 803,
+                            "endLine": 803,
+                            "detail": "npm test"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "4",
+                        "kind": "module",
+                        "startLine": 804,
+                        "endLine": 805,
+                        "children": [
+                          {
+                            "name": "run",
+                            "kind": "string",
+                            "startLine": 804,
+                            "endLine": 804,
+                            "detail": "npm run build"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "kubernetes",
+        "kind": "module",
+        "startLine": 807,
+        "endLine": 839,
+        "children": [
+          {
+            "name": "apiVersion",
+            "kind": "string",
+            "startLine": 808,
+            "endLine": 808,
+            "detail": "apps/v1"
+          },
+          {
+            "name": "kind",
+            "kind": "string",
+            "startLine": 809,
+            "endLine": 809,
+            "detail": "Deployment"
+          },
+          {
+            "name": "metadata",
+            "kind": "module",
+            "startLine": 810,
+            "endLine": 814,
+            "children": [
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 811,
+                "endLine": 811,
+                "detail": "my-app"
+              },
+              {
+                "name": "labels",
+                "kind": "module",
+                "startLine": 812,
+                "endLine": 814,
+                "children": [
+                  {
+                    "name": "app",
+                    "kind": "string",
+                    "startLine": 813,
+                    "endLine": 813,
+                    "detail": "my-app"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "spec",
+            "kind": "module",
+            "startLine": 814,
+            "endLine": 839,
+            "children": [
+              {
+                "name": "replicas",
+                "kind": "number",
+                "startLine": 815,
+                "endLine": 815,
+                "detail": "3"
+              },
+              {
+                "name": "selector",
+                "kind": "module",
+                "startLine": 816,
+                "endLine": 819,
+                "children": [
+                  {
+                    "name": "matchLabels",
+                    "kind": "module",
+                    "startLine": 817,
+                    "endLine": 819,
+                    "children": [
+                      {
+                        "name": "app",
+                        "kind": "string",
+                        "startLine": 818,
+                        "endLine": 818,
+                        "detail": "my-app"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "template",
+                "kind": "module",
+                "startLine": 819,
+                "endLine": 839,
+                "children": [
+                  {
+                    "name": "metadata",
+                    "kind": "module",
+                    "startLine": 820,
+                    "endLine": 823,
+                    "children": [
+                      {
+                        "name": "labels",
+                        "kind": "module",
+                        "startLine": 821,
+                        "endLine": 823,
+                        "children": [
+                          {
+                            "name": "app",
+                            "kind": "string",
+                            "startLine": 822,
+                            "endLine": 822,
+                            "detail": "my-app"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "spec",
+                    "kind": "module",
+                    "startLine": 823,
+                    "endLine": 839,
+                    "children": [
+                      {
+                        "name": "containers",
+                        "kind": "array",
+                        "startLine": 824,
+                        "endLine": 839,
+                        "children": [
+                          {
+                            "name": "0",
+                            "kind": "module",
+                            "startLine": 825,
+                            "endLine": 839,
+                            "children": [
+                              {
+                                "name": "name",
+                                "kind": "string",
+                                "startLine": 825,
+                                "endLine": 825,
+                                "detail": "my-app"
+                              },
+                              {
+                                "name": "image",
+                                "kind": "string",
+                                "startLine": 826,
+                                "endLine": 826,
+                                "detail": "my-app:latest"
+                              },
+                              {
+                                "name": "ports",
+                                "kind": "array",
+                                "startLine": 827,
+                                "endLine": 829,
+                                "children": [
+                                  {
+                                    "name": "0",
+                                    "kind": "module",
+                                    "startLine": 828,
+                                    "endLine": 829,
+                                    "children": [
+                                      {
+                                        "name": "containerPort",
+                                        "kind": "number",
+                                        "startLine": 828,
+                                        "endLine": 828,
+                                        "detail": "8080"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "env",
+                                "kind": "array",
+                                "startLine": 829,
+                                "endLine": 832,
+                                "children": [
+                                  {
+                                    "name": "0",
+                                    "kind": "module",
+                                    "startLine": 830,
+                                    "endLine": 832,
+                                    "children": [
+                                      {
+                                        "name": "name",
+                                        "kind": "string",
+                                        "startLine": 830,
+                                        "endLine": 830,
+                                        "detail": "NODE_ENV"
+                                      },
+                                      {
+                                        "name": "value",
+                                        "kind": "string",
+                                        "startLine": 831,
+                                        "endLine": 831,
+                                        "detail": "production"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "resources",
+                                "kind": "module",
+                                "startLine": 832,
+                                "endLine": 839,
+                                "children": [
+                                  {
+                                    "name": "limits",
+                                    "kind": "module",
+                                    "startLine": 833,
+                                    "endLine": 836,
+                                    "children": [
+                                      {
+                                        "name": "cpu",
+                                        "kind": "string",
+                                        "startLine": 834,
+                                        "endLine": 834,
+                                        "detail": "500m"
+                                      },
+                                      {
+                                        "name": "memory",
+                                        "kind": "string",
+                                        "startLine": 835,
+                                        "endLine": 835,
+                                        "detail": "128Mi"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "name": "requests",
+                                    "kind": "module",
+                                    "startLine": 836,
+                                    "endLine": 839,
+                                    "children": [
+                                      {
+                                        "name": "cpu",
+                                        "kind": "string",
+                                        "startLine": 837,
+                                        "endLine": 837,
+                                        "detail": "250m"
+                                      },
+                                      {
+                                        "name": "memory",
+                                        "kind": "string",
+                                        "startLine": 838,
+                                        "endLine": 838,
+                                        "detail": "64Mi"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "ansible",
+        "kind": "array",
+        "startLine": 841,
+        "endLine": 865,
+        "children": [
+          {
+            "name": "0",
+            "kind": "module",
+            "startLine": 842,
+            "endLine": 865,
+            "children": [
+              {
+                "name": "hosts",
+                "kind": "string",
+                "startLine": 842,
+                "endLine": 842,
+                "detail": "webservers"
+              },
+              {
+                "name": "become",
+                "kind": "boolean",
+                "startLine": 843,
+                "endLine": 843,
+                "detail": "true"
+              },
+              {
+                "name": "vars",
+                "kind": "module",
+                "startLine": 844,
+                "endLine": 847,
+                "children": [
+                  {
+                    "name": "http_port",
+                    "kind": "number",
+                    "startLine": 845,
+                    "endLine": 845,
+                    "detail": "80"
+                  },
+                  {
+                    "name": "max_clients",
+                    "kind": "number",
+                    "startLine": 846,
+                    "endLine": 846,
+                    "detail": "200"
+                  }
+                ]
+              },
+              {
+                "name": "tasks",
+                "kind": "array",
+                "startLine": 848,
+                "endLine": 859,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "module",
+                    "startLine": 849,
+                    "endLine": 853,
+                    "children": [
+                      {
+                        "name": "name",
+                        "kind": "string",
+                        "startLine": 849,
+                        "endLine": 849,
+                        "detail": "Ensure Apache is installed"
+                      },
+                      {
+                        "name": "apt",
+                        "kind": "module",
+                        "startLine": 850,
+                        "endLine": 853,
+                        "children": [
+                          {
+                            "name": "name",
+                            "kind": "string",
+                            "startLine": 851,
+                            "endLine": 851,
+                            "detail": "apache2"
+                          },
+                          {
+                            "name": "state",
+                            "kind": "string",
+                            "startLine": 852,
+                            "endLine": 852,
+                            "detail": "present"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "1",
+                    "kind": "module",
+                    "startLine": 854,
+                    "endLine": 859,
+                    "children": [
+                      {
+                        "name": "name",
+                        "kind": "string",
+                        "startLine": 854,
+                        "endLine": 854,
+                        "detail": "Copy configuration file"
+                      },
+                      {
+                        "name": "template",
+                        "kind": "module",
+                        "startLine": 855,
+                        "endLine": 858,
+                        "children": [
+                          {
+                            "name": "src",
+                            "kind": "string",
+                            "startLine": 856,
+                            "endLine": 856,
+                            "detail": "templates/httpd.conf.j2"
+                          },
+                          {
+                            "name": "dest",
+                            "kind": "string",
+                            "startLine": 857,
+                            "endLine": 857,
+                            "detail": "/etc/apache2/apache2.conf"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "notify",
+                        "kind": "string",
+                        "startLine": 858,
+                        "endLine": 858,
+                        "detail": "Restart Apache"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "handlers",
+                "kind": "array",
+                "startLine": 860,
+                "endLine": 865,
+                "children": [
+                  {
+                    "name": "0",
+                    "kind": "module",
+                    "startLine": 861,
+                    "endLine": 865,
+                    "children": [
+                      {
+                        "name": "name",
+                        "kind": "string",
+                        "startLine": 861,
+                        "endLine": 861,
+                        "detail": "Restart Apache"
+                      },
+                      {
+                        "name": "service",
+                        "kind": "module",
+                        "startLine": 862,
+                        "endLine": 865,
+                        "children": [
+                          {
+                            "name": "name",
+                            "kind": "string",
+                            "startLine": 863,
+                            "endLine": 863,
+                            "detail": "apache2"
+                          },
+                          {
+                            "name": "state",
+                            "kind": "string",
+                            "startLine": 864,
+                            "endLine": 864,
+                            "detail": "restarted"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "openapi",
+        "kind": "module",
+        "startLine": 867,
+        "endLine": 898,
+        "children": [
+          {
+            "name": "openapi",
+            "kind": "string",
+            "startLine": 868,
+            "endLine": 868,
+            "detail": "3.0.0"
+          },
+          {
+            "name": "info",
+            "kind": "module",
+            "startLine": 869,
+            "endLine": 873,
+            "children": [
+              {
+                "name": "title",
+                "kind": "string",
+                "startLine": 870,
+                "endLine": 870,
+                "detail": "Sample API"
+              },
+              {
+                "name": "version",
+                "kind": "string",
+                "startLine": 871,
+                "endLine": 871,
+                "detail": "1.0.0"
+              },
+              {
+                "name": "description",
+                "kind": "string",
+                "startLine": 872,
+                "endLine": 872,
+                "detail": "A sample API specification"
+              }
+            ]
+          },
+          {
+            "name": "paths",
+            "kind": "module",
+            "startLine": 873,
+            "endLine": 886,
+            "children": [
+              {
+                "name": "/users",
+                "kind": "module",
+                "startLine": 874,
+                "endLine": 886,
+                "children": [
+                  {
+                    "name": "get",
+                    "kind": "module",
+                    "startLine": 875,
+                    "endLine": 886,
+                    "children": [
+                      {
+                        "name": "summary",
+                        "kind": "string",
+                        "startLine": 876,
+                        "endLine": 876,
+                        "detail": "List users"
+                      },
+                      {
+                        "name": "responses",
+                        "kind": "module",
+                        "startLine": 877,
+                        "endLine": 886,
+                        "children": [
+                          {
+                            "name": "200",
+                            "kind": "module",
+                            "startLine": 878,
+                            "endLine": 886,
+                            "children": [
+                              {
+                                "name": "description",
+                                "kind": "string",
+                                "startLine": 879,
+                                "endLine": 879,
+                                "detail": "Successful response"
+                              },
+                              {
+                                "name": "content",
+                                "kind": "module",
+                                "startLine": 880,
+                                "endLine": 886,
+                                "children": [
+                                  {
+                                    "name": "application/json",
+                                    "kind": "module",
+                                    "startLine": 881,
+                                    "endLine": 886,
+                                    "children": [
+                                      {
+                                        "name": "schema",
+                                        "kind": "module",
+                                        "startLine": 882,
+                                        "endLine": 886,
+                                        "children": [
+                                          {
+                                            "name": "type",
+                                            "kind": "string",
+                                            "startLine": 883,
+                                            "endLine": 883,
+                                            "detail": "array"
+                                          },
+                                          {
+                                            "name": "items",
+                                            "kind": "module",
+                                            "startLine": 884,
+                                            "endLine": 886,
+                                            "children": [
+                                              {
+                                                "name": "$ref",
+                                                "kind": "string",
+                                                "startLine": 885,
+                                                "endLine": 885,
+                                                "detail": "#/components/schemas/User"
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "components",
+            "kind": "module",
+            "startLine": 886,
+            "endLine": 898,
+            "children": [
+              {
+                "name": "schemas",
+                "kind": "module",
+                "startLine": 887,
+                "endLine": 898,
+                "children": [
+                  {
+                    "name": "User",
+                    "kind": "module",
+                    "startLine": 888,
+                    "endLine": 898,
+                    "children": [
+                      {
+                        "name": "type",
+                        "kind": "string",
+                        "startLine": 889,
+                        "endLine": 889,
+                        "detail": "object"
+                      },
+                      {
+                        "name": "properties",
+                        "kind": "module",
+                        "startLine": 890,
+                        "endLine": 895,
+                        "children": [
+                          {
+                            "name": "id",
+                            "kind": "module",
+                            "startLine": 891,
+                            "endLine": 893,
+                            "children": [
+                              {
+                                "name": "type",
+                                "kind": "string",
+                                "startLine": 892,
+                                "endLine": 892,
+                                "detail": "integer"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "name",
+                            "kind": "module",
+                            "startLine": 893,
+                            "endLine": 895,
+                            "children": [
+                              {
+                                "name": "type",
+                                "kind": "string",
+                                "startLine": 894,
+                                "endLine": 894,
+                                "detail": "string"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "required",
+                        "kind": "array",
+                        "startLine": 895,
+                        "endLine": 898,
+                        "children": [
+                          {
+                            "name": "0",
+                            "kind": "string",
+                            "startLine": 896,
+                            "endLine": 896
+                          },
+                          {
+                            "name": "1",
+                            "kind": "string",
+                            "startLine": 897,
+                            "endLine": 897
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "type_matrix",
+    "kind": "array",
+    "startLine": 903,
+    "endLine": 951,
+    "children": [
+      {
+        "name": "0",
+        "kind": "module",
+        "startLine": 904,
+        "endLine": 912,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 904,
+            "endLine": 904,
+            "detail": "string"
+          },
+          {
+            "name": "plain",
+            "kind": "string",
+            "startLine": 905,
+            "endLine": 905,
+            "detail": "hello"
+          },
+          {
+            "name": "single",
+            "kind": "string",
+            "startLine": 906,
+            "endLine": 906,
+            "detail": "hello"
+          },
+          {
+            "name": "double",
+            "kind": "string",
+            "startLine": 907,
+            "endLine": 907,
+            "detail": "hello"
+          },
+          {
+            "name": "literal",
+            "kind": "string",
+            "startLine": 908,
+            "endLine": 910,
+            "detail": "hello\n"
+          },
+          {
+            "name": "folded",
+            "kind": "string",
+            "startLine": 910,
+            "endLine": 912,
+            "detail": "hello\n"
+          }
+        ]
+      },
+      {
+        "name": "1",
+        "kind": "module",
+        "startLine": 913,
+        "endLine": 919,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 913,
+            "endLine": 913,
+            "detail": "integer"
+          },
+          {
+            "name": "positive",
+            "kind": "number",
+            "startLine": 914,
+            "endLine": 914,
+            "detail": "42"
+          },
+          {
+            "name": "negative",
+            "kind": "number",
+            "startLine": 915,
+            "endLine": 915,
+            "detail": "-42"
+          },
+          {
+            "name": "zero",
+            "kind": "number",
+            "startLine": 916,
+            "endLine": 916,
+            "detail": "0"
+          },
+          {
+            "name": "octal",
+            "kind": "number",
+            "startLine": 917,
+            "endLine": 917,
+            "detail": "42"
+          },
+          {
+            "name": "hex",
+            "kind": "number",
+            "startLine": 918,
+            "endLine": 918,
+            "detail": "42"
+          }
+        ]
+      },
+      {
+        "name": "2",
+        "kind": "module",
+        "startLine": 920,
+        "endLine": 926,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 920,
+            "endLine": 920,
+            "detail": "float"
+          },
+          {
+            "name": "positive",
+            "kind": "number",
+            "startLine": 921,
+            "endLine": 921,
+            "detail": "3.14"
+          },
+          {
+            "name": "negative",
+            "kind": "number",
+            "startLine": 922,
+            "endLine": 922,
+            "detail": "-3.14"
+          },
+          {
+            "name": "scientific",
+            "kind": "number",
+            "startLine": 923,
+            "endLine": 923,
+            "detail": "6.022e+23"
+          },
+          {
+            "name": "infinity",
+            "kind": "number",
+            "startLine": 924,
+            "endLine": 924,
+            "detail": "Infinity"
+          },
+          {
+            "name": "not_a_number",
+            "kind": "number",
+            "startLine": 925,
+            "endLine": 925,
+            "detail": "NaN"
+          }
+        ]
+      },
+      {
+        "name": "3",
+        "kind": "module",
+        "startLine": 927,
+        "endLine": 930,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 927,
+            "endLine": 927,
+            "detail": "boolean"
+          },
+          {
+            "name": "true_val",
+            "kind": "boolean",
+            "startLine": 928,
+            "endLine": 928,
+            "detail": "true"
+          },
+          {
+            "name": "false_val",
+            "kind": "boolean",
+            "startLine": 929,
+            "endLine": 929,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "4",
+        "kind": "module",
+        "startLine": 931,
+        "endLine": 934,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 931,
+            "endLine": 931,
+            "detail": "null"
+          },
+          {
+            "name": "tilde",
+            "kind": "variable",
+            "startLine": 932,
+            "endLine": 932,
+            "detail": "null"
+          },
+          {
+            "name": "word",
+            "kind": "variable",
+            "startLine": 933,
+            "endLine": 933,
+            "detail": "null"
+          },
+          {
+            "name": "empty",
+            "kind": "variable",
+            "startLine": 934,
+            "endLine": 934,
+            "detail": "null"
+          }
+        ]
+      },
+      {
+        "name": "5",
+        "kind": "module",
+        "startLine": 936,
+        "endLine": 939,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 936,
+            "endLine": 936,
+            "detail": "timestamp"
+          },
+          {
+            "name": "canonical",
+            "kind": "string",
+            "startLine": 937,
+            "endLine": 937,
+            "detail": "2024-02-14T12:00:00Z"
+          },
+          {
+            "name": "date",
+            "kind": "string",
+            "startLine": 938,
+            "endLine": 938,
+            "detail": "2024-02-14"
+          }
+        ]
+      },
+      {
+        "name": "6",
+        "kind": "module",
+        "startLine": 940,
+        "endLine": 946,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 940,
+            "endLine": 940,
+            "detail": "sequence"
+          },
+          {
+            "name": "flow",
+            "kind": "array",
+            "startLine": 941,
+            "endLine": 941,
+            "children": [
+              {
+                "name": "0",
+                "kind": "number",
+                "startLine": 941,
+                "endLine": 941
+              },
+              {
+                "name": "1",
+                "kind": "number",
+                "startLine": 941,
+                "endLine": 941
+              },
+              {
+                "name": "2",
+                "kind": "number",
+                "startLine": 941,
+                "endLine": 941
+              }
+            ]
+          },
+          {
+            "name": "block",
+            "kind": "array",
+            "startLine": 942,
+            "endLine": 946,
+            "children": [
+              {
+                "name": "0",
+                "kind": "number",
+                "startLine": 943,
+                "endLine": 943
+              },
+              {
+                "name": "1",
+                "kind": "number",
+                "startLine": 944,
+                "endLine": 944
+              },
+              {
+                "name": "2",
+                "kind": "number",
+                "startLine": 945,
+                "endLine": 945
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "7",
+        "kind": "module",
+        "startLine": 947,
+        "endLine": 951,
+        "children": [
+          {
+            "name": "type",
+            "kind": "string",
+            "startLine": 947,
+            "endLine": 947,
+            "detail": "mapping"
+          },
+          {
+            "name": "flow",
+            "kind": "module",
+            "startLine": 948,
+            "endLine": 948,
+            "children": [
+              {
+                "name": "key",
+                "kind": "string",
+                "startLine": 948,
+                "endLine": 948,
+                "detail": "value"
+              }
+            ]
+          },
+          {
+            "name": "block",
+            "kind": "module",
+            "startLine": 949,
+            "endLine": 951,
+            "children": [
+              {
+                "name": "key",
+                "kind": "string",
+                "startLine": 950,
+                "endLine": 950,
+                "detail": "value"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

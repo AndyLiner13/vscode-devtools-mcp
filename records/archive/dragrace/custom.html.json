@@ -1,0 +1,2273 @@
+[
+  {
+    "name": "<html>",
+    "kind": "element",
+    "startLine": 10,
+    "endLine": 1592,
+    "detail": "lang=\"en\" .no-js",
+    "children": [
+      {
+        "name": "<head>",
+        "kind": "element",
+        "startLine": 11,
+        "endLine": 150,
+        "children": [
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 13,
+            "endLine": 13
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 16,
+            "endLine": 16,
+            "detail": "name=\"viewport\""
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 17,
+            "endLine": 17,
+            "detail": "name=\"mobile-web-app-capable\""
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 18,
+            "endLine": 18,
+            "detail": "name=\"apple-mobile-web-app-capable\""
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 19,
+            "endLine": 19,
+            "detail": "name=\"apple-mobile-web-app-status-bar-style\""
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 22,
+            "endLine": 22
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 23,
+            "endLine": 23
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 24,
+            "endLine": 24
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 25,
+            "endLine": 25
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 26,
+            "endLine": 26
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 29,
+            "endLine": 29,
+            "detail": "name=\"description\""
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 30,
+            "endLine": 30,
+            "detail": "name=\"keywords\""
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 31,
+            "endLine": 31,
+            "detail": "name=\"author\""
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 32,
+            "endLine": 32,
+            "detail": "name=\"generator\""
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 33,
+            "endLine": 33,
+            "detail": "name=\"robots\""
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 34,
+            "endLine": 34,
+            "detail": "name=\"googlebot\""
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 37,
+            "endLine": 37
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 38,
+            "endLine": 38
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 39,
+            "endLine": 39
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 40,
+            "endLine": 40
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 41,
+            "endLine": 41
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 42,
+            "endLine": 42
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 45,
+            "endLine": 45,
+            "detail": "name=\"twitter:card\""
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 46,
+            "endLine": 46,
+            "detail": "name=\"twitter:site\""
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 47,
+            "endLine": 47,
+            "detail": "name=\"twitter:creator\""
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 48,
+            "endLine": 48,
+            "detail": "name=\"twitter:title\""
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 49,
+            "endLine": 49,
+            "detail": "name=\"twitter:description\""
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 52,
+            "endLine": 52,
+            "detail": "name=\"google-site-verification\""
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 53,
+            "endLine": 53,
+            "detail": "name=\"msvalidate.01\""
+          },
+          {
+            "name": "<title>",
+            "kind": "metadata",
+            "startLine": 55,
+            "endLine": 55
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 58,
+            "endLine": 58,
+            "detail": "rel=\"icon\" href=\"favicon.ico\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 59,
+            "endLine": 59,
+            "detail": "rel=\"icon\" href=\"favicon.svg\" type=\"image/svg+xml\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 60,
+            "endLine": 60,
+            "detail": "rel=\"apple-touch-icon\" href=\"apple-touch-icon.png\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 61,
+            "endLine": 61,
+            "detail": "rel=\"manifest\" href=\"manifest.json\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 62,
+            "endLine": 62,
+            "detail": "rel=\"mask-icon\" href=\"safari-pinned-tab.svg\""
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 63,
+            "endLine": 63,
+            "detail": "name=\"theme-color\""
+          },
+          {
+            "name": "<meta>",
+            "kind": "metadata",
+            "startLine": 64,
+            "endLine": 64,
+            "detail": "name=\"theme-color\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 67,
+            "endLine": 67,
+            "detail": "rel=\"preconnect\" href=\"https://fonts.googleapis.com\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 68,
+            "endLine": 68,
+            "detail": "rel=\"preconnect\" href=\"https://fonts.gstatic.com\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 69,
+            "endLine": 69,
+            "detail": "rel=\"dns-prefetch\" href=\"//cdn.example.com\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 70,
+            "endLine": 70,
+            "detail": "rel=\"preload\" href=\"critical.css\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 71,
+            "endLine": 71,
+            "detail": "rel=\"preload\" href=\"main.js\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 72,
+            "endLine": 72,
+            "detail": "rel=\"preload\" href=\"hero.jpg\" type=\"image/jpeg\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 73,
+            "endLine": 73,
+            "detail": "rel=\"prefetch\" href=\"next-page.html\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 74,
+            "endLine": 74,
+            "detail": "rel=\"modulepreload\" href=\"module.mjs\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 77,
+            "endLine": 77,
+            "detail": "rel=\"stylesheet\" href=\"styles.css\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 78,
+            "endLine": 78,
+            "detail": "rel=\"stylesheet\" href=\"print.css\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 79,
+            "endLine": 79,
+            "detail": "rel=\"stylesheet\" href=\"dark.css\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 80,
+            "endLine": 80,
+            "detail": "rel=\"stylesheet\" href=\"mobile.css\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 83,
+            "endLine": 83,
+            "detail": "rel=\"alternate\" type=\"application/rss+xml\" href=\"/feed.xml\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 84,
+            "endLine": 84,
+            "detail": "rel=\"alternate\" type=\"application/atom+xml\" href=\"/atom.xml\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 85,
+            "endLine": 85,
+            "detail": "rel=\"alternate\" href=\"https://example.com/es/\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 86,
+            "endLine": 86,
+            "detail": "rel=\"alternate\" href=\"https://example.com/fr/\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 87,
+            "endLine": 87,
+            "detail": "rel=\"canonical\" href=\"https://example.com/canonical\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 90,
+            "endLine": 90,
+            "detail": "rel=\"author\" href=\"humans.txt\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 91,
+            "endLine": 91,
+            "detail": "rel=\"license\" href=\"license.html\""
+          },
+          {
+            "name": "<link>",
+            "kind": "resource",
+            "startLine": 92,
+            "endLine": 92,
+            "detail": "rel=\"search\" type=\"application/opensearchdescription+xml\" href=\"/opensearch.xml\""
+          },
+          {
+            "name": "<style>",
+            "kind": "resource",
+            "startLine": 98,
+            "endLine": 110
+          },
+          {
+            "name": "<style>",
+            "kind": "resource",
+            "startLine": 113,
+            "endLine": 115,
+            "detail": "#critical-css type=\"text/css\""
+          },
+          {
+            "name": "<script>",
+            "kind": "resource",
+            "startLine": 118,
+            "endLine": 123
+          },
+          {
+            "name": "<script>",
+            "kind": "resource",
+            "startLine": 126,
+            "endLine": 129,
+            "detail": "type=\"module\""
+          },
+          {
+            "name": "<script>",
+            "kind": "resource",
+            "startLine": 132,
+            "endLine": 139,
+            "detail": "type=\"application/ld+json\""
+          },
+          {
+            "name": "<script>",
+            "kind": "resource",
+            "startLine": 142,
+            "endLine": 149,
+            "detail": "type=\"importmap\""
+          }
+        ]
+      },
+      {
+        "name": "<body>",
+        "kind": "element",
+        "startLine": 152,
+        "endLine": 1591,
+        "detail": "#top .page-test.theme-light",
+        "children": [
+          {
+            "name": "<header>",
+            "kind": "landmark",
+            "startLine": 162,
+            "endLine": 213,
+            "detail": "#site-header",
+            "children": [
+              {
+                "name": "<h1>",
+                "kind": "heading",
+                "startLine": 172,
+                "endLine": 172
+              },
+              {
+                "name": "<nav>",
+                "kind": "landmark",
+                "startLine": 177,
+                "endLine": 194,
+                "detail": "#primary-nav",
+                "children": [
+                  {
+                    "name": "<ul>",
+                    "kind": "element",
+                    "startLine": 178,
+                    "endLine": 193,
+                    "children": [
+                      {
+                        "name": "<ul>",
+                        "kind": "element",
+                        "startLine": 187,
+                        "endLine": 191
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "<nav>",
+                "kind": "landmark",
+                "startLine": 197,
+                "endLine": 212,
+                "children": [
+                  {
+                    "name": "<ol>",
+                    "kind": "element",
+                    "startLine": 198,
+                    "endLine": 211,
+                    "children": [
+                      {
+                        "name": "<meta>",
+                        "kind": "metadata",
+                        "startLine": 201,
+                        "endLine": 201
+                      },
+                      {
+                        "name": "<meta>",
+                        "kind": "metadata",
+                        "startLine": 205,
+                        "endLine": 205
+                      },
+                      {
+                        "name": "<meta>",
+                        "kind": "metadata",
+                        "startLine": 209,
+                        "endLine": 209
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "<main>",
+            "kind": "landmark",
+            "startLine": 219,
+            "endLine": 1517,
+            "detail": "#main-content",
+            "children": [
+              {
+                "name": "<article>",
+                "kind": "landmark",
+                "startLine": 225,
+                "endLine": 247,
+                "detail": "#headings",
+                "children": [
+                  {
+                    "name": "<header>",
+                    "kind": "landmark",
+                    "startLine": 226,
+                    "endLine": 229,
+                    "children": [
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 227,
+                        "endLine": 227,
+                        "detail": "#headings-title"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 231,
+                    "endLine": 246,
+                    "children": [
+                      {
+                        "name": "<h1>",
+                        "kind": "heading",
+                        "startLine": 232,
+                        "endLine": 232
+                      },
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 233,
+                        "endLine": 233
+                      },
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 234,
+                        "endLine": 234
+                      },
+                      {
+                        "name": "<h4>",
+                        "kind": "heading",
+                        "startLine": 235,
+                        "endLine": 235
+                      },
+                      {
+                        "name": "<h5>",
+                        "kind": "heading",
+                        "startLine": 236,
+                        "endLine": 236
+                      },
+                      {
+                        "name": "<h6>",
+                        "kind": "heading",
+                        "startLine": 237,
+                        "endLine": 237
+                      },
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 239,
+                        "endLine": 239,
+                        "detail": "#heading-with-id"
+                      },
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 240,
+                        "endLine": 240,
+                        "detail": ".styled-heading"
+                      },
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 241,
+                        "endLine": 241
+                      },
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 242,
+                        "endLine": 242,
+                        "detail": "lang=\"ar\""
+                      },
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 243,
+                        "endLine": 243
+                      },
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 244,
+                        "endLine": 244
+                      },
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 245,
+                        "endLine": 245
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "<article>",
+                "kind": "landmark",
+                "startLine": 253,
+                "endLine": 369,
+                "detail": "#text",
+                "children": [
+                  {
+                    "name": "<header>",
+                    "kind": "landmark",
+                    "startLine": 254,
+                    "endLine": 256,
+                    "children": [
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 255,
+                        "endLine": 255,
+                        "detail": "#text-title"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 258,
+                    "endLine": 298,
+                    "detail": "#paragraphs",
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 259,
+                        "endLine": 259
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 300,
+                    "endLine": 327,
+                    "detail": "#code-elements",
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 301,
+                        "endLine": 301
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 329,
+                    "endLine": 348,
+                    "detail": "#blockquotes",
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 330,
+                        "endLine": 330
+                      },
+                      {
+                        "name": "<footer>",
+                        "kind": "landmark",
+                        "startLine": 338,
+                        "endLine": 338
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 350,
+                    "endLine": 356,
+                    "detail": "#horizontal-rules",
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 351,
+                        "endLine": 351
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 358,
+                    "endLine": 368,
+                    "detail": "#address",
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 359,
+                        "endLine": 359
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "<article>",
+                "kind": "landmark",
+                "startLine": 375,
+                "endLine": 507,
+                "detail": "#lists",
+                "children": [
+                  {
+                    "name": "<header>",
+                    "kind": "landmark",
+                    "startLine": 376,
+                    "endLine": 378,
+                    "children": [
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 377,
+                        "endLine": 377,
+                        "detail": "#lists-title"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 380,
+                    "endLine": 414,
+                    "detail": "#unordered-lists",
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 381,
+                        "endLine": 381
+                      },
+                      {
+                        "name": "<ul>",
+                        "kind": "element",
+                        "startLine": 383,
+                        "endLine": 387
+                      },
+                      {
+                        "name": "<ul>",
+                        "kind": "element",
+                        "startLine": 389,
+                        "endLine": 393
+                      },
+                      {
+                        "name": "<ul>",
+                        "kind": "element",
+                        "startLine": 395,
+                        "endLine": 413,
+                        "children": [
+                          {
+                            "name": "<ul>",
+                            "kind": "element",
+                            "startLine": 398,
+                            "endLine": 410,
+                            "children": [
+                              {
+                                "name": "<ul>",
+                                "kind": "element",
+                                "startLine": 401,
+                                "endLine": 408,
+                                "children": [
+                                  {
+                                    "name": "<ul>",
+                                    "kind": "element",
+                                    "startLine": 404,
+                                    "endLine": 406
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 416,
+                    "endLine": 467,
+                    "detail": "#ordered-lists",
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 417,
+                        "endLine": 417
+                      },
+                      {
+                        "name": "<ol>",
+                        "kind": "element",
+                        "startLine": 419,
+                        "endLine": 423
+                      },
+                      {
+                        "name": "<ol>",
+                        "kind": "element",
+                        "startLine": 425,
+                        "endLine": 430
+                      },
+                      {
+                        "name": "<ol>",
+                        "kind": "element",
+                        "startLine": 432,
+                        "endLine": 436
+                      },
+                      {
+                        "name": "<ol>",
+                        "kind": "element",
+                        "startLine": 438,
+                        "endLine": 441,
+                        "detail": "type=\"A\""
+                      },
+                      {
+                        "name": "<ol>",
+                        "kind": "element",
+                        "startLine": 443,
+                        "endLine": 446,
+                        "detail": "type=\"a\""
+                      },
+                      {
+                        "name": "<ol>",
+                        "kind": "element",
+                        "startLine": 448,
+                        "endLine": 451,
+                        "detail": "type=\"I\""
+                      },
+                      {
+                        "name": "<ol>",
+                        "kind": "element",
+                        "startLine": 453,
+                        "endLine": 456,
+                        "detail": "type=\"i\""
+                      },
+                      {
+                        "name": "<ol>",
+                        "kind": "element",
+                        "startLine": 458,
+                        "endLine": 466,
+                        "children": [
+                          {
+                            "name": "<ol>",
+                            "kind": "element",
+                            "startLine": 461,
+                            "endLine": 464
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 469,
+                    "endLine": 497,
+                    "detail": "#definition-lists",
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 470,
+                        "endLine": 470
+                      },
+                      {
+                        "name": "<dl>",
+                        "kind": "element",
+                        "startLine": 472,
+                        "endLine": 496,
+                        "children": [
+                          {
+                            "name": "<dl>",
+                            "kind": "element",
+                            "startLine": 491,
+                            "endLine": 494
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 499,
+                    "endLine": 506,
+                    "detail": "#menu-lists",
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 500,
+                        "endLine": 500
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "<article>",
+                "kind": "landmark",
+                "startLine": 513,
+                "endLine": 609,
+                "detail": "#tables",
+                "children": [
+                  {
+                    "name": "<header>",
+                    "kind": "landmark",
+                    "startLine": 514,
+                    "endLine": 516,
+                    "children": [
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 515,
+                        "endLine": 515,
+                        "detail": "#tables-title"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 518,
+                    "endLine": 549,
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 519,
+                        "endLine": 519
+                      },
+                      {
+                        "name": "<table>",
+                        "kind": "table",
+                        "startLine": 520,
+                        "endLine": 548,
+                        "children": [
+                          {
+                            "name": "<thead>",
+                            "kind": "table",
+                            "startLine": 522,
+                            "endLine": 528
+                          },
+                          {
+                            "name": "<tbody>",
+                            "kind": "table",
+                            "startLine": 529,
+                            "endLine": 540
+                          },
+                          {
+                            "name": "<tfoot>",
+                            "kind": "table",
+                            "startLine": 541,
+                            "endLine": 547
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 551,
+                    "endLine": 608,
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 552,
+                        "endLine": 552
+                      },
+                      {
+                        "name": "<table>",
+                        "kind": "table",
+                        "startLine": 553,
+                        "endLine": 607,
+                        "children": [
+                          {
+                            "name": "<thead>",
+                            "kind": "table",
+                            "startLine": 560,
+                            "endLine": 572
+                          },
+                          {
+                            "name": "<tbody>",
+                            "kind": "table",
+                            "startLine": 573,
+                            "endLine": 599
+                          },
+                          {
+                            "name": "<tfoot>",
+                            "kind": "table",
+                            "startLine": 600,
+                            "endLine": 606
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "<article>",
+                "kind": "landmark",
+                "startLine": 615,
+                "endLine": 917,
+                "detail": "#forms",
+                "children": [
+                  {
+                    "name": "<header>",
+                    "kind": "landmark",
+                    "startLine": 616,
+                    "endLine": 618,
+                    "children": [
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 617,
+                        "endLine": 617,
+                        "detail": "#forms-title"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<form>",
+                    "kind": "form",
+                    "startLine": 620,
+                    "endLine": 916,
+                    "detail": "#comprehensive-form name=\"test-form\" rel=\"external\"",
+                    "children": [
+                      {
+                        "name": "<fieldset>",
+                        "kind": "form",
+                        "startLine": 632,
+                        "endLine": 699,
+                        "children": [
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 635,
+                            "endLine": 650
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 652,
+                            "endLine": 659
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 661,
+                            "endLine": 673
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 675,
+                            "endLine": 680
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 682,
+                            "endLine": 688
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 690,
+                            "endLine": 698
+                          }
+                        ]
+                      },
+                      {
+                        "name": "<fieldset>",
+                        "kind": "form",
+                        "startLine": 701,
+                        "endLine": 722,
+                        "children": [
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 704,
+                            "endLine": 711
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 713,
+                            "endLine": 721
+                          }
+                        ]
+                      },
+                      {
+                        "name": "<fieldset>",
+                        "kind": "form",
+                        "startLine": 724,
+                        "endLine": 757,
+                        "children": [
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 727,
+                            "endLine": 733
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 735,
+                            "endLine": 741
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 743,
+                            "endLine": 746
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 748,
+                            "endLine": 751
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 753,
+                            "endLine": 756
+                          }
+                        ]
+                      },
+                      {
+                        "name": "<fieldset>",
+                        "kind": "form",
+                        "startLine": 759,
+                        "endLine": 798,
+                        "children": [
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 762,
+                            "endLine": 765
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 767,
+                            "endLine": 773
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 775,
+                            "endLine": 780
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 782,
+                            "endLine": 785
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 787,
+                            "endLine": 792
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 794,
+                            "endLine": 797
+                          }
+                        ]
+                      },
+                      {
+                        "name": "<fieldset>",
+                        "kind": "form",
+                        "startLine": 800,
+                        "endLine": 826,
+                        "children": [
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 803,
+                            "endLine": 815
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 817,
+                            "endLine": 820
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 822,
+                            "endLine": 825
+                          }
+                        ]
+                      },
+                      {
+                        "name": "<fieldset>",
+                        "kind": "form",
+                        "startLine": 828,
+                        "endLine": 870,
+                        "children": [
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 831,
+                            "endLine": 840
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 842,
+                            "endLine": 858
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 860,
+                            "endLine": 869
+                          }
+                        ]
+                      },
+                      {
+                        "name": "<fieldset>",
+                        "kind": "form",
+                        "startLine": 872,
+                        "endLine": 887
+                      },
+                      {
+                        "name": "<fieldset>",
+                        "kind": "form",
+                        "startLine": 889,
+                        "endLine": 906,
+                        "children": [
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 892,
+                            "endLine": 895
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 897,
+                            "endLine": 900
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 902,
+                            "endLine": 905
+                          }
+                        ]
+                      },
+                      {
+                        "name": "<fieldset>",
+                        "kind": "form",
+                        "startLine": 908,
+                        "endLine": 913
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "<article>",
+                "kind": "landmark",
+                "startLine": 923,
+                "endLine": 1078,
+                "detail": "#media",
+                "children": [
+                  {
+                    "name": "<header>",
+                    "kind": "landmark",
+                    "startLine": 924,
+                    "endLine": 926,
+                    "children": [
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 925,
+                        "endLine": 925,
+                        "detail": "#media-title"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 928,
+                    "endLine": 981,
+                    "detail": "#images",
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 929,
+                        "endLine": 929
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 983,
+                    "endLine": 1030,
+                    "detail": "#audio-video",
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 984,
+                        "endLine": 984
+                      },
+                      {
+                        "name": "<audio>",
+                        "kind": "media",
+                        "startLine": 986,
+                        "endLine": 991
+                      },
+                      {
+                        "name": "<audio>",
+                        "kind": "media",
+                        "startLine": 993,
+                        "endLine": 1001,
+                        "detail": "src=\"simple.mp3\""
+                      },
+                      {
+                        "name": "<video>",
+                        "kind": "media",
+                        "startLine": 1003,
+                        "endLine": 1014
+                      },
+                      {
+                        "name": "<video>",
+                        "kind": "media",
+                        "startLine": 1016,
+                        "endLine": 1029,
+                        "detail": "src=\"simple.mp4\""
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1032,
+                    "endLine": 1070,
+                    "detail": "#svg-inline",
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1033,
+                        "endLine": 1033
+                      },
+                      {
+                        "name": "<svg>",
+                        "kind": "media",
+                        "startLine": 1035,
+                        "endLine": 1069,
+                        "children": [
+                          {
+                            "name": "<title>",
+                            "kind": "metadata",
+                            "startLine": 1036,
+                            "endLine": 1036,
+                            "detail": "#svg-title"
+                          },
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 1067,
+                            "endLine": 1067
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1072,
+                    "endLine": 1077,
+                    "detail": "#canvas",
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1073,
+                        "endLine": 1073
+                      },
+                      {
+                        "name": "<canvas>",
+                        "kind": "media",
+                        "startLine": 1074,
+                        "endLine": 1076,
+                        "detail": "#test-canvas"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "<article>",
+                "kind": "landmark",
+                "startLine": 1084,
+                "endLine": 1144,
+                "detail": "#interactive",
+                "children": [
+                  {
+                    "name": "<header>",
+                    "kind": "landmark",
+                    "startLine": 1085,
+                    "endLine": 1087,
+                    "children": [
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 1086,
+                        "endLine": 1086,
+                        "detail": "#interactive-title"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1089,
+                    "endLine": 1118,
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1090,
+                        "endLine": 1090
+                      },
+                      {
+                        "name": "<details>",
+                        "kind": "interactive",
+                        "startLine": 1092,
+                        "endLine": 1095,
+                        "children": [
+                          {
+                            "name": "<summary>",
+                            "kind": "interactive",
+                            "startLine": 1093,
+                            "endLine": 1093
+                          }
+                        ]
+                      },
+                      {
+                        "name": "<details>",
+                        "kind": "interactive",
+                        "startLine": 1097,
+                        "endLine": 1104,
+                        "children": [
+                          {
+                            "name": "<summary>",
+                            "kind": "interactive",
+                            "startLine": 1098,
+                            "endLine": 1098
+                          },
+                          {
+                            "name": "<ul>",
+                            "kind": "element",
+                            "startLine": 1100,
+                            "endLine": 1103
+                          }
+                        ]
+                      },
+                      {
+                        "name": "<details>",
+                        "kind": "interactive",
+                        "startLine": 1106,
+                        "endLine": 1109,
+                        "children": [
+                          {
+                            "name": "<summary>",
+                            "kind": "interactive",
+                            "startLine": 1107,
+                            "endLine": 1107
+                          }
+                        ]
+                      },
+                      {
+                        "name": "<details>",
+                        "kind": "interactive",
+                        "startLine": 1111,
+                        "endLine": 1117,
+                        "children": [
+                          {
+                            "name": "<summary>",
+                            "kind": "interactive",
+                            "startLine": 1112,
+                            "endLine": 1112
+                          },
+                          {
+                            "name": "<details>",
+                            "kind": "interactive",
+                            "startLine": 1113,
+                            "endLine": 1116,
+                            "children": [
+                              {
+                                "name": "<summary>",
+                                "kind": "interactive",
+                                "startLine": 1114,
+                                "endLine": 1114
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1120,
+                    "endLine": 1143,
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1121,
+                        "endLine": 1121
+                      },
+                      {
+                        "name": "<dialog>",
+                        "kind": "interactive",
+                        "startLine": 1123,
+                        "endLine": 1132,
+                        "detail": "#dialog-example",
+                        "children": [
+                          {
+                            "name": "<header>",
+                            "kind": "landmark",
+                            "startLine": 1124,
+                            "endLine": 1126,
+                            "children": [
+                              {
+                                "name": "<h4>",
+                                "kind": "heading",
+                                "startLine": 1125,
+                                "endLine": 1125
+                              }
+                            ]
+                          },
+                          {
+                            "name": "<form>",
+                            "kind": "form",
+                            "startLine": 1128,
+                            "endLine": 1131
+                          }
+                        ]
+                      },
+                      {
+                        "name": "<dialog>",
+                        "kind": "interactive",
+                        "startLine": 1134,
+                        "endLine": 1138,
+                        "detail": "#modal-dialog",
+                        "children": [
+                          {
+                            "name": "<h4>",
+                            "kind": "heading",
+                            "startLine": 1135,
+                            "endLine": 1135,
+                            "detail": "#modal-title"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "<article>",
+                "kind": "landmark",
+                "startLine": 1150,
+                "endLine": 1236,
+                "detail": "#embedded",
+                "children": [
+                  {
+                    "name": "<header>",
+                    "kind": "landmark",
+                    "startLine": 1151,
+                    "endLine": 1153,
+                    "children": [
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 1152,
+                        "endLine": 1152,
+                        "detail": "#embedded-title"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1155,
+                    "endLine": 1175,
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1156,
+                        "endLine": 1156
+                      },
+                      {
+                        "name": "<iframe>",
+                        "kind": "media",
+                        "startLine": 1158,
+                        "endLine": 1168,
+                        "detail": "src=\"https://example.com\""
+                      },
+                      {
+                        "name": "<iframe>",
+                        "kind": "media",
+                        "startLine": 1170,
+                        "endLine": 1174
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1177,
+                    "endLine": 1201,
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1178,
+                        "endLine": 1178
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1203,
+                    "endLine": 1235,
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1204,
+                        "endLine": 1204
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "<article>",
+                "kind": "landmark",
+                "startLine": 1242,
+                "endLine": 1290,
+                "detail": "#semantic",
+                "children": [
+                  {
+                    "name": "<header>",
+                    "kind": "landmark",
+                    "startLine": 1243,
+                    "endLine": 1245,
+                    "children": [
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 1244,
+                        "endLine": 1244,
+                        "detail": "#semantic-title"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1247,
+                    "endLine": 1276,
+                    "detail": "#sectioning",
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1248,
+                        "endLine": 1248
+                      },
+                      {
+                        "name": "<article>",
+                        "kind": "landmark",
+                        "startLine": 1250,
+                        "endLine": 1262,
+                        "children": [
+                          {
+                            "name": "<header>",
+                            "kind": "landmark",
+                            "startLine": 1251,
+                            "endLine": 1254,
+                            "children": [
+                              {
+                                "name": "<h4>",
+                                "kind": "heading",
+                                "startLine": 1252,
+                                "endLine": 1252
+                              }
+                            ]
+                          },
+                          {
+                            "name": "<section>",
+                            "kind": "landmark",
+                            "startLine": 1255,
+                            "endLine": 1258,
+                            "children": [
+                              {
+                                "name": "<h5>",
+                                "kind": "heading",
+                                "startLine": 1256,
+                                "endLine": 1256
+                              }
+                            ]
+                          },
+                          {
+                            "name": "<footer>",
+                            "kind": "landmark",
+                            "startLine": 1259,
+                            "endLine": 1261
+                          }
+                        ]
+                      },
+                      {
+                        "name": "<aside>",
+                        "kind": "landmark",
+                        "startLine": 1264,
+                        "endLine": 1267,
+                        "children": [
+                          {
+                            "name": "<h4>",
+                            "kind": "heading",
+                            "startLine": 1265,
+                            "endLine": 1265
+                          }
+                        ]
+                      },
+                      {
+                        "name": "<nav>",
+                        "kind": "landmark",
+                        "startLine": 1269,
+                        "endLine": 1275,
+                        "children": [
+                          {
+                            "name": "<h4>",
+                            "kind": "heading",
+                            "startLine": 1270,
+                            "endLine": 1270
+                          },
+                          {
+                            "name": "<ul>",
+                            "kind": "element",
+                            "startLine": 1271,
+                            "endLine": 1274
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1278,
+                    "endLine": 1289,
+                    "detail": "#ruby",
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1279,
+                        "endLine": 1279
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "<article>",
+                "kind": "landmark",
+                "startLine": 1296,
+                "endLine": 1339,
+                "detail": "#web-components",
+                "children": [
+                  {
+                    "name": "<header>",
+                    "kind": "landmark",
+                    "startLine": 1297,
+                    "endLine": 1299,
+                    "children": [
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 1298,
+                        "endLine": 1298,
+                        "detail": "#webcomp-title"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1301,
+                    "endLine": 1321,
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1302,
+                        "endLine": 1302
+                      },
+                      {
+                        "name": "<template>",
+                        "kind": "interactive",
+                        "startLine": 1304,
+                        "endLine": 1313,
+                        "detail": "#card-template"
+                      },
+                      {
+                        "name": "<template>",
+                        "kind": "interactive",
+                        "startLine": 1315,
+                        "endLine": 1320,
+                        "detail": "#row-template"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1323,
+                    "endLine": 1338,
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1324,
+                        "endLine": 1324
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "<article>",
+                "kind": "landmark",
+                "startLine": 1345,
+                "endLine": 1516,
+                "detail": "#edge-cases",
+                "children": [
+                  {
+                    "name": "<header>",
+                    "kind": "landmark",
+                    "startLine": 1346,
+                    "endLine": 1348,
+                    "children": [
+                      {
+                        "name": "<h2>",
+                        "kind": "heading",
+                        "startLine": 1347,
+                        "endLine": 1347,
+                        "detail": "#edge-title"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1350,
+                    "endLine": 1366,
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1351,
+                        "endLine": 1351
+                      },
+                      {
+                        "name": "<link>",
+                        "kind": "resource",
+                        "startLine": 1356,
+                        "endLine": 1356,
+                        "detail": "rel=\"stylesheet\" href=\"style.css\""
+                      },
+                      {
+                        "name": "<meta>",
+                        "kind": "metadata",
+                        "startLine": 1357,
+                        "endLine": 1357,
+                        "detail": "name=\"test\""
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1368,
+                    "endLine": 1374,
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1369,
+                        "endLine": 1369
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1376,
+                    "endLine": 1399,
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1377,
+                        "endLine": 1377
+                      },
+                      {
+                        "name": "<div>",
+                        "kind": "element",
+                        "startLine": 1378,
+                        "endLine": 1398,
+                        "children": [
+                          {
+                            "name": "<div>",
+                            "kind": "element",
+                            "startLine": 1379,
+                            "endLine": 1397,
+                            "children": [
+                              {
+                                "name": "<div>",
+                                "kind": "element",
+                                "startLine": 1380,
+                                "endLine": 1396,
+                                "children": [
+                                  {
+                                    "name": "<div>",
+                                    "kind": "element",
+                                    "startLine": 1381,
+                                    "endLine": 1395,
+                                    "children": [
+                                      {
+                                        "name": "<div>",
+                                        "kind": "element",
+                                        "startLine": 1382,
+                                        "endLine": 1394
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1401,
+                    "endLine": 1414,
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1402,
+                        "endLine": 1402
+                      },
+                      {
+                        "name": "<div>",
+                        "kind": "element",
+                        "startLine": 1403,
+                        "endLine": 1413
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1416,
+                    "endLine": 1446,
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1417,
+                        "endLine": 1417
+                      },
+                      {
+                        "name": "<div>",
+                        "kind": "element",
+                        "startLine": 1418,
+                        "endLine": 1445
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1448,
+                    "endLine": 1478,
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1449,
+                        "endLine": 1449
+                      },
+                      {
+                        "name": "<div>",
+                        "kind": "element",
+                        "startLine": 1450,
+                        "endLine": 1477
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1480,
+                    "endLine": 1494,
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1481,
+                        "endLine": 1481
+                      },
+                      {
+                        "name": "<video>",
+                        "kind": "media",
+                        "startLine": 1486,
+                        "endLine": 1486
+                      },
+                      {
+                        "name": "<details>",
+                        "kind": "interactive",
+                        "startLine": 1487,
+                        "endLine": 1487
+                      },
+                      {
+                        "name": "<script>",
+                        "kind": "resource",
+                        "startLine": 1488,
+                        "endLine": 1488
+                      },
+                      {
+                        "name": "<form>",
+                        "kind": "form",
+                        "startLine": 1489,
+                        "endLine": 1489
+                      },
+                      {
+                        "name": "<ol>",
+                        "kind": "element",
+                        "startLine": 1490,
+                        "endLine": 1490
+                      },
+                      {
+                        "name": "<iframe>",
+                        "kind": "media",
+                        "startLine": 1493,
+                        "endLine": 1493
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1496,
+                    "endLine": 1502,
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1497,
+                        "endLine": 1497
+                      },
+                      {
+                        "name": "<div>",
+                        "kind": "element",
+                        "startLine": 1498,
+                        "endLine": 1498
+                      },
+                      {
+                        "name": "<div>",
+                        "kind": "element",
+                        "startLine": 1501,
+                        "endLine": 1501
+                      }
+                    ]
+                  },
+                  {
+                    "name": "<section>",
+                    "kind": "landmark",
+                    "startLine": 1504,
+                    "endLine": 1515,
+                    "children": [
+                      {
+                        "name": "<h3>",
+                        "kind": "heading",
+                        "startLine": 1505,
+                        "endLine": 1505
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "<aside>",
+            "kind": "landmark",
+            "startLine": 1523,
+            "endLine": 1537,
+            "detail": "#sidebar",
+            "children": [
+              {
+                "name": "<section>",
+                "kind": "landmark",
+                "startLine": 1524,
+                "endLine": 1536,
+                "children": [
+                  {
+                    "name": "<h3>",
+                    "kind": "heading",
+                    "startLine": 1525,
+                    "endLine": 1525
+                  },
+                  {
+                    "name": "<ul>",
+                    "kind": "element",
+                    "startLine": 1526,
+                    "endLine": 1535
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "<footer>",
+            "kind": "landmark",
+            "startLine": 1543,
+            "endLine": 1559,
+            "detail": "#site-footer",
+            "children": [
+              {
+                "name": "<nav>",
+                "kind": "landmark",
+                "startLine": 1544,
+                "endLine": 1550,
+                "children": [
+                  {
+                    "name": "<ul>",
+                    "kind": "element",
+                    "startLine": 1545,
+                    "endLine": 1549
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "<script>",
+            "kind": "resource",
+            "startLine": 1566,
+            "endLine": 1566,
+            "detail": "src=\"vendor.js\""
+          },
+          {
+            "name": "<script>",
+            "kind": "resource",
+            "startLine": 1567,
+            "endLine": 1567,
+            "detail": "src=\"app.js\""
+          },
+          {
+            "name": "<script>",
+            "kind": "resource",
+            "startLine": 1568,
+            "endLine": 1568,
+            "detail": "src=\"analytics.js\""
+          },
+          {
+            "name": "<script>",
+            "kind": "resource",
+            "startLine": 1569,
+            "endLine": 1569,
+            "detail": "src=\"module.mjs\" type=\"module\""
+          },
+          {
+            "name": "<script>",
+            "kind": "resource",
+            "startLine": 1570,
+            "endLine": 1570,
+            "detail": "src=\"legacy.js\""
+          },
+          {
+            "name": "<script>",
+            "kind": "resource",
+            "startLine": 1573,
+            "endLine": 1578
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,148 @@
+[
+  {
+    "name": "# Heading Level 1 (ATX Style)",
+    "kind": "string",
+    "startLine": 28,
+    "endLine": 39,
+    "children": [
+      {
+        "name": "## Heading Level 2",
+        "kind": "string",
+        "startLine": 30,
+        "endLine": 39,
+        "children": [
+          {
+            "name": "### Heading Level 3",
+            "kind": "string",
+            "startLine": 32,
+            "endLine": 39,
+            "children": [
+              {
+                "name": "#### Heading Level 4",
+                "kind": "string",
+                "startLine": 34,
+                "endLine": 39,
+                "children": [
+                  {
+                    "name": "##### Heading Level 5",
+                    "kind": "string",
+                    "startLine": 36,
+                    "endLine": 39,
+                    "children": [
+                      {
+                        "name": "###### Heading Level 6",
+                        "kind": "string",
+                        "startLine": 38,
+                        "endLine": 39
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "# Heading Level 1 (Setext Style)",
+    "kind": "string",
+    "startLine": 40,
+    "endLine": 781,
+    "children": [
+      {
+        "name": "## Heading Level 2 (Setext Style)",
+        "kind": "string",
+        "startLine": 43,
+        "endLine": 45
+      },
+      {
+        "name": "## Heading with inline code",
+        "kind": "string",
+        "startLine": 46,
+        "endLine": 47
+      },
+      {
+        "name": "## Heading with bold and italic",
+        "kind": "string",
+        "startLine": 48,
+        "endLine": 49
+      },
+      {
+        "name": "## Heading with link",
+        "kind": "string",
+        "startLine": 50,
+        "endLine": 51
+      },
+      {
+        "name": "## Heading with emoji 🚀",
+        "kind": "string",
+        "startLine": 52,
+        "endLine": 781,
+        "children": [
+          {
+            "name": "[ref1]",
+            "kind": "constant",
+            "startLine": 431,
+            "endLine": 431
+          },
+          {
+            "name": "[ref2]",
+            "kind": "constant",
+            "startLine": 432,
+            "endLine": 432
+          },
+          {
+            "name": "[Implicit reference link]",
+            "kind": "constant",
+            "startLine": 433,
+            "endLine": 433
+          },
+          {
+            "name": "[Shortcut reference link]",
+            "kind": "constant",
+            "startLine": 434,
+            "endLine": 434
+          },
+          {
+            "name": "[REF1]",
+            "kind": "constant",
+            "startLine": 438,
+            "endLine": 438
+          },
+          {
+            "name": "[Multiline reference definition]",
+            "kind": "constant",
+            "startLine": 440,
+            "endLine": 440
+          },
+          {
+            "name": "[img1]",
+            "kind": "constant",
+            "startLine": 462,
+            "endLine": 462
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "# Heading in HTML",
+    "kind": "string",
+    "startLine": 782,
+    "endLine": 809
+  },
+  {
+    "name": "[//]",
+    "kind": "constant",
+    "startLine": 795,
+    "endLine": 795
+  },
+  {
+    "name": "[comment]",
+    "kind": "constant",
+    "startLine": 797,
+    "endLine": 797
+  }
+]

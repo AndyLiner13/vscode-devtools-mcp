@@ -1,0 +1,41 @@
+{
+  "totalTokens": 1879,
+  "legend": {
+    "tokenTypes": [
+      "class",
+      "enum",
+      "interface",
+      "namespace",
+      "typeParameter",
+      "type",
+      "parameter",
+      "variable",
+      "enumMember",
+      "property",
+      "function",
+      "method"
+    ],
+    "tokenModifiers": [
+      "declaration",
+      "static",
+      "async",
+      "readonly",
+      "defaultLibrary",
+      "local"
+    ]
+  },
+  "tokenTypeCounts": {
+    "type": 185,
+    "typeParameter": 359,
+    "parameter": 304,
+    "interface": 137,
+    "property": 297,
+    "enum": 8,
+    "enumMember": 25,
+    "method": 148,
+    "function": 119,
+    "class": 63,
+    "variable": 227,
+    "namespace": 7
+  }
+}

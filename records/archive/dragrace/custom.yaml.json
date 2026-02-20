@@ -1,0 +1,3312 @@
+[
+  {
+    "name": "strings",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "plain_simple",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "hello world"
+      },
+      {
+        "name": "plain_with_numbers",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "abc123"
+      },
+      {
+        "name": "plain_starting_with_number",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "123abc"
+      },
+      {
+        "name": "plain_with_special",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "hello-world_test"
+      },
+      {
+        "name": "plain_colon_space",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "need quotes: for this"
+      },
+      {
+        "name": "single_quoted",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "single quoted string"
+      },
+      {
+        "name": "single_empty",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0
+      },
+      {
+        "name": "single_with_spaces",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "  spaces preserved  "
+      },
+      {
+        "name": "single_escaped_quote",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "it's working"
+      },
+      {
+        "name": "single_special_chars",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "colon: and dash- ok"
+      },
+      {
+        "name": "single_newlines_preserved",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "line1 line2"
+      },
+      {
+        "name": "single_with_unicode",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "日本語 中文 한국어"
+      },
+      {
+        "name": "double_quoted",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "double quoted string"
+      },
+      {
+        "name": "double_empty",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0
+      },
+      {
+        "name": "double_with_escapes",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "newline",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "line1\nline2"
+          },
+          {
+            "name": "tab",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "col1\tcol2"
+          },
+          {
+            "name": "carriage_return",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "before\rafter"
+          },
+          {
+            "name": "backslash",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "path\\to\\file"
+          },
+          {
+            "name": "double_quote",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "she said \"hello\""
+          },
+          {
+            "name": "single_quote",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "it\\'s fine"
+          },
+          {
+            "name": "null_char",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "null\u0000char"
+          },
+          {
+            "name": "bell",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "bell\u0007char"
+          },
+          {
+            "name": "backspace",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "back\bspace"
+          },
+          {
+            "name": "form_feed",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "page\fbreak"
+          },
+          {
+            "name": "escape",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "escape\u001bchar"
+          },
+          {
+            "name": "vertical_tab",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "vtab\u000bchar"
+          },
+          {
+            "name": "next_line",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "nextline"
+          },
+          {
+            "name": "non_breaking_space",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "non breaking"
+          },
+          {
+            "name": "line_separator",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "line sep"
+          },
+          {
+            "name": "paragraph_separator",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "para sep"
+          },
+          {
+            "name": "hex_escape",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "ABC"
+          },
+          {
+            "name": "unicode_2digit",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "AB"
+          },
+          {
+            "name": "unicode_4digit",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "中文"
+          },
+          {
+            "name": "unicode_8digit",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "😀"
+          }
+        ]
+      },
+      {
+        "name": "double_multiline",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "This is a long string that continues on the next line wit..."
+      },
+      {
+        "name": "literal_default",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "Line one\nLine two\nLine three\n"
+      },
+      {
+        "name": "literal_strip",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "Line one\nLine two\nNo trailing newline"
+      },
+      {
+        "name": "literal_keep",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "Line one\nLine two\nKeep trailing newlines\n\n\n\n"
+      },
+      {
+        "name": "literal_indented",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "  Two space indent indicator\n  Content starts here\n  Pres..."
+      },
+      {
+        "name": "literal_with_indent_and_strip",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "  Indent indicator with strip\n  No trailing newline"
+      },
+      {
+        "name": "literal_empty_lines",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "Line before empty\n\n\nLine after empty lines\n"
+      },
+      {
+        "name": "literal_special_chars",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "Contains: colons\nAnd - dashes\nAnd # comments (not really)..."
+      },
+      {
+        "name": "folded_default",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "This is a folded block scalar that becomes one line.\n"
+      },
+      {
+        "name": "folded_strip",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "Folded content without trailing newline"
+      },
+      {
+        "name": "folded_keep",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "Folded with trailing newlines\n\n\n\n"
+      },
+      {
+        "name": "folded_with_breaks",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "First paragraph continues here.\nSecond paragraph after bl..."
+      },
+      {
+        "name": "folded_indented",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "  Two space indent\n  Content here\n"
+      },
+      {
+        "name": "edge_cases",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "looks_like_number",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "123"
+          },
+          {
+            "name": "looks_like_bool",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "true"
+          },
+          {
+            "name": "looks_like_null",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "null"
+          },
+          {
+            "name": "empty_string",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0
+          },
+          {
+            "name": "space_only",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "   "
+          },
+          {
+            "name": "starts_with_indicator",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "-not a list"
+          },
+          {
+            "name": "contains_colon",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "key: value like"
+          },
+          {
+            "name": "unicode_emoji",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "🎉🚀💡"
+          },
+          {
+            "name": "very_long",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ..."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "numbers",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "integers",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "positive",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "42"
+          },
+          {
+            "name": "negative",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "-42"
+          },
+          {
+            "name": "zero",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "large",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "9007199254740991"
+          },
+          {
+            "name": "negative_large",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "-9007199254740991"
+          },
+          {
+            "name": "with_underscores",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1_000_000"
+          }
+        ]
+      },
+      {
+        "name": "floats",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "simple",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3.14"
+          },
+          {
+            "name": "negative",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "-3.14"
+          },
+          {
+            "name": "leading_zero",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0.123"
+          },
+          {
+            "name": "scientific_lower",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "6.022e+23"
+          },
+          {
+            "name": "scientific_upper",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "6.022e+23"
+          },
+          {
+            "name": "scientific_negative_exp",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1.23e-10"
+          },
+          {
+            "name": "scientific_positive_exp",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "12300000000"
+          },
+          {
+            "name": "with_underscores",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1_000.000_001"
+          }
+        ]
+      },
+      {
+        "name": "special_floats",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "infinity_lower",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Infinity"
+          },
+          {
+            "name": "infinity_upper",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Infinity"
+          },
+          {
+            "name": "infinity_caps",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Infinity"
+          },
+          {
+            "name": "negative_infinity",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "-Infinity"
+          },
+          {
+            "name": "not_a_number_lower",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "NaN"
+          },
+          {
+            "name": "not_a_number_upper",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "NaN"
+          },
+          {
+            "name": "not_a_number_caps",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "NaN"
+          }
+        ]
+      },
+      {
+        "name": "alternate_bases",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "octal",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "493"
+          },
+          {
+            "name": "hexadecimal",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "255"
+          },
+          {
+            "name": "hexadecimal_upper",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0XFF"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "booleans",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "yaml_1_1_legacy",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "true_forms",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "true"
+              },
+              {
+                "name": "[1]",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "true"
+              },
+              {
+                "name": "[2]",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "true"
+              }
+            ]
+          },
+          {
+            "name": "false_forms",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "false"
+              },
+              {
+                "name": "[1]",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "false"
+              },
+              {
+                "name": "[2]",
+                "kind": "boolean",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "false"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "string_booleans",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "yes_word",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "yes"
+          },
+          {
+            "name": "no_word",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "no"
+          },
+          {
+            "name": "on_word",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "on"
+          },
+          {
+            "name": "off_word",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "off"
+          },
+          {
+            "name": "y_letter",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "y"
+          },
+          {
+            "name": "n_letter",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "n"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "nulls",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "tilde",
+        "kind": "null",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "null"
+      },
+      {
+        "name": "null_word",
+        "kind": "null",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "null"
+      },
+      {
+        "name": "null_upper",
+        "kind": "null",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "null"
+      },
+      {
+        "name": "null_caps",
+        "kind": "null",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "null"
+      },
+      {
+        "name": "empty_value",
+        "kind": "null",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "null"
+      },
+      {
+        "name": "explicit_null",
+        "kind": "null",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "null"
+      }
+    ]
+  },
+  {
+    "name": "timestamps",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "canonical",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "2024-02-14T12:30:00.123Z"
+      },
+      {
+        "name": "iso8601",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "2024-02-14T12:30:00+05:30"
+      },
+      {
+        "name": "spaced",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "2024-02-14 12:30:00"
+      },
+      {
+        "name": "date_only",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "2024-02-14"
+      },
+      {
+        "name": "relaxed",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "2024-2-14"
+      },
+      {
+        "name": "with_timezone",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "2024-02-14T12:30:00-08:00"
+      },
+      {
+        "name": "milliseconds",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "2024-02-14T12:30:00.999Z"
+      }
+    ]
+  },
+  {
+    "name": "sequences",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "block_simple",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item1"
+          },
+          {
+            "name": "[1]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item2"
+          },
+          {
+            "name": "[2]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item3"
+          }
+        ]
+      },
+      {
+        "name": "block_mixed_types",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "7 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "string value"
+          },
+          {
+            "name": "[1]",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "42"
+          },
+          {
+            "name": "[2]",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3.14"
+          },
+          {
+            "name": "[3]",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "true"
+          },
+          {
+            "name": "[4]",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "false"
+          },
+          {
+            "name": "[5]",
+            "kind": "null",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "null"
+          },
+          {
+            "name": "[6]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "2024-02-14"
+          }
+        ]
+      },
+      {
+        "name": "block_multiline_items",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "2 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Multiline\nliteral item\n"
+          },
+          {
+            "name": "[1]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Folded item here\n"
+          }
+        ]
+      },
+      {
+        "name": "flow_simple",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item1"
+          },
+          {
+            "name": "[1]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item2"
+          },
+          {
+            "name": "[2]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item3"
+          }
+        ]
+      },
+      {
+        "name": "flow_mixed",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "6 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "string"
+          },
+          {
+            "name": "[1]",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "42"
+          },
+          {
+            "name": "[2]",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3.14"
+          },
+          {
+            "name": "[3]",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "true"
+          },
+          {
+            "name": "[4]",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "false"
+          },
+          {
+            "name": "[5]",
+            "kind": "null",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "null"
+          }
+        ]
+      },
+      {
+        "name": "flow_nested",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1"
+              },
+              {
+                "name": "[1]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2"
+              }
+            ]
+          },
+          {
+            "name": "[1]",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3"
+              },
+              {
+                "name": "[1]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "4"
+              }
+            ]
+          },
+          {
+            "name": "[2]",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "5"
+              },
+              {
+                "name": "[1]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "6"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "flow_empty",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "0 items"
+      },
+      {
+        "name": "flow_single",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "1 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "only_one"
+          }
+        ]
+      },
+      {
+        "name": "flow_with_spaces",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "spaced"
+          },
+          {
+            "name": "[1]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "items"
+          },
+          {
+            "name": "[2]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "here"
+          }
+        ]
+      },
+      {
+        "name": "flow_multiline",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item1"
+          },
+          {
+            "name": "[1]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item2"
+          },
+          {
+            "name": "[2]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item3"
+          }
+        ]
+      },
+      {
+        "name": "nested_depth_2",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "2 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "a"
+              },
+              {
+                "name": "[1]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "b"
+              }
+            ]
+          },
+          {
+            "name": "[1]",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "c"
+              },
+              {
+                "name": "[1]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "d"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "nested_depth_3",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "1 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "deep1"
+                  },
+                  {
+                    "name": "[1]",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "deep2"
+                  }
+                ]
+              },
+              {
+                "name": "[1]",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "deep3"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "nested_depth_5",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "1 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "array",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "[0]",
+                    "kind": "array",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "[0]",
+                        "kind": "array",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "children": [
+                          {
+                            "name": "[0]",
+                            "kind": "string",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "deepest"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "sequence_of_mappings",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "Alice"
+              },
+              {
+                "name": "age",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "30"
+              }
+            ]
+          },
+          {
+            "name": "[1]",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "Bob"
+              },
+              {
+                "name": "age",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "25"
+              }
+            ]
+          },
+          {
+            "name": "[2]",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "Charlie"
+              },
+              {
+                "name": "age",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "35"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "compact_nested",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "2 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "a1"
+              },
+              {
+                "name": "[1]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "a2"
+              }
+            ]
+          },
+          {
+            "name": "[1]",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "b1"
+              },
+              {
+                "name": "[1]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "b2"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "mixed_styles",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "inline"
+              },
+              {
+                "name": "[1]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "array"
+              }
+            ]
+          },
+          {
+            "name": "[1]",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "block",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "item"
+              }
+            ]
+          },
+          {
+            "name": "[2]",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "inline",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "mapping"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "mappings",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "block_simple",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "key1",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "value1"
+          },
+          {
+            "name": "key2",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "value2"
+          },
+          {
+            "name": "key3",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "value3"
+          }
+        ]
+      },
+      {
+        "name": "flow_simple",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "key1",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "value1"
+          },
+          {
+            "name": "key2",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "value2"
+          }
+        ]
+      },
+      {
+        "name": "flow_empty",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0
+      },
+      {
+        "name": "flow_single",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "only",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "one"
+          }
+        ]
+      },
+      {
+        "name": "flow_with_spaces",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "spaced",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "values"
+          },
+          {
+            "name": "here",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "too"
+          }
+        ]
+      },
+      {
+        "name": "flow_multiline",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "key1",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "value1"
+          },
+          {
+            "name": "key2",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "value2"
+          },
+          {
+            "name": "key3",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "value3"
+          }
+        ]
+      },
+      {
+        "name": "flow_nested",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "outer",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "inner",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "deep",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "special_keys",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "_empty_placeholder",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "empty_string_key_workaround"
+          },
+          {
+            "name": " ",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "space_key"
+          },
+          {
+            "name": "key with spaces",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "spaced_key"
+          },
+          {
+            "name": "key:with:colons",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "colon_key"
+          },
+          {
+            "name": "123",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "numeric_string_key"
+          },
+          {
+            "name": "123",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "actual_numeric_key"
+          },
+          {
+            "name": "true",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "boolean_key"
+          },
+          {
+            "name": "null_as_string",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "null_key_workaround"
+          },
+          {
+            "name": "3.14",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "float_key"
+          }
+        ]
+      },
+      {
+        "name": "unicode_keys",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "日本語キー",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "japanese_value"
+          },
+          {
+            "name": "中文键",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "chinese_value"
+          },
+          {
+            "name": "키",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "korean_value"
+          },
+          {
+            "name": "🔑",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "emoji_key"
+          }
+        ]
+      },
+      {
+        "name": "nested_depth_2",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "level1",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "level2",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "value"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "nested_depth_3",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "level1",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "level2",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "level3",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "nested_depth_5",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "l1",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "l2",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "l3",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "l4",
+                        "kind": "object",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "children": [
+                          {
+                            "name": "l5",
+                            "kind": "string",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "detail": "deepest"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "nested_depth_10",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "a",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "b",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "c",
+                    "kind": "object",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "children": [
+                      {
+                        "name": "d",
+                        "kind": "object",
+                        "startLine": 0,
+                        "endLine": 0,
+                        "children": [
+                          {
+                            "name": "e",
+                            "kind": "object",
+                            "startLine": 0,
+                            "endLine": 0,
+                            "children": [
+                              {
+                                "name": "f",
+                                "kind": "object",
+                                "startLine": 0,
+                                "endLine": 0,
+                                "children": [
+                                  {
+                                    "name": "g",
+                                    "kind": "object",
+                                    "startLine": 0,
+                                    "endLine": 0,
+                                    "children": [
+                                      {
+                                        "name": "h",
+                                        "kind": "object",
+                                        "startLine": 0,
+                                        "endLine": 0
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "mapping_with_sequences",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "list1",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "a"
+              },
+              {
+                "name": "[1]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "b"
+              },
+              {
+                "name": "[2]",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "c"
+              }
+            ]
+          },
+          {
+            "name": "list2",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1"
+              },
+              {
+                "name": "[1]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2"
+              },
+              {
+                "name": "[2]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "mixed_styles",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "block_key",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "nested",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "value"
+              }
+            ]
+          },
+          {
+            "name": "inline_key",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "nested",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "value"
+              }
+            ]
+          },
+          {
+            "name": "array_inline",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1"
+              },
+              {
+                "name": "[1]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2"
+              },
+              {
+                "name": "[2]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3"
+              }
+            ]
+          },
+          {
+            "name": "array_block",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "3 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1"
+              },
+              {
+                "name": "[1]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2"
+              },
+              {
+                "name": "[2]",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "3"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "complex_keys",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "explicit_key",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "explicit_value"
+      },
+      {
+        "name": "multiline_key_placeholder",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "value_for_multiline_key"
+      },
+      {
+        "name": "array_as_key",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "array_key_value"
+      },
+      {
+        "name": "mapping_as_key",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "mapping_key_value"
+      },
+      {
+        "name": "sequence_as_key",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "sequence_key_value"
+      },
+      {
+        "name": "complex_nested",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "complex_nested_key_value"
+      }
+    ]
+  },
+  {
+    "name": "anchors_and_aliases",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "original",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Original"
+          },
+          {
+            "name": "value",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "100"
+          }
+        ]
+      },
+      {
+        "name": "copy",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "name",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Original"
+          },
+          {
+            "name": "value",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "100"
+          }
+        ]
+      },
+      {
+        "name": "first",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "id",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1"
+          },
+          {
+            "name": "label",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "First Item"
+          }
+        ]
+      },
+      {
+        "name": "second",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "id",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "2"
+          },
+          {
+            "name": "label",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "Second Item"
+          }
+        ]
+      },
+      {
+        "name": "references",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "ref_to_first",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "id",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "1"
+              },
+              {
+                "name": "label",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "First Item"
+              }
+            ]
+          },
+          {
+            "name": "ref_to_second",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "id",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "2"
+              },
+              {
+                "name": "label",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "Second Item"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "scalar_anchor",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "important_string"
+      },
+      {
+        "name": "scalar_alias",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "important_string"
+      },
+      {
+        "name": "array_anchor",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item1"
+          },
+          {
+            "name": "[1]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item2"
+          },
+          {
+            "name": "[2]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item3"
+          }
+        ]
+      },
+      {
+        "name": "array_alias",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item1"
+          },
+          {
+            "name": "[1]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item2"
+          },
+          {
+            "name": "[2]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item3"
+          }
+        ]
+      },
+      {
+        "name": "nested_anchor",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "level1",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "level2",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "data",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "nested_data"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "nested_alias",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "level1",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "level2",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "data",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "nested_data"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "list_with_anchors",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "Anchored Item"
+              }
+            ]
+          },
+          {
+            "name": "[1]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "regular_item"
+          },
+          {
+            "name": "[2]",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "name",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "Anchored Item"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "merge_keys",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "defaults",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "adapter",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "postgres"
+          },
+          {
+            "name": "host",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "localhost"
+          },
+          {
+            "name": "port",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "5432"
+          }
+        ]
+      },
+      {
+        "name": "development",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "<<",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "adapter",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "postgres"
+              },
+              {
+                "name": "host",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "localhost"
+              },
+              {
+                "name": "port",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "5432"
+              }
+            ]
+          },
+          {
+            "name": "database",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "dev_db"
+          },
+          {
+            "name": "debug",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "true"
+          }
+        ]
+      },
+      {
+        "name": "production",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "<<",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "adapter",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "postgres"
+              },
+              {
+                "name": "host",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "localhost"
+              },
+              {
+                "name": "port",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "5432"
+              }
+            ]
+          },
+          {
+            "name": "database",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "prod_db"
+          },
+          {
+            "name": "host",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "prod.server.com"
+          },
+          {
+            "name": "debug",
+            "kind": "boolean",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "false"
+          }
+        ]
+      },
+      {
+        "name": "base1",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "key1",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "value1"
+          }
+        ]
+      },
+      {
+        "name": "base2",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "key2",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "value2"
+          }
+        ]
+      },
+      {
+        "name": "merged_multiple",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "<<",
+            "kind": "array",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "2 items",
+            "children": [
+              {
+                "name": "[0]",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "key1",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "value1"
+                  }
+                ]
+              },
+              {
+                "name": "[1]",
+                "kind": "object",
+                "startLine": 0,
+                "endLine": 0,
+                "children": [
+                  {
+                    "name": "key2",
+                    "kind": "string",
+                    "startLine": 0,
+                    "endLine": 0,
+                    "detail": "value2"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "key3",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "value3"
+          }
+        ]
+      },
+      {
+        "name": "override_merge",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "<<",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "adapter",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "postgres"
+              },
+              {
+                "name": "host",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "localhost"
+              },
+              {
+                "name": "port",
+                "kind": "number",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "5432"
+              }
+            ]
+          },
+          {
+            "name": "host",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "override.host.com"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "tags",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "explicit_string",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "123"
+      },
+      {
+        "name": "explicit_int",
+        "kind": "number",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "456"
+      },
+      {
+        "name": "explicit_float",
+        "kind": "number",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "3.14"
+      },
+      {
+        "name": "explicit_bool",
+        "kind": "boolean",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "true"
+      },
+      {
+        "name": "explicit_null",
+        "kind": "null",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "null"
+      },
+      {
+        "name": "explicit_seq",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "2 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item1"
+          },
+          {
+            "name": "[1]",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "item2"
+          }
+        ]
+      },
+      {
+        "name": "explicit_map",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "key",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "value"
+          }
+        ]
+      },
+      {
+        "name": "binary_data",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "0",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "71"
+          },
+          {
+            "name": "1",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "73"
+          },
+          {
+            "name": "2",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "70"
+          },
+          {
+            "name": "3",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "56"
+          },
+          {
+            "name": "4",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "57"
+          },
+          {
+            "name": "5",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "97"
+          },
+          {
+            "name": "6",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1"
+          },
+          {
+            "name": "7",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "8",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1"
+          },
+          {
+            "name": "9",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "10",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "128"
+          },
+          {
+            "name": "11",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "12",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "13",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "14",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "15",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "16",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "255"
+          },
+          {
+            "name": "17",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "255"
+          },
+          {
+            "name": "18",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "255"
+          },
+          {
+            "name": "19",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "33"
+          },
+          {
+            "name": "20",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "249"
+          },
+          {
+            "name": "21",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "4"
+          },
+          {
+            "name": "22",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1"
+          },
+          {
+            "name": "23",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "24",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "25",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "26",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "27",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "44"
+          },
+          {
+            "name": "28",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "29",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "30",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "31",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "32",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1"
+          },
+          {
+            "name": "33",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "34",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1"
+          },
+          {
+            "name": "35",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "36",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "37",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "2"
+          },
+          {
+            "name": "38",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "1"
+          },
+          {
+            "name": "39",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "68"
+          },
+          {
+            "name": "40",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "0"
+          },
+          {
+            "name": "41",
+            "kind": "number",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "59"
+          }
+        ]
+      },
+      {
+        "name": "omap_example",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "key1",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "value1"
+          },
+          {
+            "name": "key2",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "value2"
+          }
+        ]
+      },
+      {
+        "name": "pairs_example",
+        "kind": "array",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "2 items",
+        "children": [
+          {
+            "name": "[0]",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "key1",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "value1"
+              }
+            ]
+          },
+          {
+            "name": "[1]",
+            "kind": "object",
+            "startLine": 0,
+            "endLine": 0,
+            "children": [
+              {
+                "name": "key1",
+                "kind": "string",
+                "startLine": 0,
+                "endLine": 0,
+                "detail": "value2"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "set_example",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0
+      },
+      {
+        "name": "custom_tagged",
+        "kind": "object",
+        "startLine": 0,
+        "endLine": 0,
+        "children": [
+          {
+            "name": "data",
+            "kind": "string",
+            "startLine": 0,
+            "endLine": 0,
+            "detail": "custom_value"
+          }
+        ]
+      },
+      {
+        "name": "local_tag",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "value"
+      },
+      {
+        "name": "verbatim_tag",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "value"
+      }
+    ]
+  },
+  {
+    "name": "document_markers",
+    "kind": "object",
+    "startLine": 0,
+    "endLine": 0,
+    "children": [
+      {
+        "name": "note",
+        "kind": "string",
+        "startLine": 0,
+        "endLine": 0,
+        "detail": "Document start (---) and end (...) markers are demonstrat..."
+      }
+    ]
+  }
+]
