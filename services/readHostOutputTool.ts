@@ -162,7 +162,7 @@ function getClientLogsDir(): string | null {
 
     // The Client Extension Development Host stores its user-data at
     // <clientWorkspace>/.devtools/user-data/. The clientWorkspace can be
-    // the workspace root itself, or a subdirectory (e.g. test-workspace/).
+    // the workspace root itself, or a subdirectory (e.g. client-workspace/).
     // Scan the root and its immediate children for .devtools/user-data/logs/.
     const root = workspaceFolders[0].uri.fsPath;
     const candidates: string[] = [

@@ -478,7 +478,7 @@ pnpm add -D @types/css-tree
 3. **Test Files Location**
 
 ```
-test-workspace/
+client-workspace/
   docs/
     simple.md           # Basic headings
     complex.md          # Tables, code blocks, frontmatter

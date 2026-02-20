@@ -37,7 +37,7 @@ Use this skill when:
 The MCP server accepts these flags:
 
 - `--extension` (`-e`): Path to the extension development folder
-- `--test-workspace` (`-w`): Path to the test workspace folder
+- `--client-workspace` (`-w`): Path to the test workspace folder
 
 ## Example Usage
 
@@ -49,7 +49,7 @@ The MCP server accepts these flags:
       "args": [
         "/path/to/vscode-devtools-mcp/build/src/index.js",
         "--extension", "/path/to/your/extension",
-        "--test-workspace", "/path/to/test/workspace"
+        "--client-workspace", "/path/to/test/workspace"
       ]
     }
   }

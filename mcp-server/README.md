@@ -25,13 +25,13 @@ pnpm run build
 ### Command Line Arguments
 
 ```sh
-node build/src/index.js --extension <path> --test-workspace <path>
+node build/src/index.js --extension <path> --client-workspace <path>
 ```
 
 | Flag | Alias | Description |
 |------|-------|-------------|
 | `--extension` | `-e` | Path to the extension development folder |
-| `--test-workspace` | `-w` | Path to the test workspace folder |
+| `--client-workspace` | `-w` | Path to the test workspace folder |
 
 ### MCP Configuration
 
@@ -45,7 +45,7 @@ Add to your MCP client's configuration:
       "args": [
         "/path/to/vscode-devtools-mcp/build/src/index.js",
         "--extension", "/path/to/your/extension",
-        "--test-workspace", "/path/to/test/workspace"
+        "--client-workspace", "/path/to/test/workspace"
       ]
     }
   }

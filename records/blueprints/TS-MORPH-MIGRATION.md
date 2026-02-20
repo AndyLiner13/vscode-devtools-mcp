@@ -508,7 +508,7 @@ The migration adds zero new runtime dependencies. ts-morph is already installed 
 
 ## Success Criteria
 
-- [ ] `file_read` produces identical output for all 6 test-workspace files (pre/post migration)
+- [ ] `file_read` produces identical output for all 6 client-workspace files (pre/post migration)
 - [ ] Single client-pipe round trip instead of two (or three)
 - [ ] All 16 invariants pass for hand-crafted test files
 - [ ] All 16 invariants pass for ≥90% of industry conformance test files

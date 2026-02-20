@@ -218,7 +218,7 @@ function assertAllInvariants(result: UnifiedFileResult, filePath: string): void 
 // ── Test suite ──
 
 const WORKSPACE_ROOT = path.resolve(__dirname, '../..');
-const TEST_WORKSPACE = path.resolve(WORKSPACE_ROOT, 'test-workspace');
+const TEST_WORKSPACE = path.resolve(WORKSPACE_ROOT, 'client-workspace');
 const EXTENSION_DIR = path.resolve(WORKSPACE_ROOT, 'extension');
 
 const TS_EXTS = new Set(['.ts', '.tsx', '.js', '.jsx', '.mts', '.mjs', '.cts', '.cjs']);
@@ -244,12 +244,12 @@ function collectTsFiles(dir: string, maxDepth = 20): string[] {
   return files;
 }
 
-// ── Test-workspace files ──
+// ── client-workspace files ──
 
-describe('Invariants: test-workspace files', () => {
+describe('Invariants: client-workspace files', () => {
   const testFiles = collectTsFiles(TEST_WORKSPACE);
 
-  it('should find test-workspace TS/JS files', () => {
+  it('should find client-workspace TS/JS files', () => {
     expect(testFiles.length, 'should find at least 1 test file').toBeGreaterThan(0);
   });
 

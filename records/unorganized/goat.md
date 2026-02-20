@@ -2,26 +2,26 @@ Good question! Let me test whether comments between symbols are captured or excl
 
 Ran File Read 
 Completed with input: {
-  "file": "test-workspace/ast-parser-test.ts",
+  "file": "client-workspace/ast-parser-test.ts",
   "includeMetadata": true,
   "target": "StringAlias"
 }
 
 Ran File Read 
 Completed with input: {
-  "file": "test-workspace/ast-parser-test.ts",
+  "file": "client-workspace/ast-parser-test.ts",
   "includeMetadata": true,
   "target": "Direction"
 }
 
 Ran File Read 
 Completed with input: {
-  "file": "test-workspace/ast-parser-test.ts",
+  "file": "client-workspace/ast-parser-test.ts",
   "includeMetadata": true,
   "target": "Pair"
 }
 
-Read [](file:///c%3A/hw-workspace/hw-mcp-tools/documentation/graphrag.js/vscode-toolkit/test-workspace/ast-parser-test.ts#1-1), lines 1 to 35
+Read [](file:///c%3A/hw-workspace/hw-mcp-tools/documentation/graphrag.js/vscode-toolkit/client-workspace/ast-parser-test.ts#1-1), lines 1 to 35
 
 This reveals an important gap. Looking at the actual file:
 
@@ -37,7 +37,7 @@ This reveals an important gap. Looking at the actual file:
 
 Let me also check if **JSDoc comments directly above a function** are included: 
 
-Searched for regex `/\*\*` (`**/test-workspace/ast-parser-test.ts`), no results
+Searched for regex `/\*\*` (`**/client-workspace/ast-parser-test.ts`), no results
 
 Let me check a file with JSDoc comments to see if they're included in symbol ranges:  
 
@@ -147,18 +147,18 @@ Completed with input: {
 
 Ran File Read 
 Completed with input: {
-  "file": "test-workspace/ast-parser-test.ts",
+  "file": "client-workspace/ast-parser-test.ts",
   "includeMetadata": true,
   "target": "UserProfile"
 }
 
 Let me also check export statements at the end of the TS test file:      
 
-Read [](file:///c%3A/hw-workspace/hw-mcp-tools/documentation/graphrag.js/vscode-toolkit/test-workspace/ast-parser-test.ts#1150-1150), lines 1150 to 1236
+Read [](file:///c%3A/hw-workspace/hw-mcp-tools/documentation/graphrag.js/vscode-toolkit/client-workspace/ast-parser-test.ts#1150-1150), lines 1150 to 1236
 
 Ran File Read 
 Completed with input: {
-  "file": "test-workspace/ast-parser-test.ts",
+  "file": "client-workspace/ast-parser-test.ts",
   "startLine": 1145,
   "endLine": 1180
 }

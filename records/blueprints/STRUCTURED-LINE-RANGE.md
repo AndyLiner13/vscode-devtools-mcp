@@ -369,7 +369,7 @@ Skeleton-combo stubs (when skeleton + startLine/endLine):
 
 1. **Unit tests for `classifyLines()`**: Verify correct categorization with mock `UnifiedFileResult` data
 2. **Unit tests for `renderStructuredRange()`**: Verify output format with known inputs
-3. **Integration tests via tool invocation**: Use test-workspace files to verify end-to-end
+3. **Integration tests via tool invocation**: Use client-workspace files to verify end-to-end
 4. **Edge case tests**: Partial symbol ranges, empty files, non-TS/JS files, mutual exclusivity errors
 
 ## Future: Edit Tool Foundation

@@ -74,7 +74,7 @@ wasm/
 .eugene/
 __lsmcp__/
 reports/audits/
-test-workspace/
+client-workspace/
 vscode-automation-mcp/
 test-vscode-automation-mcp.mjs
 Copilot-Processing.md

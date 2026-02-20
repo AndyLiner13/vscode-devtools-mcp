@@ -249,7 +249,7 @@ Extend the existing `.devtools/host.config.jsonc` with a `hotReload` section:
 ```jsonc
 {
   // ── Existing fields ──────────────────────────────────────
-  "clientWorkspace": "../test-workspace",
+  "clientWorkspace": "../client-workspace",
   "extensionPath": "../extension",
   "mcpServerRoot": ".",                           // Root of the MCP server package (where package.json/tsconfig live)
                                                   // Relative to host.config.jsonc location, or absolute.
