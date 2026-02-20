@@ -816,8 +816,8 @@ export function registerFileLmTools(context: vscode.ExtensionContext) {
 
 ## 12. References
 
-- [GIT-TOOLS.md](../../../backups/blueprints/GIT-TOOLS.md) — Version control operations
-- [CODEBASE-TOOLS.md](../../../backups/blueprints/CODEBASE-TOOLS.md) — Code analysis tools (to be trimmed)
+- [GIT-TOOLS.md](../../resources/blueprints/GIT-TOOLS.md) — Version control operations
+- [CODEBASE-TOOLS.md](../../resources/blueprints/CODEBASE-TOOLS.md) — Code analysis tools (to be trimmed)
 - [ts-morph Documentation](https://ts-morph.com/)
 - [JSONPath Syntax](https://goessner.net/articles/JsonPath/)
 - [VS Code Refactoring API](https://code.visualstudio.com/api/references/commands)
