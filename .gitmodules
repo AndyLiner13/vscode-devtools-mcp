@@ -1,0 +1,4 @@
+[submodule "client-workspace"]
+	path = client-workspace
+	url = https://github.com/AndyLiner13/test-workspace.git
+	branch = master
