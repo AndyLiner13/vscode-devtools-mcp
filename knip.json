@@ -2,7 +2,7 @@
   "ignoreExportsUsedInFile": true,
   "ignoreWorkspaces": ["."],
   "workspaces": {
-    "extension": {
+    ".":{
       "entry": [
         "extension.ts",
         "services/runtime.ts",
@@ -30,7 +30,7 @@
       ],
       "project": ["src/**/*.ts", "scripts/**/*.{ts,mts,mjs}"],
       "ignore": ["src/third_party/**"],
-      "ignoreDependencies": ["@typescript-eslint/eslint-plugin", "@types/filesystem"]
+      "ignoreDependencies": ["@types/filesystem"]
     }
   }
 }

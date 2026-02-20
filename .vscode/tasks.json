@@ -22,7 +22,7 @@
 			"type": "shell",
 			"command": "npm run compile && npx tsc --noEmit && npm run build && (code --uninstall-extension AndyLiner.vscode-devtools || $true) && code --install-extension (Get-ChildItem *.vsix | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName --force",
 			"options": {
-				"cwd": "${workspaceFolder}/extension"
+				"cwd": "${workspaceFolder}"
 			},
 			"group": {
 				"kind": "build",

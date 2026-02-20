@@ -3,7 +3,7 @@
 	"git.openRepositoryInParentFolders": "never",
 	"git.repositoryScanMaxDepth": 2,
 	"github.copilot.chat.githubMcpServer.enabled": true,
-	"eslint.workingDirectories": ["extension", "mcp-server"],
+	"eslint.workingDirectories": ["."],
 	"eslint.useFlatConfig": true,
 	"eslint.validate": [
 		"javascript",

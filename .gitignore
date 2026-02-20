@@ -51,9 +51,6 @@ log.txt
 
 # VS Code
 .vscode-test
-.vscode
-!.vscode/*.template.json
-!.vscode/extensions.json
 
 # Yarn
 .yarn/cache

@@ -4,33 +4,54 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import js from '@eslint/js';
-import tsPlugin from '@typescript-eslint/eslint-plugin';
-import tsParser from '@typescript-eslint/parser';
+import eslint from '@eslint/js';
+import stylisticPlugin from '@stylistic/eslint-plugin';
+import {defineConfig, globalIgnores} from 'eslint/config';
+import perfectionist from 'eslint-plugin-perfectionist';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
-export default [
+import localPlugin from './mcp-server/scripts/eslint_rules/local-plugin.js';
+
+export default defineConfig([
+  globalIgnores([
+    '**/dist/**',
+    '**/node_modules/**',
+    '**/*.d.ts',
+    '.devtools/**',
+    'client-workspace/**',
+    'test-workspace/**',
+    'mcp-server/build/**',
+  ]),
   {
-    ignores: ['**/dist/**', '**/node_modules/**', '**/*.d.ts', '.devtools/**'],
-  },
-  js.configs.recommended,
-  {
-    files: ['**/*.ts'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
-      parser: tsParser,
+      parser: tseslint.parser,
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['esbuild.js', 'eslint.config.mjs'],
+          allowDefaultProject: [
+            'esbuild.js',
+            'eslint.config.mjs',
+            '.prettierrc.cjs',
+            'mcp-server/rollup.config.mjs',
+          ],
         },
       },
     },
     plugins: {
-      '@typescript-eslint': tsPlugin,
+      js: eslint,
+      '@typescript-eslint': tseslint.plugin,
+      '@stylistic': stylisticPlugin,
+      perfectionist,
     },
+    extends: ['js/recommended'],
+  },
+  tseslint.configs.recommended,
+  tseslint.configs.stylistic,
+  {
+    name: 'Shared TypeScript rules',
     rules: {
-      ...tsPlugin.configs.recommended.rules,
-      ...tsPlugin.configs.stylistic.rules,
       curly: ['error', 'all'],
       'no-undef': 'off',
       'no-unused-vars': 'off',
@@ -57,13 +78,73 @@ export default [
         },
       ],
       '@typescript-eslint/no-floating-promises': 'error',
+      'perfectionist/sort-imports': [
+        'error',
+        {
+          type: 'natural',
+          order: 'asc',
+          ignoreCase: true,
+          newlinesBetween: 'always',
+          groups: [
+            'type',
+            ['builtin', 'external'],
+            'internal',
+            ['parent', 'sibling', 'index'],
+            'unknown',
+          ],
+        },
+      ],
+      'perfectionist/sort-named-imports': [
+        'error',
+        {
+          type: 'natural',
+          order: 'asc',
+        },
+      ],
+      '@stylistic/function-call-spacing': 'error',
+      '@stylistic/semi': 'error',
     },
   },
   {
+    name: 'MCP server rules',
+    files: ['mcp-server/**/*.ts', 'mcp-server/**/*.js', 'mcp-server/**/*.mjs'],
+    plugins: {
+      '@local': localPlugin,
+    },
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+    rules: {
+      '@local/check-license': 'error',
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '.*chrome-devtools-frontend/(?!mcp/mcp.js$).*',
+              message:
+                'Import only the devtools-frontend code exported via node_modules/chrome-devtools-frontend/mcp/mcp.js',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    name: 'Tests',
+    files: ['**/*.test.ts'],
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'off',
+    },
+  },
+  {
+    name: 'JavaScript files',
     files: ['**/*.js', '**/*.mjs'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
     },
   },
-];
+]);

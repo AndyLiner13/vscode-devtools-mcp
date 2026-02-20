@@ -1,2 +1,7 @@
 # Prettier-only ignores.
 CHANGELOG.md
+dist/
+mcp-server/build/
+client-workspace/
+test-workspace/
+*.vsix
