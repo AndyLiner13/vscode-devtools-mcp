@@ -9,7 +9,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@extractor': path.resolve(__dirname, '../extension/services/codebase/file-structure-extractor.ts'),
+      '@extractor': path.resolve(__dirname, '../services/codebase/file-structure-extractor.ts'),
     },
   },
 });

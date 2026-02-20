@@ -20,10 +20,10 @@
  */
 
 import * as vscode from 'vscode';
-import { SingleTerminalController } from './services/singleTerminalController';
-import { getProcessLedger, disposeProcessLedger, type ProcessLedgerSummary } from './services/processLedger';
-import { getUserActionTracker } from './services/userActionTracker';
-import { getOverview, getExports, traceSymbol, findDeadCode, getImportGraph, findDuplicates, extractOrphanedContent, extractFileStructure, extractStructure } from './codebase-worker-proxy';
+import { SingleTerminalController } from './singleTerminalController';
+import { getProcessLedger, disposeProcessLedger, type ProcessLedgerSummary } from './processLedger';
+import { getUserActionTracker } from './userActionTracker';
+import { getOverview, getExports, traceSymbol, findDeadCode, getImportGraph, findDuplicates, extractOrphanedContent, extractFileStructure, extractStructure } from './codebase/codebase-worker-proxy';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

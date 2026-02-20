@@ -4,7 +4,7 @@ import path from 'node:path';
 
 const targetFile = path.resolve(
   import.meta.dirname,
-  '../../extension/services/codebase/parsers.ts'
+  '../../services/codebase/parsers.ts'
 );
 
 console.log(`\nTarget: ${targetFile}\n`);

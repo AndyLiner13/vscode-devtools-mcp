@@ -4,26 +4,26 @@
 
 import * as path from 'node:path';
 import { parentPort } from 'node:worker_threads';
-import { getOverview } from './services/codebase/overview-service';
-import { getExports } from './services/codebase/exports-service';
-import { traceSymbol, findDeadCode } from './services/codebase/trace-symbol-service';
-import { getImportGraph } from './services/codebase/import-graph-service';
-import { findDuplicates } from './services/codebase/duplicate-detection-service';
-import { chunkFile } from './services/codebase/chunker';
-import { invalidateWorkspaceProject } from './services/codebase/ts-project';
-import { extractOrphanedContent, type OrphanedContentResult } from './services/codebase/orphaned-content';
-import { extractFileStructure } from './services/codebase/file-structure-extractor';
-import type { UnifiedFileResult } from './services/codebase/file-structure-extractor';
-import { LanguageServiceRegistry } from './services/codebase/language-service-registry';
-import { TypeScriptLanguageService } from './services/codebase/language-services';
-import { MarkdownLanguageService } from './services/codebase/language-services';
-import type { OverviewParams, OverviewResult, FileStructure } from './services/codebase/types';
-import type { ExportsParams, ExportsResult } from './services/codebase/types';
-import type { TraceSymbolParams, TraceSymbolResult } from './services/codebase/types';
-import type { DeadCodeParams, DeadCodeResult } from './services/codebase/types';
-import type { ImportGraphParams, ImportGraphResult } from './services/codebase/types';
-import type { DuplicateDetectionParams, DuplicateDetectionResult } from './services/codebase/types';
-import type { ChunkFileParams, ChunkFileResult } from './services/codebase/types';
+import { getOverview } from './overview-service';
+import { getExports } from './exports-service';
+import { traceSymbol, findDeadCode } from './trace-symbol-service';
+import { getImportGraph } from './import-graph-service';
+import { findDuplicates } from './duplicate-detection-service';
+import { chunkFile } from './chunker';
+import { invalidateWorkspaceProject } from './ts-project';
+import { extractOrphanedContent, type OrphanedContentResult } from './orphaned-content';
+import { extractFileStructure } from './file-structure-extractor';
+import type { UnifiedFileResult } from './file-structure-extractor';
+import { LanguageServiceRegistry } from './language-service-registry';
+import { TypeScriptLanguageService } from './language-services';
+import { MarkdownLanguageService } from './language-services';
+import type { OverviewParams, OverviewResult, FileStructure } from './types';
+import type { ExportsParams, ExportsResult } from './types';
+import type { TraceSymbolParams, TraceSymbolResult } from './types';
+import type { DeadCodeParams, DeadCodeResult } from './types';
+import type { ImportGraphParams, ImportGraphResult } from './types';
+import type { DuplicateDetectionParams, DuplicateDetectionResult } from './types';
+import type { ChunkFileParams, ChunkFileResult } from './types';
 
 // ── Language Service Registry ────────────────────────────
 

@@ -54,7 +54,7 @@ const loaderConfig = {
 // Contains the core GUI features (tree views, webview).
 // If this fails to compile, the loader still works (Safe Mode).
 const runtimeConfig = {
-	entryPoints: ['runtime.ts'],
+	entryPoints: ['services/runtime.ts'],
 	bundle: true,
 	format: 'cjs',
 	minify: production,
@@ -75,7 +75,7 @@ const runtimeConfig = {
 // Runs ts-morph and all codebase analysis on a background thread.
 // Does NOT depend on the VS Code API — pure Node.js.
 const workerConfig = {
-	entryPoints: ['codebase-worker.ts'],
+	entryPoints: ['services/codebase/codebase-worker.ts'],
 	bundle: true,
 	format: 'cjs',
 	minify: production,

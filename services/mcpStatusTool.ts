@@ -10,7 +10,7 @@
  */
 
 import type * as vscode from 'vscode';
-import { waitForMcpReady } from '../host-handlers';
+import { waitForMcpReady } from './host-handlers';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 

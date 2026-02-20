@@ -5,9 +5,9 @@
     "extension": {
       "entry": [
         "extension.ts",
-        "runtime.ts",
-        "codebase-worker.ts",
-        "codebase-worker-proxy.ts"
+        "services/runtime.ts",
+        "services/codebase/codebase-worker.ts",
+        "services/codebase/codebase-worker-proxy.ts"
       ],
       "project": ["**/*.ts", "**/*.js"],
       "ignoreDependencies": [

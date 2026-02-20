@@ -9,8 +9,8 @@
     "skipLibCheck": true,
     "noEmit": true,
     "paths": {
-      "@extractor": ["../extension/services/codebase/file-structure-extractor.ts"],
-      "@extractor/*": ["../extension/services/codebase/*"]
+      "@extractor": ["../services/codebase/file-structure-extractor.ts"],
+      "@extractor/*": ["../services/codebase/*"]
     }
   },
   "include": [

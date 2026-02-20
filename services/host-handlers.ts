@@ -22,7 +22,7 @@ import path from 'node:path';
 import net from 'node:net';
 import http from 'node:http';
 import crypto from 'node:crypto';
-import { createHotReloadService, getHotReloadService, type ChangeCheckResult } from './services/hotReloadService';
+import { createHotReloadService, getHotReloadService, type ChangeCheckResult } from './hotReloadService';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 

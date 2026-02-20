@@ -6,16 +6,16 @@
 import { Worker } from 'node:worker_threads';
 import * as path from 'path';
 
-import type { OverviewParams, OverviewResult } from './services/codebase/types';
-import type { ExportsParams, ExportsResult } from './services/codebase/types';
-import type { TraceSymbolParams, TraceSymbolResult } from './services/codebase/types';
-import type { DeadCodeParams, DeadCodeResult } from './services/codebase/types';
-import type { ImportGraphParams, ImportGraphResult } from './services/codebase/types';
-import type { DuplicateDetectionParams, DuplicateDetectionResult } from './services/codebase/types';
-import type { ChunkFileParams, ChunkFileResult } from './services/codebase/types';
-import type { OrphanedContentResult } from './services/codebase/orphaned-content';
-import type { UnifiedFileResult } from './services/codebase/file-structure-extractor';
-import type { FileStructure } from './services/codebase/types';
+import type { OverviewParams, OverviewResult } from './types';
+import type { ExportsParams, ExportsResult } from './types';
+import type { TraceSymbolParams, TraceSymbolResult } from './types';
+import type { DeadCodeParams, DeadCodeResult } from './types';
+import type { ImportGraphParams, ImportGraphResult } from './types';
+import type { DuplicateDetectionParams, DuplicateDetectionResult } from './types';
+import type { ChunkFileParams, ChunkFileResult } from './types';
+import type { OrphanedContentResult } from './orphaned-content';
+import type { UnifiedFileResult } from './file-structure-extractor';
+import type { FileStructure } from './types';
 
 // ── Configuration ────────────────────────────────────────
 

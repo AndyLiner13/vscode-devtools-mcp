@@ -17,7 +17,7 @@ import * as path from 'path';
 import net from 'node:net';
 import * as vscode from 'vscode';
 import pkg from './package.json';
-import { startWorker, stopWorker } from './codebase-worker-proxy';
+import { startWorker, stopWorker } from './services/codebase/codebase-worker-proxy';
 
 // ── Bootstrap (Plain JS, always loads) ───────────────────────────────────────
 
@@ -197,7 +197,7 @@ export async function activate(context: vscode.ExtensionContext) {
       // Dynamic import to ensure esbuild doesn't bundle host-handlers into client builds
       log('Loading host-handlers module...');
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { registerHostHandlers, cleanup } = require('./host-handlers');
+      const { registerHostHandlers, cleanup } = require('./services/host-handlers');
       log('host-handlers module loaded, registering handlers...');
       registerHostHandlers(bootstrap.registerHandler, context);
       hostHandlersCleanup = cleanup;
@@ -205,7 +205,7 @@ export async function activate(context: vscode.ExtensionContext) {
     } else {
       log('Loading client-handlers module...');
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { registerClientHandlers } = require('./client-handlers');
+      const { registerClientHandlers } = require('./services/client-handlers');
       log('client-handlers module loaded, registering handlers...');
       const disposable = registerClientHandlers(bootstrap.registerHandler);
       clientHandlersCleanup = disposable;

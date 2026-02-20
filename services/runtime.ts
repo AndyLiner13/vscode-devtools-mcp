@@ -16,15 +16,15 @@ import {
     setProjectTreeProvider,
     ASTGraphWebviewProvider,
     GraphVisualizerProvider,
-} from './gui';
-import { OutputReadTool } from './services/readHostOutputTool';
+} from '../gui';
+import { OutputReadTool } from './readHostOutputTool';
 import {
     TerminalReadTool,
     TerminalExecuteTool,
-} from './services/terminalLmTools';
-import { WaitTool } from './services/waitLmTool';
-import { McpStatusTool } from './services/mcpStatusTool';
-import { getUserActionTracker, disposeUserActionTracker } from './services/userActionTracker';
+} from './terminalLmTools';
+import { WaitTool } from './waitLmTool';
+import { McpStatusTool } from './mcpStatusTool';
+import { getUserActionTracker, disposeUserActionTracker } from './userActionTracker';
 
 // ============================================================================
 // View Constants

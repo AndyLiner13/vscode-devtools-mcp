@@ -13,7 +13,7 @@ import {
   extractFileStructure,
   type ExtractedSymbol,
   type UnifiedFileResult,
-} from '../../extension/services/codebase/file-structure-extractor';
+} from '../../services/codebase/file-structure-extractor';
 
 // ── Known valid values ──
 
