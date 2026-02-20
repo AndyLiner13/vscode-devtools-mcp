@@ -4,7 +4,7 @@
 > **Created:** 2026-02-14  
 > **Revised:** 2026-02-25 — Extracted file tools to FILE-TOOLS.md, focused on 4 analysis tools  
 > **Replaces:** `#codebase`, `#file`, `grep_search`, `file_search`, `list_dir`, `list_code_usages`, `get_errors`
-> **See Also:** [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md), [GIT-TOOLS.md](../../../resources/archive/blueprints/GIT-TOOLS.md)
+> **See Also:** [FILE-TOOLS.md](./FILE-TOOLS.md), [GIT-TOOLS.md](./GIT-TOOLS.md)
 
 ---
 
@@ -27,8 +27,8 @@ Copilot should find what it needs in **one well-targeted tool call** instead of 
 
 Every question about codebase **structure and analysis** falls into exactly one of these categories.
 
-**For file content and operations**, see [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md).  
-**For version control**, see [GIT-TOOLS.md](../../../resources/archive/blueprints/GIT-TOOLS.md).
+**For file content and operations**, see [FILE-TOOLS.md](./FILE-TOOLS.md).  
+**For version control**, see [GIT-TOOLS.md](./GIT-TOOLS.md).
 
 ### What This Replaces
 
@@ -43,7 +43,7 @@ Every question about codebase **structure and analysis** falls into exactly one 
 | `list_code_usages` | `codebase_trace` (include: ['references']) | Full symbol tracing, not just usages |
 | `get_errors` | `codebase_lint` (checks: ['errors']) | Unified quality tool with diagnostics + analysis |
 
-**Note:** File content and file system operations are handled by [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md).
+**Note:** File content and file system operations are handled by [FILE-TOOLS.md](./FILE-TOOLS.md).
 
 ### What This Is NOT
 
@@ -78,7 +78,7 @@ Every question about codebase **structure and analysis** falls into exactly one 
 | `list_dir` | `codebase_map` | `depth: 0` for file tree |
 | `#file` | `codebase_map` | `depth: 2+` for module API |
 
-**Note:** File content and file system operations are in [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md).
+**Note:** File content and file system operations are in [FILE-TOOLS.md](./FILE-TOOLS.md).
 
 ---
 
@@ -314,7 +314,7 @@ These handle file-level operations with optional import updates:
 | `workspace.findFiles(pattern, exclude)` | File discovery with globs | All tools |
 | `workspace.openTextDocument(uri)` | Open a document for analysis | All tools |
 
-**Note:** File operation APIs (`executeRenameProvider`, `executeCodeActionProvider`, `workspace.applyEdit`, `workspace.fs.*`) are documented in [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md).
+**Note:** File operation APIs (`executeRenameProvider`, `executeCodeActionProvider`, `workspace.applyEdit`, `workspace.fs.*`) are documented in [FILE-TOOLS.md](./FILE-TOOLS.md).
 
 ### Why These APIs Over Raw TS Compiler?
 
@@ -349,7 +349,7 @@ export enum ToolCategory {
 
 - **Codebase tools** (map, trace, search, lint): `{ readOnlyHint: true, category: CODEBASE_ANALYSIS }`
 
-**Note:** File operation tool hints are documented in [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md).
+**Note:** File operation tool hints are documented in [FILE-TOOLS.md](./FILE-TOOLS.md).
 
 All tools require extension connection (no `standalone` — not CDP-based).
 
@@ -419,28 +419,26 @@ interface IndexStats {
     .describe("File, directory, or glob to map. Defaults to entire workspace."),
   rootDir: z.string().optional()
     .describe("Project root. Defaults to workspace root."),
-  depth: z.number().int().min(0).max(3).default(1)
-    .describe("Detail level: 0=files only, 1=top-level symbols, 2=symbols with signatures, 3=full detail (signatures + JSDoc + re-exports)"),
+  depth: z.number().int().min(0).max(6).default(1)
+    .describe("Detail level: 0=files only, 1=top-level symbols, 2=symbols with signatures, 3+=full detail (signatures + JSDoc + re-exports)"),
   filter: z.string().optional()
     .describe("Glob pattern to include only matching files"),
   includeImports: z.boolean().default(false)
     .describe("Include import specifiers per file"),
   includeGraph: z.boolean().default(false)
-    .describe("Include module dependency graph"),
-  detectCircular: z.boolean().default(false)
-    .describe("Detect circular dependencies (requires includeGraph)"),
-  findOrphans: z.boolean().default(false)
-    .describe("Find modules with no importers"),
+    .describe("Include module dependency graph with circular dependency detection and orphan identification"),
   includeStats: z.boolean().default(false)
     .describe("Include line counts and diagnostic counts"),
   kind: z.enum(['all', 'functions', 'classes', 'interfaces', 'types', 'constants', 'enums']).default('all')
-    .describe("Filter exports by kind"),
+    .describe("Filter symbols/exports by kind"),
   includeTypes: z.boolean().default(true)
     .describe("Include type signatures (depth >= 2)"),
   includeJSDoc: z.boolean().default(true)
     .describe("Include JSDoc descriptions (depth >= 3)"),
-  format: z.enum(['tree', 'flat']).default('tree')
-    .describe("Output structure format"),
+  includePatterns: z.array(z.string()).optional()
+    .describe("Glob patterns to restrict results to matching files only"),
+  excludePatterns: z.array(z.string()).optional()
+    .describe("Glob patterns to exclude files from results. Applied in addition to .devtoolsignore rules"),
 }
 ```
 
@@ -545,7 +543,7 @@ Same as depth 2, plus `jsdoc` field on every export.
 - `vscode.prepareCallHierarchy()` + `incoming/outgoing` for call chains
 - `vscode.prepareTypeHierarchy()` + `supertypes/subtypes` for type hierarchy
 - ts-morph for re-export chains and type flow analysis
-- When `include` contains `'impact'`: transitive dependency walk + risk assessment
+- When `includeImpact` is true: transitive dependency walk + risk assessment
 
 ```typescript
 // Schema
@@ -561,20 +559,29 @@ Same as depth 2, plus `jsdoc` field on every export.
   rootDir: z.string().optional()
     .describe("Project root. Defaults to workspace root."),
   depth: z.number().int().min(1).max(10).default(3)
-    .describe("Call hierarchy traversal depth"),
+    .describe("Call hierarchy traversal depth. Higher values find deeper call chains but take longer"),
   include: z.enum([
     'all',
     'definitions',   // Where is this symbol defined?
     'references',    // Where is this symbol used?
     'reexports',     // Re-export chains
     'calls',         // Incoming/outgoing call hierarchy
-    'types',         // Type flows (parameter types, return types, inheritance)
+    'type-flows',    // Type flows (parameter types, return types, inheritance)
     'hierarchy',     // Type hierarchy (supertypes/subtypes)
-    'impact',        // Blast radius / breaking change analysis
   ]).array().default(['all'])
     .describe("Which analyses to include"),
+  includeImpact: z.boolean().default(false)
+    .describe("Compute blast-radius impact analysis. Shows direct and transitive dependents with risk level assessment"),
   maxReferences: z.number().int().min(10).max(5000).default(500)
-    .describe("Maximum number of references to return"),
+    .describe("Maximum number of references to return. Prevents runaway scans on large codebases"),
+  timeout: z.number().int().min(1000).max(120000).default(30000)
+    .describe("Timeout in milliseconds. Returns partial results if exceeded"),
+  forceRefresh: z.boolean().default(false)
+    .describe("Force invalidate project cache before tracing. Use after adding new files or when structure has changed"),
+  includePatterns: z.array(z.string()).optional()
+    .describe("Glob patterns to restrict analysis to matching files only"),
+  excludePatterns: z.array(z.string()).optional()
+    .describe("Glob patterns to exclude files from analysis. Applied in addition to .devtoolsignore rules"),
 }
 ```
 
@@ -629,7 +636,7 @@ Same as depth 2, plus `jsdoc` field on every export.
 }
 ```
 
-> **Note:** Each `include` mode returns only its section. When `include: ['all']`, all sections are returned. When `include: ['calls', 'impact']`, only `calls` and `impact` are returned. This lets Copilot request exactly what it needs.
+> **Note:** Each `include` mode returns only its section. When `include: ['all']`, all sections are returned. When `include: ['calls', 'type-flows']`, only `calls` and `types` are returned. Impact analysis is controlled separately via `includeImpact: true` and is always additive — it can be combined with any include selection. This lets Copilot request exactly what it needs.
 
 ---
 
@@ -804,35 +811,34 @@ Same as depth 2, plus `jsdoc` field on every export.
     // Live diagnostics (cheap — reads VS Code state)
     'errors',         // Compile/TypeScript errors
     'warnings',       // Warnings (deprecations, etc.)
-    'hints',          // Hints and suggestions
     // Static analysis (expensive — full project scan)
     'dead-code',      // Unused exports, unreachable functions
-    'duplicates',     // Duplicate/similar code
+    'duplicates',     // Duplicate/similar code (AST structural hashing, future: re-ranked with embeddings)
     'circular-deps',  // Circular import dependencies
   ]).array().default(['all'])
     .describe("Which quality checks to run"),
   rootDir: z.string().optional()
     .describe("Project root. Defaults to workspace root."),
-  scope: z.string().optional()
-    .describe("Glob pattern to limit scope"),
   excludeTests: z.boolean().default(true)
-    .describe("Exclude test files from static analysis"),
-  limit: z.number().int().min(1).max(100).default(50)
+    .describe("Skip test files (*.test.*, *.spec.*, __tests__/*)"),
+  limit: z.number().int().min(1).max(500).default(100)
     .describe("Maximum results per check"),
 
-  // Dead code options
-  deadCodeKinds: z.enum(['all', 'exports', 'functions', 'variables', 'types']).array().default(['all'])
-    .describe("Filter dead code by symbol kind"),
+  // Static analysis filtering
+  exportedOnly: z.boolean().default(true)
+    .describe("For dead-code: only check exported symbols. Set false to also find unreachable internal functions, dead variables, unused types"),
+  kinds: z.enum(['function', 'class', 'interface', 'type', 'variable', 'constant', 'enum']).array().optional()
+    .describe("Filter dead-code and duplicates by symbol kind. Omit for all kinds"),
 
-  // Duplicate detection options
+  // Duplicate detection tuning
   duplicateThreshold: z.number().min(0.5).max(1.0).default(0.75)
-    .describe("Minimum similarity score for duplicate detection"),
-  duplicateKinds: z.enum(['all', 'functions', 'classes', 'methods']).default('functions')
-    .describe("Filter duplicates by symbol kind"),
+    .describe("Minimum similarity score for duplicate detection. 1.0 = exact structural match only"),
 
-  // Diagnostics options
-  severityFilter: z.enum(['all', 'error', 'warning', 'info', 'hint']).array().default(['all'])
-    .describe("Filter diagnostics by severity"),
+  // Scope filtering
+  includePatterns: z.array(z.string()).optional()
+    .describe("Glob patterns to restrict analysis to matching files only"),
+  excludePatterns: z.array(z.string()).optional()
+    .describe("Glob patterns to exclude files from analysis. Applied in addition to .devtoolsignore rules"),
 }
 ```
 
@@ -898,11 +904,10 @@ Same as depth 2, plus `jsdoc` field on every export.
   "summary": {
     "totalErrors": 3,
     "totalWarnings": 12,
-    "totalHints": 5,
     "totalDeadCode": 8,
     "totalDuplicateGroups": 5,
     "totalCircularDeps": 1,
-    "bySeverity": { "error": 3, "warning": 12, "info": 0, "hint": 5 },
+    "bySeverity": { "error": 3, "warning": 12 },
     "deadCodeByKind": { "exports": 3, "functions": 4, "variables": 1 }
   }
 }
@@ -918,13 +923,13 @@ The following tools have been moved to a separate blueprint for better organizat
 
 | Tool | Purpose | Blueprint |
 |------|---------|-----------|
-| `file_read` | Semantic content reading | [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md) |
-| `file_edit` | Semantic editing + refactors | [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md) |
-| `file_create` | Create files with templates | [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md) |
-| `file_delete` | Delete with import cleanup | [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md) |
-| `file_move` | Move + update imports | [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md) |
-| `file_rename` | Rename + update symbols | [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md) |
-| `file_duplicate` | Duplicate with symbol mapping | [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md) |
+| `file_read` | Semantic content reading | [FILE-TOOLS.md](./FILE-TOOLS.md) |
+| `file_edit` | Semantic editing + refactors | [FILE-TOOLS.md](./FILE-TOOLS.md) |
+| `file_create` | Create files with templates | [FILE-TOOLS.md](./FILE-TOOLS.md) |
+| `file_delete` | Delete with import cleanup | [FILE-TOOLS.md](./FILE-TOOLS.md) |
+| `file_move` | Move + update imports | [FILE-TOOLS.md](./FILE-TOOLS.md) |
+| `file_rename` | Rename + update symbols | [FILE-TOOLS.md](./FILE-TOOLS.md) |
+| `file_duplicate` | Duplicate with symbol mapping | [FILE-TOOLS.md](./FILE-TOOLS.md) |
 
 ---
 
@@ -1088,7 +1093,7 @@ In `extension/package.json` under `contributes.languageModelTools`:
     "icon": "$(symbol-reference)",
     "canBeReferencedInPrompt": true,
     "userDescription": "Trace a symbol through definitions, references, call chains, type hierarchy, and impact analysis",
-    "modelDescription": "Trace all relationships of a specific symbol through the codebase. Use include: ['references'] to find all usages (replaces list_code_usages). Use this when you need to understand how a symbol CONNECTS — who calls it, what it calls, where it's defined, what implements it, what its type hierarchy is, and what would break if you changed it. Choose include modes: definitions, references, calls, types, hierarchy, impact."
+    "modelDescription": "Trace all relationships of a specific symbol through the codebase. Use include: ['references'] to find all usages (replaces list_code_usages). Use this when you need to understand how a symbol CONNECTS — who calls it, what it calls, where it's defined, what implements it, what its type hierarchy is, and what would break if you changed it. Choose include modes: definitions, references, calls, type-flows, hierarchy. Impact analysis is separate via includeImpact: true."
   },
   {
     "name": "codebase_search",
@@ -1120,9 +1125,18 @@ In `extension/package.json` under `contributes.languageModelTools`:
 The MCP server handles compute-heavy operations that shouldn't run in the extension host:
 
 ### Embedding Service
-- **Runtime:** `@huggingface/transformers` (100% Node.js, ONNX)
-- **Model:** `Xenova/all-MiniLM-L6-v2` (22MB, 384-dimensional)
-- **Cache:** `.devtools/models/` in target workspace
+
+**Architecture: Local ONNX + Optional Voyage 3 Code API**
+
+- **Local (default):** `@huggingface/transformers` with `Xenova/all-MiniLM-L6-v2` (22MB, 384-dimensional, ONNX runtime). Zero config, no API key required. Good baseline for semantic search.
+- **Remote (optional upgrade):** Voyage 3 Code API (`voyage-code-3`) for superior code-specific embeddings. Requires `VOYAGE_API_KEY` environment variable. Automatically preferred when configured.
+- **Cache:** `.devtools/models/` in target workspace (for local ONNX model)
+
+**Duplicate detection evolution:**
+Currently, duplicate detection uses pure AST structural hashing (fast, deterministic). When the embedding infrastructure is built for `codebase_search`, duplicates will evolve to a **re-ranked multi-signal** approach:
+1. Structural similarity (AST hash match → 1.0, partial → lower)
+2. Semantic similarity (embedding cosine distance)
+3. Combined re-ranked score, filtered by `duplicateThreshold`
 
 ### Index Store
 ```
@@ -1173,24 +1187,24 @@ export function createIgnoreFilter(rootDir: string): IgnoreFilter;
 
 | # | Component | Location | Effort | Status |
 |---|-----------|----------|--------|--------|
-| 1 | `ignore-filter.ts` — shared utility | MCP server | Small | |
-| 2 | `types.ts` — shared interfaces | MCP server | Small | |
-| 3 | `CodebaseService` — core engine | Extension | Large | Partial (overview done) |
-| 4 | Bridge RPC handlers | Extension (`client-handlers.ts`) | Medium | Partial (getOverview done) |
-| 5 | Bridge RPC callers | MCP server (`client-pipe.ts`) | Medium | Partial (getOverview done) |
-| 6 | **`codebase_map`** tool + LM Tool | Both | Medium | ✅ Partial (overview mode) |
-| 7 | **`codebase_trace`** tool + LM Tool | Both | Large | |
+| 1 | `ignore-filter.ts` — shared utility | MCP server | Small | ✅ Done |
+| 2 | `types.ts` — shared interfaces | MCP server | Small | ✅ Done |
+| 3 | `CodebaseService` — core engine | Extension | Large | ✅ Done |
+| 4 | Bridge RPC handlers | Extension (`client-handlers.ts`) | Medium | ✅ Done |
+| 5 | Bridge RPC callers | MCP server (`client-pipe.ts`) | Medium | ✅ Done |
+| 6 | **`codebase_map`** tool + LM Tool | Both | Medium | ✅ Done |
+| 7 | **`codebase_trace`** tool + LM Tool | Both | Large | ✅ Done |
 | 8 | Indexing layer (internal, auto-triggered) | MCP server | Medium | |
 | 9 | `embedding-service.ts` | MCP server | Medium | |
 | 10 | `search-engine.ts` + re-ranking | MCP server | Medium | |
 | 11 | **`codebase_search`** tool + LM Tool | Both | Medium | |
 | 12 | `index-store.ts` — JSON persistence | MCP server | Medium | |
-| 13 | Category + tools.ts + package.json | Both | Small | |
-| 14 | **`codebase_lint`** tool + LM Tool | Both | Medium | |
+| 13 | Category + tools.ts + package.json | Both | Small | ✅ Done |
+| 14 | **`codebase_lint`** tool + LM Tool | Both | Medium | ✅ Done |
 
 ### Phase 2 & 3: File Tools (see FILE-TOOLS.md)
 
-File tool implementation phases (file_read, file_edit, file_create, file_delete, file_move, file_rename, file_duplicate) are specified in [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md).
+File tool implementation phases (file_read, file_edit, file_create, file_delete, file_move, file_rename, file_duplicate) are specified in [FILE-TOOLS.md](./FILE-TOOLS.md).
 
 ---
 
@@ -1210,17 +1224,17 @@ Indexing is fully internal — there is no user-facing index tool. The index is 
 ### Native Tool Replacements (Codebase Tools — 4 tools)
 
 **Codebase Intelligence:**
-- [x] `codebase_map` replaces `#codebase` — gives Copilot a complete project map in one call ✅ (partial)
-- [ ] `codebase_map` replaces `#file` — gives Copilot a module's public API via `depth: 2+`
-- [ ] `codebase_map` replaces `list_dir` — file listing via `depth: 0`
-- [ ] `codebase_map` replaces `file_search` — glob-based file discovery via `filter` parameter
-- [ ] `codebase_trace` replaces `list_code_usages` — via `include: ['references']`
+- [x] `codebase_map` replaces `#codebase` — gives Copilot a complete project map in one call ✅
+- [x] `codebase_map` replaces `#file` — gives Copilot a module's public API via `depth: 2+` ✅
+- [x] `codebase_map` replaces `list_dir` — file listing via `depth: 0` ✅
+- [x] `codebase_map` replaces `file_search` — glob-based file discovery via `filter` parameter ✅
+- [x] `codebase_trace` replaces `list_code_usages` — via `include: ['references']` ✅
 - [ ] `codebase_search` replaces `grep_search` — via `mode: 'literal'` for exact text matching
-- [ ] `codebase_lint` replaces `get_errors` — via `checks: ['errors', 'warnings']`
+- [x] `codebase_lint` replaces `get_errors` — via `checks: ['errors', 'warnings']` ✅
 
 ### File Tool Success Criteria
 
-See [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md) for success criteria for:
+See [FILE-TOOLS.md](./FILE-TOOLS.md) for success criteria for:
 - `file_read` (replaces `read_file`)
 - `file_edit` (replaces `replace_string_in_file`)
 - `file_create` (replaces `create_file`)
@@ -1229,23 +1243,23 @@ See [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md) for suc
 ### Tool Capabilities
 
 **Codebase Intelligence:**
-- [ ] `codebase_map` provides module dependency graph via `includeGraph: true`
-- [ ] `codebase_trace` follows a symbol through ≥3 levels of call chain in one call
-- [ ] `codebase_trace` provides type hierarchy via `include: ['hierarchy']`
-- [ ] `codebase_trace` provides blast radius/impact via `include: ['impact']`
+- [x] `codebase_map` provides module dependency graph via `includeGraph: true` ✅
+- [x] `codebase_trace` follows a symbol through ≥3 levels of call chain in one call ✅
+- [x] `codebase_trace` provides type hierarchy via `include: ['hierarchy']` ✅
+- [x] `codebase_trace` provides blast radius/impact via `includeImpact: true` ✅
 - [ ] `codebase_search` returns semantically relevant results using local embeddings
 - [ ] `codebase_search` supports hybrid mode (semantic + literal merged)
-- [ ] `codebase_lint` detects dead code, duplicates, and circular dependencies
-- [ ] `codebase_lint` surfaces live VS Code diagnostics (errors/warnings/hints)
+- [x] `codebase_lint` detects dead code, duplicates, and circular dependencies ✅
+- [x] `codebase_lint` surfaces live VS Code diagnostics (errors/warnings) ✅
 
 **File Tools:**
-See [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md) for detailed file tool capability success criteria.
+See [FILE-TOOLS.md](./FILE-TOOLS.md) for detailed file tool capability success criteria.
 
 ### Architecture
-- [ ] All 4 codebase tools go through the extension bridge (no standalone, no CDP)
-- [ ] LM Tools are registered and usable by Copilot directly (no MCP needed)
-- [ ] MCP Tools work through the existing client pipe bridge
-- [ ] `.devtoolsignore` is respected for all file operations
+- [x] All 4 codebase tools go through the extension bridge (no standalone, no CDP) ✅ (3/4 — `codebase_search` pending)
+- [x] LM Tools are registered and usable by Copilot directly (no MCP needed) ✅ (3/4 — `codebase_search` pending)
+- [x] MCP Tools work through the existing client pipe bridge ✅ (3/4 — `codebase_search` pending)
+- [x] `.devtoolsignore` is respected for all file operations ✅
 - [ ] Auto-indexing is transparent — first `codebase_search` call triggers it
 
 ### Quality
@@ -1265,4 +1279,4 @@ See [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md) for det
 
 3. **Should embeddings also be generated in the extension?** Currently planned for MCP side. But if we also want LM tools to do semantic search without MCP, the extension would need embedding capability too. Recommend: Phase 1 does semantic search only via MCP; add extension-side embeddings in Phase 2 if needed.
 
-See [FILE-TOOLS.md](../../../resources/archive/blueprints/FILE-TOOLS.md) for open questions related to file tools (confirmations, auto-save, refactor preview).
+See [FILE-TOOLS.md](./FILE-TOOLS.md) for open questions related to file tools (confirmations, auto-save, refactor preview).

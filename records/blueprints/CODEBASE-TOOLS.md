@@ -4,7 +4,7 @@
 > **Created:** 2026-02-14  
 > **Revised:** 2026-02-25 — Extracted file tools to FILE-TOOLS.md, focused on 4 analysis tools  
 > **Replaces:** `#codebase`, `#file`, `grep_search`, `file_search`, `list_dir`, `list_code_usages`, `get_errors`
-> **See Also:** [FILE-TOOLS.md](./FILE-TOOLS.md), [GIT-TOOLS.md](./GIT-TOOLS.md)
+> **See Also:** [FILE-TOOLS.md](../../resources/blueprints/FILE-TOOLS.md), [GIT-TOOLS.md](../../resources/blueprints/GIT-TOOLS.md)
 
 ---
 
@@ -27,8 +27,8 @@ Copilot should find what it needs in **one well-targeted tool call** instead of 
 
 Every question about codebase **structure and analysis** falls into exactly one of these categories.
 
-**For file content and operations**, see [FILE-TOOLS.md](./FILE-TOOLS.md).  
-**For version control**, see [GIT-TOOLS.md](./GIT-TOOLS.md).
+**For file content and operations**, see [FILE-TOOLS.md](../../resources/blueprints/FILE-TOOLS.md).  
+**For version control**, see [GIT-TOOLS.md](../../resources/blueprints/GIT-TOOLS.md).
 
 ### What This Replaces
 
@@ -43,7 +43,7 @@ Every question about codebase **structure and analysis** falls into exactly one 
 | `list_code_usages` | `codebase_trace` (include: ['references']) | Full symbol tracing, not just usages |
 | `get_errors` | `codebase_lint` (checks: ['errors']) | Unified quality tool with diagnostics + analysis |
 
-**Note:** File content and file system operations are handled by [FILE-TOOLS.md](./FILE-TOOLS.md).
+**Note:** File content and file system operations are handled by [FILE-TOOLS.md](../../resources/blueprints/FILE-TOOLS.md).
 
 ### What This Is NOT
 
@@ -78,7 +78,7 @@ Every question about codebase **structure and analysis** falls into exactly one 
 | `list_dir` | `codebase_map` | `depth: 0` for file tree |
 | `#file` | `codebase_map` | `depth: 2+` for module API |
 
-**Note:** File content and file system operations are in [FILE-TOOLS.md](./FILE-TOOLS.md).
+**Note:** File content and file system operations are in [FILE-TOOLS.md](../../resources/blueprints/FILE-TOOLS.md).
 
 ---
 
@@ -314,7 +314,7 @@ These handle file-level operations with optional import updates:
 | `workspace.findFiles(pattern, exclude)` | File discovery with globs | All tools |
 | `workspace.openTextDocument(uri)` | Open a document for analysis | All tools |
 
-**Note:** File operation APIs (`executeRenameProvider`, `executeCodeActionProvider`, `workspace.applyEdit`, `workspace.fs.*`) are documented in [FILE-TOOLS.md](./FILE-TOOLS.md).
+**Note:** File operation APIs (`executeRenameProvider`, `executeCodeActionProvider`, `workspace.applyEdit`, `workspace.fs.*`) are documented in [FILE-TOOLS.md](../../resources/blueprints/FILE-TOOLS.md).
 
 ### Why These APIs Over Raw TS Compiler?
 
@@ -349,7 +349,7 @@ export enum ToolCategory {
 
 - **Codebase tools** (map, trace, search, lint): `{ readOnlyHint: true, category: CODEBASE_ANALYSIS }`
 
-**Note:** File operation tool hints are documented in [FILE-TOOLS.md](./FILE-TOOLS.md).
+**Note:** File operation tool hints are documented in [FILE-TOOLS.md](../../resources/blueprints/FILE-TOOLS.md).
 
 All tools require extension connection (no `standalone` — not CDP-based).
 
@@ -923,13 +923,13 @@ The following tools have been moved to a separate blueprint for better organizat
 
 | Tool | Purpose | Blueprint |
 |------|---------|-----------|
-| `file_read` | Semantic content reading | [FILE-TOOLS.md](./FILE-TOOLS.md) |
-| `file_edit` | Semantic editing + refactors | [FILE-TOOLS.md](./FILE-TOOLS.md) |
-| `file_create` | Create files with templates | [FILE-TOOLS.md](./FILE-TOOLS.md) |
-| `file_delete` | Delete with import cleanup | [FILE-TOOLS.md](./FILE-TOOLS.md) |
-| `file_move` | Move + update imports | [FILE-TOOLS.md](./FILE-TOOLS.md) |
-| `file_rename` | Rename + update symbols | [FILE-TOOLS.md](./FILE-TOOLS.md) |
-| `file_duplicate` | Duplicate with symbol mapping | [FILE-TOOLS.md](./FILE-TOOLS.md) |
+| `file_read` | Semantic content reading | [FILE-TOOLS.md](../../resources/blueprints/FILE-TOOLS.md) |
+| `file_edit` | Semantic editing + refactors | [FILE-TOOLS.md](../../resources/blueprints/FILE-TOOLS.md) |
+| `file_create` | Create files with templates | [FILE-TOOLS.md](../../resources/blueprints/FILE-TOOLS.md) |
+| `file_delete` | Delete with import cleanup | [FILE-TOOLS.md](../../resources/blueprints/FILE-TOOLS.md) |
+| `file_move` | Move + update imports | [FILE-TOOLS.md](../../resources/blueprints/FILE-TOOLS.md) |
+| `file_rename` | Rename + update symbols | [FILE-TOOLS.md](../../resources/blueprints/FILE-TOOLS.md) |
+| `file_duplicate` | Duplicate with symbol mapping | [FILE-TOOLS.md](../../resources/blueprints/FILE-TOOLS.md) |
 
 ---
 
@@ -1204,7 +1204,7 @@ export function createIgnoreFilter(rootDir: string): IgnoreFilter;
 
 ### Phase 2 & 3: File Tools (see FILE-TOOLS.md)
 
-File tool implementation phases (file_read, file_edit, file_create, file_delete, file_move, file_rename, file_duplicate) are specified in [FILE-TOOLS.md](./FILE-TOOLS.md).
+File tool implementation phases (file_read, file_edit, file_create, file_delete, file_move, file_rename, file_duplicate) are specified in [FILE-TOOLS.md](../../resources/blueprints/FILE-TOOLS.md).
 
 ---
 
@@ -1234,7 +1234,7 @@ Indexing is fully internal — there is no user-facing index tool. The index is 
 
 ### File Tool Success Criteria
 
-See [FILE-TOOLS.md](./FILE-TOOLS.md) for success criteria for:
+See [FILE-TOOLS.md](../../resources/blueprints/FILE-TOOLS.md) for success criteria for:
 - `file_read` (replaces `read_file`)
 - `file_edit` (replaces `replace_string_in_file`)
 - `file_create` (replaces `create_file`)
@@ -1253,7 +1253,7 @@ See [FILE-TOOLS.md](./FILE-TOOLS.md) for success criteria for:
 - [x] `codebase_lint` surfaces live VS Code diagnostics (errors/warnings) ✅
 
 **File Tools:**
-See [FILE-TOOLS.md](./FILE-TOOLS.md) for detailed file tool capability success criteria.
+See [FILE-TOOLS.md](../../resources/blueprints/FILE-TOOLS.md) for detailed file tool capability success criteria.
 
 ### Architecture
 - [x] All 4 codebase tools go through the extension bridge (no standalone, no CDP) ✅ (3/4 — `codebase_search` pending)
@@ -1279,4 +1279,4 @@ See [FILE-TOOLS.md](./FILE-TOOLS.md) for detailed file tool capability success c
 
 3. **Should embeddings also be generated in the extension?** Currently planned for MCP side. But if we also want LM tools to do semantic search without MCP, the extension would need embedding capability too. Recommend: Phase 1 does semantic search only via MCP; add extension-side embeddings in Phase 2 if needed.
 
-See [FILE-TOOLS.md](./FILE-TOOLS.md) for open questions related to file tools (confirmations, auto-save, refactor preview).
+See [FILE-TOOLS.md](../../resources/blueprints/FILE-TOOLS.md) for open questions related to file tools (confirmations, auto-save, refactor preview).

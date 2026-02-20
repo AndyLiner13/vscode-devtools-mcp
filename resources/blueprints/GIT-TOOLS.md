@@ -781,5 +781,5 @@ interface GitError {
 ## 12. References
 
 - [VS Code Git Extension API](https://github.com/microsoft/vscode/blob/main/extensions/git/src/api/git.d.ts)
-- [CODEBASE-TOOLS.md](../../resources/blueprints/CODEBASE-TOOLS.md) — Companion blueprint
+- [CODEBASE-TOOLS.md](./CODEBASE-TOOLS.md) — Companion blueprint
 - [Git Internals](https://git-scm.com/book/en/v2/Git-Internals-Plumbing-and-Porcelain)

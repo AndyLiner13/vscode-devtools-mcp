@@ -2,7 +2,7 @@
 
 > **Status:** Draft v1  
 > **Created:** 2026-02-28  
-> **Depends On:** [CODEBASE-TOOLS.md](../../resources/blueprints/CODEBASE-TOOLS.md), [FILE-TOOLS.md](../../resources/blueprints/FILE-TOOLS.md)  
+> **Depends On:** [CODEBASE-TOOLS.md](./CODEBASE-TOOLS.md), [FILE-TOOLS.md](./FILE-TOOLS.md)  
 > **Supersedes:** CODEBASE-TOOLS.md §10 (Embedding & Indexing Layer)
 
 ---
