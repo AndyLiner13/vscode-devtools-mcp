@@ -26,6 +26,16 @@ import { createHotReloadService, getHotReloadService, type ChangeCheckResult } f
 import { CdpClient, BrowserService } from './browser';
 import { setBrowserService } from './clientDevTools';
 
+// ── Client State Events ────────────────────────────────────────────────────
+
+const _onClientStateChanged = new vscode.EventEmitter<boolean>();
+
+/** Fires when the client window connects or disconnects. Payload = connected state. */
+export const onClientStateChanged = _onClientStateChanged.event;
+
+let clientHealthMonitorInterval: ReturnType<typeof setInterval> | null = null;
+let lastKnownClientState = false;
+
 // ── Constants ──────────────────────────────────────────────────────────────
 
 const IS_WINDOWS = process.platform === 'win32';
@@ -1508,9 +1518,162 @@ export function isHotReloadInProgress(): boolean {
   return hotReloadInProgress;
 }
 
+// ── Client Lifecycle Exports ─────────────────────────────────────────────────
+
+/**
+ * Resolve clientWorkspace and extensionPath from VS Code settings.
+ * Mirrors the config resolution in mcpServerProvider's buildConfigEnv.
+ */
+function resolveClientConfig(): { clientWorkspace: string; extensionPath: string; launchFlags: Record<string, unknown> } | null {
+  const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (!workspacePath) {
+    return null;
+  }
+
+  const config = vscode.workspace.getConfiguration('devtools');
+
+  const clientWorkspaceRaw = config.get<string>('clientWorkspace', '');
+  const extensionPathRaw = config.get<string>('extensionPath', '.');
+
+  const clientWorkspace = clientWorkspaceRaw
+    ? (path.isAbsolute(clientWorkspaceRaw) ? clientWorkspaceRaw : path.resolve(workspacePath, clientWorkspaceRaw))
+    : workspacePath;
+  const extensionPath = path.isAbsolute(extensionPathRaw)
+    ? extensionPathRaw
+    : path.resolve(workspacePath, extensionPathRaw);
+
+  const launchFlags: Record<string, unknown> = {
+    skipReleaseNotes: config.get<boolean>('launch.skipReleaseNotes', true),
+    skipWelcome: config.get<boolean>('launch.skipWelcome', true),
+    disableGpu: config.get<boolean>('launch.disableGpu', false),
+    disableWorkspaceTrust: config.get<boolean>('launch.disableWorkspaceTrust', false),
+    verbose: config.get<boolean>('launch.verbose', false),
+    extraArgs: config.get<string[]>('launch.extraArgs', []),
+  };
+
+  return { clientWorkspace, extensionPath, launchFlags };
+}
+
+/**
+ * Start the client window immediately. Resolves config from VS Code settings,
+ * spawns the Extension Development Host, and connects the CDP client.
+ *
+ * Called during extension activation to auto-start the client.
+ */
+export async function startClientWindow(): Promise<boolean> {
+  // Already running?
+  if (cdpPort && electronPid) {
+    const healthy = await isClientHealthy();
+    if (healthy) {
+      console.log('[host] Client window already running and healthy');
+      if (!activeCdpClient?.connected) {
+        await connectCdpClient(cdpPort);
+      }
+      lastKnownClientState = true;
+      _onClientStateChanged.fire(true);
+      startHealthMonitor();
+      return true;
+    }
+    // Not healthy — clean up and respawn
+    stopClient();
+  }
+
+  // Try persisted session first
+  const session = loadPersistedSession();
+  if (session) {
+    electronPid = session.clientPid;
+    cdpPort = session.cdpPort;
+    inspectorPort = session.inspectorPort;
+    currentExtensionPath = session.extensionPath;
+
+    const healthy = await isClientHealthy();
+    if (healthy) {
+      console.log('[host] Reconnected to persisted client session');
+      await connectCdpClient(session.cdpPort);
+      lastKnownClientState = true;
+      _onClientStateChanged.fire(true);
+      startHealthMonitor();
+      return true;
+    }
+    // Stale session — clean up
+    stopClient();
+    await waitForPipeRelease();
+  }
+
+  const resolved = resolveClientConfig();
+  if (!resolved) {
+    console.log('[host] Cannot auto-start client: no workspace folder or config');
+    return false;
+  }
+
+  try {
+    console.log('[host] Auto-starting client window...');
+    const result = await spawnClient(resolved.clientWorkspace, resolved.extensionPath, resolved.launchFlags);
+    await connectCdpClient(result.cdpPort);
+    console.log('[host] Client window auto-started successfully (cdpPort: ' + result.cdpPort + ')');
+    lastKnownClientState = true;
+    _onClientStateChanged.fire(true);
+    startHealthMonitor();
+    return true;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.log('[host] Failed to auto-start client window: ' + msg);
+    return false;
+  }
+}
+
+/**
+ * Stop the client window and disconnect CDP.
+ */
+export function stopClientWindow(): void {
+  stopHealthMonitor();
+  disconnectCdpClient();
+  stopClient();
+  lastKnownClientState = false;
+  _onClientStateChanged.fire(false);
+}
+
+/**
+ * Returns whether the client window is currently connected (fast, no I/O).
+ */
+export function isClientWindowConnected(): boolean {
+  return lastKnownClientState;
+}
+
+/**
+ * Start polling for client health. Fires onClientStateChanged when state changes.
+ */
+function startHealthMonitor(): void {
+  stopHealthMonitor();
+
+  clientHealthMonitorInterval = setInterval(async () => {
+    // Skip checks during hot-reload or reconnection
+    if (hotReloadInProgress || clientReconnecting) {
+      return;
+    }
+
+    const healthy = cdpPort ? await isClientHealthy() : false;
+    if (healthy !== lastKnownClientState) {
+      lastKnownClientState = healthy;
+      _onClientStateChanged.fire(healthy);
+      console.log(`[host] Client state changed: ${healthy ? 'connected' : 'disconnected'}`);
+    }
+  }, 5000);
+}
+
+function stopHealthMonitor(): void {
+  if (clientHealthMonitorInterval) {
+    clearInterval(clientHealthMonitorInterval);
+    clientHealthMonitorInterval = null;
+  }
+}
+
 /**
  * Export for deactivate cleanup
  */
 export function cleanup(): void {
+  stopHealthMonitor();
+  disconnectCdpClient();
   stopClient();
+  _onClientStateChanged.dispose();
 }

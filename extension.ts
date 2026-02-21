@@ -142,13 +142,13 @@ export async function activate(context: vscode.ExtensionContext) {
     switch (state) {
       case 'connected':
         statusBarItem.text = '$(debug-connected) VS Code DevTools Host';
-        statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Host\nMCP Server: Connected\nClick to toggle MCP server`;
+        statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Host\nClient Window: Connected\nMCP Server: Enabled\nClick to toggle`;
         statusBarItem.command = 'devtools.toggleMcpServer';
         statusBarItem.backgroundColor = undefined;
         break;
       case 'disconnected':
         statusBarItem.text = '$(debug-disconnect) VS Code DevTools Host';
-        statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Host\nMCP Server: Disconnected\nClick to toggle MCP server`;
+        statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Host\nClient Window: Disconnected\nMCP Server: Disabled\nClick to toggle`;
         statusBarItem.command = 'devtools.toggleMcpServer';
         statusBarItem.backgroundColor = undefined;
         break;
@@ -222,7 +222,7 @@ export async function activate(context: vscode.ExtensionContext) {
       // Dynamic import to ensure esbuild doesn't bundle host-handlers into client builds
       log('Loading host-handlers module...');
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { registerHostHandlers, cleanup } = require('./services/host-handlers');
+      const { registerHostHandlers, cleanup, startClientWindow, stopClientWindow, onClientStateChanged } = require('./services/host-handlers');
       log('host-handlers module loaded, registering handlers...');
       registerHostHandlers(bootstrap.registerHandler, context);
       hostHandlersCleanup = cleanup;
@@ -242,16 +242,70 @@ export async function activate(context: vscode.ExtensionContext) {
         }),
       );
 
-      // Listen for MCP toggle to update the status bar
+      // ── Tethered Lifecycle: Client Window ↔ MCP Server ──────────────────
+      // The client window and MCP server are a single entity:
+      // - Extension activation → start both immediately
+      // - Client dies → disable MCP server
+      // - MCP toggled off → stop client window
+      // - MCP toggled on → start client window
+
+      // Track whether WE are driving a toggle to avoid recursive loops
+      let tetheredAction = false;
+
+      // When client state changes (health monitor fires), update status bar and MCP
       context.subscriptions.push(
-        mcpProvider.onDidToggle((enabled) => {
-          updateStatusBar(enabled ? 'connected' : 'disconnected');
-          log(`MCP server toggled: ${enabled ? 'enabled' : 'disabled'}`);
+        onClientStateChanged((connected: boolean) => {
+          if (tetheredAction) {
+            return;
+          }
+          if (connected) {
+            updateStatusBar('connected');
+            log('Client window connected');
+          } else {
+            updateStatusBar('disconnected');
+            log('Client window disconnected — disabling MCP server');
+            tetheredAction = true;
+            mcpProvider.setEnabled(false);
+            tetheredAction = false;
+          }
         }),
       );
 
-      // Initial state: enabled but waiting for a client to connect
-      updateStatusBar(mcpProvider.enabled ? 'connected' : 'disconnected');
+      // When MCP is toggled, start/stop client window to match
+      context.subscriptions.push(
+        mcpProvider.onDidToggle((enabled: boolean) => {
+          if (tetheredAction) {
+            return;
+          }
+          log(`MCP server toggled: ${enabled ? 'enabled' : 'disabled'}`);
+          if (enabled) {
+            // MCP turned on → start client window
+            void startClientWindow().then((ok: boolean) => {
+              if (!ok) {
+                log('Failed to start client window after MCP enable');
+                updateStatusBar('disconnected');
+              }
+            });
+          } else {
+            // MCP turned off → stop client window
+            stopClientWindow();
+            updateStatusBar('disconnected');
+          }
+        }),
+      );
+
+      // Auto-start: spawn client window immediately during activation
+      updateStatusBar('disconnected');
+      log('Auto-starting client window...');
+      void startClientWindow().then((ok: boolean) => {
+        if (ok) {
+          log('Client window auto-started successfully');
+          // MCP provider is already enabled by default — status bar updated by onClientStateChanged
+        } else {
+          log('Client window auto-start failed — MCP server stays enabled, client will start on first tool call');
+          updateStatusBar('disconnected');
+        }
+      });
     } else {
       log('Loading client-handlers module...');
       // eslint-disable-next-line @typescript-eslint/no-require-imports

@@ -145,7 +145,7 @@ Every question about codebase **structure and analysis** falls into exactly one 
 │  ┌──────────────────┐  ┌──────────────────────────────────────────┐  │
 │  │ Existing MCP Tools│  │ Codebase Intelligence (4 TOOLS)          │  │
 │  │ · take_snapshot   │  │                                          │  │
-│  │ · read_console    │  │ · codebase_map                           │  │
+│  │ · console_read    │  │ · codebase_map                           │  │
 │  │ · terminal_run    │  │ · codebase_trace                         │  │
 │  │ · mouse_click     │  │ · codebase_search                        │  │
 │  │ · ...             │  │ · codebase_lint                          │  │

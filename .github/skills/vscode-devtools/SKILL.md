@@ -27,7 +27,7 @@ Use this skill when:
 
 ### Inspection and Debugging
 - `snapshot` - Get the current DOM state of VS Code
-- `read_console` - Read console messages (list all or get specific by ID)
+- `console_read` - Read console messages (list all or get specific by ID)
 - `screenshot` - Capture screenshots of VS Code window
 
 ### Monitoring

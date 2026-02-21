@@ -109,6 +109,16 @@ export class McpServerProvider implements vscode.McpServerDefinitionProvider<vsc
     this._onDidToggle.fire(this._enabled);
   }
 
+  /** Programmatically set enabled state. Only fires events if state actually changes. */
+  setEnabled(enabled: boolean): void {
+    if (this._enabled === enabled) {
+      return;
+    }
+    this._enabled = enabled;
+    this._onDidChange.fire();
+    this._onDidToggle.fire(this._enabled);
+  }
+
   dispose(): void {
     this._onDidChange.dispose();
     this._onDidToggle.dispose();

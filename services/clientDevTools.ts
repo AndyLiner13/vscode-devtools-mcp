@@ -403,7 +403,7 @@ const mouseScrollTool = createClientTool<ScrollInput>({
     },
 });
 
-// ── Tool: read_console ───────────────────────────────────────────────────────
+// ── Tool: console_read ───────────────────────────────────────────────────────
 
 interface ReadConsoleInput {
     limit?: number;
@@ -421,7 +421,7 @@ interface ReadConsoleInput {
 }
 
 const readConsoleTool = createClientTool<ReadConsoleInput>({
-    name: 'read_console',
+    name: 'console_read',
     invocationMessage: (input) => {
         if (input.msgid !== undefined) return `Reading console message #${input.msgid}`;
         if (input.types?.length) return `Reading ${input.types.join(', ')} console messages`;
@@ -579,6 +579,6 @@ export function getClientDevTools(): ClientToolEntry[] {
         { name: 'mouse_drag', tool: mouseDragTool as vscode.LanguageModelTool<unknown> },
         { name: 'keyboard_hotkey', tool: keyboardHotkeyTool as vscode.LanguageModelTool<unknown> },
         { name: 'mouse_scroll', tool: mouseScrollTool as vscode.LanguageModelTool<unknown> },
-        { name: 'read_console', tool: readConsoleTool as vscode.LanguageModelTool<unknown> },
+        { name: 'console_read', tool: readConsoleTool as vscode.LanguageModelTool<unknown> },
     ];
 }

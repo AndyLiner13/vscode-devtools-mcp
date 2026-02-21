@@ -788,7 +788,7 @@ Running command in terminal "default"
 
 Let me check if there are any console errors from the extension reload: 
 
-Ran `read_console` 
+Ran `console_read` 
 Completed with input: {
   "types": [
     "error",
