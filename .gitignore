@@ -64,6 +64,7 @@ log.txt
 # Project-specific
 .DS_Store
 .devtools/
+client-workspace/
 backups/
 tmpfldr/
 sideline/
