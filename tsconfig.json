@@ -28,6 +28,6 @@
     "tests",
     "resources",
     "client-workspace",
-    "test-workspace"
+    "client-workspace"
   ]
 }

@@ -20,7 +20,7 @@ export default defineConfig([
     '**/*.d.ts',
     '.devtools/**',
     'client-workspace/**',
-    'test-workspace/**',
+    'client-workspace/**',
     'tests/**',
     'resources/**',
     'mcp-server/build/**',

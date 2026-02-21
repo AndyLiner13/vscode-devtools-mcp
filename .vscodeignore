@@ -63,6 +63,6 @@ tests/**
 resources/**
 .github/**
 client-workspace/**
-test-workspace/**
+client-workspace/**
 backups/**
 documentation/**

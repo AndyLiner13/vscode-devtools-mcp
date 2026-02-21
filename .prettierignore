@@ -3,5 +3,5 @@ CHANGELOG.md
 dist/
 mcp-server/build/
 client-workspace/
-test-workspace/
+client-workspace/
 *.vsix
