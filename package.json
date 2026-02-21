@@ -62,6 +62,11 @@
         "command": "devtools.selectWorkspace",
         "title": "VS Code DevTools: Select Workspace",
         "icon": "$(folder-active)"
+      },
+      {
+        "command": "devtools.openSettings",
+        "title": "VS Code DevTools: Settings",
+        "icon": "$(gear)"
       }
     ],
     "menus": {
@@ -70,8 +75,136 @@
           "command": "devtools.refreshProjectTree",
           "when": "view == devtools.project",
           "group": "navigation@1"
+        },
+        {
+          "command": "devtools.openSettings",
+          "when": "view == devtools.project",
+          "group": "navigation@2"
         }
       ]
+    },
+    "configuration": {
+      "title": "VS Code DevTools",
+      "properties": {
+        "devtools.clientWorkspace": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the client workspace folder (absolute, or relative to host workspace root). If empty, uses the host workspace root.",
+          "scope": "resource"
+        },
+        "devtools.extensionPath": {
+          "type": "string",
+          "default": ".",
+          "description": "Path to the vscode-devtools extension folder (absolute, or relative to host workspace root).",
+          "scope": "resource"
+        },
+        "devtools.lmToolsWorkspace": {
+          "type": "string",
+          "default": ".",
+          "description": "Workspace scope for host LM tools. Set via the sidebar tree view.",
+          "scope": "resource"
+        },
+        "devtools.client.devDiagnostic": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable extra diagnostic tools (debug_evaluate)."
+        },
+        "devtools.client.headless": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run Client VS Code headless (Linux only)."
+        },
+        "devtools.client.experimentalVision": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable experimental vision tools."
+        },
+        "devtools.client.experimentalStructuredContent": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable experimental structured content output."
+        },
+        "devtools.launch.newWindow": {
+          "type": "boolean",
+          "default": true,
+          "description": "Open the client workspace in a new window."
+        },
+        "devtools.launch.disableExtensions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Disable all extensions except those in enableExtensions."
+        },
+        "devtools.launch.skipReleaseNotes": {
+          "type": "boolean",
+          "default": true,
+          "description": "Suppress the release-notes tab on startup."
+        },
+        "devtools.launch.skipWelcome": {
+          "type": "boolean",
+          "default": true,
+          "description": "Suppress the welcome tab on startup."
+        },
+        "devtools.launch.disableGpu": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disable GPU hardware acceleration."
+        },
+        "devtools.launch.disableWorkspaceTrust": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disable workspace-trust dialog."
+        },
+        "devtools.launch.verbose": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable verbose VS Code logging."
+        },
+        "devtools.launch.locale": {
+          "type": ["string", "null"],
+          "default": null,
+          "description": "Set the display language (e.g. 'en', 'de'). Null uses OS default."
+        },
+        "devtools.launch.enableExtensions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [
+            "vscode.typescript-language-features",
+            "github.copilot-chat"
+          ],
+          "description": "Extension IDs to keep enabled when disableExtensions is true."
+        },
+        "devtools.launch.extraArgs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Arbitrary extra CLI flags forwarded verbatim to the client VS Code."
+        },
+        "devtools.hotReload.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic hot-reload on source changes."
+        },
+        "devtools.hotReload.restartDelay": {
+          "type": "number",
+          "default": 2000,
+          "description": "Delay (ms) between stopping and starting MCP server during restart."
+        },
+        "devtools.hotReload.mcpStatusTimeout": {
+          "type": "number",
+          "default": 60000,
+          "description": "Max wait time (ms) for MCP status tool before timeout."
+        },
+        "devtools.session.persistence": {
+          "type": "string",
+          "enum": ["session", "permanent"],
+          "default": "session",
+          "enumDescriptions": [
+            "Client data persists until Host extension reloads",
+            "Client data persists permanently unless manually deleted"
+          ],
+          "description": "How long client window data (user-data, extensions cache) should persist."
+        }
+      }
     },
     "languageModelTools": [
       {
@@ -277,10 +410,10 @@
     "compile": "node esbuild.js",
     "mcp:build": "cd mcp-server && npm run build && tsc --noEmit",
     "mcp:inspect": "npx @modelcontextprotocol/inspector node mcp-server/build/src/index.js --client-workspace client-workspace --extension .",
-    "package": "vsce package --allow-star-activation",
+    "build": "vsce package --allow-star-activation",
     "uninstall": "code --uninstall-extension AndyLiner.vscode-devtools || echo Extension not installed, skipping",
     "install:vsix": "node -e \"var p=require('./package.json');require('child_process').execSync('code --install-extension '+p.name+'-'+p.version+'.vsix --force',{stdio:'inherit'})\"",
-    "reinstall": "npm run compile && npm run package && npm run uninstall && npm run install:vsix",
+    "reinstall": "npm run compile && npm run build && npm run uninstall && npm run install:vsix",
     "check-types": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",

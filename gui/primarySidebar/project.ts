@@ -1,16 +1,11 @@
 import * as vscode from 'vscode';
 import { join, relative } from 'path';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 'fs';
-import { parse, modify, applyEdits } from 'jsonc-parser';
+import { readdirSync } from 'fs';
 import { parseIgnoreRules, applyIgnoreRules } from '../../services/codebase/ignore-rules';
 
 // ============================================================================
-// Config Persistence
+// Config Persistence (via VS Code Settings API)
 // ============================================================================
-
-const DEVTOOLS_DIR = '.devtools';
-const CONFIG_FILENAME = 'host.config.jsonc';
-const CONFIG_KEY = 'lmToolsWorkspace';
 
 const ALWAYS_EXCLUDE_DIRS = new Set([
   'node_modules', 'dist', 'build', '.git', '.devtools', '.vscode',
@@ -22,48 +17,15 @@ function getHostWorkspaceRoot(): string | undefined {
   return folders[0].uri.fsPath;
 }
 
-function getConfigPath(): string | undefined {
-  const root = getHostWorkspaceRoot();
-  if (!root) return undefined;
-  return join(root, DEVTOOLS_DIR, CONFIG_FILENAME);
-}
-
 function readSelectedWorkspace(): string | undefined {
-  const configPath = getConfigPath();
-  if (!configPath || !existsSync(configPath)) return undefined;
-
-  try {
-    const content = readFileSync(configPath, 'utf8');
-    const parsed = parse(content);
-    return typeof parsed?.[CONFIG_KEY] === 'string' ? parsed[CONFIG_KEY] : undefined;
-  } catch {
-    return undefined;
-  }
+  const config = vscode.workspace.getConfiguration('devtools');
+  const value = config.get<string>('lmToolsWorkspace', '.');
+  return value || undefined;
 }
 
 function writeSelectedWorkspace(relativePath: string): void {
-  const root = getHostWorkspaceRoot();
-  if (!root) return;
-
-  const devtoolsDir = join(root, DEVTOOLS_DIR);
-  const configPath = join(devtoolsDir, CONFIG_FILENAME);
-
-  if (!existsSync(devtoolsDir)) {
-    mkdirSync(devtoolsDir, { recursive: true });
-  }
-
-  let content: string;
-  if (existsSync(configPath)) {
-    content = readFileSync(configPath, 'utf8');
-  } else {
-    content = '{\n}\n';
-  }
-
-  const edits = modify(content, [CONFIG_KEY], relativePath, {
-    formattingOptions: { tabSize: 2, insertSpaces: true },
-  });
-  const updated = applyEdits(content, edits);
-  writeFileSync(configPath, updated, 'utf8');
+  const config = vscode.workspace.getConfiguration('devtools');
+  config.update('lmToolsWorkspace', relativePath, vscode.ConfigurationTarget.Workspace);
 }
 
 // ============================================================================

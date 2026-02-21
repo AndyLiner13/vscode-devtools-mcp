@@ -15,6 +15,57 @@ import * as vscode from 'vscode';
 const PROVIDER_ID = 'devtools.mcp-server';
 const TOGGLE_COMMAND = 'devtools.toggleMcpServer';
 
+/**
+ * Build the resolved config object from VS Code settings to pass as env var.
+ */
+function buildConfigEnv(workspacePath: string): Record<string, string> {
+  const config = vscode.workspace.getConfiguration('devtools');
+
+  const clientWorkspaceRaw = config.get<string>('clientWorkspace', '');
+  const extensionPathRaw = config.get<string>('extensionPath', '.');
+
+  const clientWorkspace = clientWorkspaceRaw
+    ? (path.isAbsolute(clientWorkspaceRaw) ? clientWorkspaceRaw : path.resolve(workspacePath, clientWorkspaceRaw))
+    : workspacePath;
+  const extensionPath = path.isAbsolute(extensionPathRaw)
+    ? extensionPathRaw
+    : path.resolve(workspacePath, extensionPathRaw);
+
+  const resolvedConfig = {
+    clientWorkspace,
+    extensionPath,
+    lmToolsWorkspace: config.get<string>('lmToolsWorkspace', '.'),
+    devDiagnostic: config.get<boolean>('client.devDiagnostic', false),
+    headless: config.get<boolean>('client.headless', false),
+    experimentalVision: config.get<boolean>('client.experimentalVision', false),
+    experimentalStructuredContent: config.get<boolean>('client.experimentalStructuredContent', false),
+    launch: {
+      newWindow: config.get<boolean>('launch.newWindow', true),
+      disableExtensions: config.get<boolean>('launch.disableExtensions', true),
+      skipReleaseNotes: config.get<boolean>('launch.skipReleaseNotes', true),
+      skipWelcome: config.get<boolean>('launch.skipWelcome', true),
+      disableGpu: config.get<boolean>('launch.disableGpu', false),
+      disableWorkspaceTrust: config.get<boolean>('launch.disableWorkspaceTrust', false),
+      verbose: config.get<boolean>('launch.verbose', false),
+      locale: config.get<string | null>('launch.locale', null),
+      enableExtensions: config.get<string[]>('launch.enableExtensions', [
+        'vscode.typescript-language-features',
+        'github.copilot-chat',
+      ]),
+      extraArgs: config.get<string[]>('launch.extraArgs', []),
+    },
+    hotReload: {
+      enabled: config.get<boolean>('hotReload.enabled', true),
+      restartDelay: config.get<number>('hotReload.restartDelay', 2000),
+      mcpStatusTimeout: config.get<number>('hotReload.mcpStatusTimeout', 60000),
+    },
+  };
+
+  return {
+    DEVTOOLS_CONFIG: JSON.stringify(resolvedConfig),
+  };
+}
+
 export class McpServerProvider implements vscode.McpServerDefinitionProvider<vscode.McpStdioServerDefinition> {
   private readonly _onDidChange = new vscode.EventEmitter<void>();
   readonly onDidChangeMcpServerDefinitions = this._onDidChange.event;
@@ -34,6 +85,11 @@ export class McpServerProvider implements vscode.McpServerDefinitionProvider<vsc
     return this._enabled;
   }
 
+  /** Notify VS Code that server definitions changed (triggers re-spawn). */
+  refresh(): void {
+    this._onDidChange.fire();
+  }
+
   provideMcpServerDefinitions(
     _token: vscode.CancellationToken,
   ): vscode.McpStdioServerDefinition[] {
@@ -48,11 +104,14 @@ export class McpServerProvider implements vscode.McpServerDefinitionProvider<vsc
       'init.mjs',
     );
 
+    const env = buildConfigEnv(this._workspacePath);
+
     return [
       new vscode.McpStdioServerDefinition(
         'Experimental DevTools',
         'node',
         [initScript],
+        env,
       ),
     ];
   }

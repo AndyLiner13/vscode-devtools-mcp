@@ -21,7 +21,7 @@
 
 import * as vscode from 'vscode';
 import { SingleTerminalController } from './singleTerminalController';
-import { getProcessLedger, disposeProcessLedger, type ProcessLedgerSummary } from './processLedger';
+import { getProcessLedger, initProcessLedger, disposeProcessLedger, type ProcessLedgerSummary } from './processLedger';
 import { getUserActionTracker } from './userActionTracker';
 import { getOverview, getExports, traceSymbol, findDeadCode, getImportGraph, findDuplicates, extractOrphanedContent, extractFileStructure, extractStructure } from './codebase/codebase-worker-proxy';
 
@@ -1112,11 +1112,11 @@ async function handleExtractOrphanedContent(params: Record<string, unknown>) {
 /**
  * Register all Client RPC handlers with the bootstrap.
  */
-export function registerClientHandlers(register: RegisterHandler): vscode.Disposable {
+export function registerClientHandlers(register: RegisterHandler, workspaceState: vscode.Memento): vscode.Disposable {
   console.log('[client] Registering Client RPC handlers');
 
-  // Initialize the process ledger (loads persisted state, detects orphans)
-  const processLedger = getProcessLedger();
+  // Initialize the process ledger with VS Code's workspace state for persistence
+  const processLedger = initProcessLedger(workspaceState);
   processLedger.initialize().catch(err => {
     console.error('[client] Process ledger initialization failed:', err);
   });

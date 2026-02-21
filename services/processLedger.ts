@@ -1,15 +1,14 @@
 /**
  * Process Ledger Service
  *
- * Persists all Copilot-managed process events to disk for:
+ * Persists all Copilot-managed process events via VS Code's workspaceState for:
  * - Cross-session process tracking
  * - Orphan detection (processes that survived VS Code restart)
  * - Accountability (every MCP response includes the full ledger)
  *
- * Storage:
- *   .devtools/
- *   ├── process-log.jsonl    # Append-only event log (started, completed, killed)
- *   └── active-processes.json # Currently running processes (rebuilt on load)
+ * Storage keys (workspaceState):
+ *   - devtools.activeProcesses   # Currently running processes
+ *   - devtools.processLog        # Capped event log (started, completed, killed)
  *
  * Event Types:
  *   - started: Process began, includes command, pid, terminal name
@@ -22,8 +21,6 @@
  */
 
 import * as vscode from 'vscode';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 
@@ -81,10 +78,10 @@ export interface ProcessLedgerSummary {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const DEVTOOLS_DIR = '.devtools';
-const PROCESS_LOG_FILE = 'process-log.jsonl';
-const ACTIVE_PROCESSES_FILE = 'active-processes.json';
+const ACTIVE_PROCESSES_KEY = 'devtools.activeProcesses';
+const PROCESS_LOG_KEY = 'devtools.processLog';
 const MAX_RECENTLY_COMPLETED = 10;
+const MAX_LOG_ENTRIES = 200;
 const CHILD_CACHE_TTL_MS = 5_000;  // Re-query children every 5 seconds
 const CHILD_QUERY_TIMEOUT_MS = 10_000;  // PowerShell execution timeout
 const MAX_TREE_ITERATIONS = 200;  // BFS limit to prevent runaway queries
@@ -92,7 +89,7 @@ const MAX_TREE_ITERATIONS = 200;  // BFS limit to prevent runaway queries
 // ── Process Ledger Service ───────────────────────────────────────────────────
 
 export class ProcessLedger {
-  private workspacePath: string | undefined;
+  private workspaceState: vscode.Memento | undefined;
   private sessionId: string;
   private activeProcesses = new Map<number, ProcessEntry>();
   private orphanedProcesses = new Map<number, ProcessEntry>();
@@ -101,7 +98,8 @@ export class ProcessLedger {
   private childCache = new Map<number, ChildProcessInfo[]>();
   private childCacheTimestamp = 0;
 
-  constructor() {
+  constructor(workspaceState?: vscode.Memento) {
+    this.workspaceState = workspaceState;
     this.sessionId = this.generateSessionId();
     console.log(`[ProcessLedger] Created with sessionId: ${this.sessionId}`);
   }
@@ -115,16 +113,14 @@ export class ProcessLedger {
   async initialize(): Promise<void> {
     if (this.initialized) return;
 
-    this.workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    if (!this.workspacePath) {
-      console.log('[ProcessLedger] No workspace folder — persistence disabled');
+    if (!this.workspaceState) {
+      console.log('[ProcessLedger] No workspaceState — persistence disabled');
       this.initialized = true;
       return;
     }
 
     try {
-      await this.ensureDevtoolsDir();
-      await this.loadActiveProcesses();
+      this.loadActiveProcesses();
       await this.detectOrphans();
       this.initialized = true;
       console.log(`[ProcessLedger] Initialized — ${this.activeProcesses.size} active, ${this.orphanedProcesses.size} orphaned`);
@@ -444,41 +440,23 @@ export class ProcessLedger {
 
   // ── Persistence ────────────────────────────────────────────────────────────
 
-  private async ensureDevtoolsDir(): Promise<void> {
-    if (!this.workspacePath) return;
-
-    const devtoolsPath = path.join(this.workspacePath, DEVTOOLS_DIR);
-    try {
-      await fs.promises.mkdir(devtoolsPath, { recursive: true });
-    } catch (err) {
-      // Directory might already exist
-    }
-  }
-
-  private getLogPath(): string | undefined {
-    if (!this.workspacePath) return undefined;
-    return path.join(this.workspacePath, DEVTOOLS_DIR, PROCESS_LOG_FILE);
-  }
-
-  private getActiveProcessesPath(): string | undefined {
-    if (!this.workspacePath) return undefined;
-    return path.join(this.workspacePath, DEVTOOLS_DIR, ACTIVE_PROCESSES_FILE);
-  }
-
   private async appendEvent(event: ProcessEvent): Promise<void> {
-    const logPath = this.getLogPath();
-    if (!logPath) return;
+    if (!this.workspaceState) return;
 
     try {
-      await fs.promises.appendFile(logPath, JSON.stringify(event) + '\n');
+      const log = this.workspaceState.get<ProcessEvent[]>(PROCESS_LOG_KEY, []);
+      log.push(event);
+
+      // Cap the log to prevent unbounded growth
+      const capped = log.length > MAX_LOG_ENTRIES ? log.slice(-MAX_LOG_ENTRIES) : log;
+      await this.workspaceState.update(PROCESS_LOG_KEY, capped);
     } catch (err) {
       console.error('[ProcessLedger] Failed to append event:', err);
     }
   }
 
   private async saveActiveProcesses(): Promise<void> {
-    const activePath = this.getActiveProcessesPath();
-    if (!activePath) return;
+    if (!this.workspaceState) return;
 
     const data = {
       sessionId: this.sessionId,
@@ -487,24 +465,30 @@ export class ProcessLedger {
     };
 
     try {
-      await fs.promises.writeFile(activePath, JSON.stringify(data, null, 2));
+      await this.workspaceState.update(ACTIVE_PROCESSES_KEY, data);
     } catch (err) {
       console.error('[ProcessLedger] Failed to save active processes:', err);
     }
   }
 
-  private async loadActiveProcesses(): Promise<void> {
-    const activePath = this.getActiveProcessesPath();
-    if (!activePath) return;
+  private loadActiveProcesses(): void {
+    if (!this.workspaceState) return;
 
     try {
-      const content = await fs.promises.readFile(activePath, 'utf8');
-      const data = JSON.parse(content);
+      const data = this.workspaceState.get<{
+        sessionId: string;
+        processes: ProcessEntry[];
+        timestamp: string;
+      }>(ACTIVE_PROCESSES_KEY);
+
+      if (!data) {
+        console.log('[ProcessLedger] No previous active processes');
+        return;
+      }
 
       // Store as potential orphans (will verify in detectOrphans)
       for (const proc of data.processes ?? []) {
         if (proc.status === 'running') {
-          // Mark as potentially orphaned (from previous session)
           this.orphanedProcesses.set(proc.pid, {
             ...proc,
             status: 'orphaned',
@@ -514,8 +498,7 @@ export class ProcessLedger {
 
       console.log(`[ProcessLedger] Loaded ${this.orphanedProcesses.size} potential orphans from previous session`);
     } catch (err) {
-      // File doesn't exist or is invalid — start fresh
-      console.log('[ProcessLedger] No previous active processes file');
+      console.log('[ProcessLedger] Failed to load previous state:', err);
     }
   }
 
@@ -577,7 +560,6 @@ export class ProcessLedger {
    */
   dispose(): void {
     console.log('[ProcessLedger] Disposing');
-    // Save final state
     this.saveActiveProcesses().catch(() => {});
   }
 }
@@ -585,6 +567,13 @@ export class ProcessLedger {
 // ── Singleton Instance ───────────────────────────────────────────────────────
 
 let instance: ProcessLedger | null = null;
+
+export function initProcessLedger(workspaceState: vscode.Memento): ProcessLedger {
+  if (!instance) {
+    instance = new ProcessLedger(workspaceState);
+  }
+  return instance;
+}
 
 export function getProcessLedger(): ProcessLedger {
   if (!instance) {

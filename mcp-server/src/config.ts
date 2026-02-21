@@ -4,12 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
-import {dirname, isAbsolute, join, resolve} from 'node:path';
+import {dirname} from 'node:path';
 import process from 'node:process';
 import {fileURLToPath} from 'node:url';
-
-import {parse} from 'jsonc-parser';
 
 import {logger} from './logger.js';
 
@@ -61,75 +58,6 @@ export const DEFAULT_LAUNCH_FLAGS: LaunchFlags = {
   extraArgs: [],
 };
 
-const HOST_CONFIG_TEMPLATE = `// VS Code DevTools MCP — Host Configuration (JSONC)
-//
-// This file configures the VS Code DevTools MCP Server at the host level.
-// It determines which client workspace to control and which extension to load.
-// Logs are written to stderr and appear in VS Code's MCP output channel.
-
-{
-  // Path to the client workspace folder (absolute, or relative to host workspace root).
-  // This is the VS Code window that the MCP server controls.
-  // If omitted, the host workspace root is used.
-  // "clientWorkspace": "my-project",
-
-  // Path to the vscode-devtools extension folder (absolute, or relative to host workspace root).
-  // If omitted, no extension is loaded in the client workspace.
-  // "extensionPath": "extension",
-}
-`;
-
-const CLIENT_CONFIG_TEMPLATE = `// VS Code DevTools MCP — Client Configuration (JSONC)
-//
-// This file configures runtime behavior of the client VS Code window
-// controlled by the MCP server.
-
-{
-  // Enable extra diagnostic tools (debug_evaluate).
-  "devDiagnostic": false,
-
-  // Run VS Code headless (Linux only).
-  "headless": false,
-
-  // Enable experimental vision tools.
-  "experimentalVision": false,
-
-  // Enable experimental structured content output.
-  "experimentalStructuredContent": false,
-
-  // VS Code launch flags for the client VS Code window.
-  "launch": {
-    // Open the client workspace in a new window.
-    "newWindow": true,
-
-    // Disable all extensions except those explicitly enabled below.
-    "disableExtensions": true,
-
-    // Hide release notes / welcome UI on startup.
-    "skipReleaseNotes": true,
-    "skipWelcome": true,
-
-    // Optional switches.
-    "disableGpu": false,
-    "disableWorkspaceTrust": false,
-    "verbose": false,
-
-    // Force a VS Code UI locale (e.g. "en", "de"). Use null to keep OS default.
-    "locale": null,
-
-    // Extensions to enable when disableExtensions=true.
-    "enableExtensions": [
-      "vscode.typescript-language-features",
-      "github.copilot-chat",
-    ],
-
-    // Extra raw flags forwarded to VS Code as-is.
-    // Example: ["--log=trace", "--disable-updates"]
-    "extraArgs": [],
-  },
-}
-`;
-
 /**
  * Hot-reload configuration for automatic change detection and rebuild.
  * All fields are optional with sensible defaults.
@@ -153,21 +81,7 @@ const DEFAULT_HOT_RELOAD_CONFIG: HotReloadConfig = {
 };
 
 /**
- * Host configuration read from .devtools/host.config.jsonc.
- * Controls which client workspace and extension to use.
- */
-export interface HostConfig {
-  /** Path to the client workspace (absolute or relative to host root). Defaults to host root. */
-  clientWorkspace?: string;
-  /** Path to the extension folder (absolute or relative to host root). If omitted, no extension is loaded. */
-  extensionPath?: string;
-  /** Hot-reload configuration. All fields optional with sensible defaults. */
-  hotReload?: Partial<HotReloadConfig>;
-}
-
-/**
- * Client configuration read from .devtools/client.config.jsonc.
- * Controls runtime behavior of the client VS Code window.
+ * Client configuration — runtime behavior of the client VS Code window.
  */
 export interface ClientConfig {
   /** Enable diagnostic tools (debug_evaluate) */
@@ -211,14 +125,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function readOptionalString(
-  obj: Record<string, unknown>,
-  key: string,
-): string | undefined {
-  const value = obj[key];
-  return typeof value === 'string' ? value : undefined;
-}
-
 function readOptionalBoolean(
   obj: Record<string, unknown>,
   key: string,
@@ -247,39 +153,6 @@ function readOptionalStringArray(
     strings.push(item);
   }
   return strings;
-}
-
-function coerceHostConfig(value: unknown): HostConfig {
-  if (!isRecord(value)) {return {};}
-
-  const config: HostConfig = {};
-
-  const clientWorkspace = readOptionalString(value, 'clientWorkspace');
-  if (clientWorkspace) {config.clientWorkspace = clientWorkspace;}
-
-  const extensionPath = readOptionalString(value, 'extensionPath');
-  if (extensionPath) {config.extensionPath = extensionPath;}
-
-  const hotReloadValue = value['hotReload'];
-  if (isRecord(hotReloadValue)) {
-    const hotReload: Partial<HotReloadConfig> = {};
-
-    const enabled = readOptionalBoolean(hotReloadValue, 'enabled');
-    if (typeof enabled === 'boolean') {hotReload.enabled = enabled;}
-
-    const mcpServerName = readOptionalString(hotReloadValue, 'mcpServerName');
-    if (mcpServerName) {hotReload.mcpServerName = mcpServerName;}
-
-    const restartDelay = readOptionalNumber(hotReloadValue, 'restartDelay');
-    if (typeof restartDelay === 'number') {hotReload.restartDelay = restartDelay;}
-
-    const mcpStatusTimeout = readOptionalNumber(hotReloadValue, 'mcpStatusTimeout');
-    if (typeof mcpStatusTimeout === 'number') {hotReload.mcpStatusTimeout = mcpStatusTimeout;}
-
-    config.hotReload = hotReload;
-  }
-
-  return config;
 }
 
 function coerceClientConfig(value: unknown): ClientConfig {
@@ -350,61 +223,6 @@ function coerceClientConfig(value: unknown): ClientConfig {
   return config;
 }
 
-/**
- * Load host config from <hostRoot>/.devtools/host.config.jsonc.
- * Contains clientWorkspace and extensionPath.
- */
-function loadHostConfig(hostRoot: string): HostConfig {
-  const configPath = join(hostRoot, '.devtools', 'host.config.jsonc');
-
-  if (!existsSync(configPath)) {
-    logger(`No host config found, creating template at ${configPath}`);
-    mkdirSync(join(hostRoot, '.devtools'), {recursive: true});
-    writeFileSync(configPath, HOST_CONFIG_TEMPLATE + '\n');
-    return {};
-  }
-
-  try {
-    const content = readFileSync(configPath, 'utf-8');
-    const parsed: unknown = parse(content);
-    const config = coerceHostConfig(parsed);
-    logger(`Loaded host config from ${configPath}`);
-    return config;
-  } catch (error) {
-    logger(`Failed to parse host config at ${configPath}: ${error}`);
-    return {};
-  }
-}
-
-/**
- * Load client config from <clientRoot>/.devtools/client.config.jsonc.
- * Contains runtime settings (headless, launch flags, etc.).
- */
-function loadClientConfig(clientRoot: string): ClientConfig {
-  const configDir = join(clientRoot, '.devtools');
-  const configPath = join(configDir, 'client.config.jsonc');
-
-  if (!existsSync(configPath)) {
-    logger(`No client config found, creating template at ${configPath}`);
-    mkdirSync(configDir, {recursive: true});
-    writeFileSync(configPath, CLIENT_CONFIG_TEMPLATE + '\n');
-    return {
-      launch: {...DEFAULT_LAUNCH_FLAGS},
-    };
-  }
-
-  try {
-    const content = readFileSync(configPath, 'utf-8');
-    const parsed: unknown = parse(content);
-    const config = coerceClientConfig(parsed);
-    logger(`Loaded client config from ${configPath}`);
-    return config;
-  } catch (error) {
-    logger(`Failed to parse client config at ${configPath}: ${error}`);
-    return {};
-  }
-}
-
 /** Merge partial launch flags over defaults. */
 function resolveLaunchFlags(partial?: Partial<LaunchFlags>): LaunchFlags {
   if (!partial) {return {...DEFAULT_LAUNCH_FLAGS};}
@@ -426,9 +244,6 @@ function resolveHotReloadConfig(partial?: Partial<HotReloadConfig>): HotReloadCo
   };
 }
 
-/**
- * Resolve a path relative to workspace folder, or return absolute path as-is
- */
 /**
  * Get the host workspace where VS Code is running.
  * This is the parent of the mcp-server package.
@@ -463,52 +278,99 @@ export function getClientWorkspace(): string {
 }
 
 /**
- * Load and resolve configuration from host and client config files.
- *
- * Host config (.devtools/host.config.jsonc): clientWorkspace, extensionPath
- * Client config (.devtools/client.config.jsonc): runtime settings (headless, launch, etc.)
+ * Load and resolve configuration from DEVTOOLS_CONFIG environment variable.
+ * The extension serializes all VS Code settings as JSON and passes them
+ * via the env var when spawning the MCP server process.
  */
 export function loadConfig(): ResolvedConfig {
+  const envConfig = process.env.DEVTOOLS_CONFIG;
+  if (!envConfig) {
+    logger('DEVTOOLS_CONFIG not set — using defaults (host workspace as client workspace)');
+    const hostRoot = getHostWorkspace();
+    _resolvedClientWorkspace = hostRoot;
+    return {
+      hostWorkspace: hostRoot,
+      clientWorkspace: hostRoot,
+      extensionBridgePath: '',
+      explicitExtensionDevelopmentPath: false,
+      devDiagnostic: false,
+      headless: false,
+      experimentalVision: false,
+      experimentalStructuredContent: false,
+      launch: {...DEFAULT_LAUNCH_FLAGS},
+      hotReload: {...DEFAULT_HOT_RELOAD_CONFIG},
+    };
+  }
+
   const hostRoot = getHostWorkspace();
 
-  // 1. Read host config for clientWorkspace and extensionPath
-  const hostConfig = loadHostConfig(hostRoot);
+  try {
+    const parsed: unknown = JSON.parse(envConfig);
+    if (!isRecord(parsed)) {
+      logger('DEVTOOLS_CONFIG is not a valid JSON object — using defaults');
+      _resolvedClientWorkspace = hostRoot;
+      return {
+        hostWorkspace: hostRoot,
+        clientWorkspace: hostRoot,
+        extensionBridgePath: '',
+        explicitExtensionDevelopmentPath: false,
+        devDiagnostic: false,
+        headless: false,
+        experimentalVision: false,
+        experimentalStructuredContent: false,
+        launch: {...DEFAULT_LAUNCH_FLAGS},
+        hotReload: {...DEFAULT_HOT_RELOAD_CONFIG},
+      };
+    }
 
-  // 2. Resolve client workspace: from host config, or host root if not set
-  let clientWorkspace: string;
-  if (hostConfig.clientWorkspace) {
-    clientWorkspace = isAbsolute(hostConfig.clientWorkspace)
-      ? hostConfig.clientWorkspace
-      : resolve(hostRoot, hostConfig.clientWorkspace);
-  } else {
-    clientWorkspace = hostRoot;
+    const clientWorkspace = (typeof parsed.clientWorkspace === 'string' && parsed.clientWorkspace)
+      ? parsed.clientWorkspace
+      : hostRoot;
+    _resolvedClientWorkspace = clientWorkspace;
+
+    const extensionPath = typeof parsed.extensionPath === 'string' ? parsed.extensionPath : '';
+    const explicitExtensionDevelopmentPath = extensionPath.length > 0;
+
+    const clientConfig = coerceClientConfig(parsed);
+    const hotReloadPartial: Partial<HotReloadConfig> = {};
+    const hrValue = parsed.hotReload;
+    if (isRecord(hrValue)) {
+      const enabled = readOptionalBoolean(hrValue, 'enabled');
+      if (typeof enabled === 'boolean') {hotReloadPartial.enabled = enabled;}
+      const restartDelay = readOptionalNumber(hrValue, 'restartDelay');
+      if (typeof restartDelay === 'number') {hotReloadPartial.restartDelay = restartDelay;}
+      const mcpStatusTimeout = readOptionalNumber(hrValue, 'mcpStatusTimeout');
+      if (typeof mcpStatusTimeout === 'number') {hotReloadPartial.mcpStatusTimeout = mcpStatusTimeout;}
+    }
+
+    logger('Loaded config from DEVTOOLS_CONFIG environment variable');
+
+    return {
+      hostWorkspace: hostRoot,
+      clientWorkspace,
+      extensionBridgePath: extensionPath,
+      explicitExtensionDevelopmentPath,
+      devDiagnostic: clientConfig.devDiagnostic ?? false,
+      headless: clientConfig.headless ?? false,
+      experimentalVision: clientConfig.experimentalVision ?? false,
+      experimentalStructuredContent: clientConfig.experimentalStructuredContent ?? false,
+      launch: resolveLaunchFlags(clientConfig.launch),
+      hotReload: resolveHotReloadConfig(hotReloadPartial),
+    };
+  } catch (error) {
+    logger(`Failed to parse DEVTOOLS_CONFIG: ${error} — using defaults`);
+    _resolvedClientWorkspace = hostRoot;
+    return {
+      hostWorkspace: hostRoot,
+      clientWorkspace: hostRoot,
+      extensionBridgePath: '',
+      explicitExtensionDevelopmentPath: false,
+      devDiagnostic: false,
+      headless: false,
+      experimentalVision: false,
+      experimentalStructuredContent: false,
+      launch: {...DEFAULT_LAUNCH_FLAGS},
+      hotReload: {...DEFAULT_HOT_RELOAD_CONFIG},
+    };
   }
-
-  // Store for getClientWorkspace() access by tools
-  _resolvedClientWorkspace = clientWorkspace;
-
-  // 3. Resolve extension path: from host config, or empty string (no extension)
-  let extensionBridgePath = '';
-  const explicitExtensionDevelopmentPath = typeof hostConfig.extensionPath === 'string';
-  if (hostConfig.extensionPath) {
-    extensionBridgePath = isAbsolute(hostConfig.extensionPath)
-      ? hostConfig.extensionPath
-      : resolve(hostRoot, hostConfig.extensionPath);
-  }
-
-  // 4. Read client config for runtime settings
-  const clientConfig = loadClientConfig(clientWorkspace);
-
-  return {
-    hostWorkspace: hostRoot,
-    clientWorkspace,
-    extensionBridgePath,
-    explicitExtensionDevelopmentPath,
-    devDiagnostic: clientConfig.devDiagnostic ?? false,
-    headless: clientConfig.headless ?? false,
-    experimentalVision: clientConfig.experimentalVision ?? false,
-    experimentalStructuredContent: clientConfig.experimentalStructuredContent ?? false,
-    launch: resolveLaunchFlags(clientConfig.launch),
-    hotReload: resolveHotReloadConfig(hostConfig.hotReload),
-  };
 }

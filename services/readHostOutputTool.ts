@@ -5,13 +5,27 @@
  * from ALL active sessions (Host and Client/Extension Development Host).
  * 
  * Host logs: %APPDATA%/Code/logs/ (or platform equivalent)
- * Client logs: <workspace>/.devtools/user-data/logs/
+ * Client logs: <workspaceStorage>/user-data/logs/ (or fallback .devtools/user-data/logs/)
  */
 
 import * as vscode from 'vscode';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
+
+// ============================================================================
+// Module State
+// ============================================================================
+
+let clientLogsStoragePath: string | null = null;
+
+export function setClientLogsStoragePath(storagePath: string): void {
+    clientLogsStoragePath = storagePath;
+}
+
+function getClientLogsStoragePath(): string | null {
+    return clientLogsStoragePath;
+}
 
 // ============================================================================
 // Input Schema Interface
@@ -160,14 +174,17 @@ function getClientLogsDir(): string | null {
         return null;
     }
 
-    // The Client Extension Development Host stores its user-data at
-    // <clientWorkspace>/.devtools/user-data/. The clientWorkspace can be
-    // the workspace root itself, or a subdirectory (e.g. client-workspace/).
-    // Scan the root and its immediate children for .devtools/user-data/logs/.
     const root = workspaceFolders[0].uri.fsPath;
-    const candidates: string[] = [
-        path.join(root, '.devtools', 'user-data', 'logs'),
-    ];
+    const candidates: string[] = [];
+
+    // Check workspace storage path first (set by extension via storageUri)
+    const storagePath = getClientLogsStoragePath();
+    if (storagePath) {
+        candidates.push(path.join(storagePath, 'user-data', 'logs'));
+    }
+
+    // Fallback: scan workspace for legacy .devtools/user-data/logs/
+    candidates.push(path.join(root, '.devtools', 'user-data', 'logs'));
 
     try {
         const rootEntries = fs.readdirSync(root, { withFileTypes: true });
@@ -179,7 +196,7 @@ function getClientLogsDir(): string | null {
             }
         }
     } catch {
-        // Can't read root dir — just use the direct candidate
+        // Can't read root dir
     }
 
     // Pick the candidate with the most recent log session

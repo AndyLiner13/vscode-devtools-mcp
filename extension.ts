@@ -232,6 +232,16 @@ export async function activate(context: vscode.ExtensionContext) {
       const mcpProvider = registerMcpServerProvider(context);
       log(`MCP server provider registered (enabled: ${mcpProvider.enabled})`);
 
+      // Listen for settings changes and refresh MCP server definitions
+      context.subscriptions.push(
+        vscode.workspace.onDidChangeConfiguration((e) => {
+          if (e.affectsConfiguration('devtools')) {
+            mcpProvider.refresh();
+            log('Settings changed — MCP server definitions refreshed');
+          }
+        }),
+      );
+
       // Listen for MCP toggle to update the status bar
       context.subscriptions.push(
         mcpProvider.onDidToggle((enabled) => {
@@ -247,7 +257,7 @@ export async function activate(context: vscode.ExtensionContext) {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { registerClientHandlers } = require('./services/client-handlers');
       log('client-handlers module loaded, registering handlers...');
-      const disposable = registerClientHandlers(bootstrap.registerHandler);
+      const disposable = registerClientHandlers(bootstrap.registerHandler, context.workspaceState);
       clientHandlersCleanup = disposable;
       context.subscriptions.push(disposable);
       log('Client handlers registered');

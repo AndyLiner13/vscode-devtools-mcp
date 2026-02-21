@@ -64,6 +64,9 @@ function getMcpServerId(): string {
 /** Flag to prevent MCP shutdown during hot-reload */
 let hotReloadInProgress = false;
 
+/** Workspace storage path for persisting user-data, set during registerHostHandlers */
+let hostStoragePath: string | null = null;
+
 /** Timestamp when Client was started */
 let clientStartedAt: number | null = null;
 
@@ -153,13 +156,9 @@ function isPersistedSession(value: unknown): value is PersistedSession {
   );
 }
 
-function getSessionFilePath(): string {
-  const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-  if (!workspaceFolder) {
-    throw new Error('No workspace folder available');
-  }
-  return path.join(workspaceFolder, '.devtools', 'host-session.json');
-}
+// Captured during registerHostHandlers — used by session persistence helpers
+let hostWorkspaceState: vscode.Memento | null = null;
+const HOST_SESSION_KEY = 'devtools.hostSession';
 
 function getWorkspacePath(): string | null {
   return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
@@ -237,14 +236,13 @@ async function notifyMcpClientReconnected(params: {
 }
 
 function loadPersistedSession(): PersistedSession | null {
+  if (!hostWorkspaceState) return null;
   try {
-    const filePath = getSessionFilePath();
-    if (fs.existsSync(filePath)) {
-      const data = fs.readFileSync(filePath, 'utf8');
-      const parsed: unknown = JSON.parse(data);
-      if (isPersistedSession(parsed)) {
-        return parsed;
-      }
+    const data: unknown = hostWorkspaceState.get(HOST_SESSION_KEY);
+    if (data && isPersistedSession(data)) {
+      return data;
+    }
+    if (data) {
       console.log('[host] Ignoring invalid persisted session payload');
     }
   } catch (err) {
@@ -254,24 +252,18 @@ function loadPersistedSession(): PersistedSession | null {
 }
 
 function persistSession(session: PersistedSession): void {
+  if (!hostWorkspaceState) return;
   try {
-    const filePath = getSessionFilePath();
-    const dir = path.dirname(filePath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(filePath, JSON.stringify(session, null, 2));
+    hostWorkspaceState.update(HOST_SESSION_KEY, session);
   } catch (err) {
     console.log('[host] Failed to persist session:', err);
   }
 }
 
 function clearPersistedSession(): void {
+  if (!hostWorkspaceState) return;
   try {
-    const filePath = getSessionFilePath();
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
+    hostWorkspaceState.update(HOST_SESSION_KEY, undefined);
   } catch {
     // Ignore cleanup errors
   }
@@ -546,8 +538,10 @@ async function spawnClient(clientWorkspace: string, extensionPath: string, launc
   
   const electronPath = getElectronPath();
   
-  // User data directory for the Client (persists state, stored alongside target workspace)
-  const userDataDir = path.join(clientWorkspace, '.devtools', 'user-data');
+  // User data directory for the Client (persists state, stored in workspace storage)
+  const userDataDir = hostStoragePath
+    ? path.join(hostStoragePath, 'user-data')
+    : path.join(clientWorkspace, '.devtools', 'user-data');
   if (!fs.existsSync(userDataDir)) {
     fs.mkdirSync(userDataDir, { recursive: true });
   }
@@ -963,6 +957,12 @@ function stopClient(): void {
 export function registerHostHandlers(register: RegisterHandler, context: vscode.ExtensionContext): void {
   console.log('[host] Registering Host RPC handlers');
 
+  // Capture workspaceState for session persistence helpers
+  hostWorkspaceState = context.workspaceState;
+
+  // Capture storage path for user-data directory
+  hostStoragePath = context.storageUri?.fsPath ?? null;
+
   // Initialize the hot reload service (content-hash change detection)
   const hotReloadService = createHotReloadService(context.workspaceState);
   
@@ -1019,7 +1019,9 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
         const healthy = await isClientHealthy();
         if (healthy && !extCheck.changed) {
           console.log('[host] Existing Client is healthy and build is current, returning connection info');
-          const dataDir = path.join(clientWorkspace, '.devtools', 'user-data');
+          const dataDir = hostStoragePath
+            ? path.join(hostStoragePath, 'user-data')
+            : path.join(clientWorkspace, '.devtools', 'user-data');
           return { cdpPort: session.cdpPort, userDataDir: dataDir, clientStartedAt: session.startedAt };
         }
 

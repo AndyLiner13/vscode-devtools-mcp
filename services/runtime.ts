@@ -14,7 +14,7 @@ import {
     ProjectTreeProvider,
     setProjectTreeProvider,
 } from '../gui';
-import { OutputReadTool } from './readHostOutputTool';
+import { OutputReadTool, setClientLogsStoragePath } from './readHostOutputTool';
 import {
     TerminalReadTool,
     TerminalExecuteTool,
@@ -79,9 +79,17 @@ export async function activate(context: vscode.ExtensionContext) {
         projectTreeProvider.selectWorkspace(item);
     }));
 
+    track(vscode.commands.registerCommand('devtools.openSettings', () => {
+        vscode.commands.executeCommand('workbench.action.openSettings', '@ext:AndyLiner.vscode-devtools');
+    }));
+
     // ========================================================================
     // LM Tool Registration (all registered unconditionally, native toggle)
     // ========================================================================
+
+    if (context.storageUri) {
+        setClientLogsStoragePath(context.storageUri.fsPath);
+    }
 
     track(vscode.lm.registerTool('output_read', new OutputReadTool()));
     track(vscode.lm.registerTool('terminal_read', new TerminalReadTool()));
