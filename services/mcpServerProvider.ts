@@ -5,8 +5,8 @@
  * other MCP clients discover it automatically. The extension owns the
  * server lifecycle — no user-facing mcp.json configuration needed.
  *
- * The server is auto-started on activation and can be toggled on/off
- * via the status bar item or the toggle command.
+ * The status bar and connection state are managed externally by extension.ts.
+ * This provider only handles server definition provisioning and toggle logic.
  */
 
 import * as path from 'path';
@@ -19,21 +19,15 @@ export class McpServerProvider implements vscode.McpServerDefinitionProvider<vsc
   private readonly _onDidChange = new vscode.EventEmitter<void>();
   readonly onDidChangeMcpServerDefinitions = this._onDidChange.event;
 
+  private readonly _onDidToggle = new vscode.EventEmitter<boolean>();
+  /** Fires when the provider is toggled on/off. Payload = new enabled state. */
+  readonly onDidToggle = this._onDidToggle.event;
+
   private _enabled = true;
-  private readonly _statusBarItem: vscode.StatusBarItem;
   private readonly _workspacePath: string | undefined;
 
   constructor() {
-    // Use the first workspace folder as the MCP server root (for hot-reload support)
     this._workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-
-    this._statusBarItem = vscode.window.createStatusBarItem(
-      vscode.StatusBarAlignment.Right,
-      99,
-    );
-    this._statusBarItem.command = TOGGLE_COMMAND;
-    this._updateStatusBar();
-    this._statusBarItem.show();
   }
 
   get enabled(): boolean {
@@ -65,33 +59,19 @@ export class McpServerProvider implements vscode.McpServerDefinitionProvider<vsc
 
   toggle(): void {
     this._enabled = !this._enabled;
-    this._updateStatusBar();
     this._onDidChange.fire();
+    this._onDidToggle.fire(this._enabled);
   }
 
   dispose(): void {
     this._onDidChange.dispose();
-    this._statusBarItem.dispose();
-  }
-
-  private _updateStatusBar(): void {
-    if (this._enabled) {
-      this._statusBarItem.text = '$(circle-filled) MCP Server';
-      this._statusBarItem.tooltip = 'MCP Server: Running — click to stop';
-      this._statusBarItem.backgroundColor = undefined;
-    } else {
-      this._statusBarItem.text = '$(circle-outline) MCP Server';
-      this._statusBarItem.tooltip = 'MCP Server: Stopped — click to start';
-      this._statusBarItem.backgroundColor = new vscode.ThemeColor(
-        'statusBarItem.warningBackground',
-      );
-    }
+    this._onDidToggle.dispose();
   }
 }
 
 /**
- * Register the MCP server provider, toggle command, and status bar item.
- * Call during extension activation (Host role only).
+ * Register the MCP server provider and toggle command.
+ * The status bar is managed by extension.ts — not by this module.
  */
 export function registerMcpServerProvider(
   context: vscode.ExtensionContext,

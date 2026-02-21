@@ -126,16 +126,40 @@ export async function activate(context: vscode.ExtensionContext) {
   log('VS Code DevTools extension activating...');
 
   // ========================================================================
-  // Status Bar (always visible)
+  // Status Bar (always visible — reflects MCP connection state for Host)
   // ========================================================================
 
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   context.subscriptions.push(statusBarItem);
 
   const version = pkg.version || 'unknown';
-  statusBarItem.text = '$(plug) vscode-devtools';
+  statusBarItem.text = '$(debug-disconnect) VS Code DevTools';
   statusBarItem.tooltip = `VS Code DevTools v${version}`;
   statusBarItem.show();
+
+  /** Update the status bar to reflect MCP / connection state (Host only). */
+  function updateStatusBar(state: 'connected' | 'disconnected' | 'safe-mode', detail?: string): void {
+    switch (state) {
+      case 'connected':
+        statusBarItem.text = '$(debug-connected) VS Code DevTools Host';
+        statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Host\nMCP Server: Connected\nClick to toggle MCP server`;
+        statusBarItem.command = 'vscode-devtools.toggleMcpServer';
+        statusBarItem.backgroundColor = undefined;
+        break;
+      case 'disconnected':
+        statusBarItem.text = '$(debug-disconnect) VS Code DevTools Host';
+        statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Host\nMCP Server: Disconnected\nClick to toggle MCP server`;
+        statusBarItem.command = 'vscode-devtools.toggleMcpServer';
+        statusBarItem.backgroundColor = undefined;
+        break;
+      case 'safe-mode':
+        statusBarItem.text = `$(warning) VS Code DevTools ${currentRole ?? ''} Safe Mode`;
+        statusBarItem.tooltip = `VS Code DevTools v${version} — SAFE MODE\n\n${detail ?? ''}`;
+        statusBarItem.command = undefined;
+        statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+        break;
+    }
+  }
 
   // ========================================================================
   // Step 1: Role Detection via Pipe Availability
@@ -146,8 +170,7 @@ export async function activate(context: vscode.ExtensionContext) {
     await bootstrap.startServer(HOST_PIPE_PATH);
     currentRole = 'host';
     log(`Claimed Host pipe @ ${HOST_PIPE_PATH} — this instance is the HOST`);
-    statusBarItem.text = '$(plug) vscode-devtools [Host]';
-    statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Host\nPipe: ${HOST_PIPE_PATH}`;
+    updateStatusBar('disconnected');
   } catch (err: unknown) {
     const error = err as NodeJS.ErrnoException;
     if (error.code === 'EADDRINUSE') {
@@ -182,8 +205,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
       currentRole = 'client';
       log(`Host pipe exists — claimed Client pipe @ ${CLIENT_PIPE_PATH} — this instance is the CLIENT`);
-      statusBarItem.text = '$(plug) vscode-devtools [Client]';
+      statusBarItem.text = '$(debug-connected) VS Code DevTools Client';
       statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Client\nPipe: ${CLIENT_PIPE_PATH}`;
+      statusBarItem.command = undefined;
     } else {
       throw err;
     }
@@ -207,6 +231,17 @@ export async function activate(context: vscode.ExtensionContext) {
       // Register the MCP server provider so Copilot discovers it automatically
       const mcpProvider = registerMcpServerProvider(context);
       log(`MCP server provider registered (enabled: ${mcpProvider.enabled})`);
+
+      // Listen for MCP toggle to update the status bar
+      context.subscriptions.push(
+        mcpProvider.onDidToggle((enabled) => {
+          updateStatusBar(enabled ? 'connected' : 'disconnected');
+          log(`MCP server toggled: ${enabled ? 'enabled' : 'disabled'}`);
+        }),
+      );
+
+      // Initial state: enabled but waiting for a client to connect
+      updateStatusBar(mcpProvider.enabled ? 'connected' : 'disconnected');
     } else {
       log('Loading client-handlers module...');
       // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -228,8 +263,7 @@ export async function activate(context: vscode.ExtensionContext) {
     if (stack) {
       log(`Stack trace:\n${stack}`);
     }
-    statusBarItem.text = `$(warning) vscode-devtools [${currentRole} Safe Mode]`;
-    statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+    updateStatusBar('safe-mode', msg);
   }
 
   // ========================================================================
@@ -254,9 +288,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // Views stay hidden
     await vscode.commands.executeCommand('setContext', 'vscdt.coreLoaded', false);
 
-    statusBarItem.text = `$(warning) vscode-devtools [${currentRole} Safe Mode]`;
-    statusBarItem.tooltip = `VS Code DevTools v${version} — SAFE MODE\n\nRuntime failed to load:\n${msg}\n\nThe pipe server is still running.\nFix build errors and reload the window.`;
-    statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+    updateStatusBar('safe-mode', msg);
 
     vscode.window.showErrorMessage(
       `vscode-devtools: Runtime failed to load — entering Safe Mode.\n\n${msg}`,
