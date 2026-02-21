@@ -23,6 +23,8 @@ import net from 'node:net';
 import http from 'node:http';
 import crypto from 'node:crypto';
 import { createHotReloadService, getHotReloadService, type ChangeCheckResult } from './hotReloadService';
+import { CdpClient, BrowserService } from './browser';
+import { setBrowserService } from './clientDevTools';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -81,6 +83,9 @@ let clientReconnecting = false;
 
 /** Shared reconnect promise to coalesce concurrent calls */
 let reconnectPromise: Promise<boolean> | null = null;
+
+/** Active CDP client for browser automation LM tools */
+let activeCdpClient: CdpClient | null = null;
 
 // ── MCP Server Readiness Tracking ───────────────────────────────────────────
 
@@ -932,6 +937,42 @@ function stopClient(): void {
   clearPersistedSession();
 }
 
+/**
+ * Connect the extension's CDP client to the client window for browser automation LM tools.
+ * Creates a CdpClient + BrowserService and makes them available via setBrowserService().
+ */
+async function connectCdpClient(port: number): Promise<void> {
+  disconnectCdpClient();
+
+  try {
+    const client = new CdpClient();
+    await client.connect(port);
+    activeCdpClient = client;
+
+    const service = new BrowserService(client);
+    service.initConsoleCollection();
+    setBrowserService(service);
+
+    console.log(`[host] CDP client connected on port ${port} — browser LM tools active`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.log(`[host] Warning: CDP client connection failed: ${msg}. Browser LM tools unavailable.`);
+    disconnectCdpClient();
+  }
+}
+
+/**
+ * Disconnect the extension's CDP client and teardown the BrowserService.
+ */
+function disconnectCdpClient(): void {
+  setBrowserService(null);
+  if (activeCdpClient) {
+    activeCdpClient.dispose();
+    activeCdpClient = null;
+    console.log('[host] CDP client disconnected');
+  }
+}
+
 // ── RPC Handlers ────────────────────────────────────────────────────────────
 
 /**
@@ -1005,6 +1046,12 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
           const dataDir = hostStoragePath
             ? path.join(hostStoragePath, 'user-data')
             : path.join(clientWorkspace, '.devtools', 'user-data');
+
+          // Ensure CDP client is connected for browser automation LM tools
+          if (!activeCdpClient?.connected) {
+            await connectCdpClient(session.cdpPort);
+          }
+
           return { cdpPort: session.cdpPort, userDataDir: dataDir, clientStartedAt: session.startedAt };
         }
 
@@ -1027,6 +1074,10 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
     // Spawn new Client with MCP-provided paths (build is guaranteed up-to-date)
     console.log(`[host] Spawning new Client — workspace: ${clientWorkspace}, ext: ${extensionPath}`);
     const result = await spawnClient(clientWorkspace, extensionPath, launchFlags);
+
+    // Connect CDP client for browser automation LM tools
+    await connectCdpClient(result.cdpPort);
+
     return { cdpPort: result.cdpPort, userDataDir: result.userDataDir, clientStartedAt: result.clientStartedAt };
   });
   
@@ -1049,7 +1100,8 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
     }
     
     try {
-      // Stop existing Client
+      // Stop existing Client + teardown CDP client
+      disconnectCdpClient();
       stopClient();
       
       // Wait for pipe to be released before spawning new Client
@@ -1060,7 +1112,10 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
       
       // Spawn fresh Client with latest build
       const result = await spawnClient(clientWorkspace, extensionPath, launchFlags);
-      
+
+      // Reconnect CDP for browser automation LM tools
+      await connectCdpClient(result.cdpPort);
+
       return { cdpPort: result.cdpPort, userDataDir: result.userDataDir, clientStartedAt: result.clientStartedAt };
     } finally {
       hotReloadInProgress = false;

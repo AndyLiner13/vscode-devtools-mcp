@@ -18,6 +18,7 @@ import {
 import { WaitTool } from './waitLmTool';
 import { McpStatusTool } from './mcpStatusTool';
 import { getUserActionTracker, disposeUserActionTracker } from './userActionTracker';
+import { getClientDevTools } from './clientDevTools';
 
 // ============================================================================
 // Runtime Activation
@@ -76,6 +77,12 @@ export async function activate(context: vscode.ExtensionContext) {
     track(vscode.lm.registerTool('terminal_execute', new TerminalExecuteTool()));
     track(vscode.lm.registerTool('wait', new WaitTool()));
     track(vscode.lm.registerTool('mcpStatus', new McpStatusTool()));
+
+    // Client DevTools — browser automation via CDP (factory-created tools)
+    for (const entry of getClientDevTools()) {
+        track(vscode.lm.registerTool(entry.name, entry.tool));
+    }
+
     console.log('[devtools:runtime] All LM tools registered');
 
     // ========================================================================

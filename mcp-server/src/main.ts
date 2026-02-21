@@ -18,21 +18,14 @@ import {checkForChanges, readyToRestart} from './host-pipe.js';
 import {logger} from './logger.js';
 import {McpResponse} from './McpResponse.js';
 import {startMcpSocketServer} from './mcp-socket-server.js';
-import {checkForBlockingUI} from './notification-gate.js';
 import {lifecycleService} from './services/index.js';
 import {RequestPipeline} from './services/requestPipeline.js';
 import type {ToolDefinition} from './tools/ToolDefinition.js';
 import {tools} from './tools/tools.js';
-import {fetchAXTree, fetchAXTreeForDiff, fetchAXTreeForDiffWithUids, diffSnapshots, type AXNode, type NodeSignature} from './ax-tree.js';
 import {getProcessLedger, registerClientRecoveryHandler, ensureClientAvailable, type ProcessLedgerSummary, type ProcessEntry} from './client-pipe.js';
 
 // Default timeout for tools (30 seconds)
 const DEFAULT_TOOL_TIMEOUT_MS = 30_000;
-
-// ── Error Diff State ──────────────────────────────────────
-// Before-snapshot captured at tool start for diff computation on errors.
-// This obviates the need for full snapshot dumps on errors.
-let toolBeforeSnapshot: Map<number, {node: AXNode; sig: NodeSignature}> | null = null;
 
 // ── MCP Server Root ──────────────────────────────────────
 const mcpServerDir = getMcpServerRoot();
@@ -229,7 +222,7 @@ server.server.setRequestHandler(SetLevelRequestSchema, () => {
 });
 
 /**
- * Ensure VS Code debug window is connected (Host pipe + CDP).
+ * Ensure VS Code debug window is connected via Host pipe.
  */
 async function ensureConnection(): Promise<void> {
   await lifecycleService.ensureConnection();
@@ -260,18 +253,6 @@ const pipeline = new RequestPipeline({
   mcpServerRoot: mcpServerDir,
   extensionPath: config.extensionBridgePath,
   hotReloadEnabled: config.hotReload.enabled && config.explicitExtensionDevelopmentPath,
-  onBeforeChangeCheck: () => {
-    lifecycleService.suppressCdpDisconnectDuringChangeCheck();
-  },
-  onAfterChangeCheck: async (result) => {
-    lifecycleService.resumeCdpDisconnectHandling();
-    if (result.extClientReloaded && result.newCdpPort) {
-      await lifecycleService.reconnectAfterExtensionReload(
-        result.newCdpPort,
-        result.newClientStartedAt,
-      );
-    }
-  },
 });
 
 function registerTool(targetServer: McpServer, tool: ToolDefinition): void {
@@ -286,9 +267,6 @@ function registerTool(targetServer: McpServer, tool: ToolDefinition): void {
       const timeoutMs = tool.timeoutMs ?? DEFAULT_TOOL_TIMEOUT_MS;
 
       return pipeline.submit(tool.name, async () => {
-        // Everything inside execute() runs AFTER pipeline dequeues and
-        // hot-reload check completes. Timeouts start here, not when
-        // the tool entered the queue.
         try {
           const executeBody = async (): Promise<CallToolResult> => {
             logger(`${tool.name} request: ${JSON.stringify(params, null, '  ')}`);
@@ -298,12 +276,6 @@ function registerTool(targetServer: McpServer, tool: ToolDefinition): void {
             // Ensure VS Code connection is alive
             if (!isStandalone) {
               await ensureConnection();
-              // Capture before-snapshot for diff computation on errors
-              try {
-                toolBeforeSnapshot = await fetchAXTreeForDiff();
-              } catch {
-                toolBeforeSnapshot = null;
-              }
             }
 
             // Ensure Client pipe is alive for tools that need it
@@ -312,42 +284,10 @@ function registerTool(targetServer: McpServer, tool: ToolDefinition): void {
               await ensureClientAvailable();
             }
 
-            // Standalone tools don't need VS Code connection or UI checks
-            if (isStandalone) {
-              const response = new McpResponse();
-              await tool.handler({params}, response, extra);
-              const content: CallToolResult['content'] = [];
-              for (const line of response.responseLines) {
-                content.push({type: 'text', text: line});
-              }
-              if (content.length === 0) {
-                content.push({type: 'text', text: '(no output)'});
-              }
-              return {content};
-            }
-
-            // Check for blocking modals/notifications before tool execution
-            const inputTools = ['keyboard_hotkey', 'mouse_click', 'mouse_hover', 'mouse_drag', 'keyboard_type', 'mouse_scroll'];
-            const isInputTool = inputTools.includes(tool.name);
-
-            const uiCheck = await checkForBlockingUI();
-            if (uiCheck.blocked && !isInputTool) {
-              const content: CallToolResult['content'] = [];
-              if (uiCheck.notificationBanner) {
-                content.push({type: 'text', text: uiCheck.notificationBanner});
-              }
-              content.push({type: 'text', text: uiCheck.blockingMessage!});
-              return {content};
-            }
-            const notificationBanner = uiCheck.notificationBanner;
-
             const response = new McpResponse();
             await tool.handler({params}, response, extra);
 
             const content: CallToolResult['content'] = [];
-            if (notificationBanner) {
-              content.push({type: 'text', text: notificationBanner});
-            }
             for (const line of response.responseLines) {
               content.push({type: 'text', text: line});
             }
@@ -373,7 +313,6 @@ function registerTool(targetServer: McpServer, tool: ToolDefinition): void {
           // Apply timeout — starts AFTER pipeline dequeue + hot-reload check
           const isCodebaseTool = tool.annotations.conditions?.includes('codebase-sequential');
           if (isCodebaseTool) {
-            // Codebase tools manage their own dynamic timeout internally
             return await executeBody();
           }
           return await withTimeout(executeBody(), timeoutMs, tool.name);
@@ -399,54 +338,7 @@ function registerTool(targetServer: McpServer, tool: ToolDefinition): void {
             };
           }
 
-          const content: CallToolResult['content'] = [{type: 'text', text: errorText}];
-
-          // Compute diff from before-snapshot if available
-          if (toolBeforeSnapshot) {
-            try {
-              const {map: afterMap} = await fetchAXTreeForDiffWithUids();
-              const diff = diffSnapshots(toolBeforeSnapshot, afterMap);
-
-              if (diff.hasChanges) {
-                const lines: string[] = [];
-                if (diff.added.length > 0) {
-                  lines.push(`Added (${diff.added.length}):`);
-                  for (const item of diff.added.slice(0, 10)) {
-                    lines.push(`  + ${item}`);
-                  }
-                  if (diff.added.length > 10) {
-                    lines.push(`  ... and ${diff.added.length - 10} more`);
-                  }
-                }
-                if (diff.removed.length > 0) {
-                  lines.push(`Removed (${diff.removed.length}):`);
-                  for (const item of diff.removed.slice(0, 10)) {
-                    lines.push(`  - ${item}`);
-                  }
-                  if (diff.removed.length > 10) {
-                    lines.push(`  ... and ${diff.removed.length - 10} more`);
-                  }
-                }
-                if (diff.changed.length > 0) {
-                  lines.push(`Changed (${diff.changed.length}):`);
-                  for (const item of diff.changed.slice(0, 10)) {
-                    lines.push(`  ~ ${item}`);
-                  }
-                  if (diff.changed.length > 10) {
-                    lines.push(`  ... and ${diff.changed.length - 10} more`);
-                  }
-                }
-                content.push({
-                  type: 'text',
-                  text: `\n## UI Changes\n${lines.join('\n')}`,
-                });
-              }
-            } catch (diffErr) {
-              logger('Failed to compute diff on error:', diffErr);
-            }
-          }
-
-          return {content, isError: true};
+          return {content: [{type: 'text', text: errorText}], isError: true};
         }
       });
     },

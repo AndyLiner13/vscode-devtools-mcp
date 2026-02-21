@@ -25,7 +25,9 @@
     "languages": [
       {
         "id": "ignore",
-        "filenames": [".devtoolsignore"]
+        "filenames": [
+          ".devtoolsignore"
+        ]
       }
     ],
     "viewsContainers": {
@@ -122,7 +124,9 @@
           },
           "devtools.launch.extraArgs": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "default": [],
             "description": "Arbitrary extra CLI flags forwarded verbatim to the client VS Code."
           }
@@ -336,6 +340,343 @@
             }
           }
         }
+      },
+      {
+        "name": "take_snapshot",
+        "displayName": "Take Snapshot",
+        "toolReferenceName": "take_snapshot",
+        "icon": "$(list-tree)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Take an accessibility tree snapshot of the client VS Code window",
+        "modelDescription": "Take a text snapshot of the currently selected page based on the a11y tree. The snapshot lists page elements along with a unique identifier (uid). Always use the latest snapshot.\n\nArgs:\n  - verbose (boolean): Include full a11y tree details. Default: false\n  - filePath (string): Save to file instead of returning inline\n  - response_format ('markdown'|'json'): Output format. Default: 'markdown'\n\nReturns:\n  Formatted accessibility tree with element UIDs for interaction.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "verbose": {
+              "type": "boolean",
+              "description": "Whether to include all possible information available in the full a11y tree. Default is false."
+            },
+            "filePath": {
+              "type": "string",
+              "description": "Save the snapshot to this file path instead of returning inline."
+            },
+            "response_format": {
+              "type": "string",
+              "enum": ["markdown", "json"],
+              "description": "Output format. Default: 'markdown'."
+            }
+          }
+        }
+      },
+      {
+        "name": "take_screenshot",
+        "displayName": "Take Screenshot",
+        "toolReferenceName": "take_screenshot",
+        "icon": "$(device-camera)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Take a screenshot of the client VS Code window",
+        "modelDescription": "Take a screenshot of the page or element.\n\nArgs:\n  - format ('png'|'jpeg'|'webp'): Image format. Default: 'png'\n  - quality (number): Compression quality for JPEG/WebP (0-100)\n  - uid (string): Element uid to screenshot. Omit for full viewport\n  - fullPage (boolean): Screenshot full page instead of viewport\n  - filePath (string): Save to file path instead of attaching inline\n  - response_format ('markdown'|'json'): Output format. Default: 'markdown'",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "string",
+              "enum": ["png", "jpeg", "webp"],
+              "description": "Image format. Default: 'png'."
+            },
+            "quality": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Compression quality for JPEG/WebP (0-100)."
+            },
+            "uid": {
+              "type": "string",
+              "description": "Element uid to screenshot. Omit for full page/viewport."
+            },
+            "fullPage": {
+              "type": "boolean",
+              "description": "Screenshot full page instead of viewport."
+            },
+            "filePath": {
+              "type": "string",
+              "description": "Save to file path instead of attaching inline."
+            },
+            "response_format": {
+              "type": "string",
+              "enum": ["markdown", "json"],
+              "description": "Output format. Default: 'markdown'."
+            }
+          }
+        }
+      },
+      {
+        "name": "mouse_click",
+        "displayName": "Mouse Click",
+        "toolReferenceName": "mouse_click",
+        "icon": "$(debug-step-into)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Click on an element in the client VS Code window",
+        "modelDescription": "Clicks on the provided element.\n\nArgs:\n  - uid (string): Element uid from page snapshot\n  - dblClick (boolean): Double click. Default: false\n  - includeSnapshot (boolean): Include full snapshot. Default: false\n  - response_format ('markdown'|'json'): Output format. Default: 'markdown'",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "uid": {
+              "type": "string",
+              "description": "The uid of an element on the page from the page content snapshot."
+            },
+            "dblClick": {
+              "type": "boolean",
+              "description": "Set to true for double clicks. Default is false."
+            },
+            "includeSnapshot": {
+              "type": "boolean",
+              "description": "Whether to include a snapshot in the response. Default is false."
+            },
+            "response_format": {
+              "type": "string",
+              "enum": ["markdown", "json"],
+              "description": "Output format. Default: 'markdown'."
+            }
+          },
+          "required": ["uid"]
+        }
+      },
+      {
+        "name": "mouse_hover",
+        "displayName": "Mouse Hover",
+        "toolReferenceName": "mouse_hover",
+        "icon": "$(debug-step-into)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Hover over an element in the client VS Code window",
+        "modelDescription": "Hover over the provided element.\n\nArgs:\n  - uid (string): Element uid from page snapshot\n  - includeSnapshot (boolean): Include full snapshot. Default: false\n  - response_format ('markdown'|'json'): Output format. Default: 'markdown'",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "uid": {
+              "type": "string",
+              "description": "The uid of an element on the page from the page content snapshot."
+            },
+            "includeSnapshot": {
+              "type": "boolean",
+              "description": "Whether to include a snapshot in the response. Default is false."
+            },
+            "response_format": {
+              "type": "string",
+              "enum": ["markdown", "json"],
+              "description": "Output format. Default: 'markdown'."
+            }
+          },
+          "required": ["uid"]
+        }
+      },
+      {
+        "name": "keyboard_type",
+        "displayName": "Keyboard Type",
+        "toolReferenceName": "keyboard_type",
+        "icon": "$(keyboard)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Type text into an element in the client VS Code window",
+        "modelDescription": "Type text into an input, text area or select an option from a <select> element.\n\nBy default, text is inserted at the current cursor position without clearing existing content. Set `clear` to true to replace all existing content first.\n\nArgs:\n  - uid (string): Element uid from page snapshot\n  - value (string): Text to type or option to select\n  - clear (boolean): Clear existing content before typing. Default: false\n  - includeSnapshot (boolean): Include full snapshot. Default: false\n  - response_format ('markdown'|'json'): Output format. Default: 'markdown'",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "uid": {
+              "type": "string",
+              "description": "The uid of an element on the page from the page content snapshot."
+            },
+            "value": {
+              "type": "string",
+              "description": "The value to fill in."
+            },
+            "clear": {
+              "type": "boolean",
+              "description": "Clear existing content before typing. Default: false."
+            },
+            "includeSnapshot": {
+              "type": "boolean",
+              "description": "Whether to include a snapshot in the response. Default is false."
+            },
+            "response_format": {
+              "type": "string",
+              "enum": ["markdown", "json"],
+              "description": "Output format. Default: 'markdown'."
+            }
+          },
+          "required": ["uid", "value"]
+        }
+      },
+      {
+        "name": "mouse_drag",
+        "displayName": "Mouse Drag",
+        "toolReferenceName": "mouse_drag",
+        "icon": "$(move)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Drag an element onto another element in the client VS Code window",
+        "modelDescription": "Drag an element onto another element.\n\nArgs:\n  - from_uid (string): Element uid to drag\n  - to_uid (string): Element uid to drop onto\n  - includeSnapshot (boolean): Include full snapshot. Default: false\n  - response_format ('markdown'|'json'): Output format. Default: 'markdown'",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "from_uid": {
+              "type": "string",
+              "description": "The uid of the element to drag."
+            },
+            "to_uid": {
+              "type": "string",
+              "description": "The uid of the element to drop into."
+            },
+            "includeSnapshot": {
+              "type": "boolean",
+              "description": "Whether to include a snapshot in the response. Default is false."
+            },
+            "response_format": {
+              "type": "string",
+              "enum": ["markdown", "json"],
+              "description": "Output format. Default: 'markdown'."
+            }
+          },
+          "required": ["from_uid", "to_uid"]
+        }
+      },
+      {
+        "name": "keyboard_hotkey",
+        "displayName": "Keyboard Hotkey",
+        "toolReferenceName": "keyboard_hotkey",
+        "icon": "$(keyboard)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Press a key or key combination in the client VS Code window",
+        "modelDescription": "Press a key or key combination. Use this when other input methods like keyboard_type() cannot be used (e.g., keyboard shortcuts, navigation keys, or special key combinations).\n\nArgs:\n  - key (string): Key or combination (e.g., \"Enter\", \"Control+A\", \"Control+Shift+R\")\n  - includeSnapshot (boolean): Include full snapshot. Default: false\n  - response_format ('markdown'|'json'): Output format. Default: 'markdown'\n\nExamples:\n  - \"Press Enter\" -> { key: \"Enter\" }\n  - \"Select all\" -> { key: \"Control+A\" }",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "type": "string",
+              "description": "A key or a combination (e.g., \"Enter\", \"Control+A\", \"Control+Shift+R\"). Modifiers: Control, Shift, Alt, Meta."
+            },
+            "includeSnapshot": {
+              "type": "boolean",
+              "description": "Whether to include a snapshot in the response. Default is false."
+            },
+            "response_format": {
+              "type": "string",
+              "enum": ["markdown", "json"],
+              "description": "Output format. Default: 'markdown'."
+            }
+          },
+          "required": ["key"]
+        }
+      },
+      {
+        "name": "mouse_scroll",
+        "displayName": "Mouse Scroll",
+        "toolReferenceName": "mouse_scroll",
+        "icon": "$(fold)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Scroll an element in the client VS Code window",
+        "modelDescription": "Scroll an element into view, or scroll within a scrollable element in a given direction. If no direction is provided, the element is simply scrolled into the viewport.\n\nArgs:\n  - uid (string): Element uid from page snapshot\n  - direction ('up'|'down'|'left'|'right'): Scroll direction. Optional\n  - amount (number): Scroll distance in pixels. Default: 300\n  - includeSnapshot (boolean): Include full snapshot. Default: false\n  - response_format ('markdown'|'json'): Output format. Default: 'markdown'",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "uid": {
+              "type": "string",
+              "description": "The uid of an element on the page from the page content snapshot."
+            },
+            "direction": {
+              "type": "string",
+              "enum": ["up", "down", "left", "right"],
+              "description": "Direction to scroll. If omitted, element is scrolled into view."
+            },
+            "amount": {
+              "type": "number",
+              "description": "Scroll distance in pixels. Default is 300."
+            },
+            "includeSnapshot": {
+              "type": "boolean",
+              "description": "Whether to include a snapshot in the response. Default is false."
+            },
+            "response_format": {
+              "type": "string",
+              "enum": ["markdown", "json"],
+              "description": "Output format. Default: 'markdown'."
+            }
+          },
+          "required": ["uid"]
+        }
+      },
+      {
+        "name": "read_console",
+        "displayName": "Read Console",
+        "toolReferenceName": "read_console",
+        "icon": "$(debug-console)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Read console messages from the client VS Code window",
+        "modelDescription": "Read console messages with full control over filtering and detail level.\n\n**FILTERING OPTIONS:**\n- `limit` (number): Get N most recent messages\n- `types` (string[]): Filter by log type: 'error', 'warning', 'info', 'debug', 'log', etc.\n- `pattern` (string): Regex pattern to match against message text\n- `sourcePattern` (string): Regex pattern to match against source URLs\n- `afterId` (number): Only messages after this ID (for incremental reads)\n- `beforeId` (number): Only messages before this ID\n\n**DETAIL CONTROL:**\n- `fields` (string[]): Which fields to include. Default: ['id', 'type', 'text']\n- `textLimit` (number): Max characters per message text\n- `stackDepth` (number): Max stack frames. Default: 1. Set 0 to exclude.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Get the N most recent messages."
+            },
+            "types": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["log", "debug", "info", "error", "warning", "warn", "dir", "dirxml", "table", "trace", "clear", "startGroup", "startGroupCollapsed", "endGroup", "assert", "profile", "profileEnd", "count", "timeEnd", "verbose"]
+              },
+              "description": "Filter by log types."
+            },
+            "pattern": {
+              "type": "string",
+              "description": "Regex pattern to match against message text (case-insensitive)."
+            },
+            "sourcePattern": {
+              "type": "string",
+              "description": "Regex pattern to match against source URLs in stack traces."
+            },
+            "afterId": {
+              "type": "integer",
+              "description": "Only return messages with ID greater than this."
+            },
+            "beforeId": {
+              "type": "integer",
+              "description": "Only return messages with ID less than this."
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["id", "type", "text", "timestamp", "stackTrace", "args"]
+              },
+              "description": "Which fields to include per message. Default: [id, type, text]."
+            },
+            "textLimit": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Max characters per message text."
+            },
+            "stackDepth": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Max stack frames to include. Default: 1. Set 0 to exclude."
+            },
+            "msgid": {
+              "type": "number",
+              "description": "Get a specific message by ID with full details."
+            },
+            "logFormat": {
+              "type": "string",
+              "enum": ["summary", "detailed", "json"],
+              "description": "Log compression format."
+            },
+            "response_format": {
+              "type": "string",
+              "enum": ["markdown", "json"],
+              "description": "Output format. Default: 'markdown'."
+            }
+          }
+        }
       }
     ]
   },
@@ -380,15 +721,17 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
+    "@types/ws": "^8.18.1",
     "jsonc-parser": "^3.3.1",
     "logpare": "^0.1.0",
+    "remark-directive": "^3.0.1",
     "remark-frontmatter": "^5.0.0",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
-    "remark-directive": "^3.0.1",
     "remark-parse": "^11.0.0",
     "ts-morph": "^27.0.2",
     "unified": "^11.0.5",
+    "ws": "^8.19.0",
     "yaml": "^2.8.2"
   }
 }
