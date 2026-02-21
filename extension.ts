@@ -18,6 +18,7 @@ import net from 'node:net';
 import * as vscode from 'vscode';
 import pkg from './package.json';
 import { startWorker, stopWorker } from './services/codebase/codebase-worker-proxy';
+import { registerMcpServerProvider } from './services/mcpServerProvider';
 
 // ── Bootstrap (Plain JS, always loads) ───────────────────────────────────────
 
@@ -202,6 +203,10 @@ export async function activate(context: vscode.ExtensionContext) {
       registerHostHandlers(bootstrap.registerHandler, context);
       hostHandlersCleanup = cleanup;
       log('Host handlers registered');
+
+      // Register the MCP server provider so Copilot discovers it automatically
+      const mcpProvider = registerMcpServerProvider(context);
+      log(`MCP server provider registered (enabled: ${mcpProvider.enabled})`);
     } else {
       log('Loading client-handlers module...');
       // eslint-disable-next-line @typescript-eslint/no-require-imports

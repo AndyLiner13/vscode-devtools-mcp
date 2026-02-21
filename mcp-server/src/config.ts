@@ -468,12 +468,7 @@ export function getClientWorkspace(): string {
  * Host config (.devtools/host.config.jsonc): clientWorkspace, extensionPath
  * Client config (.devtools/client.config.jsonc): runtime settings (headless, launch, etc.)
  */
-export function loadConfig(cliArgs: {
-  devDiagnostic?: boolean;
-  headless?: boolean;
-  experimentalVision?: boolean;
-  experimentalStructuredContent?: boolean;
-}): ResolvedConfig {
+export function loadConfig(): ResolvedConfig {
   const hostRoot = getHostWorkspace();
 
   // 1. Read host config for clientWorkspace and extensionPath
@@ -509,14 +504,10 @@ export function loadConfig(cliArgs: {
     clientWorkspace,
     extensionBridgePath,
     explicitExtensionDevelopmentPath,
-    devDiagnostic: cliArgs.devDiagnostic ?? clientConfig.devDiagnostic ?? false,
-    headless: cliArgs.headless ?? clientConfig.headless ?? false,
-    experimentalVision:
-      cliArgs.experimentalVision ?? clientConfig.experimentalVision ?? false,
-    experimentalStructuredContent:
-      cliArgs.experimentalStructuredContent ??
-      clientConfig.experimentalStructuredContent ??
-      false,
+    devDiagnostic: clientConfig.devDiagnostic ?? false,
+    headless: clientConfig.headless ?? false,
+    experimentalVision: clientConfig.experimentalVision ?? false,
+    experimentalStructuredContent: clientConfig.experimentalStructuredContent ?? false,
     launch: resolveLaunchFlags(clientConfig.launch),
     hotReload: resolveHotReloadConfig(hostConfig.hotReload),
   };

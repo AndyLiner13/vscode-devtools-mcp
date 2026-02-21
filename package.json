@@ -42,7 +42,17 @@
         }
       ]
     },
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "vscode-devtools.mcp-server",
+        "label": "VS Code DevTools"
+      }
+    ],
     "commands": [
+      {
+        "command": "vscode-devtools.toggleMcpServer",
+        "title": "VS Code DevTools: Toggle MCP Server"
+      },
       {
         "command": "vscode-devtools.refreshProjectTree",
         "title": "VS Code DevTools: Refresh Workspaces",

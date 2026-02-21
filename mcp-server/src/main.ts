@@ -13,7 +13,6 @@ import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {StreamableHTTPServerTransport} from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import {type CallToolResult, SetLevelRequestSchema} from '@modelcontextprotocol/sdk/types.js';
 
-import {parseArguments} from './cli.js';
 import {loadConfig, getMcpServerRoot, type ResolvedConfig} from './config.js';
 import {checkForChanges, readyToRestart} from './host-pipe.js';
 import {logger} from './logger.js';
@@ -188,12 +187,8 @@ function withTimeout<T>(
 const VERSION = '0.16.0';
 // x-release-please-end
 
-// Parse CLI args and load config from .devtools/ config files
-const cliArgs = parseArguments(VERSION);
-export const config: ResolvedConfig = loadConfig(cliArgs);
-
-// Legacy export for backwards compatibility
-const args = cliArgs;
+// Load config from .devtools/ config files (no CLI args — config files are the source of truth)
+export const config: ResolvedConfig = loadConfig();
 
 // Initialize lifecycle service with MCP config (target workspace + extension path + launch flags)
 lifecycleService.init({
