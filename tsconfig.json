@@ -26,6 +26,7 @@
     "dist",
     "mcp-server",
     "tests",
+    "resources",
     "client-workspace",
     "test-workspace"
   ]

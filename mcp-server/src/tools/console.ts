@@ -5,7 +5,7 @@
  */
 
 import {getConsoleMessages, getConsoleMessageById} from '../cdp-events.js';
-import {zod} from '../third_party/index.js';
+import {z as zod} from 'zod';
 
 import {consolidateLines} from '../log-consolidator.js';
 

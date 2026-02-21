@@ -8,7 +8,7 @@ import {writeFileSync} from 'node:fs';
 
 import {fetchAXTree} from '../ax-tree.js';
 import {cdpService} from '../services/index.js';
-import {zod} from '../third_party/index.js';
+import {z as zod} from 'zod';
 
 import {ToolCategory} from './categories.js';
 import {

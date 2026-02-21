@@ -44,8 +44,7 @@ const loaderConfig = {
 	// Packages that must load from node_modules at runtime:
 	// - jsonc-parser: UMD entry has dynamic require('./impl/...') that esbuild can't resolve
 	// - ts-morph: large dependency tree with dynamic requires (typescript compiler)
-	// - typescript: transitive dep of ts-morph, used by hotReloadService for tsconfig parsing
-	external: ['vscode', 'jsonc-parser', 'ts-morph', 'typescript'],
+	external: ['vscode', 'jsonc-parser', 'ts-morph'],
 	logLevel: 'silent',
 	plugins: [esbuildProblemMatcherPlugin],
 };
@@ -65,8 +64,7 @@ const runtimeConfig = {
 	// Packages that must load from node_modules at runtime:
 	// - jsonc-parser: UMD entry has dynamic require('./impl/...') that esbuild can't resolve
 	// - ts-morph: large dependency tree with dynamic requires (typescript compiler)
-	// - typescript: transitive dep of ts-morph, used by hotReloadService for tsconfig parsing
-	external: ['vscode', 'jsonc-parser', 'ts-morph', 'typescript'],
+	external: ['vscode', 'jsonc-parser', 'ts-morph'],
 	logLevel: 'silent',
 	plugins: [esbuildProblemMatcherPlugin],
 };

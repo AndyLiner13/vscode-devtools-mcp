@@ -15,7 +15,7 @@
  */
 
 import type * as vscode from 'vscode';
-import * as ts from 'typescript';
+import { ts } from 'ts-morph';
 import { createHash } from 'node:crypto';
 import { readFileSync, existsSync } from 'node:fs';
 import { relative, join } from 'node:path';

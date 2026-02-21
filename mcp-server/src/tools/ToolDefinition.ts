@@ -4,7 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {zod, type ToolExtra} from '../third_party/index.js';
+import type {RequestHandlerExtra} from '@modelcontextprotocol/sdk/shared/protocol.js';
+import type {ServerRequest, ServerNotification} from '@modelcontextprotocol/sdk/types.js';
+import {z as zod} from 'zod';
+
+export type ToolExtra = RequestHandlerExtra<ServerRequest, ServerNotification>;
 
 import type {ToolCategory} from './categories.js';
 

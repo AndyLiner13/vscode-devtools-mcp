@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {zod, ElicitResultSchema, type ElicitRequestFormParams} from '../third_party/index.js';
+import {ElicitResultSchema, type ElicitRequestFormParams} from '@modelcontextprotocol/sdk/types.js';
+import {z as zod} from 'zod';
 
 import {ToolCategory} from './categories.js';
 import {defineTool} from './ToolDefinition.js';

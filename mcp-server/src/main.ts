@@ -4,29 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import './polyfill.js';
-
 import {randomUUID} from 'node:crypto';
 import {createServer} from 'node:http';
 import process from 'node:process';
 
+import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
+import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
+import {StreamableHTTPServerTransport} from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import {type CallToolResult, SetLevelRequestSchema} from '@modelcontextprotocol/sdk/types.js';
+
 import {parseArguments} from './cli.js';
 import {loadConfig, getMcpServerRoot, type ResolvedConfig} from './config.js';
 import {checkForChanges, readyToRestart} from './host-pipe.js';
-import {loadIssueDescriptions} from './issue-descriptions.js';
 import {logger} from './logger.js';
 import {McpResponse} from './McpResponse.js';
 import {startMcpSocketServer} from './mcp-socket-server.js';
 import {checkForBlockingUI} from './notification-gate.js';
 import {lifecycleService} from './services/index.js';
 import {RequestPipeline} from './services/requestPipeline.js';
-import {
-  McpServer,
-  StdioServerTransport,
-  StreamableHTTPServerTransport,
-  type CallToolResult,
-  SetLevelRequestSchema,
-} from './third_party/index.js';
 import type {ToolDefinition} from './tools/ToolDefinition.js';
 import {tools} from './tools/tools.js';
 import {fetchAXTree} from './ax-tree.js';
@@ -452,7 +447,6 @@ for (const tool of tools) {
   registerTool(server, tool);
 }
 
-await loadIssueDescriptions();
 const transport = new StdioServerTransport();
 await server.connect(transport);
 logger('VS Code DevTools MCP Server connected to stdio transport');

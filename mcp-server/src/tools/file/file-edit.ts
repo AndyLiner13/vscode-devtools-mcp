@@ -8,7 +8,7 @@ import path from 'node:path';
 
 import {fileExtractStructure, fileReadContent} from '../../client-pipe.js';
 import {getClientWorkspace} from '../../config.js';
-import {zod} from '../../third_party/index.js';
+import {z as zod} from 'zod';
 import {ToolCategory} from '../categories.js';
 import {defineTool} from '../ToolDefinition.js';
 import {executeEditWithSafetyLayer} from './safety-layer.js';

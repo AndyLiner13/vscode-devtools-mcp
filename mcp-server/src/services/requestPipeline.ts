@@ -22,7 +22,7 @@
  */
 
 import {logger} from '../logger.js';
-import type {CallToolResult} from '../third_party/index.js';
+import type {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
 
 // ── Deterministic Messages ───────────────────────────────
 

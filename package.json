@@ -298,20 +298,17 @@
     ]
   },
   "scripts": {
-    "clean": "node -e \"require('fs').rmSync('dist', {recursive: true, force: true})\"",
-    "vscode:prepublish": "npm run clean && npm run package",
-    "compile": "npm run clean && node esbuild.js",
-    "watch": "npm run clean && node esbuild.js --watch",
-    "package": "npm run clean && node esbuild.js --production",
-    "build": "npm run clean && vsce package --skip-license --allow-star-activation",
+    "compile": "node esbuild.js",
+    "mcp:build": "cd mcp-server && npm run build && tsc --noEmit",
+    "mcp:inspect": "npx @modelcontextprotocol/inspector node mcp-server/build/src/index.js --client-workspace client-workspace --extension .",
+    "package": "vsce package --allow-star-activation",
     "uninstall": "code --uninstall-extension AndyLiner.vscode-devtools || echo Extension not installed, skipping",
     "install:vsix": "node -e \"var p=require('./package.json');require('child_process').execSync('code --install-extension '+p.name+'-'+p.version+'.vsix --force',{stdio:'inherit'})\"",
-    "reinstall": "npm run compile && npm run build && npm run uninstall && npm run install:vsix",
+    "reinstall": "npm run compile && npm run package && npm run uninstall && npm run install:vsix",
     "check-types": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "format": "eslint --cache --fix . && prettier --write --cache .",
-    "check-format": "eslint --cache . && prettier --check --cache ."
+    "format": "eslint --cache --fix . && prettier --write --cache ."
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

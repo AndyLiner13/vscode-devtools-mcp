@@ -1,9 +1,14 @@
 # Source files (not needed in VSIX — dist/ has the bundles)
-# Source files (not needed in VSIX — dist/ has the bundles)
 **/*.ts
-!**/*.d.ts
+
+# Config files not needed at runtime
 esbuild.js
 tsconfig.json
+eslint.config.mjs
+knip.json
+.prettierrc.cjs
+.prettierignore
+.devtoolsignore
 
 # Build artifacts & config
 package-lock.json
@@ -19,6 +24,7 @@ package-lock.json
 **/.env*
 .vscode/
 .gitignore
+.gitmodules
 .copilotignore
 
 # Parent directory leakage from npm workspaces
@@ -46,16 +52,17 @@ node_modules/**
 !node_modules/balanced-match/**
 !node_modules/path-browserify/**
 !node_modules/tinyglobby/**
+!node_modules/fdir/**
 !node_modules/picomatch/**
 
-# typescript (transitive dep of ts-morph, used by hotReloadService for tsconfig parsing)
-!node_modules/typescript/**
-DE
-.env*
-**/.env*
-.vscode/
-.gitignore
-.copilotignore
-
-# Always include dist/
-!dist/**
+# ── Directories not needed in extension VSIX ──────────────
+# These MUST come last so they override all earlier !include rules
+mcp-server/**
+.devtools/**
+tests/**
+resources/**
+.github/**
+client-workspace/**
+test-workspace/**
+backups/**
+documentation/**

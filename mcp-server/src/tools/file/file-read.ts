@@ -16,7 +16,7 @@ import {
   type FileStructure,
 } from '../../client-pipe.js';
 import {getClientWorkspace} from '../../config.js';
-import {zod} from '../../third_party/index.js';
+import {z as zod} from 'zod';
 import {ToolCategory} from '../categories.js';
 import {CHARACTER_LIMIT, defineTool} from '../ToolDefinition.js';
 import {resolveSymbolTarget, findQualifiedPaths} from './symbol-resolver.js';

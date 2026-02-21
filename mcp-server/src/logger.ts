@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {debug} from './third_party/index.js';
+import debug from 'debug';
 
 const mcpDebugNamespace = 'mcp:log';
 

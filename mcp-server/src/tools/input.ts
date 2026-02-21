@@ -15,7 +15,7 @@ import {
   scrollElement,
   typeIntoElement,
 } from '../ax-tree.js';
-import {zod} from '../third_party/index.js';
+import {z as zod} from 'zod';
 
 import {ToolCategory} from './categories.js';
 import {defineTool, ResponseFormat, responseFormatSchema} from './ToolDefinition.js';

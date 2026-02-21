@@ -21,6 +21,8 @@ export default defineConfig([
     '.devtools/**',
     'client-workspace/**',
     'test-workspace/**',
+    'tests/**',
+    'resources/**',
     'mcp-server/build/**',
   ]),
   {

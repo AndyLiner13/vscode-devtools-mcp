@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {YargsOptions} from './third_party/index.js';
-import {yargs, hideBin} from './third_party/index.js';
+import type {Options as YargsOptions} from 'yargs';
+import yargs from 'yargs';
+import {hideBin} from 'yargs/helpers';
 
 export const cliOptions = {
   headless: {
