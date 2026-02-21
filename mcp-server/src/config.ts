@@ -137,7 +137,7 @@ const CLIENT_CONFIG_TEMPLATE = `// VS Code DevTools MCP — Client Configuration
 export interface HotReloadConfig {
   /** Master switch — set false to disable all hot-reload checks. Default: true */
   enabled: boolean;
-  /** The MCP server name as defined in .vscode/mcp.json. Used for VS Code server definition ID. Default: 'vscode-devtools' */
+  /** The MCP server ID matching package.json mcpServerDefinitionProviders. Default: 'devtools' */
   mcpServerName: string;
   /** Delay (ms) between stopping and starting MCP server during restart. Default: 2000 */
   restartDelay: number;
@@ -147,7 +147,7 @@ export interface HotReloadConfig {
 
 const DEFAULT_HOT_RELOAD_CONFIG: HotReloadConfig = {
   enabled: true,
-  mcpServerName: 'vscode-devtools',
+  mcpServerName: 'devtools',
   restartDelay: 2000,
   mcpStatusTimeout: 60_000,
 };

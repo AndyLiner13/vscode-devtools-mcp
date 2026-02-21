@@ -164,7 +164,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<WorkspaceIte
     watcher.onDidCreate(() => this.refresh());
     watcher.onDidDelete(() => this.refresh());
 
-    console.log('[vscode-devtools] ProjectTreeProvider initialized — workspace root picker');
+    console.log('[devtools] ProjectTreeProvider initialized — workspace root picker');
   }
 
   refresh(): void {
@@ -206,7 +206,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<WorkspaceIte
     item.contextValue = isSelected ? 'workspaceActive' : 'workspaceInactive';
 
     item.command = {
-      command: 'vscode-devtools.selectWorkspace',
+      command: 'devtools.selectWorkspace',
       title: 'Select as Workspace Root',
       arguments: [element],
     };

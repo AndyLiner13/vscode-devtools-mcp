@@ -12,12 +12,6 @@
       "project": ["**/*.ts", "**/*.js"],
       "ignoreDependencies": [
         "@vscode/codicons",
-        "@sigma/edge-curve",
-        "@sigma/node-piechart",
-        "graphology",
-        "graphology-layout",
-        "graphology-layout-forceatlas2",
-        "sigma",
         "@modelcontextprotocol/inspector"
       ],
       "ignoreBinaries": ["code", "tsc"]

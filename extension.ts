@@ -58,7 +58,7 @@ function log(message: string): void {
   const timestamp = new Date().toISOString();
   const line = `[${timestamp}] ${message}`;
   outputChannel?.appendLine(line);
-  console.log(`[vscode-devtools] ${message}`);
+  console.log(`[devtools] ${message}`);
 }
 
 async function notifyHostOfShutdown(reason: string): Promise<void> {
@@ -120,7 +120,7 @@ async function notifyHostOfShutdown(reason: string): Promise<void> {
 
 export async function activate(context: vscode.ExtensionContext) {
   // Output channel for all logging
-  outputChannel = vscode.window.createOutputChannel('vscode-devtools');
+  outputChannel = vscode.window.createOutputChannel('devtools');
   context.subscriptions.push(outputChannel);
 
   log('VS Code DevTools extension activating...');
@@ -143,13 +143,13 @@ export async function activate(context: vscode.ExtensionContext) {
       case 'connected':
         statusBarItem.text = '$(debug-connected) VS Code DevTools Host';
         statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Host\nMCP Server: Connected\nClick to toggle MCP server`;
-        statusBarItem.command = 'vscode-devtools.toggleMcpServer';
+        statusBarItem.command = 'devtools.toggleMcpServer';
         statusBarItem.backgroundColor = undefined;
         break;
       case 'disconnected':
         statusBarItem.text = '$(debug-disconnect) VS Code DevTools Host';
         statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Host\nMCP Server: Disconnected\nClick to toggle MCP server`;
-        statusBarItem.command = 'vscode-devtools.toggleMcpServer';
+        statusBarItem.command = 'devtools.toggleMcpServer';
         statusBarItem.backgroundColor = undefined;
         break;
       case 'safe-mode':
@@ -279,19 +279,19 @@ export async function activate(context: vscode.ExtensionContext) {
     runtimeModule = runtime;
 
     // Signal to VS Code that runtime loaded — views become visible
-    await vscode.commands.executeCommand('setContext', 'vscdt.coreLoaded', true);
+    await vscode.commands.executeCommand('setContext', 'devtools.coreLoaded', true);
     log('Runtime loaded successfully');
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     const stack = err instanceof Error ? err.stack : undefined;
 
     // Views stay hidden
-    await vscode.commands.executeCommand('setContext', 'vscdt.coreLoaded', false);
+    await vscode.commands.executeCommand('setContext', 'devtools.coreLoaded', false);
 
     updateStatusBar('safe-mode', msg);
 
     vscode.window.showErrorMessage(
-      `vscode-devtools: Runtime failed to load — entering Safe Mode.\n\n${msg}`,
+      `devtools: Runtime failed to load — entering Safe Mode.\n\n${msg}`,
       'Show Output'
     ).then(choice => {
       if (choice === 'Show Output') {

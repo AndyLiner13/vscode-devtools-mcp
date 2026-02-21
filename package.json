@@ -25,84 +25,50 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "vscdt",
+          "id": "devtools",
           "title": "VS Code DevTools",
           "icon": "icon.svg"
         }
       ]
     },
     "views": {
-      "vscdt": [
+      "devtools": [
         {
-          "id": "vscdt.project",
+          "id": "devtools.project",
           "name": "Workspace Root",
           "icon": "$(folder-library)",
           "contextualTitle": "Git Workspace Picker",
-          "when": "vscdt.coreLoaded"
+          "when": "devtools.coreLoaded"
         }
       ]
     },
     "mcpServerDefinitionProviders": [
       {
-        "id": "vscode-devtools.mcp-server",
-        "label": "VS Code DevTools"
+        "id": "devtools.mcp-server",
+        "label": "Experimental DevTools"
       }
     ],
     "commands": [
       {
-        "command": "vscode-devtools.toggleMcpServer",
+        "command": "devtools.toggleMcpServer",
         "title": "VS Code DevTools: Toggle MCP Server"
       },
       {
-        "command": "vscode-devtools.refreshProjectTree",
+        "command": "devtools.refreshProjectTree",
         "title": "VS Code DevTools: Refresh Workspaces",
         "icon": "$(refresh)"
       },
       {
-        "command": "vscode-devtools.selectWorkspace",
+        "command": "devtools.selectWorkspace",
         "title": "VS Code DevTools: Select Workspace",
         "icon": "$(folder-active)"
-      },
-      {
-        "command": "vscode-devtools.showASTGraph",
-        "title": "VS Code DevTools: Show AST Graph",
-        "icon": "$(type-hierarchy)"
-      },
-      {
-        "command": "vscode-devtools.graphVisualizer.refresh",
-        "title": "Refresh Graph",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "vscode-devtools.graphVisualizer.fit",
-        "title": "Fit to Screen",
-        "icon": "$(screen-full)"
-      },
-      {
-        "command": "vscode-devtools.graphVisualizer.zoomIn",
-        "title": "Zoom In",
-        "icon": "$(zoom-in)"
-      },
-      {
-        "command": "vscode-devtools.graphVisualizer.zoomOut",
-        "title": "Zoom Out",
-        "icon": "$(zoom-out)"
-      },
-      {
-        "command": "vscode-devtools.graphVisualizer.search",
-        "title": "Search Symbols",
-        "icon": "$(search)"
-      },
-      {
-        "command": "vscode-devtools.graphVisualizer.setLayout",
-        "title": "Set Layout"
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "vscode-devtools.refreshProjectTree",
-          "when": "view == vscdt.project",
+          "command": "devtools.refreshProjectTree",
+          "when": "view == devtools.project",
           "group": "navigation@1"
         }
       ]
@@ -323,8 +289,6 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@modelcontextprotocol/inspector": "^0.16.0",
-    "@sigma/edge-curve": "^3.1.0",
-    "@sigma/node-piechart": "^3.0.0",
     "@stylistic/eslint-plugin": "^5.4.0",
     "@types/mdast": "^4.0.4",
     "@types/node": "22.x",
@@ -337,13 +301,9 @@
     "eslint": "^10.0.0",
     "eslint-plugin-perfectionist": "^4.0.0",
     "globals": "^17.0.0",
-    "graphology": "^0.26.0",
-    "graphology-layout": "^0.6.1",
-    "graphology-layout-forceatlas2": "^0.10.1",
     "mdast-util-directive": "^3.1.0",
     "mdast-util-math": "^3.0.0",
     "prettier": "^3.6.2",
-    "sigma": "^3.0.2",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.43.0",
     "vitest": "^3.2.4"

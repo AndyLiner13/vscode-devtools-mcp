@@ -1,9 +1,8 @@
 /**
- * VS Code DevTools (vscode-devtools) - Runtime
+ * VS Code DevTools (devtools) - Runtime
  *
  * GUI features loaded dynamically by extension.ts:
  * - Workspace Root tree view — Git workspace picker
- * - Graph Visualizer (Sigma.js webview, opened via command palette)
  * - Language Model tool registrations (native VS Code toggle)
  *
  * Terminal management is handled by client-handlers.ts (Client role).
@@ -14,8 +13,6 @@ import * as vscode from 'vscode';
 import {
     ProjectTreeProvider,
     setProjectTreeProvider,
-    ASTGraphWebviewProvider,
-    GraphVisualizerProvider,
 } from '../gui';
 import { OutputReadTool } from './readHostOutputTool';
 import {
@@ -31,8 +28,8 @@ import { getUserActionTracker, disposeUserActionTracker } from './userActionTrac
 // ============================================================================
 
 const Views = {
-    Container: 'vscdt',
-    Project: 'vscdt.project',
+    Container: 'devtools',
+    Project: 'devtools.project',
 };
 
 // ============================================================================
@@ -40,7 +37,7 @@ const Views = {
 // ============================================================================
 
 export async function activate(context: vscode.ExtensionContext) {
-    console.log('[vscode-devtools:runtime] Runtime module loading...');
+    console.log('[devtools:runtime] Runtime module loading...');
 
     const trackedDisposables: vscode.Disposable[] = [];
     const track = <T extends vscode.Disposable>(disposable: T): T => {
@@ -74,11 +71,11 @@ export async function activate(context: vscode.ExtensionContext) {
     track(projectTreeView);
     track({ dispose: () => projectTreeProvider.dispose() });
 
-    track(vscode.commands.registerCommand('vscode-devtools.refreshProjectTree', () => {
+    track(vscode.commands.registerCommand('devtools.refreshProjectTree', () => {
         projectTreeProvider.refresh();
     }));
 
-    track(vscode.commands.registerCommand('vscode-devtools.selectWorkspace', (item) => {
+    track(vscode.commands.registerCommand('devtools.selectWorkspace', (item) => {
         projectTreeProvider.selectWorkspace(item);
     }));
 
@@ -91,42 +88,7 @@ export async function activate(context: vscode.ExtensionContext) {
     track(vscode.lm.registerTool('terminal_execute', new TerminalExecuteTool()));
     track(vscode.lm.registerTool('wait', new WaitTool()));
     track(vscode.lm.registerTool('mcpStatus', new McpStatusTool()));
-    console.log('[vscode-devtools:runtime] All LM tools registered');
-
-    // ========================================================================
-    // AST Graph Webview
-    // ========================================================================
-
-    const astGraphProvider = new ASTGraphWebviewProvider(context);
-    track(vscode.commands.registerCommand('vscode-devtools.showASTGraph', () => {
-        astGraphProvider.show();
-    }));
-
-    // ========================================================================
-    // Graph Visualizer (webview-only, no sidebar tree view)
-    // ========================================================================
-
-    const graphVisualizerProvider = new GraphVisualizerProvider();
-    astGraphProvider.setGraphVisualizer(graphVisualizerProvider);
-
-    track(vscode.commands.registerCommand('vscode-devtools.graphVisualizer.refresh', () => {
-        graphVisualizerProvider.doAction('refresh');
-    }));
-    track(vscode.commands.registerCommand('vscode-devtools.graphVisualizer.fit', () => {
-        graphVisualizerProvider.doAction('fit');
-    }));
-    track(vscode.commands.registerCommand('vscode-devtools.graphVisualizer.zoomIn', () => {
-        graphVisualizerProvider.doAction('zoomIn');
-    }));
-    track(vscode.commands.registerCommand('vscode-devtools.graphVisualizer.zoomOut', () => {
-        graphVisualizerProvider.doAction('zoomOut');
-    }));
-    track(vscode.commands.registerCommand('vscode-devtools.graphVisualizer.search', () => {
-        graphVisualizerProvider.doSearch();
-    }));
-    track(vscode.commands.registerCommand('vscode-devtools.graphVisualizer.setLayout', (layoutId: string) => {
-        graphVisualizerProvider.setLayout(layoutId);
-    }));
+    console.log('[devtools:runtime] All LM tools registered');
 
     // ========================================================================
     // User Action Tracker (detect user interventions)
@@ -134,11 +96,11 @@ export async function activate(context: vscode.ExtensionContext) {
 
     getUserActionTracker();
     track({ dispose: () => disposeUserActionTracker() });
-    console.log('[vscode-devtools:runtime] User action tracker initialized');
+    console.log('[devtools:runtime] User action tracker initialized');
 
-    console.log('[vscode-devtools:runtime] Runtime activation complete');
+    console.log('[devtools:runtime] Runtime activation complete');
 }
 
 export async function deactivate() {
-    console.log('[vscode-devtools:runtime] Runtime deactivating...');
+    console.log('[devtools:runtime] Runtime deactivating...');
 }

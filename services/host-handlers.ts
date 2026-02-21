@@ -53,40 +53,12 @@ let currentDebugSession: vscode.DebugSession | null = null;
 
 // ── MCP Server ID Resolution ─────────────────────────────────────────────
 
-// VS Code constructs server definition IDs as `mcp.config.<configId>.<serverName>`.
-// The configId depends on where the mcp.json lives:
-//   - User-level:          'usrlocal'
-//   - Remote user:         'usrremote'
-//   - Workspace file:      'workspace'
-//   - Workspace folder:    'ws<index>' (e.g., ws0, ws1)
-const MCP_SERVER_NAME = 'vscode-devtools';
+// MCP server definition ID — matches the provider ID in package.json contributes.mcpServerDefinitionProviders.
+// For provider-based servers, VS Code uses the provider ID directly.
+const MCP_SERVER_ID = 'devtools.mcp-server';
 
-async function resolveMcpServerId(): Promise<string> {
-  const workspaceFolders = vscode.workspace.workspaceFolders;
-  if (!workspaceFolders || workspaceFolders.length === 0) {
-    return `mcp.config.unknown.${MCP_SERVER_NAME}`;
-  }
-
-  // Check each workspace folder for .vscode/mcp.json containing our server
-  for (let i = 0; i < workspaceFolders.length; i++) {
-    const mcpJsonUri = vscode.Uri.joinPath(workspaceFolders[i].uri, '.vscode', 'mcp.json');
-    try {
-      const content = await vscode.workspace.fs.readFile(mcpJsonUri);
-      const config = JSON.parse(Buffer.from(content).toString('utf-8'));
-      if (config?.servers?.[MCP_SERVER_NAME]) {
-        const serverId = `mcp.config.ws${i}.${MCP_SERVER_NAME}`;
-        console.log(`[host] Resolved MCP server ID: ${serverId}`);
-        return serverId;
-      }
-    } catch {
-      // mcp.json doesn't exist in this folder, try next
-    }
-  }
-
-  // Fallback: assume user-level config
-  const fallbackId = `mcp.config.usrlocal.${MCP_SERVER_NAME}`;
-  console.log(`[host] MCP server not found in workspace folders, using fallback: ${fallbackId}`);
-  return fallbackId;
+function getMcpServerId(): string {
+  return MCP_SERVER_ID;
 }
 
 /** Flag to prevent MCP shutdown during hot-reload */
@@ -1238,7 +1210,7 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 
     const doRestart = async (): Promise<Record<string, unknown>> => {
       console.log('[host] readyToRestart — stop → clearCache → start');
-      const serverId = await resolveMcpServerId();
+      const serverId = getMcpServerId();
       const bridge = mcpProgressBridge;
       mcpProgressBridge = null;
 

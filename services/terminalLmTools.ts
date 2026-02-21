@@ -28,7 +28,7 @@ let localController: SingleTerminalController | null = null;
 
 function getController(): SingleTerminalController {
     if (!localController) {
-        console.log('[vscode-devtools:LM-tools] Initializing local terminal controller');
+        console.log('[devtools:LM-tools] Initializing local terminal controller');
         localController = new SingleTerminalController();
     }
     return localController;

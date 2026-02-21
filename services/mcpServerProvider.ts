@@ -12,8 +12,8 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-const PROVIDER_ID = 'vscode-devtools.mcp-server';
-const TOGGLE_COMMAND = 'vscode-devtools.toggleMcpServer';
+const PROVIDER_ID = 'devtools.mcp-server';
+const TOGGLE_COMMAND = 'devtools.toggleMcpServer';
 
 export class McpServerProvider implements vscode.McpServerDefinitionProvider<vscode.McpStdioServerDefinition> {
   private readonly _onDidChange = new vscode.EventEmitter<void>();
@@ -50,7 +50,7 @@ export class McpServerProvider implements vscode.McpServerDefinitionProvider<vsc
 
     return [
       new vscode.McpStdioServerDefinition(
-        'VS Code DevTools',
+        'Experimental DevTools',
         'node',
         [initScript],
       ),

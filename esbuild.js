@@ -86,18 +86,6 @@ const workerConfig = {
 	plugins: [esbuildProblemMatcherPlugin],
 };
 
-// Browser bundle: sigma.js + graphology for the AST graph webview
-const webviewConfig = {
-	entryPoints: ['gui/astWebview/sigma-globals.js'],
-	bundle: true,
-	format: 'iife',
-	minify: production,
-	sourcemap: false,
-	platform: 'browser',
-	outfile: 'dist/webview/sigma-bundle.js',
-	logLevel: 'silent',
-};
-
 async function main() {
 	// Clean dist folder before starting (ensures no stale files from previous builds)
 	if (fs.existsSync('dist')) {
@@ -108,21 +96,17 @@ async function main() {
 	const loaderCtx = await esbuild.context(loaderConfig);
 	const runtimeCtx = await esbuild.context(runtimeConfig);
 	const workerCtx = await esbuild.context(workerConfig);
-	const wvCtx = await esbuild.context(webviewConfig);
 	if (watch) {
 		await loaderCtx.watch();
 		await runtimeCtx.watch();
 		await workerCtx.watch();
-		await wvCtx.watch();
 	} else {
 		await loaderCtx.rebuild();
 		await runtimeCtx.rebuild();
 		await workerCtx.rebuild();
-		await wvCtx.rebuild();
 		await loaderCtx.dispose();
 		await runtimeCtx.dispose();
 		await workerCtx.dispose();
-		await wvCtx.dispose();
 	}
 }
 
