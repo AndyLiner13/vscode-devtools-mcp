@@ -23,17 +23,16 @@ import {lifecycleService} from './services/index.js';
 import {RequestPipeline} from './services/requestPipeline.js';
 import type {ToolDefinition} from './tools/ToolDefinition.js';
 import {tools} from './tools/tools.js';
-import {fetchAXTree} from './ax-tree.js';
+import {fetchAXTree, fetchAXTreeForDiff, fetchAXTreeForDiffWithUids, diffSnapshots, type AXNode, type NodeSignature} from './ax-tree.js';
 import {getProcessLedger, registerClientRecoveryHandler, ensureClientAvailable, type ProcessLedgerSummary, type ProcessEntry} from './client-pipe.js';
 
 // Default timeout for tools (30 seconds)
 const DEFAULT_TOOL_TIMEOUT_MS = 30_000;
 
-// ── Error Snapshot Deduplication ──────────────────────────
-// Track the last snapshot sent on error to avoid dumping identical snapshots
-// repeatedly. Reset when a new CDP session starts (hot-reload, reconnect).
-let lastErrorSnapshotText: string | null = null;
-let lastErrorSnapshotGeneration = -1;
+// ── Error Diff State ──────────────────────────────────────
+// Before-snapshot captured at tool start for diff computation on errors.
+// This obviates the need for full snapshot dumps on errors.
+let toolBeforeSnapshot: Map<number, {node: AXNode; sig: NodeSignature}> | null = null;
 
 // ── MCP Server Root ──────────────────────────────────────
 const mcpServerDir = getMcpServerRoot();
@@ -216,7 +215,7 @@ process.on('unhandledRejection', (reason, promise) => {
 
 logger(`Starting VS Code DevTools MCP Server v${VERSION}`);
 logger(`Config: hostWorkspace=${config.hostWorkspace}, clientWorkspace=${config.clientWorkspace}`);
-logger(`Config: extensionBridgePath=${config.extensionBridgePath}, headless=${config.headless}`);
+logger(`Config: extensionBridgePath=${config.extensionBridgePath}`);
 const server = new McpServer(
   {
     name: 'vscode_devtools',
@@ -276,18 +275,6 @@ const pipeline = new RequestPipeline({
 });
 
 function registerTool(targetServer: McpServer, tool: ToolDefinition): void {
-  if (
-    tool.annotations.conditions?.includes('computerVision') &&
-    !config.experimentalVision
-  ) {
-    return;
-  }
-  if (
-    tool.annotations.conditions?.includes('devDiagnostic') &&
-    !config.devDiagnostic
-  ) {
-    return;
-  }
   targetServer.registerTool(
     tool.name,
     {
@@ -311,6 +298,12 @@ function registerTool(targetServer: McpServer, tool: ToolDefinition): void {
             // Ensure VS Code connection is alive
             if (!isStandalone) {
               await ensureConnection();
+              // Capture before-snapshot for diff computation on errors
+              try {
+                toolBeforeSnapshot = await fetchAXTreeForDiff();
+              } catch {
+                toolBeforeSnapshot = null;
+              }
             }
 
             // Ensure Client pipe is alive for tools that need it
@@ -408,27 +401,49 @@ function registerTool(targetServer: McpServer, tool: ToolDefinition): void {
 
           const content: CallToolResult['content'] = [{type: 'text', text: errorText}];
 
-          // Snapshot deduplication: include snapshot on error only if
-          // the CDP session changed or snapshot content differs
-          try {
-            const currentGeneration = lifecycleService.cdpGeneration;
-            const snapshot = await fetchAXTree(false);
+          // Compute diff from before-snapshot if available
+          if (toolBeforeSnapshot) {
+            try {
+              const {map: afterMap} = await fetchAXTreeForDiffWithUids();
+              const diff = diffSnapshots(toolBeforeSnapshot, afterMap);
 
-            if (snapshot.formatted) {
-              const isNewSession = currentGeneration !== lastErrorSnapshotGeneration;
-              const isDifferent = snapshot.formatted !== lastErrorSnapshotText;
-
-              if (isNewSession || isDifferent) {
+              if (diff.hasChanges) {
+                const lines: string[] = [];
+                if (diff.added.length > 0) {
+                  lines.push(`Added (${diff.added.length}):`);
+                  for (const item of diff.added.slice(0, 10)) {
+                    lines.push(`  + ${item}`);
+                  }
+                  if (diff.added.length > 10) {
+                    lines.push(`  ... and ${diff.added.length - 10} more`);
+                  }
+                }
+                if (diff.removed.length > 0) {
+                  lines.push(`Removed (${diff.removed.length}):`);
+                  for (const item of diff.removed.slice(0, 10)) {
+                    lines.push(`  - ${item}`);
+                  }
+                  if (diff.removed.length > 10) {
+                    lines.push(`  ... and ${diff.removed.length - 10} more`);
+                  }
+                }
+                if (diff.changed.length > 0) {
+                  lines.push(`Changed (${diff.changed.length}):`);
+                  for (const item of diff.changed.slice(0, 10)) {
+                    lines.push(`  ~ ${item}`);
+                  }
+                  if (diff.changed.length > 10) {
+                    lines.push(`  ... and ${diff.changed.length - 10} more`);
+                  }
+                }
                 content.push({
                   type: 'text',
-                  text: `\n## Latest page snapshot\n${snapshot.formatted}`,
+                  text: `\n## UI Changes\n${lines.join('\n')}`,
                 });
-                lastErrorSnapshotText = snapshot.formatted;
-                lastErrorSnapshotGeneration = currentGeneration;
               }
+            } catch (diffErr) {
+              logger('Failed to compute diff on error:', diffErr);
             }
-          } catch (snapshotErr) {
-            logger('Failed to capture snapshot on error:', snapshotErr);
           }
 
           return {content, isError: true};

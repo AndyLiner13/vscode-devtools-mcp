@@ -560,9 +560,6 @@ async function spawnClient(clientWorkspace: string, extensionPath: string, launc
 
   // Apply launch flags from MCP config (if provided)
   if (launchFlags) {
-    if (launchFlags.disableExtensions) {
-      args.push('--disable-extensions');
-    }
     if (launchFlags.skipReleaseNotes) {
       args.push('--skip-release-notes');
     }
@@ -577,20 +574,6 @@ async function spawnClient(clientWorkspace: string, extensionPath: string, launc
     }
     if (launchFlags.verbose) {
       args.push('--verbose');
-    }
-    if (typeof launchFlags.locale === 'string') {
-      args.push('--locale=' + launchFlags.locale);
-    }
-    // Re-enable critical extensions when disable-extensions is on
-    // WARNING: DO NOT use --enable-proposed-api here. We do NOT have access to
-    // VS Code proposed APIs. Use --enable-extension to allowlist extensions.
-    const enableExts = launchFlags.enableExtensions;
-    if (launchFlags.disableExtensions && Array.isArray(enableExts)) {
-      for (const ext of enableExts) {
-        if (typeof ext === 'string') {
-          args.push('--enable-extension=' + ext);
-        }
-      }
     }
     // Extra raw args
     const extraArgs = launchFlags.extraArgs;

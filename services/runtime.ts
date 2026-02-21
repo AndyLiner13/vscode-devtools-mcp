@@ -2,7 +2,7 @@
  * VS Code DevTools (devtools) - Runtime
  *
  * GUI features loaded dynamically by extension.ts:
- * - Workspace Root tree view — Git workspace picker
+ * - Settings welcome view — empty-state button to open extension settings
  * - Language Model tool registrations (native VS Code toggle)
  *
  * Terminal management is handled by client-handlers.ts (Client role).
@@ -10,10 +10,6 @@
  */
 
 import * as vscode from 'vscode';
-import {
-    ProjectTreeProvider,
-    setProjectTreeProvider,
-} from '../gui';
 import { OutputReadTool, setClientLogsStoragePath } from './readHostOutputTool';
 import {
     TerminalReadTool,
@@ -22,15 +18,6 @@ import {
 import { WaitTool } from './waitLmTool';
 import { McpStatusTool } from './mcpStatusTool';
 import { getUserActionTracker, disposeUserActionTracker } from './userActionTracker';
-
-// ============================================================================
-// View Constants
-// ============================================================================
-
-const Views = {
-    Container: 'devtools',
-    Project: 'devtools.project',
-};
 
 // ============================================================================
 // Runtime Activation
@@ -58,26 +45,19 @@ export async function activate(context: vscode.ExtensionContext) {
     );
 
     // ========================================================================
-    // Workspace Root Tree View — Git workspace picker
+    // Settings View — empty-state welcome button opens extension settings
     // ========================================================================
 
-    const projectTreeProvider = new ProjectTreeProvider();
-    setProjectTreeProvider(projectTreeProvider);
+    const emptyTreeProvider: vscode.TreeDataProvider<never> = {
+        getTreeItem: () => { throw new Error('No items'); },
+        getChildren: () => [],
+    };
 
-    const projectTreeView = vscode.window.createTreeView(Views.Project, {
-        treeDataProvider: projectTreeProvider,
+    const settingsView = vscode.window.createTreeView('devtools.settings', {
+        treeDataProvider: emptyTreeProvider,
         canSelectMany: false,
     });
-    track(projectTreeView);
-    track({ dispose: () => projectTreeProvider.dispose() });
-
-    track(vscode.commands.registerCommand('devtools.refreshProjectTree', () => {
-        projectTreeProvider.refresh();
-    }));
-
-    track(vscode.commands.registerCommand('devtools.selectWorkspace', (item) => {
-        projectTreeProvider.selectWorkspace(item);
-    }));
+    track(settingsView);
 
     track(vscode.commands.registerCommand('devtools.openSettings', () => {
         vscode.commands.executeCommand('workbench.action.openSettings', '@ext:AndyLiner.vscode-devtools');

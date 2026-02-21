@@ -34,29 +34,16 @@ function buildConfigEnv(workspacePath: string): Record<string, string> {
   const resolvedConfig = {
     clientWorkspace,
     extensionPath,
-    lmToolsWorkspace: config.get<string>('lmToolsWorkspace', '.'),
-    devDiagnostic: config.get<boolean>('client.devDiagnostic', false),
-    headless: config.get<boolean>('client.headless', false),
-    experimentalVision: config.get<boolean>('client.experimentalVision', false),
-    experimentalStructuredContent: config.get<boolean>('client.experimentalStructuredContent', false),
     launch: {
-      newWindow: config.get<boolean>('launch.newWindow', true),
-      disableExtensions: config.get<boolean>('launch.disableExtensions', true),
       skipReleaseNotes: config.get<boolean>('launch.skipReleaseNotes', true),
       skipWelcome: config.get<boolean>('launch.skipWelcome', true),
       disableGpu: config.get<boolean>('launch.disableGpu', false),
       disableWorkspaceTrust: config.get<boolean>('launch.disableWorkspaceTrust', false),
       verbose: config.get<boolean>('launch.verbose', false),
-      locale: config.get<string | null>('launch.locale', null),
-      enableExtensions: config.get<string[]>('launch.enableExtensions', [
-        'vscode.typescript-language-features',
-        'github.copilot-chat',
-      ]),
       extraArgs: config.get<string[]>('launch.extraArgs', []),
     },
     hotReload: {
       enabled: config.get<boolean>('hotReload.enabled', true),
-      restartDelay: config.get<number>('hotReload.restartDelay', 2000),
       mcpStatusTimeout: config.get<number>('hotReload.mcpStatusTimeout', 60000),
     },
   };

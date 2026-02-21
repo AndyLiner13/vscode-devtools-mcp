@@ -20,10 +20,6 @@ const __dirname = dirname(__filename);
  * extensionDevelopmentPath, user-data-dir, target folder).
  */
 export interface LaunchFlags {
-  /** Open in a new window (--new-window). */
-  newWindow: boolean;
-  /** Disable all extensions except those in enableExtensions (--disable-extensions). */
-  disableExtensions: boolean;
   /** Suppress the release-notes tab (--skip-release-notes). */
   skipReleaseNotes: boolean;
   /** Suppress the welcome tab (--skip-welcome). */
@@ -34,27 +30,16 @@ export interface LaunchFlags {
   disableWorkspaceTrust: boolean;
   /** Enable verbose logging (--verbose). */
   verbose: boolean;
-  /** Set the display language, e.g. "en" (--locale). null = OS default. */
-  locale: string | null;
-  /** Extension IDs to keep enabled when disableExtensions is true. */
-  enableExtensions: string[];
   /** Arbitrary extra CLI flags forwarded verbatim. */
   extraArgs: string[];
 }
 
 export const DEFAULT_LAUNCH_FLAGS: LaunchFlags = {
-  newWindow: true,
-  disableExtensions: true,
   skipReleaseNotes: true,
   skipWelcome: true,
   disableGpu: false,
   disableWorkspaceTrust: false,
   verbose: false,
-  locale: null,
-  enableExtensions: [
-    'vscode.typescript-language-features',
-    'github.copilot-chat',
-  ],
   extraArgs: [],
 };
 
@@ -67,8 +52,6 @@ export interface HotReloadConfig {
   enabled: boolean;
   /** The MCP server ID matching package.json mcpServerDefinitionProviders. Default: 'devtools' */
   mcpServerName: string;
-  /** Delay (ms) between stopping and starting MCP server during restart. Default: 2000 */
-  restartDelay: number;
   /** Max wait time (ms) for mcpStatus LM tool before timeout. Default: 60000 */
   mcpStatusTimeout: number;
 }
@@ -76,29 +59,8 @@ export interface HotReloadConfig {
 const DEFAULT_HOT_RELOAD_CONFIG: HotReloadConfig = {
   enabled: true,
   mcpServerName: 'devtools',
-  restartDelay: 2000,
   mcpStatusTimeout: 60_000,
 };
-
-/**
- * Client configuration — runtime behavior of the client VS Code window.
- */
-export interface ClientConfig {
-  /** Enable diagnostic tools (debug_evaluate) */
-  devDiagnostic?: boolean;
-
-  /** Run VS Code headless (Linux only) */
-  headless?: boolean;
-
-  /** Enable experimental vision tools */
-  experimentalVision?: boolean;
-
-  /** Enable experimental structured content output */
-  experimentalStructuredContent?: boolean;
-
-  /** VS Code launch flags for the client VS Code window */
-  launch?: Partial<LaunchFlags>;
-}
 
 /**
  * Resolved configuration with all paths made absolute
@@ -112,10 +74,6 @@ export interface ResolvedConfig {
   extensionBridgePath: string;
   /** True when extensionPath was explicitly set in host config */
   explicitExtensionDevelopmentPath: boolean;
-  devDiagnostic: boolean;
-  headless: boolean;
-  experimentalVision: boolean;
-  experimentalStructuredContent: boolean;
   launch: LaunchFlags;
   /** Resolved hot-reload configuration with defaults applied */
   hotReload: HotReloadConfig;
@@ -155,72 +113,32 @@ function readOptionalStringArray(
   return strings;
 }
 
-function coerceClientConfig(value: unknown): ClientConfig {
+function coerceLaunchFlags(value: unknown): Partial<LaunchFlags> {
   if (!isRecord(value)) {return {};}
 
-  const config: ClientConfig = {};
+  const launch: Partial<LaunchFlags> = {};
 
-  const devDiagnostic = readOptionalBoolean(value, 'devDiagnostic');
-  if (typeof devDiagnostic === 'boolean') {config.devDiagnostic = devDiagnostic;}
+  const skipReleaseNotes = readOptionalBoolean(value, 'skipReleaseNotes');
+  if (typeof skipReleaseNotes === 'boolean') {launch.skipReleaseNotes = skipReleaseNotes;}
 
-  const headless = readOptionalBoolean(value, 'headless');
-  if (typeof headless === 'boolean') {config.headless = headless;}
+  const skipWelcome = readOptionalBoolean(value, 'skipWelcome');
+  if (typeof skipWelcome === 'boolean') {launch.skipWelcome = skipWelcome;}
 
-  const experimentalVision = readOptionalBoolean(value, 'experimentalVision');
-  if (typeof experimentalVision === 'boolean') {config.experimentalVision = experimentalVision;}
+  const disableGpu = readOptionalBoolean(value, 'disableGpu');
+  if (typeof disableGpu === 'boolean') {launch.disableGpu = disableGpu;}
 
-  const experimentalStructuredContent = readOptionalBoolean(
-    value,
-    'experimentalStructuredContent',
-  );
-  if (typeof experimentalStructuredContent === 'boolean') {
-    config.experimentalStructuredContent = experimentalStructuredContent;
+  const disableWorkspaceTrust = readOptionalBoolean(value, 'disableWorkspaceTrust');
+  if (typeof disableWorkspaceTrust === 'boolean') {
+    launch.disableWorkspaceTrust = disableWorkspaceTrust;
   }
 
-  const launchValue = value['launch'];
-  if (isRecord(launchValue)) {
-    const launch: Partial<LaunchFlags> = {};
+  const verbose = readOptionalBoolean(value, 'verbose');
+  if (typeof verbose === 'boolean') {launch.verbose = verbose;}
 
-    const newWindow = readOptionalBoolean(launchValue, 'newWindow');
-    if (typeof newWindow === 'boolean') {launch.newWindow = newWindow;}
+  const extraArgs = readOptionalStringArray(value, 'extraArgs');
+  if (extraArgs) {launch.extraArgs = extraArgs;}
 
-    const disableExtensions = readOptionalBoolean(launchValue, 'disableExtensions');
-    if (typeof disableExtensions === 'boolean') {launch.disableExtensions = disableExtensions;}
-
-    const skipReleaseNotes = readOptionalBoolean(launchValue, 'skipReleaseNotes');
-    if (typeof skipReleaseNotes === 'boolean') {launch.skipReleaseNotes = skipReleaseNotes;}
-
-    const skipWelcome = readOptionalBoolean(launchValue, 'skipWelcome');
-    if (typeof skipWelcome === 'boolean') {launch.skipWelcome = skipWelcome;}
-
-    const disableGpu = readOptionalBoolean(launchValue, 'disableGpu');
-    if (typeof disableGpu === 'boolean') {launch.disableGpu = disableGpu;}
-
-    const disableWorkspaceTrust = readOptionalBoolean(launchValue, 'disableWorkspaceTrust');
-    if (typeof disableWorkspaceTrust === 'boolean') {
-      launch.disableWorkspaceTrust = disableWorkspaceTrust;
-    }
-
-    const verbose = readOptionalBoolean(launchValue, 'verbose');
-    if (typeof verbose === 'boolean') {launch.verbose = verbose;}
-
-    const localeValue = launchValue['locale'];
-    if (localeValue === null) {
-      launch.locale = null;
-    } else if (typeof localeValue === 'string') {
-      launch.locale = localeValue;
-    }
-
-    const enableExtensions = readOptionalStringArray(launchValue, 'enableExtensions');
-    if (enableExtensions) {launch.enableExtensions = enableExtensions;}
-
-    const extraArgs = readOptionalStringArray(launchValue, 'extraArgs');
-    if (extraArgs) {launch.extraArgs = extraArgs;}
-
-    config.launch = launch;
-  }
-
-  return config;
+  return launch;
 }
 
 /** Merge partial launch flags over defaults. */
@@ -229,8 +147,6 @@ function resolveLaunchFlags(partial?: Partial<LaunchFlags>): LaunchFlags {
   return {
     ...DEFAULT_LAUNCH_FLAGS,
     ...partial,
-    // Arrays must be explicitly provided or fall back to defaults
-    enableExtensions: partial.enableExtensions ?? DEFAULT_LAUNCH_FLAGS.enableExtensions,
     extraArgs: partial.extraArgs ?? DEFAULT_LAUNCH_FLAGS.extraArgs,
   };
 }
@@ -293,10 +209,6 @@ export function loadConfig(): ResolvedConfig {
       clientWorkspace: hostRoot,
       extensionBridgePath: '',
       explicitExtensionDevelopmentPath: false,
-      devDiagnostic: false,
-      headless: false,
-      experimentalVision: false,
-      experimentalStructuredContent: false,
       launch: {...DEFAULT_LAUNCH_FLAGS},
       hotReload: {...DEFAULT_HOT_RELOAD_CONFIG},
     };
@@ -314,10 +226,6 @@ export function loadConfig(): ResolvedConfig {
         clientWorkspace: hostRoot,
         extensionBridgePath: '',
         explicitExtensionDevelopmentPath: false,
-        devDiagnostic: false,
-        headless: false,
-        experimentalVision: false,
-        experimentalStructuredContent: false,
         launch: {...DEFAULT_LAUNCH_FLAGS},
         hotReload: {...DEFAULT_HOT_RELOAD_CONFIG},
       };
@@ -331,14 +239,12 @@ export function loadConfig(): ResolvedConfig {
     const extensionPath = typeof parsed.extensionPath === 'string' ? parsed.extensionPath : '';
     const explicitExtensionDevelopmentPath = extensionPath.length > 0;
 
-    const clientConfig = coerceClientConfig(parsed);
+    const launchPartial = coerceLaunchFlags(parsed.launch);
     const hotReloadPartial: Partial<HotReloadConfig> = {};
     const hrValue = parsed.hotReload;
     if (isRecord(hrValue)) {
       const enabled = readOptionalBoolean(hrValue, 'enabled');
       if (typeof enabled === 'boolean') {hotReloadPartial.enabled = enabled;}
-      const restartDelay = readOptionalNumber(hrValue, 'restartDelay');
-      if (typeof restartDelay === 'number') {hotReloadPartial.restartDelay = restartDelay;}
       const mcpStatusTimeout = readOptionalNumber(hrValue, 'mcpStatusTimeout');
       if (typeof mcpStatusTimeout === 'number') {hotReloadPartial.mcpStatusTimeout = mcpStatusTimeout;}
     }
@@ -350,11 +256,7 @@ export function loadConfig(): ResolvedConfig {
       clientWorkspace,
       extensionBridgePath: extensionPath,
       explicitExtensionDevelopmentPath,
-      devDiagnostic: clientConfig.devDiagnostic ?? false,
-      headless: clientConfig.headless ?? false,
-      experimentalVision: clientConfig.experimentalVision ?? false,
-      experimentalStructuredContent: clientConfig.experimentalStructuredContent ?? false,
-      launch: resolveLaunchFlags(clientConfig.launch),
+      launch: resolveLaunchFlags(launchPartial),
       hotReload: resolveHotReloadConfig(hotReloadPartial),
     };
   } catch (error) {
@@ -365,10 +267,6 @@ export function loadConfig(): ResolvedConfig {
       clientWorkspace: hostRoot,
       extensionBridgePath: '',
       explicitExtensionDevelopmentPath: false,
-      devDiagnostic: false,
-      headless: false,
-      experimentalVision: false,
-      experimentalStructuredContent: false,
       launch: {...DEFAULT_LAUNCH_FLAGS},
       hotReload: {...DEFAULT_HOT_RELOAD_CONFIG},
     };
