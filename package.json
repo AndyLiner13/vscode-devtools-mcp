@@ -42,7 +42,6 @@
         {
           "id": "devtools.settings",
           "name": "Settings",
-          "icon": "$(gear)",
           "contextualTitle": "VS Code DevTools Settings",
           "when": "devtools.coreLoaded"
         }
@@ -51,7 +50,7 @@
     "viewsWelcome": [
       {
         "view": "devtools.settings",
-        "contents": "Configure VS Code DevTools extension settings.\n[Open Settings](command:devtools.openSettings)"
+        "contents": "[Open Settings](command:devtools.openSettings)"
       }
     ],
     "mcpServerDefinitionProviders": [
@@ -67,19 +66,9 @@
       },
       {
         "command": "devtools.openSettings",
-        "title": "VS Code DevTools: Settings",
-        "icon": "$(gear)"
+        "title": "VS Code DevTools: Settings"
       }
     ],
-    "menus": {
-      "view/title": [
-        {
-          "command": "devtools.openSettings",
-          "when": "view == devtools.settings",
-          "group": "navigation@1"
-        }
-      ]
-    },
     "configuration": [
       {
         "title": "General",
