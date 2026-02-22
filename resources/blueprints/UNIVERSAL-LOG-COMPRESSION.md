@@ -1,6 +1,6 @@
 # Universal Log Compression System
 
-> **Status:** Phases 1–5 ✅ Production-verified (2026-02-22) · Phase 6 ❌ Deferred
+> **Status:** Phases 1–5 ✅ Production-verified (2026-02-22) · Complete
 
 ## Problem Statement
 
@@ -66,15 +66,13 @@ With logpare, this compresses to:
 
 3. **Single shared package.** One `packages/log-consolidation/` module used by both the extension (LM tools) and the MCP server. No duplicate code.
 
-4. **Async worker thread processing.** CPU-bound compression runs on an async worker thread (`await compressInWorker(lines)`) to keep the extension host and MCP server responsive for other tool calls. Falls back to inline processing on failure.
+4. **File type allowlist.** Only files with known log-bearing extensions get automatic compression via `file_read`. Code files (.ts, .js, .md, etc.) continue using the existing symbolic compression system.
 
-5. **File type allowlist.** Only files with known log-bearing extensions get automatic compression via `file_read`. Code files (.ts, .js, .md, etc.) continue using the existing symbolic compression system.
+5. **Composable filter layering.** New parameters on existing tools (not new tools) allow Copilot to progressively navigate into compressed log data — by template ID, severity, time range, duration threshold, correlation ID, stack frame toggle, or pattern. All filters combine with AND logic.
 
-6. **Composable filter layering.** New parameters on existing tools (not new tools) allow Copilot to progressively navigate into compressed log data — by template ID, severity, time range, duration threshold, correlation ID, stack frame toggle, or pattern. All filters combine with AND logic.
+6. **Log entry boundary detection.** A pre-processing step recognizes multi-line log entries (JSON dumps, multi-line messages) by detecting timestamp/severity prefixes at line starts. Continuation lines are grouped with their parent entry before logpare processes them, fixing the root cause of junk templates like `},` and `<*>,`.
 
-7. **Log entry boundary detection.** A pre-processing step recognizes multi-line log entries (JSON dumps, multi-line messages) by detecting timestamp/severity prefixes at line starts. Continuation lines are grouped with their parent entry before logpare processes them, fixing the root cause of junk templates like `},` and `<*>,`.
-
-8. **Custom logpare strategy.** Extended pattern set on top of logpare's defaults to improve template quality for VS Code logs: extension IDs, semantic versions, process/thread IDs, memory sizes, session timestamps.
+7. **Custom logpare strategy.** Extended pattern set on top of logpare's defaults to improve template quality for VS Code logs: extension IDs, semantic versions, process/thread IDs, memory sizes, session timestamps.
 
 ---
 
@@ -95,8 +93,6 @@ packages/
         ├── boundary.ts       # Log entry boundary detector (multi-line grouping)
         ├── strategy.ts       # Custom logpare strategy (extended patterns)
         ├── filters.ts        # Composable filter functions
-        ├── worker.ts         # Worker thread entry point
-        ├── worker-pool.ts    # Worker thread pool manager
         ├── types.ts          # Shared types and interfaces
         └── format.ts         # Output formatting (summary, detail views)
 ```
@@ -384,34 +380,6 @@ The `logFormat` parameter is **removed** from all tools. Compression is always a
 
 ---
 
-### Worker Thread Architecture (Async)
-
-Both the extension host and MCP server are single-threaded JavaScript runtimes. Logpare's Drain algorithm processes ~10K lines in ~145ms (demo result), but larger files (100K+ lines) could block the event loop significantly. The worker model keeps the main thread responsive:
-
-```
-┌─────────────────────────────┐
-│  Main Thread                │
-│  (Extension / MCP Server)   │
-│                             │
-│  await compressInWorker()   │
-│     ↓               ↑      │
-│  postMessage(data) ────────►│  Worker Thread
-│  onmessage(result) ◄───────│  (runs logpare)
-│                             │
-│  Pool: 1-2 async workers    │
-│  Promise-based return       │
-│  Inline fallback on failure │
-└─────────────────────────────┘
-```
-
-- **Async model:** `await compressInWorker(lines)` returns a Promise. Main thread continues handling other tool calls while logpare runs.
-- **Pool size:** 1-2 workers (configurable via settings)
-- **Timeout:** 10 seconds per compression call (configurable)
-- **Fallback:** If worker fails or times out, runs logpare inline on main thread
-- **Size guard:** Files > 50MB are streamed through the worker in chunks
-
----
-
 ### File Type Allowlist
 
 For the `file_read` MCP tool, automatic log compression is applied only to files with these extensions:
@@ -538,18 +506,7 @@ New extension settings in `package.json`:
     "default": 3000,
     "description": "Maximum token count for compressed log output. Lower values produce more compressed overviews."
   },
-  "devtools.logCompression.workerThreads": {
-    "type": "number",
-    "default": 1,
-    "minimum": 0,
-    "maximum": 4,
-    "description": "Number of worker threads for log compression. 0 disables worker threads (inline processing)."
-  },
-  "devtools.logCompression.maxFileSize": {
-    "type": "number",
-    "default": 52428800,
-    "description": "Maximum file size in bytes for log compression (default: 50MB). Larger files are processed in chunks."
-  }
+
 }
 ```
 
@@ -667,26 +624,6 @@ New extension settings in `package.json`:
 - ✅ Line range windowing — lines 1-50 → 93% reduction
 - ✅ Code files (`.ts`) still use symbolic extraction (unaffected)
 
-### Phase 6: Worker Thread Support ❌ (Deferred)
-
-> **Status:** Deferred. Inline compression is fast enough for current workloads (18ms–145ms). Will revisit if 100K+ line files become common.
-
-**Goal:** Move compression off the main thread.
-
-**Tasks:**
-1. Create `worker.ts` entry point that runs logpare in a worker thread
-2. Create `worker-pool.ts` for pool management
-3. Wire up the engine to use worker pool with inline fallback
-4. Add timeout and error handling
-5. Add extension settings for pool size and timeout
-6. Handle large files (>50MB) with chunked processing
-
-**Testing:**
-- Verify compression still works correctly via worker
-- Verify fallback to inline when worker fails
-- Performance test with large log files
-- Verify extension host stays responsive during compression
-
 ---
 
 ## Resolved Decisions (From Demo & Discussion)
@@ -697,25 +634,22 @@ New extension settings in `package.json`:
 ### 2. Drill-Down Interface
 **Decision:** Composable filter layering. All existing filters (pattern, limit, afterLine, beforeLine, lineLimit) preserved. New filters (templateId, severity, timeRange, minDuration, correlationId, includeStackFrames) added as composable dimensions. All combine with AND logic.
 
-### 3. Worker Thread Model
-**Decision:** Async workers. `await compressInWorker(lines)` returns a Promise, keeping the main thread responsive. Inline fallback on failure.
-
-### 4. Multi-Line Log Entry Noise
+### 3. Multi-Line Log Entry Noise
 **Decision:** Log entry boundary detector. Pre-processing step recognizes timestamp/severity header patterns and groups continuation lines with their parent entry. Fixes JSON dumps, multi-line errors, and all other multi-line content at the source.
 
-### 5. Custom Logpare Strategy
+### 4. Custom Logpare Strategy
 **Decision:** Extended pattern set — 5 additional patterns (extensionId, semver, processId, memorySize, logSessionId) on top of logpare's 12 defaults. HTTP methods and channel names are NOT wildcardized (preserved as meaningful tokens).
 
-### 6. SQLite
+### 5. SQLite
 **Decision:** Deferred. In-memory logpare results are fast enough (~145ms for 10K lines). SQLite could be a future enhancement for cross-session querying if the need arises.
 
-### 7. Time Range Parsing
+### 6. Time Range Parsing
 **Decision:** Short form: `HH:MM-HH:MM` or `HH:MM:SS-HH:MM:SS`. Parse timestamps from log lines to enable temporal filtering.
 
-### 8. Template Stability Across Calls
+### 7. Template Stability Across Calls
 Logpare assigns template IDs sequentially. As long as the same input is processed, IDs are stable. **Risk:** If new log lines are written between calls, IDs could shift. **Mitigation:** Cache the last compression result per source (channel, terminal, file) with a content hash for staleness detection.
 
-### 9. Filter vs Compression Order
+### 8. Filter vs Compression Order
 **Decision:** Filter first (existing params like pattern, afterLine), then compress. This preserves existing behavior and produces the most useful results.
 
 ## Open Questions
@@ -752,8 +686,6 @@ SQLite could enable complex queries across multiple log files and sessions (e.g.
 | `packages/log-consolidation/src/filters.ts` | Composable filter functions |
 | `packages/log-consolidation/src/types.ts` | Shared types |
 | `packages/log-consolidation/src/format.ts` | Output formatting |
-| `packages/log-consolidation/src/worker.ts` | Worker thread entry (Phase 6) |
-| `packages/log-consolidation/src/worker-pool.ts` | Worker pool manager (Phase 6) |
 
 ### Modified Files
 
@@ -783,7 +715,7 @@ SQLite could enable complex queries across multiple log files and sessions (e.g.
 1. **No tool returns raw uncompressed log data** unless the data naturally fits within the token limit
 2. **Copilot can navigate any log source** in 2-3 calls: overview → drill-down → detail
 3. **Zero duplicated compression code** — everything uses the shared package
-4. **Extension host stays responsive** during large log compression (async worker threads)
+4. **Extension host stays responsive** — inline compression is fast enough (18ms–145ms) for all practical workloads
 5. **Existing tool behavior preserved** for non-log file types
 6. **Token limit configurable** via extension settings
 7. **All tests pass** at each phase before moving to the next
