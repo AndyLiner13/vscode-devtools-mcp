@@ -450,6 +450,10 @@ export class SingleTerminalController {
    * Send one or more key sequences to a terminal for interactive TUI navigation.
    * Returns immediately with current terminal state (no waiting for completion).
    * Keys can be friendly names ("ArrowUp", "Enter", "Ctrl+C") or raw characters.
+   *
+   * Safety: If keys contains Enter AND other keys, Enter is stripped to force
+   * a "navigate → verify → confirm" pattern. Copilot must send Enter separately
+   * after confirming the visual state matches intent.
    */
   async sendKeys(keys: string[], name?: string, timeoutMs?: number): Promise<TerminalRunResult> {
     const terminalName = name ?? DEFAULT_TERMINAL_NAME;
@@ -462,6 +466,18 @@ export class SingleTerminalController {
       );
     }
 
+    // Safety: Strip Enter if keys contains Enter AND other keys
+    // This forces a two-step pattern: navigate → verify visual state → confirm with separate Enter
+    const enterKeys = ['Enter', '\r'];
+    const hasEnter = keys.some(k => enterKeys.includes(k));
+    const hasOtherKeys = keys.some(k => !enterKeys.includes(k));
+    const enterRevoked = hasEnter && hasOtherKeys;
+
+    // Filter out Enter keys if revoked
+    const keysToSend = enterRevoked
+      ? keys.filter(k => !enterKeys.includes(k))
+      : keys;
+
     // Snapshot current output and reset state before sending keys
     state.outputSnapshotIndex = state.output.length;
     state.status = 'running';
@@ -471,20 +487,36 @@ export class SingleTerminalController {
 
     state.terminal.show(true);
 
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
+    for (let i = 0; i < keysToSend.length; i++) {
+      const key = keysToSend[i];
       const sequence = KEY_SEQUENCES[key] ?? key;
       state.terminal.sendText(sequence, false);
 
       // Brief delay between keys to let TUI re-render
-      if (i < keys.length - 1) {
+      if (i < keysToSend.length - 1) {
         await new Promise(resolve => setTimeout(resolve, KEY_SETTLE_MS));
       }
     }
 
     // Wait for next completion, prompt, or timeout (same as sendInput)
     const result = await this.waitForResult(state, timeout);
-    return this.withProcessSummary(result);
+    const finalResult = this.withProcessSummary(result);
+
+    // Prepend notification if Enter was revoked
+    if (enterRevoked) {
+      const notification =
+        `⚠️ ENTER KEY REVOKED — Review before confirming\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `Original keys: [${keys.join(', ')}]\n` +
+        `Sent keys:     [${keysToSend.join(', ')}]\n\n` +
+        `The Enter key was removed to let you verify the visual state below\n` +
+        `matches your intended selection. If correct, send keys: ["Enter"]\n` +
+        `to confirm and submit your choice.\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      finalResult.output = notification + finalResult.output;
+    }
+
+    return finalResult;
   }
 
   /**
