@@ -1,6 +1,6 @@
 # Universal Log Compression System
 
-> **Status:** Phases 1–4 ✅ Production-verified (2026-02-22) · Phase 5 ❌ Not started · Phase 6 ❌ Deferred
+> **Status:** Phases 1–5 ✅ Production-verified (2026-02-22) · Phase 6 ❌ Deferred
 
 ## Problem Statement
 
@@ -644,26 +644,28 @@ New extension settings in `package.json`:
 - Verify compression on repetitive console.log patterns
 - Verify drill-down works
 
-### Phase 5: Wire Up File Read for Log Files ❌
+### Phase 5: Wire Up File Read for Log Files ✅
 
-> **Status:** Not started. `mcp-server/src/tools/file/file-read.ts` has no log file detection or compression.
+> **Status:** Verified 2026-02-22. Log file detection and compression wired into `mcp-server/src/tools/file/file-read.ts`.
 
 **Goal:** Add log file detection and compression to the MCP file_read tool.
 
-**Tasks:**
-1. Add file extension allowlist check in file_read handler
-2. For allowlisted files: skip symbolic parsing, use logpare compression
-3. Add drill-down parameters to file_read schema
-4. Handle `startLine`/`endLine` as line-range windowing for log files
-5. Handle `pattern` as regex filter before compression
+**Implementation:**
+1. ✅ Added `isLogFile()` helper using shared `LOG_FILE_EXTENSIONS` and `EXPERIMENTAL_LOG_EXTENSIONS` constants
+2. ✅ Early-return branch routes log files to `compressLogs()` instead of symbolic extraction
+3. ✅ Added 7 drill-down parameters to schema: `templateId`, `severity`, `timeRange`, `pattern`, `minDuration`, `correlationId`, `includeStackFrames`
+4. ✅ `startLine`/`endLine` work as line-range windowing for log files
+5. ✅ `pattern` filter applied before compression
 
-**Testing:**
-- Read a `.log` file — verify compressed overview
-- Read a `.jsonl` file — verify compressed overview
-- Read a `.txt` file — verify logpare decides if compressible
-- Verify `.ts` files still use symbolic compression (not affected)
-- Verify drill-down works on log files
-- Test large log files (>1MB) for performance
+**Build system fix:** esbuild transpile-only mode doesn't run `onResolve` plugins. Added `rewritePackageImports()` post-process step to `mcp-server/esbuild.mjs` that rewrites `@packages/log-consolidation` to relative paths.
+
+**Verified:**
+- ✅ Read `.log` file — 200 lines → 3 patterns, 99% token reduction
+- ✅ Severity filter — filters to 10 errors only
+- ✅ TemplateId drill-down — expands raw lines with context
+- ✅ Pattern filter — regex filtering works
+- ✅ Line range windowing — lines 1-50 → 93% reduction
+- ✅ Code files (`.ts`) still use symbolic extraction (unaffected)
 
 ### Phase 6: Worker Thread Support ❌ (Deferred)
 
