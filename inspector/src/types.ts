@@ -75,6 +75,7 @@ export interface ExecutionRecord {
   comment: string;
   priority: number;
   durationMs: number;
+  isStale: boolean;
 }
 
 export interface InspectorStorage {

@@ -75,6 +75,16 @@ function getMcpServerId(): string {
 /** Flag to prevent MCP shutdown during hot-reload */
 let hotReloadInProgress = false;
 
+// ── Inspector Staleness ──────────────────────────────────────────────────
+
+const INSPECTOR_BASE_URL = 'http://localhost:6275';
+
+function markInspectorRecordsStale(): void {
+  fetch(`${INSPECTOR_BASE_URL}/api/records/mark-stale`, { method: 'POST' }).catch(() => {
+    // Inspector may not be running — that's fine
+  });
+}
+
 /** Workspace storage path for persisting user-data, set during registerHostHandlers */
 let hostStoragePath: string | null = null;
 
@@ -1476,6 +1486,9 @@ export function registerHostHandlers(
           await hotReloadService.commitHash('ext', extChange.currentHash);
           result.extRebuilt = true;
 
+          // Mark flagged inspector records as stale — extension code changed
+          markInspectorRecordsStale();
+
           // Capture workspace before stopClient clears it
           const workspace = currentClientWorkspace;
 
@@ -1554,6 +1567,9 @@ export function registerHostHandlers(
         await hotReloadService.commitHash('mcp', mcpChange.currentHash);
         result.mcpRebuilt = true;
         expectMcpRestart();
+
+        // Mark flagged inspector records as stale — tool code changed
+        markInspectorRecordsStale();
       }
     }
     } finally {

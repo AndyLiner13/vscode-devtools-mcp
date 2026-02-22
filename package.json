@@ -848,6 +848,31 @@
             }
           }
         }
+      },
+      {
+        "name": "inspector_read",
+        "displayName": "Inspector Read",
+        "toolReferenceName": "inspector_read",
+        "icon": "$(checklist)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Read flagged MCP Inspector test records to understand tool failures",
+        "modelDescription": "Read MCP Inspector test records that have been flagged (thumbs-down) by the user. Use this tool to understand what went wrong with specific MCP tool executions and how to fix them.\n\n**TWO MODES:**\n\n**List Mode** (toolName only): Returns a table of all flagged, non-stale records for the specified tool. Each row shows the record ID, description/comment, error status, last run time, and duration. Stale records (code changed since last run but not yet re-executed) are excluded — they need to be re-run in the Inspector first.\n\n**Detail Mode** (toolName + recordId): Returns the full input JSON and output text for a specific record. Use this after reviewing the list to drill into a specific issue.\n\n**WORKFLOW:**\n1. Call with just `toolName` to see all current flagged issues\n2. Review the descriptions to identify which issues are relevant\n3. Call again with `recordId` to see the full input/output\n4. Fix the underlying code\n5. User re-runs in Inspector to verify the fix\n\n**STALENESS:**\nWhen code changes trigger a hot reload, flagged records become stale and are hidden from this tool. They only reappear after the user re-runs them in the Inspector, confirming the issue still exists with the new code.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "toolName": {
+              "type": "string",
+              "description": "The MCP tool name to check for flagged issues (e.g., 'codebase_search', 'file_read')."
+            },
+            "recordId": {
+              "type": "string",
+              "description": "Specific record ID to retrieve full input/output details. Omit to list all flagged issues."
+            }
+          },
+          "required": [
+            "toolName"
+          ]
+        }
       }
     ]
   },

@@ -287,7 +287,23 @@ export async function activate(context: vscode.ExtensionContext) {
           }
           if (connected) {
             updateStatusBar('connected');
-            log('Client window connected');
+            log('Client window connected — ensuring MCP server is running');
+            tetheredAction = true;
+            void vscode.commands.executeCommand(
+              'workbench.mcp.startServer',
+              'devtools.mcp-server',
+              { waitForLiveTools: true },
+            ).then(
+              () => {
+                log('Tethered lifecycle: MCP server started/confirmed running');
+                tetheredAction = false;
+              },
+              (err: unknown) => {
+                const msg = err instanceof Error ? err.message : String(err);
+                log('Tethered lifecycle: MCP startServer failed: ' + msg);
+                tetheredAction = false;
+              },
+            );
           } else {
             updateStatusBar('disconnected');
             log('Client window disconnected — stopping MCP server via tethered lifecycle');
@@ -307,7 +323,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }),
       );
 
-      // When MCP is toggled, start/stop client window to match
+      // When MCP is toggled, start/stop client window + MCP server together
       context.subscriptions.push(
         mcpProvider.onDidToggle((enabled: boolean) => {
           if (tetheredAction) {
@@ -315,13 +331,22 @@ export async function activate(context: vscode.ExtensionContext) {
           }
           log(`MCP server toggled: ${enabled ? 'enabled' : 'disabled'}`);
           if (enabled) {
-            // MCP turned on → start client window
-            void startClientWindow().then((ok: boolean) => {
-              if (!ok) {
-                log('Failed to start client window after MCP enable');
-                updateStatusBar('disconnected');
-              }
-            });
+            // MCP turned on → start both client window and MCP server
+            void Promise.all([
+              startClientWindow().then((ok: boolean) => {
+                if (!ok) {
+                  log('Failed to start client window after MCP enable');
+                  updateStatusBar('disconnected');
+                }
+              }),
+              vscode.commands.executeCommand('workbench.mcp.startServer', 'devtools.mcp-server').then(
+                () => log('MCP server started after toggle on'),
+                (err: unknown) => {
+                  const msg = err instanceof Error ? err.message : String(err);
+                  log('MCP server start after toggle on failed: ' + msg);
+                },
+              ),
+            ]);
           } else {
             // MCP turned off → stop client window
             stopClientWindow();
@@ -330,18 +355,38 @@ export async function activate(context: vscode.ExtensionContext) {
         }),
       );
 
-      // Auto-start: spawn client window immediately during activation
+      // Auto-start: spawn client window and MCP server together.
+      // They are a single tethered entity — one cannot exist without the other.
       updateStatusBar('disconnected');
-      log('Auto-starting client window...');
-      void startClientWindow().then((ok: boolean) => {
-        if (ok) {
-          log('Client window auto-started successfully');
-          // MCP provider is already enabled by default — status bar updated by onClientStateChanged
-        } else {
-          log('Client window auto-start failed — MCP server stays enabled, client will start on first tool call');
-          updateStatusBar('disconnected');
+      log('Auto-starting client window and MCP server...');
+
+      const startMcpServer = async (): Promise<void> => {
+        // Small delay to let VS Code's MCP service discover the provider
+        await new Promise<void>(r => setTimeout(r, 500));
+        try {
+          await vscode.commands.executeCommand(
+            'workbench.mcp.startServer',
+            'devtools.mcp-server',
+            { waitForLiveTools: true },
+          );
+          log('MCP server auto-started successfully');
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          log('MCP server auto-start failed: ' + msg);
         }
-      });
+      };
+
+      void Promise.all([
+        startClientWindow().then((ok: boolean) => {
+          if (ok) {
+            log('Client window auto-started successfully');
+          } else {
+            log('Client window auto-start failed');
+            updateStatusBar('disconnected');
+          }
+        }),
+        startMcpServer(),
+      ]);
     } else {
       log('Loading client-handlers module...');
       // eslint-disable-next-line @typescript-eslint/no-require-imports

@@ -18,6 +18,7 @@ interface DbRow {
   comment: string;
   priority: number;
   duration_ms: number;
+  is_stale: number;
 }
 
 interface SqliteStatement {
@@ -47,6 +48,7 @@ function rowToApi(row: DbRow): Record<string, unknown> {
     comment: row.comment,
     priority: row.priority,
     durationMs: row.duration_ms,
+    isStale: row.is_stale === 1,
   };
 }
 
@@ -94,6 +96,13 @@ export function inspectorDbPlugin(): Plugin {
         )
       `);
       db.exec('CREATE INDEX IF NOT EXISTS idx_tool ON records(tool_name)');
+
+      // Migration: add is_stale column for staleness tracking after hot reloads
+      try {
+        db.exec('ALTER TABLE records ADD COLUMN is_stale INTEGER NOT NULL DEFAULT 0');
+      } catch {
+        // Column already exists
+      }
 
       const sseClients = new Set<ServerResponse>();
 
@@ -219,7 +228,7 @@ export function inspectorDbPlugin(): Plugin {
           const body = await parseBody(req);
           const recordId = decodeURIComponent(outputMatch[1]);
           db.prepare(
-            'UPDATE records SET output_json = ?, is_error = ?, duration_ms = ?, last_run_at = ? WHERE id = ?',
+            'UPDATE records SET output_json = ?, is_error = ?, duration_ms = ?, last_run_at = ?, is_stale = 0 WHERE id = ?',
           ).run(
             JSON.stringify(body.output),
             body.isError ? 1 : 0,
@@ -239,6 +248,27 @@ export function inspectorDbPlugin(): Plugin {
           const tool = url.searchParams.get('tool') ?? '';
           db.prepare('DELETE FROM records WHERE id = ?').run(recordId);
           broadcast(tool);
+          json(res, { ok: true });
+          return;
+        }
+
+        // GET /api/records/:id — single record by ID
+        const singleMatch = pathname.match(/^\/api\/records\/([^/]+)$/);
+        if (singleMatch && method === 'GET') {
+          const recordId = decodeURIComponent(singleMatch[1]);
+          const row = db.prepare('SELECT * FROM records WHERE id = ?').get(recordId);
+          if (row) {
+            json(res, rowToApi(row));
+          } else {
+            json(res, { error: 'Record not found' }, 404);
+          }
+          return;
+        }
+
+        // POST /api/records/mark-stale — flag all bad-rated records as stale
+        if (pathname === '/api/records/mark-stale' && method === 'POST') {
+          db.prepare('UPDATE records SET is_stale = 1 WHERE rating = ?').run('bad');
+          broadcast('*');
           json(res, { ok: true });
           return;
         }
