@@ -413,9 +413,9 @@ function compressTargetContent(
     }
   }
 
-  // No children: skeleton was the only fallback
+  // No children and nothing collapsible — return full content (a stub is useless here)
   if (!compressionLabel && !hasChildren) {
-    compressionLabel = 'auto-skeleton';
+    return { output: maxOutput, compressed: false, label: null };
   }
 
   return {
