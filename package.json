@@ -854,7 +854,7 @@
   "scripts": {
     "compile": "node esbuild.js",
     "mcp:build": "cd mcp-server && npm run build && tsc --noEmit",
-    "mcp:inspect": "npx @modelcontextprotocol/inspector node mcp-server/build/src/index.js --client-workspace client-workspace --extension .",
+    "mcp:inspect": "node mcp-server/scripts/inspect.mjs",
     "build": "vsce package --allow-star-activation",
     "uninstall": "code --uninstall-extension AndyLiner.vscode-devtools || echo Extension not installed, skipping",
     "install:vsix": "node -e \"var p=require('./package.json');require('child_process').execSync('code --install-extension '+p.name+'-'+p.version+'.vsix --force',{stdio:'inherit'})\"",

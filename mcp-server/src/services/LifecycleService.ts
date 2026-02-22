@@ -100,7 +100,7 @@ class LifecycleService {
   async handleHotReload(): Promise<void> {
     logger('[Lifecycle] Hot-reload — requesting Host rebuild…');
 
-    if (!this._clientWorkspace || !this._extensionPath) {
+    if (this._clientWorkspace === undefined || this._extensionPath === undefined) {
       throw new Error('[Lifecycle] Not initialized — call init() before handleHotReload()');
     }
 
@@ -250,7 +250,7 @@ class LifecycleService {
   private async doConnect(options?: { forceRestart?: boolean }): Promise<void> {
     logger('[Lifecycle] Connecting — calling mcpReady()…');
 
-    if (!this._clientWorkspace || !this._extensionPath) {
+    if (this._clientWorkspace === undefined || this._extensionPath === undefined) {
       throw new Error('[Lifecycle] Not initialized — call init() before ensureConnection()');
     }
 
@@ -283,7 +283,7 @@ class LifecycleService {
   private async doRecoverClientConnection(): Promise<void> {
     logger('[Lifecycle] Client pipe recovery requested — restarting Client…');
 
-    if (!this._clientWorkspace || !this._extensionPath) {
+    if (this._clientWorkspace === undefined || this._extensionPath === undefined) {
       throw new Error('[Lifecycle] Not initialized — call init() before recoverClientConnection()');
     }
 
