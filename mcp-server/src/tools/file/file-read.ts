@@ -106,6 +106,14 @@ function getMaxSymbolNesting(symbols: ReadonlyArray<SymbolLike>, current = 0): n
   return max;
 }
 
+/** Rendering depth of a symbol's subtree (0 = leaf, 1 = has children, etc). */
+function getSymbolTreeDepth(symbol: SymbolLike): number {
+  if (!symbol.children || symbol.children.length === 0) {
+    return 0;
+  }
+  return getMaxSymbolNesting([symbol]);
+}
+
 interface SkeletonPiece {
   startLine: number;
   endLine: number;
@@ -302,7 +310,7 @@ function compressTargetSkeleton(
   symbol: FileSymbol,
   requestedMaxNesting: number,
 ): CompressionResult {
-  const maxNesting = Math.min(requestedMaxNesting, getMaxSymbolNesting(symbol.children ?? []));
+  const maxNesting = Math.min(requestedMaxNesting, getSymbolTreeDepth(symbol));
 
   const fullOutput = renderTargetSkeletonAtLevel(symbol, maxNesting);
   if (fullOutput.length <= OUTPUT_CHAR_LIMIT) {
@@ -336,11 +344,14 @@ function compressTargetSkeleton(
 }
 
 /**
- * Compress target content output. Tries raw content first, then progressively
- * falls back to skeleton mode with incremental nesting.
+ * Compress target content output using bottom-up incremental expansion,
+ * following the same approach as codebase_map.
  *
- * For non-recursive content mode with child placeholders, this acts as a middle
- * ground between raw content and full skeleton.
+ * Detail levels (least → most):
+ *   Phase 1: Skeleton nesting expansion (0 → max)
+ *   Phase 2: Content nesting expansion (0 → contentMaxNesting)
+ *           recursive=true  → contentMaxNesting = max symbol nesting
+ *           recursive=false → contentMaxNesting = 0 (children as stubs)
  */
 function compressTargetContent(
   symbol: FileSymbol,
@@ -351,34 +362,66 @@ function compressTargetContent(
   const startLine = symbol.range.startLine;
   const endLine = symbol.range.endLine;
   const hasChildren = symbol.children && symbol.children.length > 0;
+  const maxNesting = getSymbolTreeDepth(symbol);
+  const contentMaxNesting = recursive ? maxNesting : 0;
+  const header = `[${startLine === endLine ? `${startLine}` : `${startLine}-${endLine}`}] ${symbol.kind} ${symbol.name}\n`;
 
-  // Level 1: Try raw content (recursive=true or no children)
-  if (recursive || !hasChildren) {
-    const numbered = addLineNumbers(getContentSlice(allLines, startLine, endLine), startLine);
-    const header = `[${startLine === endLine ? `${startLine}` : `${startLine}-${endLine}`}] ${symbol.kind} ${symbol.name}\n`;
-    const fullOutput = header + numbered;
-    if (fullOutput.length <= OUTPUT_CHAR_LIMIT) {
-      return { output: fullOutput, compressed: false, label: null };
+  // Quick check: does the maximum-detail output fit?
+  const maxContent = hasChildren
+    ? formatContentAtNesting(allLines, symbol, startLine, endLine, contentMaxNesting)
+    : addLineNumbers(getContentSlice(allLines, startLine, endLine), startLine);
+  const maxOutput = header + maxContent;
+  if (maxOutput.length <= OUTPUT_CHAR_LIMIT) {
+    return { output: maxOutput, compressed: false, label: null };
+  }
+
+  // Compression needed — bottom-up incremental expansion
+  let bestOutput = '';
+  let compressionLabel = '';
+
+  // Phase 1: Skeleton nesting expansion (nesting 0 → max)
+  for (let n = 0; n <= maxNesting; n++) {
+    const candidate = renderTargetSkeletonAtLevel(symbol, n);
+    if (candidate.length > OUTPUT_CHAR_LIMIT) {
+      if (n === 0) {
+        return {
+          output: candidate,
+          compressed: true,
+          label: `top-level only (${symbol.children?.length ?? 0} children)`,
+        };
+      }
+      compressionLabel = `symbol nesting ${n - 1}`;
+      break;
+    }
+    bestOutput = candidate;
+  }
+
+  // Phase 2: Content nesting expansion (nesting 0 → contentMaxNesting)
+  if (!compressionLabel && hasChildren) {
+    for (let n = 0; n <= contentMaxNesting; n++) {
+      const content = formatContentAtNesting(allLines, symbol, startLine, endLine, n);
+      const candidate = header + content;
+      if (candidate.length > OUTPUT_CHAR_LIMIT) {
+        if (n === 0) {
+          compressionLabel = 'auto-skeleton';
+        } else {
+          compressionLabel = `content nesting ${n - 1}`;
+        }
+        break;
+      }
+      bestOutput = candidate;
     }
   }
 
-  // Level 2: Try content with child placeholders (shows raw code between children)
-  if (hasChildren) {
-    const formatted = formatContentWithPlaceholders(allLines, symbol, startLine, endLine);
-    const header = `[${startLine === endLine ? `${startLine}` : `${startLine}-${endLine}`}] ${symbol.kind} ${symbol.name}\n`;
-    const placeholderOutput = header + formatted;
-    if (placeholderOutput.length <= OUTPUT_CHAR_LIMIT) {
-      return { output: placeholderOutput, compressed: true, label: 'children collapsed to stubs' };
-    }
+  // No children: skeleton was the only fallback
+  if (!compressionLabel && !hasChildren) {
+    compressionLabel = 'auto-skeleton';
   }
 
-  // Level 3: Fall back to skeleton with incremental nesting
-  const maxNesting = getMaxSymbolNesting(symbol.children ?? []);
-  const skeletonResult = compressTargetSkeleton(symbol, maxNesting);
   return {
-    output: skeletonResult.output,
-    compressed: true,
-    label: `auto-skeleton${skeletonResult.label ? `, ${skeletonResult.label}` : ''}`,
+    output: bestOutput,
+    compressed: !!compressionLabel,
+    label: compressionLabel || null,
   };
 }
 
@@ -454,14 +497,20 @@ function compressStructuredRangeOutput(
 }
 
 /**
- * Format content with child placeholders and line numbers.
+ * Format symbol content with nesting-controlled child expansion.
+ * Raw code between children is always shown. Children at depths beyond
+ * maxChildNesting are collapsed to skeleton stubs.
  * All line ranges are 1-indexed.
+ *
+ * @param maxChildNesting 0=all children as stubs, 1=children expanded/grandchildren stubs, etc.
  */
-function formatContentWithPlaceholders(
+function formatContentAtNesting(
   allLines: string[],
   symbol: SymbolLike,
   startLine: number,
   endLine: number,
+  maxChildNesting: number,
+  currentDepth = 0,
 ): string {
   if (!symbol.children || symbol.children.length === 0) {
     return addLineNumbers(getContentSlice(allLines, startLine, endLine), startLine);
@@ -482,10 +531,17 @@ function formatContentWithPlaceholders(
     if (child) {
       if (!emitted.has(child)) {
         emitted.add(child);
-        const childRange = child.range.startLine === child.range.endLine
-          ? `${child.range.startLine}`
-          : `${child.range.startLine}-${child.range.endLine}`;
-        result.push(`[${childRange}] ${child.kind} ${child.name}`);
+        if (currentDepth < maxChildNesting) {
+          result.push(formatContentAtNesting(
+            allLines, child, child.range.startLine, child.range.endLine,
+            maxChildNesting, currentDepth + 1,
+          ));
+        } else {
+          const childRange = child.range.startLine === child.range.endLine
+            ? `${child.range.startLine}`
+            : `${child.range.startLine}-${child.range.endLine}`;
+          result.push(`[${childRange}] ${child.kind} ${child.name}`);
+        }
       }
     } else {
       result.push(`[${lineNum}] ${allLines[lineNum - 1] ?? ''}`);
@@ -1149,7 +1205,7 @@ export const read = defineTool({
           // Focus the symbol range in the client editor (convert 1-indexed to 0-indexed)
           fileHighlightReadRange(filePath, startLine - 1, endLine - 1);
 
-          const maxNesting = recursive ? getMaxSymbolNesting(symbol.children ?? []) : 0;
+          const maxNesting = recursive ? getSymbolTreeDepth(symbol) : 0;
           const result = compressTargetSkeleton(symbol, maxNesting);
           if (result.compressed && result.label) {
             response.appendResponseLine(`Output compressed: ${result.label}.\n`);
