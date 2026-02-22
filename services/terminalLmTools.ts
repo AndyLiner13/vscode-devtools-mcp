@@ -119,7 +119,9 @@ function formatTerminalResult(result: TerminalRunResult, limit?: number, pattern
 
     if (pattern) {
         try {
-            const regex = new RegExp(pattern, 'gi');
+            // Don't use 'g' flag — it causes test() to maintain state (lastIndex)
+            // which breaks filtering when the same regex tests multiple lines
+            const regex = new RegExp(pattern, 'i');
             const outputLines = output.split('\n');
             const matchingLines = outputLines.filter(line => regex.test(line));
             output = matchingLines.join('\n');

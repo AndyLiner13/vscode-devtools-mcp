@@ -17,7 +17,8 @@ import type { BrowserService } from './browser';
 import * as vscode from 'vscode';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { consolidateText } from '@packages/log-consolidation';
+import { compressLogs } from '@packages/log-consolidation';
+import type { FilterOptions, Severity } from '@packages/log-consolidation';
 
 // ── Shared State ─────────────────────────────────────────────────────────────
 
@@ -38,19 +39,15 @@ export function getBrowserService(): BrowserService | null {
  * self-heal when activeBrowserService is null (e.g., after Host reload).
  */
 export function setReconnectCdpCallback(callback: () => Promise<boolean>): void {
-    console.log('[clientDevTools] setReconnectCdpCallback: REGISTERING callback');
     reconnectCdpCallback = callback;
 }
 
 async function requireBrowserService(): Promise<BrowserService> {
-    console.log(`[clientDevTools] requireBrowserService: activeBrowserService=${activeBrowserService ? 'SET' : 'NULL'}, reconnectCdpCallback=${reconnectCdpCallback ? 'SET' : 'NULL'}`);
     if (activeBrowserService) return activeBrowserService;
 
     // Lazy reconnection: try to restore CDP from a persisted session
     if (reconnectCdpCallback) {
-        console.log('[clientDevTools] requireBrowserService: Invoking reconnectCdpCallback...');
         const reconnected = await reconnectCdpCallback();
-        console.log(`[clientDevTools] requireBrowserService: reconnectCdpCallback returned ${reconnected}, activeBrowserService=${activeBrowserService ? 'SET' : 'NULL'}`);
         if (reconnected && activeBrowserService) {
             return activeBrowserService;
         }
@@ -439,6 +436,12 @@ interface ReadConsoleInput {
     stackDepth?: number;
     msgid?: number;
     response_format?: string;
+    templateId?: string;
+    severity?: Severity;
+    timeRange?: string;
+    minDuration?: string;
+    correlationId?: string;
+    includeStackFrames?: boolean;
 }
 
 const readConsoleTool = createClientTool<ReadConsoleInput>({
@@ -461,6 +464,12 @@ const readConsoleTool = createClientTool<ReadConsoleInput>({
             stackDepth = 1,
             msgid,
             response_format: format,
+            templateId,
+            severity,
+            timeRange,
+            minDuration,
+            correlationId,
+            includeStackFrames,
         } = input;
 
         // Single message by ID
@@ -561,8 +570,24 @@ const readConsoleTool = createClientTool<ReadConsoleInput>({
             messages: outputMessages,
         };
 
+        // Build drill-down filters
+        const filters: FilterOptions = {};
+        if (templateId) filters.templateId = templateId;
+        if (severity) filters.severity = severity;
+        if (timeRange) filters.timeRange = timeRange;
+        if (minDuration) filters.minDuration = minDuration;
+        if (correlationId) filters.correlationId = correlationId;
+        if (includeStackFrames !== undefined) filters.includeStackFrames = includeStackFrames;
+
         if (format === 'json') {
-            return textResult(JSON.stringify(structuredOutput, null, 2));
+            // Compress JSON output through the full pipeline
+            const raw = JSON.stringify(structuredOutput, null, 2);
+            const hasFilters = Object.keys(filters).length > 0;
+            const result = compressLogs(
+                { text: raw, label: 'Console Messages (JSON)' },
+                hasFilters ? filters : undefined,
+            );
+            return textResult(result.formatted);
         }
 
         // Markdown
@@ -579,7 +604,11 @@ const readConsoleTool = createClientTool<ReadConsoleInput>({
             lines.push(parts.join(' '));
         }
 
-        const compressed = consolidateText(lines.join('\n'), { label: 'Console Messages' });
+        const hasFilters = Object.keys(filters).length > 0;
+        const compressed = compressLogs(
+            { lines, label: 'Console Messages' },
+            hasFilters ? filters : undefined,
+        );
         return textResult(header + '\n\n' + compressed.formatted);
     },
 });

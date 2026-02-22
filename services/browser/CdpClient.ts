@@ -50,6 +50,16 @@ export class CdpClient {
     private _port: number | null = null;
     private disposed = false;
     private eventListeners: CdpMessageListener[] = [];
+    private disconnectCallback: (() => void) | null = null;
+
+    /**
+     * Register a callback that fires when the WebSocket closes unexpectedly
+     * (i.e., not via explicit disconnect() or dispose() calls).
+     * Used by host-handlers to detect client window death instantly.
+     */
+    onDisconnect(callback: () => void): void {
+        this.disconnectCallback = callback;
+    }
 
     get port(): number | null {
         return this._port;
@@ -184,6 +194,7 @@ export class CdpClient {
         this.disposed = true;
         this.disconnect();
         this.eventListeners.length = 0;
+        this.disconnectCallback = null;
     }
 
     // ── Private Helpers ──────────────────────────────────────────────────────
@@ -254,6 +265,11 @@ export class CdpClient {
                 if (this.ws === ws) {
                     console.log('[CdpClient] WebSocket closed');
                     this.ws = null;
+                    // Fire disconnect callback only for unexpected closes
+                    // (not when we called disconnect() or dispose() ourselves)
+                    if (!this.disposed) {
+                        this.disconnectCallback?.();
+                    }
                 }
             });
         });

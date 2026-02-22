@@ -151,7 +151,7 @@
         "icon": "$(output)",
         "canBeReferencedInPrompt": true,
         "userDescription": "Read VS Code output logs from all active sessions — Host and Client (Extension Development Host)",
-        "modelDescription": "Read VS Code output logs from all active sessions. When called without a channel, lists all available output channels organized by session (Host and Client) and category. When called with a channel name, returns log content with optional filtering. If the same channel name exists in both sessions, returns both.\n\n**LISTING CHANNELS (no channel provided):**\nReturns all available output channels grouped by session (Host, Client) and category (Main Logs, Window Logs, Extension Host, Extension Logs, Output Channels).\n\n**READING CHANNEL CONTENT (channel provided):**\n- `session` ('host' | 'client'): Filter to a specific session. Omit for both.\n- `limit` (number): Get the N most recent lines. Default: all lines\n- `pattern` (string): Regex pattern to match against line content (case-insensitive)\n- `afterLine` (number): Only lines after this line number (for incremental reads)\n- `beforeLine` (number): Only lines before this line number\n- `lineLimit` (number): Max characters per line (truncates with '...')\n\n**EXAMPLES:**\n- List all channels from all sessions: {}\n- List only client channels: { session: 'client' }\n- Read extension host logs: { channel: 'exthost' }\n- Read client-only exthost: { channel: 'exthost', session: 'client' }\n- Get last 50 lines: { channel: 'exthost', limit: 50 }\n- Find errors: { channel: 'main', pattern: 'error|exception|failed', limit: 100 }\n\n**USE THIS TOOL when:**\n- User asks about VS Code logs, output, or errors\n- Debugging extension issues in Host or Client windows\n- Looking for specific log messages\n- Monitoring extension host activity\n- Comparing Host vs Client behavior",
+        "modelDescription": "Read VS Code output logs from all active sessions. When called without a channel, lists all available output channels organized by session (Host and Client) and category. When called with a channel name, returns log content with optional filtering. If the same channel name exists in both sessions, returns both.\n\n**LISTING CHANNELS (no channel provided):**\nReturns all available output channels grouped by session (Host, Client) and category (Main Logs, Window Logs, Extension Host, Extension Logs, Output Channels).\n\n**READING CHANNEL CONTENT (channel provided):**\n- `session` ('host' | 'client'): Filter to a specific session. Omit for both.\n- `limit` (number): Get the N most recent lines. Default: all lines\n- `pattern` (string): Regex pattern to match against line content (case-insensitive)\n- `afterLine` (number): Only lines after this line number (for incremental reads)\n- `beforeLine` (number): Only lines before this line number\n- `lineLimit` (number): Max characters per line (truncates with '...')\n\n**DRILL-DOWN PARAMETERS (for exploring compressed log overviews):**\n- `templateId` (string): Show raw lines matching this template ID\n- `severity` ('error' | 'warning' | 'info'): Filter by severity level\n- `timeRange` (string): Time window: 'HH:MM-HH:MM' or 'HH:MM:SS-HH:MM:SS'\n- `minDuration` (string): Show templates with durations >= threshold: '1s', '500ms'\n- `correlationId` (string): Trace a specific request by UUID\n- `includeStackFrames` (boolean): Show/hide stack frame templates. Default: true\n\n**EXAMPLES:**\n- List all channels from all sessions: {}\n- List only client channels: { session: 'client' }\n- Read extension host logs: { channel: 'exthost' }\n- Read client-only exthost: { channel: 'exthost', session: 'client' }\n- Get last 50 lines: { channel: 'exthost', limit: 50 }\n- Find errors: { channel: 'main', pattern: 'error|exception|failed', limit: 100 }\n\n**USE THIS TOOL when:**\n- User asks about VS Code logs, output, or errors\n- Debugging extension issues in Host or Client windows\n- Looking for specific log messages\n- Monitoring extension host activity\n- Comparing Host vs Client behavior",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -186,6 +186,31 @@
             "lineLimit": {
               "type": "number",
               "description": "Max characters per line. Longer lines are truncated with '...'."
+            },
+            "templateId": {
+              "type": "string",
+              "description": "Show raw lines matching this template ID from the compressed overview."
+            },
+            "severity": {
+              "type": "string",
+              "enum": ["error", "warning", "info"],
+              "description": "Filter by severity level."
+            },
+            "timeRange": {
+              "type": "string",
+              "description": "Time window filter: 'HH:MM-HH:MM' or 'HH:MM:SS-HH:MM:SS'."
+            },
+            "minDuration": {
+              "type": "string",
+              "description": "Show templates with durations >= threshold: '1s', '500ms', '100ms'."
+            },
+            "correlationId": {
+              "type": "string",
+              "description": "Trace a specific request by UUID/correlation ID."
+            },
+            "includeStackFrames": {
+              "type": "boolean",
+              "description": "Show/hide stack frame templates. Default: true."
             }
           }
         }
@@ -212,6 +237,31 @@
             "pattern": {
               "type": "string",
               "description": "Regex pattern to filter output lines (case-insensitive)."
+            },
+            "templateId": {
+              "type": "string",
+              "description": "Show raw lines matching this template ID from the compressed overview."
+            },
+            "severity": {
+              "type": "string",
+              "enum": ["error", "warning", "info"],
+              "description": "Filter by severity level."
+            },
+            "timeRange": {
+              "type": "string",
+              "description": "Time window filter: 'HH:MM-HH:MM' or 'HH:MM:SS-HH:MM:SS'."
+            },
+            "minDuration": {
+              "type": "string",
+              "description": "Show templates with durations >= threshold: '1s', '500ms', '100ms'."
+            },
+            "correlationId": {
+              "type": "string",
+              "description": "Trace a specific request by UUID/correlation ID."
+            },
+            "includeStackFrames": {
+              "type": "boolean",
+              "description": "Show/hide stack frame templates. Default: true."
             }
           }
         }
@@ -269,6 +319,31 @@
                 "type": "string"
               },
               "description": "Key sequences for interactive TUI navigation. Available keys: ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Enter, Escape, Tab, Backspace, Delete, Home, End, PageUp, PageDown, Space, Ctrl+C, Ctrl+D, Ctrl+Z, Ctrl+L, or any single character."
+            },
+            "templateId": {
+              "type": "string",
+              "description": "Show raw lines matching this template ID from the compressed overview."
+            },
+            "severity": {
+              "type": "string",
+              "enum": ["error", "warning", "info"],
+              "description": "Filter by severity level."
+            },
+            "timeRange": {
+              "type": "string",
+              "description": "Time window filter: 'HH:MM-HH:MM' or 'HH:MM:SS-HH:MM:SS'."
+            },
+            "minDuration": {
+              "type": "string",
+              "description": "Show templates with durations >= threshold: '1s', '500ms', '100ms'."
+            },
+            "correlationId": {
+              "type": "string",
+              "description": "Trace a specific request by UUID/correlation ID."
+            },
+            "includeStackFrames": {
+              "type": "boolean",
+              "description": "Show/hide stack frame templates. Default: true."
             }
           },
           "required": [
@@ -592,7 +667,7 @@
         "icon": "$(debug-console)",
         "canBeReferencedInPrompt": true,
         "userDescription": "Read console messages from the client VS Code window",
-        "modelDescription": "Read console messages with full control over filtering and detail level.\n\n**FILTERING OPTIONS:**\n- `limit` (number): Get N most recent messages\n- `types` (string[]): Filter by log type: 'error', 'warning', 'info', 'debug', 'log', etc.\n- `pattern` (string): Regex pattern to match against message text\n- `sourcePattern` (string): Regex pattern to match against source URLs\n- `afterId` (number): Only messages after this ID (for incremental reads)\n- `beforeId` (number): Only messages before this ID\n\n**DETAIL CONTROL:**\n- `fields` (string[]): Which fields to include. Default: ['id', 'type', 'text']\n- `textLimit` (number): Max characters per message text\n- `stackDepth` (number): Max stack frames. Default: 1. Set 0 to exclude.",
+        "modelDescription": "Read console messages with full control over filtering and detail level.\n\n**FILTERING OPTIONS:**\n- `limit` (number): Get N most recent messages\n- `types` (string[]): Filter by log type: 'error', 'warning', 'info', 'debug', 'log', etc.\n- `pattern` (string): Regex pattern to match against message text\n- `sourcePattern` (string): Regex pattern to match against source URLs\n- `afterId` (number): Only messages after this ID (for incremental reads)\n- `beforeId` (number): Only messages before this ID\n\n**DETAIL CONTROL:**\n- `fields` (string[]): Which fields to include. Default: ['id', 'type', 'text']\n- `textLimit` (number): Max characters per message text\n- `stackDepth` (number): Max stack frames. Default: 1. Set 0 to exclude.\n\n**DRILL-DOWN PARAMETERS (for exploring compressed log overviews):**\n- `templateId` (string): Show raw lines matching this template ID\n- `severity` ('error' | 'warning' | 'info'): Filter by severity level\n- `timeRange` (string): Time window: 'HH:MM-HH:MM' or 'HH:MM:SS-HH:MM:SS'\n- `minDuration` (string): Show templates with durations >= threshold: '1s', '500ms'\n- `correlationId` (string): Trace a specific request by UUID\n- `includeStackFrames` (boolean): Show/hide stack frame templates. Default: true",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -651,6 +726,31 @@
               "type": "string",
               "enum": ["markdown", "json"],
               "description": "Output format. Default: 'markdown'."
+            },
+            "templateId": {
+              "type": "string",
+              "description": "Show raw lines matching this template ID from the compressed overview."
+            },
+            "severity": {
+              "type": "string",
+              "enum": ["error", "warning", "info"],
+              "description": "Filter by severity level."
+            },
+            "timeRange": {
+              "type": "string",
+              "description": "Time window filter: 'HH:MM-HH:MM' or 'HH:MM:SS-HH:MM:SS'."
+            },
+            "minDuration": {
+              "type": "string",
+              "description": "Show templates with durations >= threshold: '1s', '500ms', '100ms'."
+            },
+            "correlationId": {
+              "type": "string",
+              "description": "Trace a specific request by UUID/correlation ID."
+            },
+            "includeStackFrames": {
+              "type": "boolean",
+              "description": "Show/hide stack frame templates. Default: true."
             }
           }
         }

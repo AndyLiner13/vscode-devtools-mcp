@@ -33,7 +33,6 @@ const _onClientStateChanged = new vscode.EventEmitter<boolean>();
 /** Fires when the client window connects or disconnects. Payload = connected state. */
 export const onClientStateChanged = _onClientStateChanged.event;
 
-let clientHealthMonitorInterval: ReturnType<typeof setInterval> | null = null;
 let lastKnownClientState = false;
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -964,10 +963,10 @@ function stopClient(): void {
 /**
  * Connect the extension's CDP client to the client window for browser automation LM tools.
  * Creates a CdpClient + BrowserService and makes them available via setBrowserService().
+ * Registers a WebSocket disconnect callback for instant client death detection.
  */
 async function connectCdpClient(port: number): Promise<void> {
-  console.log(`[host] connectCdpClient: ENTRY (port=${port}, hostLog=${hostLog ? 'SET' : 'NULL'})`);
-  hostLog?.(`connectCdpClient: Attempting CDP connection on port ${port}...`);
+  hostLog?.(`connectCdpClient: Connecting to CDP on port ${port}...`);
   disconnectCdpClient();
 
   try {
@@ -975,10 +974,26 @@ async function connectCdpClient(port: number): Promise<void> {
     await client.connect(port);
     activeCdpClient = client;
 
+    // Instant disconnect detection via WebSocket close event
+    client.onDisconnect(() => {
+      console.log('[host] CDP WebSocket closed — client window died');
+      hostLog?.('CDP WebSocket closed — client window disconnected');
+      
+      // Clean up immediately — no polling needed
+      setBrowserService(null);
+      onBrowserServiceChangedCallback?.(null);
+      activeCdpClient = null;
+      lastKnownClientState = false;
+      _onClientStateChanged.fire(false);
+    });
+
     const service = new BrowserService(client);
     service.initConsoleCollection();
     setBrowserService(service);
     onBrowserServiceChangedCallback?.(service);
+
+    lastKnownClientState = true;
+    _onClientStateChanged.fire(true);
 
     const msg = `CDP client connected on port ${port} — browser LM tools active`;
     console.log(`[host] ${msg}`);
@@ -994,6 +1009,7 @@ async function connectCdpClient(port: number): Promise<void> {
 
 /**
  * Disconnect the extension's CDP client and teardown the BrowserService.
+ * Safe to call multiple times (idempotent).
  */
 function disconnectCdpClient(): void {
   setBrowserService(null);
@@ -1636,7 +1652,6 @@ export async function startClientWindow(): Promise<boolean> {
       }
       lastKnownClientState = true;
       _onClientStateChanged.fire(true);
-      startHealthMonitor();
       return true;
     }
     // Not healthy — clean up and respawn
@@ -1664,7 +1679,6 @@ export async function startClientWindow(): Promise<boolean> {
       }
       lastKnownClientState = true;
       _onClientStateChanged.fire(true);
-      startHealthMonitor();
       return true;
     }
     // Stale session — clean up
@@ -1690,7 +1704,6 @@ export async function startClientWindow(): Promise<boolean> {
     console.log('[host] Client window auto-started successfully (cdpPort: ' + result.cdpPort + ')');
     lastKnownClientState = true;
     _onClientStateChanged.fire(true);
-    startHealthMonitor();
     return true;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -1704,7 +1717,6 @@ export async function startClientWindow(): Promise<boolean> {
  * Stop the client window and disconnect CDP.
  */
 export function stopClientWindow(): void {
-  stopHealthMonitor();
   disconnectCdpClient();
   stopClient();
   lastKnownClientState = false;
@@ -1716,35 +1728,6 @@ export function stopClientWindow(): void {
  */
 export function isClientWindowConnected(): boolean {
   return lastKnownClientState;
-}
-
-/**
- * Start polling for client health. Fires onClientStateChanged when state changes.
- */
-function startHealthMonitor(): void {
-  stopHealthMonitor();
-
-  clientHealthMonitorInterval = setInterval(async () => {
-    // Skip checks during hot-reload or reconnection
-    if (hotReloadInProgress || clientReconnecting) {
-      console.log(`[host] Health monitor skipped (hotReload=${hotReloadInProgress}, reconnecting=${clientReconnecting})`);
-      return;
-    }
-
-    const healthy = cdpPort ? await isClientHealthy() : false;
-    if (healthy !== lastKnownClientState) {
-      lastKnownClientState = healthy;
-      _onClientStateChanged.fire(healthy);
-      console.log(`[host] Client state changed: ${healthy ? 'connected' : 'disconnected'}`);
-    }
-  }, 5000);
-}
-
-function stopHealthMonitor(): void {
-  if (clientHealthMonitorInterval) {
-    clearInterval(clientHealthMonitorInterval);
-    clientHealthMonitorInterval = null;
-  }
 }
 
 /**
@@ -1784,7 +1767,6 @@ export function createReconnectCdpCallback(): () => Promise<boolean> {
  * Export for deactivate cleanup
  */
 export function cleanup(): void {
-  stopHealthMonitor();
   disconnectCdpClient();
   stopClient();
   _onClientStateChanged.dispose();

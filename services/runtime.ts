@@ -31,7 +31,6 @@ import type { BrowserService } from './browser';
  * This ensures the callback is set in THIS bundle's clientDevTools module instance.
  */
 export function wireReconnectCdpCallback(callback: () => Promise<boolean>): void {
-    console.log('[devtools:runtime] wireReconnectCdpCallback called');
     _setReconnectCdpCallback(callback);
 }
 
@@ -41,7 +40,6 @@ export function wireReconnectCdpCallback(callback: () => Promise<boolean>): void
  * This ensures the service is set in THIS bundle's clientDevTools module instance.
  */
 export function wireBrowserService(service: BrowserService | null): void {
-    console.log(`[devtools:runtime] wireBrowserService called (service=${service ? 'SET' : 'NULL'})`);
     _setBrowserService(service);
 }
 
