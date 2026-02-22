@@ -1,158 +1,132 @@
-import type { ContentBlock, ExecutionRecord, InspectorStorage, RecordRating } from './types';
+import type { ContentBlock, ExecutionRecord, RecordRating } from './types';
 
-const STORAGE_KEY = 'mcp-inspector-records';
-const STORAGE_VERSION = 1;
+type ChangeHandler = (toolName: string) => void;
+const changeHandlers: ChangeHandler[] = [];
 
-function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+export function onStorageChange(handler: ChangeHandler): void {
+  changeHandlers.push(handler);
 }
 
-function loadStorage(): InspectorStorage {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return { records: {}, version: STORAGE_VERSION };
+export function connectStorageSync(): void {
+  const es = new EventSource('/api/events');
+  es.onmessage = (event) => {
+    if (event.data === 'connected') {
+      return;
     }
-    const parsed = JSON.parse(raw) as InspectorStorage;
-    if (parsed.version !== STORAGE_VERSION) {
-      return { records: {}, version: STORAGE_VERSION };
+    try {
+      const { tool } = JSON.parse(event.data) as { tool: string };
+      for (const handler of changeHandlers) {
+        handler(tool);
+      }
+    } catch {
+      // ignore malformed SSE messages
     }
-    return parsed;
-  } catch {
-    return { records: {}, version: STORAGE_VERSION };
-  }
+  };
 }
 
-function saveStorage(storage: InspectorStorage): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(storage));
+async function apiGet<T>(url: string): Promise<T> {
+  const res = await fetch(url);
+  return res.json() as Promise<T>;
 }
 
-/** Remove unrated records on load — only rated records survive reloads */
-export function pruneUnrated(): void {
-  const storage = loadStorage();
-  for (const toolName of Object.keys(storage.records)) {
-    storage.records[toolName] = storage.records[toolName].filter(r => r.rating !== null);
-    if (storage.records[toolName].length === 0) {
-      delete storage.records[toolName];
-    }
-  }
-  saveStorage(storage);
+async function apiPost<T>(url: string, body: unknown): Promise<T> {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return res.json() as Promise<T>;
 }
 
-export function getRecords(toolName: string): ExecutionRecord[] {
-  const storage = loadStorage();
-  return storage.records[toolName] ?? [];
+async function apiPatch(url: string, body: unknown): Promise<void> {
+  await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
 }
 
-export function getAllRecords(): Record<string, ExecutionRecord[]> {
-  return loadStorage().records;
+async function apiDelete(url: string): Promise<void> {
+  await fetch(url, { method: 'DELETE' });
 }
 
-export function addRecord(
+export async function pruneUnrated(): Promise<void> {
+  await apiPost('/api/prune-unrated', {});
+}
+
+export async function getRecords(toolName: string): Promise<ExecutionRecord[]> {
+  return apiGet<ExecutionRecord[]>(`/api/records?tool=${encodeURIComponent(toolName)}`);
+}
+
+export async function getAllRecords(): Promise<Record<string, ExecutionRecord[]>> {
+  return apiGet<Record<string, ExecutionRecord[]>>('/api/records');
+}
+
+export async function addRecord(
   toolName: string,
   input: string,
   output: ContentBlock[],
   isError: boolean,
   durationMs: number,
-): ExecutionRecord {
-  const storage = loadStorage();
-
-  if (!storage.records[toolName]) {
-    storage.records[toolName] = [];
-  }
-
-  const record: ExecutionRecord = {
-    id: generateId(),
+): Promise<ExecutionRecord> {
+  return apiPost<ExecutionRecord>('/api/records', {
     toolName,
     input,
     output,
     isError,
-    createdAt: new Date().toISOString(),
-    lastRunAt: null,
-    rating: null,
-    comment: '',
-    priority: storage.records[toolName].length,
     durationMs,
-  };
-
-  // Newest first
-  storage.records[toolName].unshift(record);
-  saveStorage(storage);
-  return record;
+  });
 }
 
-export function updateRating(toolName: string, recordId: string, rating: RecordRating): void {
-  const storage = loadStorage();
-  const records = storage.records[toolName];
-  if (!records) {
-    return;
-  }
-  const record = records.find(r => r.id === recordId);
-  if (record) {
-    record.rating = rating;
-    saveStorage(storage);
-  }
+export async function updateRating(
+  toolName: string,
+  recordId: string,
+  rating: RecordRating,
+): Promise<void> {
+  await apiPatch(`/api/records/${encodeURIComponent(recordId)}/rating`, {
+    toolName,
+    rating,
+  });
 }
 
-export function updateComment(toolName: string, recordId: string, comment: string): void {
-  const storage = loadStorage();
-  const records = storage.records[toolName];
-  if (!records) {
-    return;
-  }
-  const record = records.find(r => r.id === recordId);
-  if (record) {
-    record.comment = comment;
-    saveStorage(storage);
-  }
+export async function updateComment(
+  toolName: string,
+  recordId: string,
+  comment: string,
+): Promise<void> {
+  await apiPatch(`/api/records/${encodeURIComponent(recordId)}/comment`, {
+    toolName,
+    comment,
+  });
 }
 
-export function updateRecordOutput(
+export async function updateRecordOutput(
   toolName: string,
   recordId: string,
   output: ContentBlock[],
   isError: boolean,
   durationMs: number,
-): void {
-  const storage = loadStorage();
-  const records = storage.records[toolName];
-  if (!records) {
-    return;
-  }
-  const record = records.find(r => r.id === recordId);
-  if (record) {
-    record.output = output;
-    record.isError = isError;
-    record.durationMs = durationMs;
-    record.lastRunAt = new Date().toISOString();
-    saveStorage(storage);
-  }
+): Promise<void> {
+  await apiPatch(`/api/records/${encodeURIComponent(recordId)}/output`, {
+    toolName,
+    output,
+    isError,
+    durationMs,
+  });
 }
 
-export function deleteRecord(toolName: string, recordId: string): void {
-  const storage = loadStorage();
-  const records = storage.records[toolName];
-  if (!records) {
-    return;
-  }
-  storage.records[toolName] = records.filter(r => r.id !== recordId);
-  if (storage.records[toolName].length === 0) {
-    delete storage.records[toolName];
-  }
-  saveStorage(storage);
+export async function deleteRecord(
+  toolName: string,
+  recordId: string,
+): Promise<void> {
+  await apiDelete(
+    `/api/records/${encodeURIComponent(recordId)}?tool=${encodeURIComponent(toolName)}`,
+  );
 }
 
-export function reorderRecords(toolName: string, orderedIds: string[]): void {
-  const storage = loadStorage();
-  const records = storage.records[toolName];
-  if (!records) {
-    return;
-  }
-  for (const record of records) {
-    const idx = orderedIds.indexOf(record.id);
-    if (idx !== -1) {
-      record.priority = idx;
-    }
-  }
-  saveStorage(storage);
+export async function reorderRecords(
+  toolName: string,
+  orderedIds: string[],
+): Promise<void> {
+  await apiPost('/api/records/reorder', { toolName, orderedIds });
 }

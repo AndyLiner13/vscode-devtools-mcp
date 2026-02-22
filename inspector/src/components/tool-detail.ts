@@ -4,6 +4,7 @@ import type * as monaco from 'monaco-editor';
 
 import { addExecution, createHistoryContainer, setCurrentTool } from './history-list';
 
+
 let executeHandler: ((toolName: string, args: Record<string, unknown>) => Promise<CallToolResult>) | null = null;
 
 let activeInputEditor: monaco.editor.IStandaloneCodeEditor | null = null;
@@ -50,12 +51,12 @@ async function executeCurrentInput(): Promise<void> {
     const result = await executeHandler(activeToolName, args);
     const elapsed = performance.now() - startTime;
     activeExecutionTime.textContent = `${elapsed.toFixed(0)}ms`;
-    addExecution(activeToolName, inputText, result, Math.round(elapsed));
+    await addExecution(activeToolName, inputText, result, Math.round(elapsed));
   } catch (err) {
     const elapsed = performance.now() - startTime;
     activeExecutionTime.textContent = `${elapsed.toFixed(0)}ms`;
     const message = err instanceof Error ? err.message : String(err);
-    addExecution(
+    await addExecution(
       activeToolName,
       inputText,
       { content: [{ type: 'text', text: `Error: ${message}` }], isError: true },
@@ -107,7 +108,6 @@ export function renderToolDetail(tool: ToolDefinition): void {
   card.className = 'tool-invocation-card';
   card.id = 'tool-invocation-card';
   activeToolName = tool.name;
-  setCurrentTool(tool.name);
 
   // ── Input Section ──
   const inputSection = document.createElement('div');
@@ -133,7 +133,7 @@ export function renderToolDetail(tool: ToolDefinition): void {
 
   activeExecuteBtn = document.createElement('button');
   activeExecuteBtn.className = [
-    'px-4 py-1.5 bg-vscode-accent text-white rounded text-sm font-medium',
+    'px-3 py-1 bg-vscode-accent text-white rounded text-[13px] font-medium',
     'hover:bg-vscode-accent-hover transition-colors cursor-pointer',
     'disabled:opacity-50 disabled:cursor-not-allowed',
     'flex items-center gap-2',
@@ -154,13 +154,13 @@ export function renderToolDetail(tool: ToolDefinition): void {
   scrollContainer.appendChild(card);
   panel.appendChild(scrollContainer);
 
-  // Trigger initial render of persisted records
-  setCurrentTool(tool.name);
-
   // ── Execute Handler ──
   activeExecuteBtn.addEventListener('click', () => {
-    executeCurrentInput();
+    void executeCurrentInput();
   });
+
+  // Populate from SQLite after DOM is mounted
+  void setCurrentTool(tool.name);
 }
 
 // ── Helpers ──

@@ -4,11 +4,14 @@ import { createApp } from './components/app';
 import { onRerun } from './components/history-list';
 import { onToolSelect, renderToolList } from './components/tool-list';
 import { onExecute, renderToolDetail, rerunWithInput } from './components/tool-detail';
-import { pruneUnrated } from './storage';
+import { connectStorageSync, pruneUnrated } from './storage';
 import type { ConnectionState } from './types';
 
 // Prune unrated records on load — only flagged/archived survive reloads
-pruneUnrated();
+pruneUnrated().catch(console.error);
+
+// Start SSE connection for cross-tab live sync
+connectStorageSync();
 
 // Mount app
 const appRoot = document.getElementById('app');

@@ -19,8 +19,8 @@ export function createToolDropdown(): HTMLElement {
   const select = document.createElement('select');
   select.id = 'tool-select';
   select.className = [
-    'w-full px-3 py-2 pr-8 rounded border border-vscode-border',
-    'bg-vscode-input text-vscode-text text-sm',
+    'w-full px-2.5 py-1 pr-8 rounded border border-vscode-border',
+    'bg-vscode-input text-vscode-text text-[13px]',
     'focus:border-vscode-accent focus:outline-none cursor-pointer appearance-none',
   ].join(' ');
 
