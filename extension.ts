@@ -229,6 +229,16 @@ export async function activate(context: vscode.ExtensionContext) {
       log('host-handlers module loaded, registering handlers...');
       registerHostHandlers(bootstrap.registerHandler, context, log);
       hostHandlersCleanup = cleanup;
+
+      // Safety net: kill spawned processes if the extension host exits without
+      // deactivate() running (crash, force-close, timeout). stopClient() inside
+      // cleanup() uses execSync which is safe in synchronous 'exit' handlers.
+      process.on('exit', () => {
+        if (hostHandlersCleanup) {
+          hostHandlersCleanup();
+          hostHandlersCleanup = undefined;
+        }
+      });
       
       // Save the callback for wiring to runtime after it loads
       reconnectCdpCallbackForRuntime = createReconnectCdpCallback();
@@ -447,6 +457,15 @@ async function initiateTakeover(): Promise<void> {
 export async function deactivate() {
   log('Extension deactivating...');
 
+  // Kill spawned processes FIRST — synchronously, before any async work.
+  // VS Code gives deactivate() a short timeout (~5s). If the async operations
+  // below hang, the extension host is force-killed and cleanup never runs.
+  if (currentRole === 'host' && hostHandlersCleanup) {
+    hostHandlersCleanup();
+    hostHandlersCleanup = undefined;
+    log('Host cleanup completed (client window stopped)');
+  }
+
   if (currentRole === 'client') {
     try {
       await notifyHostOfShutdown('deactivate');
@@ -464,11 +483,6 @@ export async function deactivate() {
       const msg = err instanceof Error ? err.message : String(err);
       log(`Runtime deactivation error: ${msg}`);
     }
-  }
-
-  // Clean up handlers
-  if (currentRole === 'host' && hostHandlersCleanup) {
-    hostHandlersCleanup();
   }
 
   // Stop the bootstrap pipe server

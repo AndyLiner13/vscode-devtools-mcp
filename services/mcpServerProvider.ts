@@ -11,6 +11,8 @@
 
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { exec } from 'node:child_process';
+import { existsSync } from 'node:fs';
 
 const PROVIDER_ID = 'devtools.mcp-server';
 const TOGGLE_COMMAND = 'devtools.toggleMcpServer';
@@ -107,6 +109,65 @@ export class McpServerProvider implements vscode.McpServerDefinitionProvider<vsc
     this._enabled = !this._enabled;
     this._onDidChange.fire();
     this._onDidToggle.fire(this._enabled);
+  }
+
+  /**
+   * Called by VS Code before every MCP server start — including after crashes.
+   * Rebuilds the MCP server to ensure fresh output. If the build fails, throws
+   * an error so VS Code surfaces it to Copilot instead of starting a broken server.
+   */
+  async resolveMcpServerDefinition(
+    server: vscode.McpStdioServerDefinition,
+    token: vscode.CancellationToken,
+  ): Promise<vscode.McpStdioServerDefinition> {
+    if (!this._workspacePath) {
+      return server;
+    }
+
+    const mcpServerRoot = path.join(this._workspacePath, 'mcp-server');
+    const buildError = await this._runBuild(mcpServerRoot, token);
+
+    if (buildError) {
+      throw new Error('MCP server build failed:\n' + buildError);
+    }
+
+    return server;
+  }
+
+  private _runBuild(packageRoot: string, token: vscode.CancellationToken): Promise<string | null> {
+    return new Promise(resolve => {
+      const pm = this._detectPackageManager(packageRoot);
+      const cmd = pm + ' run build';
+
+      console.log('[mcpServerProvider] Pre-start build: ' + cmd + ' in ' + packageRoot);
+
+      const child = exec(cmd, { cwd: packageRoot, timeout: 300_000 }, (error, stdout, stderr) => {
+        if (token.isCancellationRequested) {
+          resolve('Build cancelled');
+          return;
+        }
+        if (error) {
+          const output = [stderr, stdout].filter(Boolean).join('\n').trim();
+          resolve(output || error.message);
+        } else {
+          resolve(null);
+        }
+      });
+
+      token.onCancellationRequested(() => {
+        child.kill();
+      });
+    });
+  }
+
+  private _detectPackageManager(packageRoot: string): string {
+    if (existsSync(path.join(packageRoot, 'pnpm-lock.yaml'))) {
+      return 'pnpm';
+    }
+    if (existsSync(path.join(packageRoot, 'yarn.lock'))) {
+      return 'yarn';
+    }
+    return 'npm';
   }
 
   /** Programmatically set enabled state. Only fires events if state actually changes. */
