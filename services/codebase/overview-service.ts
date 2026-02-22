@@ -550,7 +550,7 @@ function populateSymbols(
 
       const parserForExt = getCustomParser(ext);
       if (parserForExt) {
-        const parsed = parserForExt(text, 10);
+        const parsed = parserForExt(text, Infinity);
         if (parsed && parsed.length > 0) {
           node.symbols = parsed;
           totalSymbols += countSymbols(node.symbols);

@@ -59,7 +59,7 @@ export const edit = defineTool({
     ),
     target: zod.string().optional().describe(
       'Symbol name to scope the edit: "UserService.findById". ' +
-      'Supported for TS/JS (.ts, .tsx, .js, .jsx, .mts, .mjs, .cts, .cjs) and Markdown (.md, .markdown) files.',
+      'Supported for TS/JS, Markdown (.md, .markdown), and JSON (.json, .jsonc, .json5, .jsonl) files.',
     ),
     startLine: zod.number().int().optional().describe(
       'Fallback: start line (1-indexed). Used when target is not specified.',

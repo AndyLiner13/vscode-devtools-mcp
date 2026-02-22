@@ -17,6 +17,7 @@ import type { UnifiedFileResult } from './file-structure-extractor';
 import { LanguageServiceRegistry } from './language-service-registry';
 import { TypeScriptLanguageService } from './language-services';
 import { MarkdownLanguageService } from './language-services';
+import { JsonLanguageService } from './language-services';
 import type { OverviewParams, OverviewResult, FileStructure } from './types';
 import type { ExportsParams, ExportsResult } from './types';
 import type { TraceSymbolParams, TraceSymbolResult } from './types';
@@ -30,6 +31,7 @@ import type { ChunkFileParams, ChunkFileResult } from './types';
 const registry = new LanguageServiceRegistry();
 registry.register(new TypeScriptLanguageService());
 registry.register(new MarkdownLanguageService());
+registry.register(new JsonLanguageService());
 
 // ── Message Protocol ─────────────────────────────────────
 
@@ -72,7 +74,7 @@ const operations: Record<string, OperationHandler> = {
   extractStructure: async (params: { filePath: string }) => {
     const ext = path.extname(params.filePath).slice(1).toLowerCase();
     const service = registry.get(ext);
-    if (!service) return undefined;
+    if (!service) return null;
     return service.extractStructure(params.filePath);
   },
 };

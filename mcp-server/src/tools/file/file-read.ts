@@ -18,9 +18,15 @@ import {
 import {getClientWorkspace} from '../../config.js';
 import {z as zod} from 'zod';
 import {ToolCategory} from '../categories.js';
-import {CHARACTER_LIMIT, defineTool} from '../ToolDefinition.js';
+import {defineTool} from '../ToolDefinition.js';
 import {resolveSymbolTarget, findQualifiedPaths} from './symbol-resolver.js';
 import type {SymbolLike} from './symbol-resolver.js';
+
+// ── Output Compression Constants ─────────────────────────
+// Same 3,000 token budget used by codebase_map and codebase_trace
+const OUTPUT_TOKEN_LIMIT = 3_000;
+const CHARS_PER_TOKEN = 4;
+const OUTPUT_CHAR_LIMIT = OUTPUT_TOKEN_LIMIT * CHARS_PER_TOKEN;
 
 function resolveFilePath(file: string): string {
   if (path.isAbsolute(file)) return file;
@@ -52,7 +58,8 @@ function addLineNumbers(content: string, startLine1: number): string {
 function formatSkeletonEntry(
   symbol: SymbolLike | OrphanedItem,
   indent = '',
-  recursive = false,
+  maxNesting = 0,
+  currentDepth = 0,
 ): string[] {
   const lines: string[] = [];
   // FileSymbol uses startLine/endLine, OrphanedItem uses start/end
@@ -62,13 +69,373 @@ function formatSkeletonEntry(
 
   lines.push(`${indent}[${range}] ${symbol.kind} ${symbol.name}`);
 
-  if (recursive && symbol.children && symbol.children.length > 0) {
+  if (currentDepth < maxNesting && symbol.children && symbol.children.length > 0) {
     for (const child of symbol.children) {
-      lines.push(...formatSkeletonEntry(child, indent + '  ', recursive));
+      lines.push(...formatSkeletonEntry(child, indent + '  ', maxNesting, currentDepth + 1));
     }
   }
 
   return lines;
+}
+
+// ── Auto-Context-Optimization Infrastructure ─────────────
+
+/** Compute the maximum nesting depth in a symbol tree. */
+function getMaxSymbolNesting(symbols: ReadonlyArray<SymbolLike>, current = 0): number {
+  let max = current;
+  for (const s of symbols) {
+    if (s.children && s.children.length > 0) {
+      max = Math.max(max, getMaxSymbolNesting(s.children, current + 1));
+    }
+  }
+  return max;
+}
+
+interface SkeletonPiece {
+  startLine: number;
+  endLine: number;
+  category: 'imports' | 'exports' | 'comments' | 'directives' | 'symbol' | 'raw';
+  symbol?: FileSymbol;
+}
+
+/**
+ * Build and merge the source-ordered skeleton pieces from a structure.
+ * This is the shared logic extracted from the handler's skeleton mode.
+ */
+function buildSkeletonPieces(structure: FileStructure): SkeletonPiece[] {
+  const pieces: SkeletonPiece[] = [];
+
+  for (const item of structure.orphaned.items) {
+    const cat: SkeletonPiece['category'] =
+      item.category === 'import' ? 'imports' :
+      item.category === 'export' ? 'exports' :
+      item.category === 'comment' ? 'comments' :
+      item.category === 'directive' ? 'directives' :
+      'comments';
+    pieces.push({ startLine: item.range.start, endLine: item.range.end, category: cat });
+  }
+  for (const sym of structure.symbols) {
+    pieces.push({ startLine: sym.range.startLine, endLine: sym.range.endLine, category: 'symbol', symbol: sym });
+  }
+  for (const gap of structure.gaps) {
+    if (gap.type === 'unknown') {
+      pieces.push({ startLine: gap.start, endLine: gap.end, category: 'raw' });
+    }
+  }
+
+  pieces.sort((a, b) => a.startLine - b.startLine);
+
+  // Merge adjacent same-category non-symbol/non-raw items
+  const merged: SkeletonPiece[] = [];
+  for (const piece of pieces) {
+    const prev = merged[merged.length - 1];
+    const canMerge = prev
+      && piece.category !== 'symbol'
+      && piece.category !== 'raw'
+      && prev.category === piece.category
+      && piece.startLine <= prev.endLine + 2;
+    if (canMerge && prev) {
+      prev.endLine = Math.max(prev.endLine, piece.endLine);
+    } else {
+      merged.push({ ...piece });
+    }
+  }
+
+  return merged;
+}
+
+/**
+ * Render skeleton output at a given compression level.
+ * @param orphanMode 'full' = show single-line orphans as content, multi-line as stubs;
+ *                   'stubs' = collapse all orphan blocks to category stubs
+ */
+function renderSkeletonAtLevel(
+  pieces: SkeletonPiece[],
+  allLines: string[],
+  maxNesting: number,
+  orphanMode: 'full' | 'stubs',
+): string {
+  const result: string[] = [];
+
+  for (const piece of pieces) {
+    if (piece.category === 'raw') {
+      for (let l = piece.startLine; l <= piece.endLine; l++) {
+        result.push(`[${l}] ${allLines[l - 1] ?? ''}`);
+      }
+    } else if (piece.symbol) {
+      const entries = formatSkeletonEntry(piece.symbol, '', maxNesting);
+      for (const entry of entries) result.push(entry);
+    } else if (orphanMode === 'stubs') {
+      const range = piece.startLine === piece.endLine
+        ? `${piece.startLine}` : `${piece.startLine}-${piece.endLine}`;
+      result.push(`[${range}] ${piece.category}`);
+    } else if (piece.startLine === piece.endLine) {
+      result.push(`[${piece.startLine}] ${allLines[piece.startLine - 1] ?? ''}`);
+    } else {
+      result.push(`[${piece.startLine}-${piece.endLine}] ${piece.category}`);
+    }
+  }
+
+  return result.join('\n');
+}
+
+/**
+ * Render target-symbol skeleton at a given nesting level.
+ */
+function renderTargetSkeletonAtLevel(
+  symbol: FileSymbol,
+  maxNesting: number,
+): string {
+  return formatSkeletonEntry(symbol, '', maxNesting).join('\n');
+}
+
+interface CompressionResult {
+  output: string;
+  compressed: boolean;
+  label: string | null;
+}
+
+/**
+ * Incrementally compress skeleton output using the same root-first approach
+ * as codebase_map. Builds from least detail (nesting=0) upward, stopping
+ * at the deepest level that fits within the token budget.
+ *
+ * Expansion order (bottom-up):
+ *   1. nesting=0  + orphans=stubs  (minimum detail)
+ *   2. nesting=1  + orphans=stubs
+ *   3. ...
+ *   4. nesting=max + orphans=stubs
+ *   5. nesting=max + orphans=full  (maximum detail — orphans expanded last)
+ *
+ * If nesting=0 + orphans=stubs still exceeds the limit, it's returned anyway
+ * as the guaranteed minimum (Copilot must be able to read at least the root structure).
+ */
+function compressSkeletonOutput(
+  structure: FileStructure,
+  allLines: string[],
+  requestedMaxNesting: number,
+): CompressionResult {
+  const pieces = buildSkeletonPieces(structure);
+  const maxNesting = Math.min(requestedMaxNesting, getMaxSymbolNesting(structure.symbols));
+
+  // Quick check: does the full output fit?
+  const fullOutput = renderSkeletonAtLevel(pieces, allLines, maxNesting, 'full');
+  if (fullOutput.length <= OUTPUT_CHAR_LIMIT) {
+    return { output: fullOutput, compressed: false, label: null };
+  }
+
+  // Compression needed — incrementally build up from nesting=0, orphans=stubs
+  let bestOutput = '';
+  let bestNesting = 0;
+  let orphansExpanded = false;
+
+  // Phase 1: Expand nesting depth with collapsed orphans
+  for (let nesting = 0; nesting <= maxNesting; nesting++) {
+    const candidate = renderSkeletonAtLevel(pieces, allLines, nesting, 'stubs');
+    if (candidate.length > OUTPUT_CHAR_LIMIT) {
+      if (nesting === 0) {
+        // Guaranteed minimum: return nesting=0 even if it exceeds
+        return {
+          output: candidate,
+          compressed: true,
+          label: `top-level skeleton only (${structure.symbols.length} symbols)`,
+        };
+      }
+      break;
+    }
+    bestOutput = candidate;
+    bestNesting = nesting;
+  }
+
+  // Phase 2: Try expanding orphans at the current best nesting level
+  if (bestNesting === maxNesting) {
+    // Nesting is already at max; try adding full orphan content
+    const withOrphans = renderSkeletonAtLevel(pieces, allLines, maxNesting, 'full');
+    if (withOrphans.length <= OUTPUT_CHAR_LIMIT) {
+      return { output: withOrphans, compressed: false, label: null };
+    }
+    // Orphans don't fit — keep collapsed
+  } else {
+    // Check if the next nesting level fits with full orphans
+    // (it won't since collapsed didn't fit, but try the current best with full orphans)
+    const withOrphans = renderSkeletonAtLevel(pieces, allLines, bestNesting, 'full');
+    if (withOrphans.length <= OUTPUT_CHAR_LIMIT) {
+      bestOutput = withOrphans;
+      orphansExpanded = true;
+    }
+  }
+
+  const parts: string[] = [];
+  if (bestNesting < maxNesting) {
+    parts.push(`symbol nesting ${bestNesting}`);
+  }
+  if (!orphansExpanded) {
+    parts.push('collapsed orphaned items');
+  }
+
+  return {
+    output: bestOutput,
+    compressed: true,
+    label: parts.length > 0 ? parts.join(', ') : null,
+  };
+}
+
+/**
+ * Compress a target symbol's skeleton output using incremental nesting expansion.
+ */
+function compressTargetSkeleton(
+  symbol: FileSymbol,
+  requestedMaxNesting: number,
+): CompressionResult {
+  const maxNesting = Math.min(requestedMaxNesting, getMaxSymbolNesting(symbol.children ?? []));
+
+  const fullOutput = renderTargetSkeletonAtLevel(symbol, maxNesting);
+  if (fullOutput.length <= OUTPUT_CHAR_LIMIT) {
+    return { output: fullOutput, compressed: false, label: null };
+  }
+
+  let bestOutput = '';
+  let bestNesting = 0;
+
+  for (let nesting = 0; nesting <= maxNesting; nesting++) {
+    const candidate = renderTargetSkeletonAtLevel(symbol, nesting);
+    if (candidate.length > OUTPUT_CHAR_LIMIT) {
+      if (nesting === 0) {
+        return {
+          output: candidate,
+          compressed: true,
+          label: `top-level only (${symbol.children?.length ?? 0} children)`,
+        };
+      }
+      break;
+    }
+    bestOutput = candidate;
+    bestNesting = nesting;
+  }
+
+  return {
+    output: bestOutput,
+    compressed: true,
+    label: `symbol nesting ${bestNesting}`,
+  };
+}
+
+/**
+ * Compress target content output. Tries raw content first, then progressively
+ * falls back to skeleton mode with incremental nesting.
+ *
+ * For non-recursive content mode with child placeholders, this acts as a middle
+ * ground between raw content and full skeleton.
+ */
+function compressTargetContent(
+  symbol: FileSymbol,
+  allLines: string[],
+  structure: FileStructure,
+  recursive: boolean,
+): CompressionResult {
+  const startLine = symbol.range.startLine;
+  const endLine = symbol.range.endLine;
+  const hasChildren = symbol.children && symbol.children.length > 0;
+
+  // Level 1: Try raw content (recursive=true or no children)
+  if (recursive || !hasChildren) {
+    const numbered = addLineNumbers(getContentSlice(allLines, startLine, endLine), startLine);
+    const header = `[${startLine === endLine ? `${startLine}` : `${startLine}-${endLine}`}] ${symbol.kind} ${symbol.name}\n`;
+    const fullOutput = header + numbered;
+    if (fullOutput.length <= OUTPUT_CHAR_LIMIT) {
+      return { output: fullOutput, compressed: false, label: null };
+    }
+  }
+
+  // Level 2: Try content with child placeholders (shows raw code between children)
+  if (hasChildren) {
+    const formatted = formatContentWithPlaceholders(allLines, symbol, startLine, endLine);
+    const header = `[${startLine === endLine ? `${startLine}` : `${startLine}-${endLine}`}] ${symbol.kind} ${symbol.name}\n`;
+    const placeholderOutput = header + formatted;
+    if (placeholderOutput.length <= OUTPUT_CHAR_LIMIT) {
+      return { output: placeholderOutput, compressed: true, label: 'children collapsed to stubs' };
+    }
+  }
+
+  // Level 3: Fall back to skeleton with incremental nesting
+  const maxNesting = getMaxSymbolNesting(symbol.children ?? []);
+  const skeletonResult = compressTargetSkeleton(symbol, maxNesting);
+  return {
+    output: skeletonResult.output,
+    compressed: true,
+    label: `auto-skeleton${skeletonResult.label ? `, ${skeletonResult.label}` : ''}`,
+  };
+}
+
+/**
+ * Compress full-file output. Auto-switches to skeleton mode with incremental nesting.
+ */
+function compressFullFileOutput(
+  rawContent: string,
+  structure: FileStructure | undefined,
+  allLines: string[],
+  startLine1: number,
+): CompressionResult {
+  // Try raw content first
+  const numbered = addLineNumbers(rawContent, startLine1);
+  if (numbered.length <= OUTPUT_CHAR_LIMIT) {
+    return { output: numbered, compressed: false, label: null };
+  }
+
+  // Auto-switch to skeleton if structure is available
+  if (structure) {
+    const maxNesting = getMaxSymbolNesting(structure.symbols);
+    const result = compressSkeletonOutput(structure, allLines, maxNesting);
+    return {
+      output: result.output,
+      compressed: true,
+      label: `auto-skeleton${result.label ? `, ${result.label}` : ''}`,
+    };
+  }
+
+  // No structure available — return raw with guidance
+  // Still return the full content but with a compression notice
+  return {
+    output: numbered,
+    compressed: true,
+    label: 'file too large for token budget. Use startLine/endLine to read specific ranges',
+  };
+}
+
+/**
+ * Compress structured range output. Tries with collapseSkeleton=false first,
+ * then collapseSkeleton=true. Non-symbol content is always preserved.
+ */
+function compressStructuredRangeOutput(
+  structure: FileStructure,
+  allLines: string[],
+  reqStart: number,
+  reqEnd: number,
+  skeleton: boolean,
+): CompressionResult & {
+  actualStart: number;
+  actualEnd: number;
+  collapsedRanges: Array<{startLine: number; endLine: number}>;
+  sourceRanges: Array<{startLine: number; endLine: number}>;
+} {
+  // Level 1: Try with current skeleton setting
+  const result = renderStructuredRange(structure, allLines, reqStart, reqEnd, skeleton);
+  if (result.output.length <= OUTPUT_CHAR_LIMIT) {
+    return { ...result, compressed: false, label: null };
+  }
+
+  // Level 2: Try with collapseSkeleton=true (collapse import/export/comment blocks)
+  if (!skeleton) {
+    const collapsed = renderStructuredRange(structure, allLines, reqStart, reqEnd, true);
+    if (collapsed.output.length <= OUTPUT_CHAR_LIMIT) {
+      return { ...collapsed, compressed: true, label: 'auto-skeleton range' };
+    }
+    // Still too large — return the collapsed version (non-symbols must be accessible)
+    return { ...collapsed, compressed: true, label: 'auto-skeleton range (exceeds budget)' };
+  }
+
+  // Already skeleton and still exceeds — return as-is (guaranteed minimum)
+  return { ...result, compressed: true, label: 'structured range (exceeds budget)' };
 }
 
 /**
@@ -414,7 +781,7 @@ export const read = defineTool({
     'Shows raw source for non-symbols, collapsed stubs for symbols. ' +
     'Cannot be used with `target`.\n\n' +
     '**Structured Range Mode (startLine/endLine):**\n' +
-    'For TS/JS files, shows non-symbol content (imports, exports, comments, gaps) as raw source ' +
+    'For supported file types (TS/JS, Markdown, JSON/JSONC), shows non-symbol content as raw source ' +
     'and collapses symbols into stubs. Use `target` to read a specific symbol. ' +
     'Non-symbol blocks are atomic: if the range touches any line of a block, the full block is included. ' +
     'Add `skeleton: true` to also collapse import/export/comment blocks into stubs.\n\n' +
@@ -526,18 +893,44 @@ export const read = defineTool({
         const rawEnd = params.endLine !== undefined ? params.endLine - 1 : undefined;
         const content = await fileReadContent(filePath, rawStart, rawEnd);
         fileHighlightReadRange(filePath, content.startLine, content.endLine);
+
+        // Report line corrections when requested values were out of range
+        if (params.startLine !== undefined && content.startLine + 1 !== params.startLine) {
+          response.appendResponseLine(
+            `ℹ️ startLine was adjusted from ${params.startLine} to ${content.startLine + 1} (file has ${totalLines} lines)`,
+          );
+        }
+        if (params.endLine !== undefined && content.endLine + 1 !== params.endLine) {
+          response.appendResponseLine(
+            `ℹ️ endLine was adjusted from ${params.endLine} to ${content.endLine + 1} (file has ${totalLines} lines)`,
+          );
+        }
+
         const numbered = addLineNumbers(content.content, content.startLine + 1);
-        response.appendResponseLine(
-          numbered.length > CHARACTER_LIMIT
-            ? numbered.substring(0, CHARACTER_LIMIT) + '\n\n⚠️ Truncated'
-            : numbered,
-        );
+        if (numbered.length > OUTPUT_CHAR_LIMIT) {
+          response.appendResponseLine(
+            `Output compressed: file too large for token budget. Use startLine/endLine to read specific ranges.`,
+          );
+        }
+        response.appendResponseLine(numbered);
         return;
       }
 
       // Structured file: symbols become stubs, non-symbols show raw content
       const reqStart = Math.max(1, params.startLine ?? 1);
       const reqEnd = Math.min(structure.totalLines, params.endLine ?? structure.totalLines);
+
+      // Report line corrections when requested values were out of range
+      if (params.startLine !== undefined && reqStart !== params.startLine) {
+        response.appendResponseLine(
+          `ℹ️ startLine was adjusted from ${params.startLine} to ${reqStart} (file has ${totalLines} lines)`,
+        );
+      }
+      if (params.endLine !== undefined && reqEnd !== params.endLine) {
+        response.appendResponseLine(
+          `ℹ️ endLine was adjusted from ${params.endLine} to ${reqEnd} (file has ${totalLines} lines)`,
+        );
+      }
 
       if (reqStart > reqEnd) {
         response.appendResponseLine(
@@ -552,95 +945,38 @@ export const read = defineTool({
         return;
       }
 
-      const { output, actualStart, actualEnd, collapsedRanges, sourceRanges } = renderStructuredRange(
-        structure,
-        allLines,
-        reqStart,
-        reqEnd,
-        skeleton,
-      );
+      const compressed = compressStructuredRangeOutput(structure, allLines, reqStart, reqEnd, skeleton);
 
       // Highlight source (yellow) and collapsed (grey + fold) ranges
-      fileHighlightReadRange(filePath, actualStart - 1, actualEnd - 1, collapsedRanges, sourceRanges);
+      fileHighlightReadRange(filePath, compressed.actualStart - 1, compressed.actualEnd - 1, compressed.collapsedRanges, compressed.sourceRanges);
 
-      response.appendResponseLine(
-        output.length > CHARACTER_LIMIT
-          ? output.substring(0, CHARACTER_LIMIT) + '\n\n⚠️ Truncated'
-          : output,
-      );
+      if (compressed.compressed && compressed.label) {
+        response.appendResponseLine(`Output compressed: ${compressed.label}.\n`);
+      }
+      response.appendResponseLine(compressed.output);
       return;
     }
 
     // ── Skeleton mode (no targets, no line range) ─────────────
     if (targets.length === 0 && skeleton) {
       if (!structure) {
-        response.appendResponseLine('Skeleton mode requires a supported structured file type.');
+        response.appendResponseLine(
+          `This file type does not support structured reading (skeleton mode). ` +
+          `Use \`startLine\`/\`endLine\` for line-range reading, or omit all parameters to read the full file.`,
+        );
         return;
       }
 
-      // Build source-ordered list of all items
-      interface SkeletonPiece {
-        startLine: number;
-        endLine: number;
-        category: 'imports' | 'exports' | 'comments' | 'directives' | 'symbol' | 'raw';
-        symbol?: FileSymbol;
-      }
+      // Focus the file in the client editor (full file range, 0-indexed)
+      fileHighlightReadRange(filePath, 0, structure.totalLines - 1);
 
-      const pieces: SkeletonPiece[] = [];
+      const maxNesting = recursive ? getMaxSymbolNesting(structure.symbols) : 0;
+      const result = compressSkeletonOutput(structure, allLines, maxNesting);
 
-      for (const item of structure.orphaned.items) {
-        const cat: SkeletonPiece['category'] =
-          item.category === 'import' ? 'imports' :
-          item.category === 'export' ? 'exports' :
-          item.category === 'comment' ? 'comments' :
-          item.category === 'directive' ? 'directives' :
-          'comments';
-        pieces.push({ startLine: item.range.start, endLine: item.range.end, category: cat });
+      if (result.compressed && result.label) {
+        response.appendResponseLine(`Output compressed: ${result.label}.\n`);
       }
-      for (const sym of structure.symbols) {
-        pieces.push({ startLine: sym.range.startLine, endLine: sym.range.endLine, category: 'symbol', symbol: sym });
-      }
-      for (const gap of structure.gaps) {
-        if (gap.type === 'unknown') {
-          pieces.push({ startLine: gap.start, endLine: gap.end, category: 'raw' });
-        }
-      }
-
-      pieces.sort((a, b) => a.startLine - b.startLine);
-
-      // Merge adjacent same-category block items
-      const merged: SkeletonPiece[] = [];
-      for (const piece of pieces) {
-        const prev = merged[merged.length - 1];
-        const canMerge = prev
-          && piece.category !== 'symbol'
-          && piece.category !== 'raw'
-          && prev.category === piece.category
-          && piece.startLine <= prev.endLine + 2;
-        if (canMerge && prev) {
-          prev.endLine = Math.max(prev.endLine, piece.endLine);
-        } else {
-          merged.push({ ...piece });
-        }
-      }
-
-      for (const piece of merged) {
-        if (piece.category === 'raw') {
-          for (let l = piece.startLine; l <= piece.endLine; l++) {
-            response.appendResponseLine(`[${l}] ${allLines[l - 1] ?? ''}`);
-          }
-        } else if (piece.symbol) {
-          const entries = formatSkeletonEntry(piece.symbol, '', recursive);
-          for (const entry of entries) response.appendResponseLine(entry);
-        } else if (piece.startLine === piece.endLine) {
-          // Single-line block: show actual content
-          response.appendResponseLine(`[${piece.startLine}] ${allLines[piece.startLine - 1] ?? ''}`);
-        } else {
-          // Multi-line block: show collapsed stub
-          response.appendResponseLine(`[${piece.startLine}-${piece.endLine}] ${piece.category}`);
-        }
-      }
-
+      response.appendResponseLine(result.output);
       return;
     }
 
@@ -649,12 +985,12 @@ export const read = defineTool({
       const content = await fileReadContent(filePath);
       fileHighlightReadRange(filePath, content.startLine, content.endLine);
 
-      const numbered = addLineNumbers(content.content, content.startLine + 1);
-      response.appendResponseLine(
-        numbered.length > CHARACTER_LIMIT
-          ? numbered.substring(0, CHARACTER_LIMIT) + '\n\n⚠️ Truncated'
-          : numbered,
-      );
+      const result = compressFullFileOutput(content.content, structure, allLines, content.startLine + 1);
+
+      if (result.compressed && result.label) {
+        response.appendResponseLine(`Output compressed: ${result.label}.\n`);
+      }
+      response.appendResponseLine(result.output);
       return;
     }
 
@@ -663,7 +999,8 @@ export const read = defineTool({
     // Targets require structured extraction
     if (!structure) {
       response.appendResponseLine(
-        'Target-based reading requires a supported structured file type.',
+        `This file type does not support structured reading (target mode). ` +
+        `Use \`startLine\`/\`endLine\` for line-range reading, or omit all parameters to read the full file.`,
       );
       return;
     }
@@ -677,15 +1014,26 @@ export const read = defineTool({
           'comment';
         const items = structure.orphaned.items.filter(i => i.category === categoryFilter);
 
+        // Focus the file in the client editor for special targets
+        if (items.length > 0) {
+          const firstStart = items[0].range.start - 1;
+          const lastEnd = items[items.length - 1].range.end - 1;
+          fileHighlightReadRange(filePath, firstStart, lastEnd);
+        }
+
         if (skeleton) {
           for (const item of items) {
-            const entries = formatSkeletonEntry(item, '', false);
+            const entries = formatSkeletonEntry(item, '', 0);
             for (const entry of entries) response.appendResponseLine(entry);
           }
         } else {
           for (const item of items) {
+            // For inline exports (export class/function/interface/etc.), only show the
+            // declaration header line rather than dumping the entire body
+            const isInlineExport = item.kind === 'inline-export';
+            const displayEnd = isInlineExport ? item.range.start : item.range.end;
             const numbered = addLineNumbers(
-              getContentSlice(allLines, item.range.start, item.range.end),
+              getContentSlice(allLines, item.range.start, displayEnd),
               item.range.start,
             );
             response.appendResponseLine(numbered);
@@ -717,38 +1065,24 @@ export const read = defineTool({
         const endLine = symbol.range.endLine;
 
         if (skeleton) {
-          const entries = formatSkeletonEntry(symbol, '', recursive);
-          for (const entry of entries) response.appendResponseLine(entry);
+          // Focus the symbol range in the client editor (convert 1-indexed to 0-indexed)
+          fileHighlightReadRange(filePath, startLine - 1, endLine - 1);
+
+          const maxNesting = recursive ? getMaxSymbolNesting(symbol.children ?? []) : 0;
+          const result = compressTargetSkeleton(symbol, maxNesting);
+          if (result.compressed && result.label) {
+            response.appendResponseLine(`Output compressed: ${result.label}.\n`);
+          }
+          response.appendResponseLine(result.output);
         } else {
           // Highlight in editor (convert 1-indexed to 0-indexed for VS Code)
           fileHighlightReadRange(filePath, startLine - 1, endLine - 1);
 
-          const range = startLine === endLine ? `${startLine}` : `${startLine}-${endLine}`;
-          response.appendResponseLine(`[${range}] ${symbol.kind} ${symbol.name}`);
-
-          if (recursive || !symbol.children || symbol.children.length === 0) {
-            const numbered = addLineNumbers(
-              getContentSlice(allLines, startLine, endLine),
-              startLine,
-            );
-            response.appendResponseLine(
-              numbered.length > CHARACTER_LIMIT
-                ? numbered.substring(0, CHARACTER_LIMIT) + '\n\n⚠️ Truncated'
-                : numbered,
-            );
-          } else {
-            const formatted = formatContentWithPlaceholders(
-              allLines,
-              symbol,
-              startLine,
-              endLine,
-            );
-            response.appendResponseLine(
-              formatted.length > CHARACTER_LIMIT
-                ? formatted.substring(0, CHARACTER_LIMIT) + '\n\n⚠️ Truncated'
-                : formatted,
-            );
+          const result = compressTargetContent(symbol, allLines, structure, recursive);
+          if (result.compressed && result.label) {
+            response.appendResponseLine(`Output compressed: ${result.label}.\n`);
           }
+          response.appendResponseLine(result.output);
         }
       }
     }

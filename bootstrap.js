@@ -140,7 +140,8 @@ function safeWrite(conn, isConnAlive, id, error) {
  * @param {*} result - Result object
  */
 function writeResult(conn, id, result) {
-  const response = JSON.stringify({ jsonrpc: '2.0', id, result });
+  // undefined is not serializable in JSON — convert to null so the 'result' key is preserved
+  const response = JSON.stringify({ jsonrpc: '2.0', id, result: result ?? null });
   conn.write(response + '\n');
 }
 

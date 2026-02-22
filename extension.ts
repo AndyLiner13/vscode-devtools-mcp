@@ -245,7 +245,7 @@ export async function activate(context: vscode.ExtensionContext) {
       // ── Tethered Lifecycle: Client Window ↔ MCP Server ──────────────────
       // The client window and MCP server are a single entity:
       // - Extension activation → start both immediately
-      // - Client dies → disable MCP server
+      // - Client dies → stop MCP server (keeps server registered for restart)
       // - MCP toggled off → stop client window
       // - MCP toggled on → start client window
 
@@ -256,6 +256,7 @@ export async function activate(context: vscode.ExtensionContext) {
       context.subscriptions.push(
         onClientStateChanged((connected: boolean) => {
           if (tetheredAction) {
+            log('Tethered lifecycle: ignoring state change (tethered action in progress)');
             return;
           }
           if (connected) {
@@ -263,10 +264,19 @@ export async function activate(context: vscode.ExtensionContext) {
             log('Client window connected');
           } else {
             updateStatusBar('disconnected');
-            log('Client window disconnected — disabling MCP server');
+            log('Client window disconnected — stopping MCP server via tethered lifecycle');
             tetheredAction = true;
-            mcpProvider.setEnabled(false);
-            tetheredAction = false;
+            void vscode.commands.executeCommand('workbench.mcp.stopServer', 'devtools.mcp-server').then(
+              () => {
+                log('Tethered lifecycle: MCP server stopped successfully');
+                tetheredAction = false;
+              },
+              (err: unknown) => {
+                const msg = err instanceof Error ? err.message : String(err);
+                log(`Tethered lifecycle: MCP stopServer failed: ${msg}`);
+                tetheredAction = false;
+              },
+            );
           }
         }),
       );
@@ -315,6 +325,17 @@ export async function activate(context: vscode.ExtensionContext) {
       clientHandlersCleanup = disposable;
       context.subscriptions.push(disposable);
       log('Client handlers registered');
+
+      // Noop MCP provider: the package.json declares mcpServerDefinitionProviders
+      // globally, so VS Code in this window will try to discover the provider.
+      // Register an empty provider so the client never spawns its own MCP server.
+      const noopProvider: vscode.McpServerDefinitionProvider = {
+        provideMcpServerDefinitions: () => [],
+      };
+      context.subscriptions.push(
+        vscode.lm.registerMcpServerDefinitionProvider('devtools.mcp-server', noopProvider),
+      );
+      log('Noop MCP provider registered — client will not spawn MCP server');
 
       // Start the codebase worker thread so ts-morph stays warm
       startWorker();

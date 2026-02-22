@@ -1260,6 +1260,9 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 
     const doRestart = async (): Promise<Record<string, unknown>> => {
       console.log('[host] readyToRestart — stop → clearCache → start');
+      // Suppress health monitor during MCP restart to prevent
+      // the tethered lifecycle from stopping the server mid-restart
+      hotReloadInProgress = true;
       const serverId = getMcpServerId();
       const bridge = mcpProgressBridge;
       mcpProgressBridge = null;
@@ -1349,6 +1352,8 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
       return await restartInProgress;
     } finally {
       restartInProgress = null;
+      hotReloadInProgress = false;
+      console.log('[host] MCP restart complete — health monitor resumed');
     }
   };
 
@@ -1649,6 +1654,7 @@ function startHealthMonitor(): void {
   clientHealthMonitorInterval = setInterval(async () => {
     // Skip checks during hot-reload or reconnection
     if (hotReloadInProgress || clientReconnecting) {
+      console.log(`[host] Health monitor skipped (hotReload=${hotReloadInProgress}, reconnecting=${clientReconnecting})`);
       return;
     }
 

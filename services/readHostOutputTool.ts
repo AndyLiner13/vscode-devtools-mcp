@@ -136,54 +136,48 @@ function findLogFiles(dir: string, session: SessionType, category = 'root'): Log
     return results;
 }
 
-function getLatestSessionDir(logsRoot: string): string | null {
-    if (!fs.existsSync(logsRoot)) {
-        return null;
-    }
+const MAX_SESSION_SCAN = 10;
 
-    let sessions: string[];
+function getRecentSessionDirs(logsRoot: string, max = MAX_SESSION_SCAN): string[] {
+    if (!fs.existsSync(logsRoot)) {
+        return [];
+    }
     try {
-        sessions = fs
+        const names = fs
             .readdirSync(logsRoot, { withFileTypes: true })
             .filter(d => d.isDirectory())
             .map(d => d.name)
             .sort()
-            .reverse();
+            .reverse()
+            .slice(0, max);
+        return names.map(name => path.join(logsRoot, name));
     } catch {
-        return null;
+        return [];
     }
-
-    if (sessions.length === 0) {
-        return null;
-    }
-
-    return path.join(logsRoot, sessions[0]);
 }
 
-function getHostLogsDir(): string | null {
+function getHostLogsDirs(): string[] {
     const userDataDir = getUserDataDir();
     if (!userDataDir) {
-        return null;
+        return [];
     }
-    return getLatestSessionDir(path.join(userDataDir, 'logs'));
+    return getRecentSessionDirs(path.join(userDataDir, 'logs'));
 }
 
-function getClientLogsDir(): string | null {
+function getClientLogsDirs(): string[] {
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders || workspaceFolders.length === 0) {
-        return null;
+        return [];
     }
 
     const root = workspaceFolders[0].uri.fsPath;
     const candidates: string[] = [];
 
-    // Check workspace storage path first (set by extension via storageUri)
     const storagePath = getClientLogsStoragePath();
     if (storagePath) {
         candidates.push(path.join(storagePath, 'user-data', 'logs'));
     }
 
-    // Fallback: scan workspace for legacy .devtools/user-data/logs/
     candidates.push(path.join(root, '.devtools', 'user-data', 'logs'));
 
     try {
@@ -199,42 +193,66 @@ function getClientLogsDir(): string | null {
         // Can't read root dir
     }
 
-    // Pick the candidate with the most recent log session
-    let bestDir: string | null = null;
+    // Find the candidate root with the most recent session
+    let bestRoot: string | null = null;
     let bestTimestamp = '';
 
     for (const candidate of candidates) {
-        const sessionDir = getLatestSessionDir(candidate);
-        if (sessionDir) {
-            const sessionName = path.basename(sessionDir);
-            if (sessionName > bestTimestamp) {
-                bestTimestamp = sessionName;
-                bestDir = sessionDir;
+        if (!fs.existsSync(candidate)) {
+            continue;
+        }
+        try {
+            const sessions = fs
+                .readdirSync(candidate, { withFileTypes: true })
+                .filter(d => d.isDirectory())
+                .map(d => d.name)
+                .sort()
+                .reverse();
+            if (sessions.length > 0 && sessions[0] > bestTimestamp) {
+                bestTimestamp = sessions[0];
+                bestRoot = candidate;
             }
+        } catch {
+            continue;
         }
     }
 
-    return bestDir;
+    if (!bestRoot) {
+        return [];
+    }
+    return getRecentSessionDirs(bestRoot);
 }
 
 /**
  * Discover log files from all active VS Code sessions.
- * Returns files tagged with their session origin.
+ * Scans multiple recent session directories per log root and merges results.
+ * Deduplicates by channel name per session type, keeping the newest file.
  */
 function discoverAllLogFiles(sessionFilter?: SessionType): LogFileInfo[] {
     const allFiles: LogFileInfo[] = [];
+    const seen = new Set<string>();
 
     if (!sessionFilter || sessionFilter === 'host') {
-        const hostDir = getHostLogsDir();
-        if (hostDir) {
-            allFiles.push(...findLogFiles(hostDir, 'host'));
+        for (const dir of getHostLogsDirs()) {
+            for (const file of findLogFiles(dir, 'host')) {
+                const key = `host:${file.name}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    allFiles.push(file);
+                }
+            }
         }
     }
 
     if (!sessionFilter || sessionFilter === 'client') {
-        const clientDir = getClientLogsDir();
-        if (clientDir) {
-            allFiles.push(...findLogFiles(clientDir, 'client'));
+        for (const dir of getClientLogsDirs()) {
+            for (const file of findLogFiles(dir, 'client')) {
+                const key = `client:${file.name}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    allFiles.push(file);
+                }
+            }
         }
     }
 
