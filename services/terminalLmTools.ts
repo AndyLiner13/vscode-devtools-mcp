@@ -272,11 +272,11 @@ export class TerminalExecuteTool implements vscode.LanguageModelTool<ITerminalRu
         // Keys mode: send key sequences for interactive TUI navigation
         if (params.keys && params.keys.length > 0) {
             try {
-                const result = await controller.sendKeys(params.keys, params.name);
+                const result = await controller.sendKeys(params.keys, params.name, params.timeout);
                 const filters = extractDrillDownFilters(params);
                 const formatted = formatTerminalResult(result, undefined, undefined, filters);
 
-                if (params.ephemeral) {
+                if (params.ephemeral && (result.status === 'completed' || result.status === 'timeout')) {
                     controller.destroyTerminal(params.name);
                 }
 

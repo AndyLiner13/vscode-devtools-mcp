@@ -424,8 +424,9 @@ export class SingleTerminalController {
    * Returns immediately with current terminal state (no waiting for completion).
    * Keys can be friendly names ("ArrowUp", "Enter", "Ctrl+C") or raw characters.
    */
-  async sendKeys(keys: string[], name?: string): Promise<TerminalRunResult> {
+  async sendKeys(keys: string[], name?: string, timeoutMs?: number): Promise<TerminalRunResult> {
     const terminalName = name ?? DEFAULT_TERMINAL_NAME;
+    const timeout = timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
     const state = this.terminals.get(terminalName);
     if (!state) {
@@ -433,6 +434,13 @@ export class SingleTerminalController {
         `No terminal named "${terminalName}" exists. Use terminal_execute to start a command first.`,
       );
     }
+
+    // Snapshot current output and reset state before sending keys
+    state.outputSnapshotIndex = state.output.length;
+    state.status = 'running';
+    state.exitCode = undefined;
+    state.lastOutputTime = Date.now();
+    state.commandStartTime = Date.now();
 
     state.terminal.show(true);
 
@@ -447,19 +455,9 @@ export class SingleTerminalController {
       }
     }
 
-    // Wait briefly for output to settle, then return current state
-    await new Promise(resolve => setTimeout(resolve, KEY_SETTLE_MS * 2));
-
-    const cleaned = cleanTerminalOutput(state.output);
-    return this.withProcessSummary({
-      status: state.status,
-      output: cleaned,
-      shell: state.shell,
-      cwd: state.cwd,
-      exitCode: state.exitCode,
-      pid: state.pid,
-      name: terminalName,
-    });
+    // Wait for next completion, prompt, or timeout (same as sendInput)
+    const result = await this.waitForResult(state, timeout);
+    return this.withProcessSummary(result);
   }
 
   /**
