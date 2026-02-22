@@ -199,7 +199,7 @@ async function handleTerminalInput(params: Record<string, unknown>) {
 /**
  * Get the current terminal state without modifying anything.
  */
-function handleTerminalState(params: Record<string, unknown>) {
+async function handleTerminalState(params: Record<string, unknown>) {
   if (!terminalController) throw new Error('Terminal controller not initialized');
 
   const name = paramStr(params, 'name');

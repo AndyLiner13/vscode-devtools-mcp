@@ -192,7 +192,7 @@ export class TerminalReadTool implements vscode.LanguageModelTool<IReadTerminalP
         const params = options.input;
         const controller = getController();
 
-        const result = controller.getState(params.name);
+        const result = await controller.getState(params.name);
         const filters = extractDrillDownFilters(params);
         const formatted = formatTerminalResult(result, params.limit, params.pattern, filters);
 

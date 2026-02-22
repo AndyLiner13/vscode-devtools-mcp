@@ -22,7 +22,7 @@ import * as vscode from 'vscode';
 import { cleanTerminalOutput, type TerminalStatus } from './processDetection';
 import { getProcessLedger, type TerminalSessionInfo } from './processLedger';
 import { getUserActionTracker } from './userActionTracker';
-import { isProcessWaitingForStdin, isStdinDetectionAvailable, type StdinDetectionResult } from './stdinDetection';
+import { getProcessTree, isStdinDetectionAvailable, isTreeWaitingForStdin, type ProcessTreeResult, type StdinDetectionResult } from './stdinDetection';
 
 // ── Configuration ────────────────────────────────────────────────────────────
 
@@ -32,23 +32,30 @@ const OUTPUT_SETTLE_MS = 2_000;      // Wait for output to settle after executio
 const NATIVE_STDIN_SETTLE_MS = 500;  // Reduced settle time when native detection available
 const DEFAULT_TERMINAL_NAME = 'default';
 
-// Native stdin detection state
+// Native detection state
 let nativeDetectionAvailable: boolean | null = null;  // null = not checked yet
 let lastNativeCheckTime = 0;
-let lastNativeResult: StdinDetectionResult | null = null;
+let lastNativeStdinResult: StdinDetectionResult | null = null;
+let lastNativeTreeResult: ProcessTreeResult | null = null;
 
 /**
- * Check if a process is waiting for stdin input using native detection with heuristic fallback.
- * 
+ * Ensure native detection is initialized. Only checks once.
+ */
+async function ensureNativeDetection(): Promise<boolean> {
+  if (nativeDetectionAvailable === null) {
+    nativeDetectionAvailable = await isStdinDetectionAvailable();
+    console.log(`[NativeDetection] Available: ${nativeDetectionAvailable}`);
+  }
+  return nativeDetectionAvailable;
+}
+
+/**
+ * Check if a process is waiting for stdin input.
+ * Uses process tree walking to find the actual command process.
+ *
  * Priority:
- * 1. Native NtQuerySystemInformation-based detection (definitive, Windows only)
- * 2. Heuristic: executionCount > 0 && output settled (fallback)
- * 
- * @param pid Process ID to check (if available)
- * @param executionCount Number of running shell executions
- * @param msSinceLastOutput Milliseconds since last output
- * @param hasOutput Whether the terminal has any output
- * @returns Whether the process is likely waiting for stdin
+ * 1. Native: walk shell's child tree, check leaf processes for stdin wait
+ * 2. Heuristic fallback: executionCount > 0 && output settled
  */
 async function isWaitingForInputDetection(
   pid: number | undefined,
@@ -56,53 +63,73 @@ async function isWaitingForInputDetection(
   msSinceLastOutput: number,
   hasOutput: boolean
 ): Promise<{ waiting: boolean; method: 'native' | 'heuristic' }> {
-  // Fast path: no execution running or no output means not waiting
   if (executionCount <= 0 || !hasOutput) {
     return { waiting: false, method: 'heuristic' };
   }
 
-  // Check native detection availability (only once)
-  if (nativeDetectionAvailable === null) {
-    nativeDetectionAvailable = await isStdinDetectionAvailable();
-    console.log(`[StdinDetection] Native detection available: ${nativeDetectionAvailable}`);
-  }
+  const available = await ensureNativeDetection();
 
-  // Try native detection if PID is available and native detection works
-  if (pid && nativeDetectionAvailable) {
+  if (pid && available) {
     const now = Date.now();
-    
-    // Rate limit native checks to avoid overhead (max once per 100ms per PID)
+
     if (now - lastNativeCheckTime >= 100) {
       lastNativeCheckTime = now;
       try {
-        lastNativeResult = await isProcessWaitingForStdin(pid);
-        
-        if (!lastNativeResult.error) {
-          // Native detection succeeded - use shorter settle time
-          if (lastNativeResult.isWaitingForStdin) {
-            console.log(`[StdinDetection] Native: PID ${pid} waiting for stdin (reasons: ${lastNativeResult.detectedWaitReasons.join(', ')})`);
+        lastNativeStdinResult = await isTreeWaitingForStdin(pid);
+
+        if (!lastNativeStdinResult.error) {
+          if (lastNativeStdinResult.isWaitingForStdin) {
+            console.log(`[NativeDetection] Tree under PID ${pid} waiting for stdin (reasons: ${lastNativeStdinResult.detectedWaitReasons.join(', ')})`);
             return { waiting: true, method: 'native' };
           } else if (msSinceLastOutput >= NATIVE_STDIN_SETTLE_MS) {
-            // Native says not waiting but output has settled - trust native
             return { waiting: false, method: 'native' };
           }
-        } else {
-          console.log(`[StdinDetection] Native detection error: ${lastNativeResult.error}`);
         }
       } catch (err) {
-        console.log(`[StdinDetection] Native detection threw: ${err}`);
+        console.log(`[NativeDetection] stdin check threw: ${err}`);
       }
-    } else if (lastNativeResult && !lastNativeResult.error) {
-      // Use cached result
-      if (lastNativeResult.isWaitingForStdin) {
-        return { waiting: true, method: 'native' };
-      }
+    } else if (lastNativeStdinResult && !lastNativeStdinResult.error && lastNativeStdinResult.isWaitingForStdin) {
+      return { waiting: true, method: 'native' };
     }
   }
 
-  // Fallback to heuristic: output settled for OUTPUT_SETTLE_MS
   const waiting = msSinceLastOutput >= OUTPUT_SETTLE_MS;
   return { waiting, method: 'heuristic' };
+}
+
+/**
+ * Check if all child processes of the shell have exited.
+ * This replaces the OUTPUT_SETTLE_MS heuristic for completion detection.
+ *
+ * Returns:
+ * - { done: true, method: 'native' } — no children alive, command is definitively done
+ * - { done: false, method: 'native' } — children still running
+ * - { done: undefined, method: 'heuristic' } — native unavailable, caller should use heuristic
+ */
+async function isCommandComplete(
+  pid: number | undefined,
+): Promise<{ done: boolean | undefined; method: 'native' | 'heuristic'; commandPid?: number }> {
+  const available = await ensureNativeDetection();
+
+  if (!pid || !available) {
+    return { done: undefined, method: 'heuristic' };
+  }
+
+  try {
+    lastNativeTreeResult = await getProcessTree(pid);
+
+    if (lastNativeTreeResult.error) {
+      return { done: undefined, method: 'heuristic' };
+    }
+
+    return {
+      done: !lastNativeTreeResult.hasLiveChildren,
+      method: 'native',
+      commandPid: lastNativeTreeResult.commandPid,
+    };
+  } catch {
+    return { done: undefined, method: 'heuristic' };
+  }
 }
 
 // Busy terminal error: max chars of output to include (whole lines, newest first)
@@ -463,7 +490,7 @@ export class SingleTerminalController {
   /**
    * Get current state of a named terminal without modifying anything.
    */
-  getState(name?: string): TerminalRunResult {
+  async getState(name?: string): Promise<TerminalRunResult> {
     const terminalName = name ?? DEFAULT_TERMINAL_NAME;
     const state = this.terminals.get(terminalName);
 
@@ -477,18 +504,36 @@ export class SingleTerminalController {
 
     const cleaned = cleanTerminalOutput(state.output);
     const msSinceLastOutput = Date.now() - state.lastOutputTime;
-    const isWaitingForInput = state.status === 'running'
-      && state.executionCount > 0
-      && msSinceLastOutput >= OUTPUT_SETTLE_MS
-      && state.output.length > 0;
+
+    // Use native process tree detection for input/completion status
+    let detectedStatus: TerminalStatus = state.status;
+    let prompt: string | undefined;
+
+    if (state.status === 'running' && state.output.length > 0) {
+      const detection = await isWaitingForInputDetection(
+        state.pid,
+        state.executionCount,
+        msSinceLastOutput,
+        state.output.length > 0,
+      );
+
+      if (detection.waiting) {
+        detectedStatus = 'waiting_for_input';
+        prompt = cleaned.split('\n').filter(l => l.trim()).pop();
+      } else if (state.executionCount <= 0) {
+        // Shell Integration says done — verify with native tree
+        const completion = await isCommandComplete(state.pid);
+        if (completion.method === 'native' && completion.done) {
+          detectedStatus = 'completed';
+        }
+      }
+    }
 
     return this.withProcessSummary({
-      status: isWaitingForInput ? 'waiting_for_input' : state.status,
+      status: detectedStatus,
       output: cleaned,
       exitCode: state.exitCode,
-      prompt: isWaitingForInput
-        ? cleaned.split('\n').filter(l => l.trim()).pop()
-        : undefined,
+      prompt,
       pid: state.pid,
       name: terminalName,
     });
@@ -828,22 +873,36 @@ export class SingleTerminalController {
             }
           }
 
-          // Priority 2: All shell executions finished — wait for output to settle
+          // Priority 2: Completion detection
+          // Shell integration says executionCount <= 0, or we can check the process tree natively
           if (state.executionCount <= 0 && state.lastExitTime > 0) {
-            // Track when executions first completed
+            // Shell Integration says done — use native tree check to verify instantly
+            const completion = await isCommandComplete(state.pid);
+
+            if (completion.method === 'native' && completion.done) {
+              console.log(`[MultiTerminalController] Native: no children alive for "${state.name}" — resolving as completed`);
+              resolveOnce({
+                status: 'completed',
+                output: cleaned,
+                exitCode: state.exitCode,
+                pid: state.pid,
+                name: state.name,
+              });
+              return;
+            }
+
+            // Native says children still running — keep waiting
+            if (completion.method === 'native' && !completion.done) {
+              return;
+            }
+
+            // Heuristic fallback: wait for output to settle
             if (completedAt === null) {
               completedAt = Date.now();
               console.log(`[MultiTerminalController] Execution count 0 for "${state.name}", waiting for output to settle...`);
               return;
             }
 
-            // New execution started → reset
-            if (state.executionCount > 0) {
-              completedAt = null;
-              return;
-            }
-
-            // Output has settled → resolve as completed
             if (msSinceLastOutput >= OUTPUT_SETTLE_MS) {
               console.log(`[MultiTerminalController] Output settled for "${state.name}" — resolving`);
               resolveOnce({
@@ -856,8 +915,31 @@ export class SingleTerminalController {
               return;
             }
           } else if (state.executionCount > 0) {
-            // Commands still running — reset completedAt tracker
-            completedAt = null;
+            // Shell Integration says executions still running — but check native tree
+            const completion = await isCommandComplete(state.pid);
+
+            if (completion.method === 'native' && completion.done) {
+              // Shell Integration is lagging — native confirms no children
+              // Give a brief moment for Shell Integration to catch up
+              if (completedAt === null) {
+                completedAt = Date.now();
+                return;
+              }
+              if (Date.now() - completedAt >= NATIVE_STDIN_SETTLE_MS) {
+                console.log(`[MultiTerminalController] Native: tree empty for "${state.name}" (shell integration lagging) — resolving`);
+                resolveOnce({
+                  status: 'completed',
+                  output: cleaned,
+                  exitCode: state.exitCode,
+                  pid: state.pid,
+                  name: state.name,
+                });
+                return;
+              }
+            } else {
+              // Children still running — reset completedAt tracker
+              completedAt = null;
+            }
           }
         })();
       }, POLL_INTERVAL_MS);

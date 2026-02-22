@@ -86,6 +86,22 @@ export interface StdinDetectionResult {
     readonly error?: string;
 }
 
+// Parsed process entry from NtQuerySystemInformation
+interface ProcessEntry {
+    pid: number;
+    parentPid: number;
+    threadCount: number;
+    threads: ReadonlyArray<{ threadState: number; waitReason: number }>;
+}
+
+// Process tree detection result
+export interface ProcessTreeResult {
+    readonly hasLiveChildren: boolean;
+    readonly childPids: readonly number[];
+    readonly commandPid: number | undefined;
+    readonly error?: string;
+}
+
 // Module state - using any to avoid import() type annotations which are forbidden by eslint
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let koffiModule: any = null;
@@ -150,43 +166,36 @@ async function initializeKoffi(): Promise<void> {
 }
 
 /**
- * Parse SYSTEM_PROCESS_INFORMATION from raw buffer
- * Structure based on psutil's ntextapi.h
+ * Parse SYSTEM_PROCESS_INFORMATION from raw buffer.
+ * Returns PID, parent PID, and thread states.
+ *
+ * SYSTEM_PROCESS_INFORMATION x64 layout (from psutil ntextapi.h):
+ *   Offset  0: ULONG NextEntryOffset
+ *   Offset  4: ULONG NumberOfThreads
+ *   Offset  8: LARGE_INTEGER[3] SpareLi (24 bytes)
+ *   Offset 32: LARGE_INTEGER CreateTime
+ *   Offset 40: LARGE_INTEGER UserTime
+ *   Offset 48: LARGE_INTEGER KernelTime
+ *   Offset 56: UNICODE_STRING ImageName (16 bytes: 2+2+4pad+8ptr)
+ *   Offset 72: LONG BasePriority + 4 pad
+ *   Offset 80: HANDLE UniqueProcessId (8 bytes)
+ *   Offset 88: HANDLE InheritedFromUniqueProcessId (8 bytes)
+ *   ...
+ *   Offset 184: SYSTEM_THREAD_INFORMATION Threads[]
  */
-function parseProcessInfo(buffer: Uint8Array, offset: number): {
+function parseProcessEntry(buffer: Uint8Array, offset: number): {
     nextEntryOffset: number;
-    numberOfThreads: number;
-    uniqueProcessId: bigint;
-    threads: Array<{ threadState: number; waitReason: number }>;
+    entry: ProcessEntry;
 } {
     const view = new DataView(buffer.buffer, buffer.byteOffset + offset);
     
-    // SYSTEM_PROCESS_INFORMATION layout (x64):
-    // Offset 0: ULONG NextEntryOffset (4 bytes)
-    // Offset 4: ULONG NumberOfThreads (4 bytes)
-    // Offset 8: LARGE_INTEGER SpareLi1 (8 bytes)
-    // Offset 16: LARGE_INTEGER SpareLi2 (8 bytes)
-    // Offset 24: LARGE_INTEGER SpareLi3 (8 bytes)
-    // Offset 32: LARGE_INTEGER CreateTime (8 bytes)
-    // Offset 40: LARGE_INTEGER UserTime (8 bytes)
-    // Offset 48: LARGE_INTEGER KernelTime (8 bytes)
-    // Offset 56: UNICODE_STRING ImageName (16 bytes on x64: 2+2+4 padding+8 pointer)
-    // Offset 72: LONG BasePriority (4 bytes) + 4 padding
-    // Offset 80: HANDLE UniqueProcessId (8 bytes on x64)
-    // ... more fields ...
-    // After fixed fields: SYSTEM_THREAD_INFORMATION Threads[NumberOfThreads]
-    
     const nextEntryOffset = view.getUint32(0, true);
     const numberOfThreads = view.getUint32(4, true);
+    const pid = Number(view.getBigUint64(80, true));
+    const parentPid = Number(view.getBigUint64(88, true));
     
-    // UniqueProcessId is at offset 80 on x64 (after UNICODE_STRING and padding)
-    // This is a HANDLE which is 8 bytes on x64
-    const uniqueProcessId = view.getBigUint64(80, true);
-    
-    // SYSTEM_THREAD_INFORMATION starts after the fixed process info
-    // Fixed size of SYSTEM_PROCESS_INFORMATION header is 184 bytes on x64
     const threadInfoOffset = 184;
-    const threadInfoSize = 64;  // Size of SYSTEM_THREAD_INFORMATION on x64
+    const threadInfoSize = 64;
     
     const threads: Array<{ threadState: number; waitReason: number }> = [];
     
@@ -198,30 +207,7 @@ function parseProcessInfo(buffer: Uint8Array, offset: number): {
         
         const threadView = new DataView(buffer.buffer, buffer.byteOffset + threadOffset);
         
-        // SYSTEM_THREAD_INFORMATION layout (x64):
-        // Offset 0: LARGE_INTEGER KernelTime (8 bytes)
-        // Offset 8: LARGE_INTEGER UserTime (8 bytes)
-        // Offset 16: LARGE_INTEGER CreateTime (8 bytes)
-        // Offset 24: ULONG WaitTime (4 bytes)
-        // Offset 28: padding (4 bytes)
-        // Offset 32: PVOID StartAddress (8 bytes)
-        // Offset 40: CLIENT_ID ClientId (16 bytes: 2x HANDLE)
-        // Offset 56: LONG Priority (4 bytes)
-        // Offset 60: LONG BasePriority (4 bytes)
-        // Offset 64: ULONG ContextSwitches (4 bytes)
-        // Offset 68: ULONG ThreadState (4 bytes)
-        // Offset 72: KWAIT_REASON WaitReason (4 bytes)
-        
-        // Actually the layout varies - let me use a safer approach
-        // Based on psutil's SYSTEM_THREAD_INFORMATION2:
-        // ThreadState is a ULONG at offset 68
-        // WaitReason is immediately after at offset 72
-        
-        // More robust: ThreadState and WaitReason are near the end
-        // Offset 48: ULONG ContextSwitches
-        // Offset 52: ULONG ThreadState  
-        // Offset 56: KWAIT_REASON WaitReason
-        
+        // SYSTEM_THREAD_INFORMATION x64: ThreadState at +48, WaitReason at +52
         const threadState = threadView.getUint32(48, true);
         const waitReason = threadView.getUint32(52, true);
         
@@ -230,142 +216,257 @@ function parseProcessInfo(buffer: Uint8Array, offset: number): {
     
     return {
         nextEntryOffset,
-        numberOfThreads,
-        uniqueProcessId,
-        threads
+        entry: { pid, parentPid, threadCount: numberOfThreads, threads },
     };
 }
 
+// ── Shared Process Table Snapshot ────────────────────────────────────────────
+
+const STATUS_INFO_LENGTH_MISMATCH = 0xC0000004;
+const MAX_BUFFER_SIZE = 64 * 1024 * 1024; // 64MB
+
 /**
- * Check if a process is waiting for stdin input
- * 
- * @param pid - Process ID to check
- * @returns Detection result with details
+ * Query NtQuerySystemInformation and build a Map of all processes.
+ * This is the single source of truth — all higher-level functions use this.
+ */
+function snapshotProcessTable(): Map<number, ProcessEntry> | string {
+    if (!NtQuerySystemInformation || !koffiModule) {
+        return 'NtQuerySystemInformation not initialized';
+    }
+
+    let bufferSize = 1024 * 1024;
+    let buffer: Uint8Array;
+    let returnLength: number[];
+    let status: number;
+
+    do {
+        buffer = new Uint8Array(bufferSize);
+        returnLength = [0];
+
+        status = NtQuerySystemInformation(
+            SystemProcessInformation,
+            buffer,
+            bufferSize,
+            returnLength,
+        );
+
+        if (status === STATUS_INFO_LENGTH_MISMATCH || (status < 0 && returnLength[0] > bufferSize)) {
+            bufferSize = returnLength[0] + 65536;
+            if (bufferSize > MAX_BUFFER_SIZE) {
+                return 'Buffer size exceeded 64MB limit';
+            }
+        }
+    } while (status === STATUS_INFO_LENGTH_MISMATCH);
+
+    if (status < 0) {
+        return `NtQuerySystemInformation failed: 0x${(status >>> 0).toString(16)}`;
+    }
+
+    const table = new Map<number, ProcessEntry>();
+    let offset = 0;
+
+    while (offset < returnLength[0]) {
+        const { nextEntryOffset, entry } = parseProcessEntry(buffer, offset);
+        table.set(entry.pid, entry);
+
+        if (nextEntryOffset === 0) {
+            break;
+        }
+        offset += nextEntryOffset;
+    }
+
+    return table;
+}
+
+// ── Stdin Detection (refactored to use shared snapshot) ─────────────────────
+
+function checkThreadsForStdin(entry: ProcessEntry): { waitingCount: number; reasons: number[] } {
+    let waitingCount = 0;
+    const reasons: number[] = [];
+    
+    for (const thread of entry.threads) {
+        if (thread.threadState === KTHREAD_STATE.Waiting) {
+            if (
+                thread.waitReason === KWAIT_REASON.UserRequest ||
+                thread.waitReason === KWAIT_REASON.WrUserRequest ||
+                thread.waitReason === KWAIT_REASON.WrLpcReceive
+            ) {
+                waitingCount++;
+                reasons.push(thread.waitReason);
+            }
+        }
+    }
+    
+    return { waitingCount, reasons };
+}
+
+/**
+ * Check if a process is waiting for stdin input.
+ * Uses NtQuerySystemInformation to inspect thread wait states.
  */
 export async function isProcessWaitingForStdin(pid: number): Promise<StdinDetectionResult> {
     await initializeKoffi();
     
     if (initError) {
-        return {
-            isWaitingForStdin: false,
-            threadCount: 0,
-            waitingThreadCount: 0,
-            detectedWaitReasons: [],
-            error: initError
-        };
-    }
-    
-    if (!NtQuerySystemInformation || !koffiModule) {
-        return {
-            isWaitingForStdin: false,
-            threadCount: 0,
-            waitingThreadCount: 0,
-            detectedWaitReasons: [],
-            error: 'NtQuerySystemInformation not initialized'
-        };
+        return { isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0, detectedWaitReasons: [], error: initError };
     }
     
     try {
-        // Start with a reasonable buffer size and grow if needed
-        let bufferSize = 1024 * 1024;  // 1MB initial
-        let buffer: Uint8Array;
-        let returnLength = [0];
-        let status: number;
-        
-        // Loop to handle STATUS_INFO_LENGTH_MISMATCH
-        const STATUS_INFO_LENGTH_MISMATCH = 0xC0000004;
-        
-        do {
-            buffer = new Uint8Array(bufferSize);
-            returnLength = [0];
-            
-            status = NtQuerySystemInformation(
-                SystemProcessInformation,
-                buffer,
-                bufferSize,
-                returnLength
-            );
-            
-            if (status === STATUS_INFO_LENGTH_MISMATCH || (status < 0 && returnLength[0] > bufferSize)) {
-                bufferSize = returnLength[0] + 65536;  // Add some extra space
-                if (bufferSize > 64 * 1024 * 1024) {  // 64MB max
-                    return {
-                        isWaitingForStdin: false,
-                        threadCount: 0,
-                        waitingThreadCount: 0,
-                        detectedWaitReasons: [],
-                        error: 'Buffer size exceeded 64MB limit'
-                    };
-                }
-            }
-        } while (status === STATUS_INFO_LENGTH_MISMATCH);
-        
-        if (status < 0) {
-            return {
-                isWaitingForStdin: false,
-                threadCount: 0,
-                waitingThreadCount: 0,
-                detectedWaitReasons: [],
-                error: `NtQuerySystemInformation failed with status: 0x${(status >>> 0).toString(16)}`
-            };
+        const table = snapshotProcessTable();
+        if (typeof table === 'string') {
+            return { isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0, detectedWaitReasons: [], error: table };
         }
-        
-        // Parse the linked list of SYSTEM_PROCESS_INFORMATION
-        let offset = 0;
-        const targetPid = BigInt(pid);
-        
-        while (offset < returnLength[0]) {
-            const processInfo = parseProcessInfo(buffer, offset);
-            
-            if (processInfo.uniqueProcessId === targetPid) {
-                // Found our process, check thread states
-                let waitingThreadCount = 0;
-                const detectedWaitReasons: number[] = [];
-                
-                for (const thread of processInfo.threads) {
-                    if (thread.threadState === KTHREAD_STATE.Waiting) {
-                        // Check if waiting for user request (stdin)
-                        if (
-                            thread.waitReason === KWAIT_REASON.UserRequest ||
-                            thread.waitReason === KWAIT_REASON.WrUserRequest ||
-                            thread.waitReason === KWAIT_REASON.WrLpcReceive
-                        ) {
-                            waitingThreadCount++;
-                            detectedWaitReasons.push(thread.waitReason);
-                        }
-                    }
-                }
-                
-                return {
-                    isWaitingForStdin: waitingThreadCount > 0,
-                    threadCount: processInfo.numberOfThreads,
-                    waitingThreadCount,
-                    detectedWaitReasons
-                };
-            }
-            
-            // Move to next process
-            if (processInfo.nextEntryOffset === 0) {
-                break;  // Last entry
-            }
-            offset += processInfo.nextEntryOffset;
+
+        const entry = table.get(pid);
+        if (!entry) {
+            return { isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0, detectedWaitReasons: [], error: `Process ${pid} not found` };
         }
-        
+
+        const { waitingCount, reasons } = checkThreadsForStdin(entry);
         return {
-            isWaitingForStdin: false,
-            threadCount: 0,
-            waitingThreadCount: 0,
-            detectedWaitReasons: [],
-            error: `Process ${pid} not found`
+            isWaitingForStdin: waitingCount > 0,
+            threadCount: entry.threadCount,
+            waitingThreadCount: waitingCount,
+            detectedWaitReasons: reasons,
         };
-        
     } catch (err) {
         return {
             isWaitingForStdin: false,
             threadCount: 0,
             waitingThreadCount: 0,
             detectedWaitReasons: [],
-            error: `Detection failed: ${err instanceof Error ? err.message : String(err)}`
+            error: `Detection failed: ${err instanceof Error ? err.message : String(err)}`,
+        };
+    }
+}
+
+// ── Process Tree Enumeration (Feature A) ────────────────────────────────────
+
+/**
+ * Collect all descendant PIDs of a given parent process (recursive tree walk).
+ */
+function collectDescendants(rootPid: number, table: Map<number, ProcessEntry>): number[] {
+    const descendants: number[] = [];
+    const visited = new Set<number>();
+    const queue = [rootPid];
+
+    while (queue.length > 0) {
+        const parentPid = queue.pop()!;
+        if (visited.has(parentPid)) {
+            continue;
+        }
+        visited.add(parentPid);
+
+        for (const [pid, entry] of table) {
+            if (entry.parentPid === parentPid && pid !== rootPid && !visited.has(pid)) {
+                descendants.push(pid);
+                queue.push(pid);
+            }
+        }
+    }
+
+    return descendants;
+}
+
+/**
+ * Check if a shell process has any live child processes.
+ * Also returns the direct child PID (the "command PID") if one exists.
+ *
+ * This enables:
+ * - Definitive completion detection (no children = command done)
+ * - More accurate stdin detection (check the command process, not the shell)
+ */
+export async function getProcessTree(shellPid: number): Promise<ProcessTreeResult> {
+    await initializeKoffi();
+
+    if (initError) {
+        return { hasLiveChildren: false, childPids: [], commandPid: undefined, error: initError };
+    }
+
+    try {
+        const table = snapshotProcessTable();
+        if (typeof table === 'string') {
+            return { hasLiveChildren: false, childPids: [], commandPid: undefined, error: table };
+        }
+
+        const childPids = collectDescendants(shellPid, table);
+
+        // The "command PID" is the direct child of the shell
+        let commandPid: number | undefined;
+        for (const pid of childPids) {
+            const entry = table.get(pid);
+            if (entry && entry.parentPid === shellPid) {
+                commandPid = pid;
+                break;
+            }
+        }
+
+        return {
+            hasLiveChildren: childPids.length > 0,
+            childPids,
+            commandPid,
+        };
+    } catch (err) {
+        return {
+            hasLiveChildren: false,
+            childPids: [],
+            commandPid: undefined,
+            error: `Tree detection failed: ${err instanceof Error ? err.message : String(err)}`,
+        };
+    }
+}
+
+/**
+ * Check stdin wait on the deepest leaf process in the tree.
+ * More accurate than checking the shell PID since the actual command
+ * (e.g. python.exe, node.exe) is the one blocking on stdin.
+ */
+export async function isTreeWaitingForStdin(shellPid: number): Promise<StdinDetectionResult> {
+    await initializeKoffi();
+
+    if (initError) {
+        return { isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0, detectedWaitReasons: [], error: initError };
+    }
+
+    try {
+        const table = snapshotProcessTable();
+        if (typeof table === 'string') {
+            return { isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0, detectedWaitReasons: [], error: table };
+        }
+
+        const childPids = collectDescendants(shellPid, table);
+
+        // No children → nothing to check
+        if (childPids.length === 0) {
+            return { isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0, detectedWaitReasons: [] };
+        }
+
+        // Check all descendant processes for stdin waiting
+        for (const pid of childPids) {
+            const entry = table.get(pid);
+            if (!entry) {
+                continue;
+            }
+
+            const { waitingCount, reasons } = checkThreadsForStdin(entry);
+            if (waitingCount > 0) {
+                return {
+                    isWaitingForStdin: true,
+                    threadCount: entry.threadCount,
+                    waitingThreadCount: waitingCount,
+                    detectedWaitReasons: reasons,
+                };
+            }
+        }
+
+        return { isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0, detectedWaitReasons: [] };
+    } catch (err) {
+        return {
+            isWaitingForStdin: false,
+            threadCount: 0,
+            waitingThreadCount: 0,
+            detectedWaitReasons: [],
+            error: `Tree stdin detection failed: ${err instanceof Error ? err.message : String(err)}`,
         };
     }
 }
