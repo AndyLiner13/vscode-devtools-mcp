@@ -56,20 +56,44 @@ export function parseIgnoreRules(rootDir: string): IgnoreRule[] {
     return rules;
   }
 
+  // Section syntax:
+  //   # global        — all following patterns apply to ALL tools
+  //   # tool:name     — all following patterns apply only to that tool
+  // Lines before any section header are treated as file description (ignored).
+  type Section = 'preamble' | 'global' | 'tool';
+  let section: Section = 'preamble';
   let currentScope: string | null = null;
-  const headerRegex = /^#\s*\[(\S+)\]\s*$/;
 
   for (const line of raw.split(/\r?\n/u)) {
     const trimmed = line.trim();
     if (!trimmed) continue;
 
     if (trimmed.startsWith('#')) {
-      const headerMatch = trimmed.match(headerRegex);
-      if (headerMatch) {
-        currentScope = headerMatch[1];
+      const sectionName = trimmed.slice(1).trim();
+
+      // # global — global patterns section
+      if (sectionName.toLowerCase() === 'global') {
+        section = 'global';
+        currentScope = null;
+        continue;
       }
+
+      // # tool:tool_name — per-tool section
+      if (sectionName.toLowerCase().startsWith('tool:')) {
+        const toolName = sectionName.slice(5).trim();
+        if (toolName) {
+          section = 'tool';
+          currentScope = toolName;
+        }
+        continue;
+      }
+
+      // Any other # line is a comment — skip
       continue;
     }
+
+    // Ignore pattern lines in preamble
+    if (section === 'preamble') continue;
 
     const negated = trimmed.startsWith('!');
     const pattern = negated ? trimmed.slice(1).trim() : trimmed;

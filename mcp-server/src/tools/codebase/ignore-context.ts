@@ -19,7 +19,8 @@ export interface IgnoreContext {
 
 /**
  * Read the `.devtoolsignore` file from a given root directory.
- * Returns only the active glob patterns (strips comments and blank lines).
+ * Parses the `# global` / `# tools` / `## tool_name` section syntax.
+ * Returns only the active glob patterns (with their section context).
  */
 export function readIgnoreContext(rootDir: string): IgnoreContext {
   const ignoreFilePath = join(rootDir, DEVTOOLS_IGNORE_FILENAME);
@@ -29,10 +30,34 @@ export function readIgnoreContext(rootDir: string): IgnoreContext {
   if (ignoreFileExists) {
     try {
       const contents = readFileSync(ignoreFilePath, 'utf8');
-      for (const rawLine of contents.split('\n')) {
+      let section: 'preamble' | 'global' | 'tool' = 'preamble';
+      let currentTool: string | null = null;
+
+      for (const rawLine of contents.split(/\r?\n/)) {
         const line = rawLine.trim();
-        if (line.length > 0 && !line.startsWith('#')) {
+        if (!line) continue;
+
+        if (line.startsWith('#')) {
+          const sectionName = line.slice(1).trim();
+          if (sectionName.toLowerCase() === 'global') {
+            section = 'global';
+            currentTool = null;
+          } else if (sectionName.toLowerCase().startsWith('tool:')) {
+            const toolName = sectionName.slice(5).trim();
+            if (toolName) {
+              section = 'tool';
+              currentTool = toolName;
+            }
+          }
+          continue;
+        }
+
+        if (section === 'preamble') continue;
+
+        if (section === 'global') {
           activePatterns.push(line);
+        } else if (currentTool) {
+          activePatterns.push(`[${currentTool}] ${line}`);
         }
       }
     } catch {
