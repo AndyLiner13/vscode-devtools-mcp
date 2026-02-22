@@ -1398,6 +1398,15 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
       return result;
     }
 
+    // Suppress health monitor during the entire checkForChanges operation.
+    // Without this, stopping the client window (Phase 2) causes the health
+    // monitor to fire onClientStateChanged(false), which triggers the
+    // tethered lifecycle in extension.ts to call workbench.mcp.stopServer,
+    // killing the MCP server process that is waiting for this RPC response.
+    hotReloadInProgress = true;
+    console.log('[host] checkForChanges: changes detected — suppressing health monitor');
+
+    try {
     // Phase 2: Extension progress notification — rebuild → stop client → launch client
     if (extChange.changed) {
       await vscode.window.withProgress(
@@ -1495,6 +1504,16 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
         await hotReloadService.commitHash('mcp', mcpChange.currentHash);
         result.mcpRebuilt = true;
         expectMcpRestart();
+      }
+    }
+    } finally {
+      // Only reset if no MCP restart is pending — handleMcpRestart owns the
+      // flag when MCP changes need stop → clearCache → start cycle
+      if (!result.mcpRebuilt) {
+        hotReloadInProgress = false;
+        console.log('[host] checkForChanges: complete — health monitor resumed');
+      } else {
+        console.log('[host] checkForChanges: MCP restart pending — health monitor stays suppressed until readyToRestart');
       }
     }
 

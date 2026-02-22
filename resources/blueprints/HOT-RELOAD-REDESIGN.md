@@ -35,7 +35,7 @@ The current hot-reload system has three fundamental issues:
 │                                                 │
 │  Each check runs independently per tool call    │
 │  No request queue — parallel calls race         │
-│  MCP does its own rebuild (exec tsc)  ← WRONG  │
+│  MCP does its own rebuild (exec tsc)  ← WRONG   │
 └─────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────┐
@@ -566,9 +566,7 @@ Do NOT retry any MCP tools until `mcpStatus` confirms the server is ready.
 ```
 ❌ MCP server rebuild failed:
 
-```
 <tsc error output here>
-```
 
 The MCP server was NOT restarted because the build failed.
 Fix the error above and try calling a tool again to trigger a rebuild.
