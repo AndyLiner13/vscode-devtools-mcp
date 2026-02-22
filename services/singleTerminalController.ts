@@ -2,9 +2,9 @@
  * Multi-Terminal Controller
  *
  * Manages multiple named VS Code terminals with:
- * - Shell Integration API for definitive command completion (exit code)
- * - DesktopCommanderMCP-style prompt detection for mid-command input requests
- * - Blocking wait pattern: run/input calls wait for completion, prompt, or timeout
+ * - Shell Integration API for command completion (onDidEndTerminalShellExecution)
+ * - Event-driven input detection: execution running + output idle = waiting for input
+ * - Blocking wait pattern: run/input calls wait for completion or timeout
  * - Busy guard: rejects new commands on a terminal while one is running
  * - Terminal persistence: terminals persist between commands, indexed by name
  * - Backward compatible: default name "default" for single-terminal usage
@@ -14,7 +14,7 @@
  *   MCP tool (terminal_execute) → RPC → client-handlers → MultiTerminalController.run()
  *       → creates terminal if needed (by name)
  *       → sends command via sendText
- *       → waits for Shell Integration completion OR prompt pattern OR timeout
+ *       → waits for Shell Integration events + output settle OR timeout
  *       → returns { status, output, exitCode?, prompt? }
  */
 
@@ -22,25 +22,91 @@ import * as vscode from 'vscode';
 import { cleanTerminalOutput, type TerminalStatus } from './processDetection';
 import { getProcessLedger, type TerminalSessionInfo } from './processLedger';
 import { getUserActionTracker } from './userActionTracker';
+import { isProcessWaitingForStdin, isStdinDetectionAvailable, type StdinDetectionResult } from './stdinDetection';
 
 // ── Configuration ────────────────────────────────────────────────────────────
 
 const DEFAULT_TIMEOUT_MS = 120_000;  // 2 minutes default for blocking completion
-const PROMPT_DETECTION_INTERVAL_MS = 200;
-const OUTPUT_SETTLE_MS = 2_000;      // Max wait for prompt to appear after last exit
+const POLL_INTERVAL_MS = 200;        // State polling interval
+const OUTPUT_SETTLE_MS = 2_000;      // Wait for output to settle after execution ends (fallback heuristic)
+const NATIVE_STDIN_SETTLE_MS = 500;  // Reduced settle time when native detection available
 const DEFAULT_TERMINAL_NAME = 'default';
+
+// Native stdin detection state
+let nativeDetectionAvailable: boolean | null = null;  // null = not checked yet
+let lastNativeCheckTime = 0;
+let lastNativeResult: StdinDetectionResult | null = null;
+
+/**
+ * Check if a process is waiting for stdin input using native detection with heuristic fallback.
+ * 
+ * Priority:
+ * 1. Native NtQuerySystemInformation-based detection (definitive, Windows only)
+ * 2. Heuristic: executionCount > 0 && output settled (fallback)
+ * 
+ * @param pid Process ID to check (if available)
+ * @param executionCount Number of running shell executions
+ * @param msSinceLastOutput Milliseconds since last output
+ * @param hasOutput Whether the terminal has any output
+ * @returns Whether the process is likely waiting for stdin
+ */
+async function isWaitingForInputDetection(
+  pid: number | undefined,
+  executionCount: number,
+  msSinceLastOutput: number,
+  hasOutput: boolean
+): Promise<{ waiting: boolean; method: 'native' | 'heuristic' }> {
+  // Fast path: no execution running or no output means not waiting
+  if (executionCount <= 0 || !hasOutput) {
+    return { waiting: false, method: 'heuristic' };
+  }
+
+  // Check native detection availability (only once)
+  if (nativeDetectionAvailable === null) {
+    nativeDetectionAvailable = await isStdinDetectionAvailable();
+    console.log(`[StdinDetection] Native detection available: ${nativeDetectionAvailable}`);
+  }
+
+  // Try native detection if PID is available and native detection works
+  if (pid && nativeDetectionAvailable) {
+    const now = Date.now();
+    
+    // Rate limit native checks to avoid overhead (max once per 100ms per PID)
+    if (now - lastNativeCheckTime >= 100) {
+      lastNativeCheckTime = now;
+      try {
+        lastNativeResult = await isProcessWaitingForStdin(pid);
+        
+        if (!lastNativeResult.error) {
+          // Native detection succeeded - use shorter settle time
+          if (lastNativeResult.isWaitingForStdin) {
+            console.log(`[StdinDetection] Native: PID ${pid} waiting for stdin (reasons: ${lastNativeResult.detectedWaitReasons.join(', ')})`);
+            return { waiting: true, method: 'native' };
+          } else if (msSinceLastOutput >= NATIVE_STDIN_SETTLE_MS) {
+            // Native says not waiting but output has settled - trust native
+            return { waiting: false, method: 'native' };
+          }
+        } else {
+          console.log(`[StdinDetection] Native detection error: ${lastNativeResult.error}`);
+        }
+      } catch (err) {
+        console.log(`[StdinDetection] Native detection threw: ${err}`);
+      }
+    } else if (lastNativeResult && !lastNativeResult.error) {
+      // Use cached result
+      if (lastNativeResult.isWaitingForStdin) {
+        return { waiting: true, method: 'native' };
+      }
+    }
+  }
+
+  // Fallback to heuristic: output settled for OUTPUT_SETTLE_MS
+  const waiting = msSinceLastOutput >= OUTPUT_SETTLE_MS;
+  return { waiting, method: 'heuristic' };
+}
 
 // Busy terminal error: max chars of output to include (whole lines, newest first)
 const BUSY_OUTPUT_MAX_CHARS = 4_000;
-
-// Shell prompt patterns for Windows PowerShell (detect when shell is truly idle)
-const SHELL_PROMPT_PATTERNS = [
-  /^PS [A-Z]:\\[^>]*>\s*$/m,          // PS C:\path>
-  /^PS>\s*$/m,                         // PS>
-  /^[A-Z]:\\[^>]*>\s*$/m,              // CMD: C:\path>
-  /^\$\s*$/m,                          // Bash: $
-  /^>\s*$/m,                           // Generic prompt: >
-];
 
 // Delay between key presses to allow TUI re-render (ms)
 const KEY_SETTLE_MS = 100;
@@ -235,7 +301,7 @@ export class SingleTerminalController {
    * All terminals use PowerShell.
    * - Creates terminal if none exists with that name
    * - Rejects if the named terminal already has a command running
-   * - Waits for completion, prompt detection, or timeout
+   * - Waits for completion (shell integration events + output settle) or timeout
    * 
    * @param command The PowerShell command to execute
    * @param cwd Absolute path to the working directory for command execution
@@ -706,17 +772,14 @@ export class SingleTerminalController {
   }
 
   /**
-   * Wait for command completion using shell prompt detection.
+   * Wait for command completion using shell integration events.
    *
    * Strategy:
    * 1. Poll every 200ms for state changes
-   * 2. Detect interactive prompts (Y/n, passwords) → return immediately
+   * 2. If execution is running (executionCount > 0) but output has stopped → waiting for input
    * 3. When executionCount reaches 0 (all shell executions finished):
-   *    - Check for PowerShell prompt pattern in last few output lines
-   *    - Prompt detected → resolve immediately (shell is truly idle)
-   *    - No prompt yet → keep polling (output may not have flushed yet)
-   *    - Fallback: if no new output for OUTPUT_SETTLE_MS and executionCount
-   *      is still 0, resolve anyway (prompt may not appear in captured output)
+   *    - Wait for output to settle (OUTPUT_SETTLE_MS of no new output)
+   *    - Then resolve as completed
    * 4. Timeout fallback
    */
   private waitForResult(state: InternalState, timeoutMs: number): Promise<TerminalRunResult> {
@@ -734,96 +797,101 @@ export class SingleTerminalController {
         resolve(result);
       };
 
-      const hasShellPrompt = (): boolean => {
-        const lastLines = state.output.split('\n').slice(-5).join('\n');
-        return SHELL_PROMPT_PATTERNS.some(pattern => pattern.test(lastLines));
-      };
-
       const pollInterval = setInterval(() => {
-        const cleaned = cleanTerminalOutput(state.output);
-        const msSinceLastOutput = Date.now() - state.lastOutputTime;
+        // Use async IIFE to handle native stdin detection
+        void (async () => {
+          if (resolved) return;  // Already resolved, skip
 
-        // Priority 1: Event-based input detection
-        // Shell execution is running (started, not ended) but output has stopped → waiting for input
-        if (state.executionCount > 0 && msSinceLastOutput >= OUTPUT_SETTLE_MS && state.output.length > 0) {
-          const lastLine = cleaned.split('\n').filter(l => l.trim()).pop() ?? '';
-          state.status = 'waiting_for_input';
-          resolveOnce({
-            status: 'waiting_for_input',
-            output: cleaned,
-            prompt: lastLine,
-            pid: state.pid,
-            name: state.name,
-          });
-          return;
-        }
+          const cleaned = cleanTerminalOutput(state.output);
+          const msSinceLastOutput = Date.now() - state.lastOutputTime;
 
-        // Priority 2: All shell executions finished — use prompt detection
-        if (state.executionCount <= 0 && state.lastExitTime > 0) {
-          // Shell prompt detected → all commands are truly done
-          if (hasShellPrompt()) {
-            console.log(`[MultiTerminalController] Prompt detected for "${state.name}" — resolving`);
-            resolveOnce({
-              status: 'completed',
-              output: cleaned,
-              exitCode: state.exitCode,
-              pid: state.pid,
-              name: state.name,
-            });
-            return;
+          // Priority 1: Input detection (native + heuristic fallback)
+          // Shell execution is running (started, not ended) but output has stopped → check for stdin wait
+          if (state.executionCount > 0 && state.output.length > 0) {
+            const detection = await isWaitingForInputDetection(
+              state.pid,
+              state.executionCount,
+              msSinceLastOutput,
+              state.output.length > 0
+            );
+
+            if (detection.waiting) {
+              const lastLine = cleaned.split('\n').filter(l => l.trim()).pop() ?? '';
+              state.status = 'waiting_for_input';
+              console.log(`[MultiTerminalController] Detected waiting_for_input via ${detection.method} for "${state.name}"`);
+              resolveOnce({
+                status: 'waiting_for_input',
+                output: cleaned,
+                prompt: lastLine,
+                pid: state.pid,
+                name: state.name,
+              });
+              return;
+            }
           }
 
-          // Track when executions first completed (for settle fallback)
-          if (completedAt === null) {
-            completedAt = Date.now();
-            console.log(`[MultiTerminalController] Execution count 0 for "${state.name}", waiting for prompt...`);
-            return;
-          }
+          // Priority 2: All shell executions finished — wait for output to settle
+          if (state.executionCount <= 0 && state.lastExitTime > 0) {
+            // Track when executions first completed
+            if (completedAt === null) {
+              completedAt = Date.now();
+              console.log(`[MultiTerminalController] Execution count 0 for "${state.name}", waiting for output to settle...`);
+              return;
+            }
 
-          // New execution started → reset
-          if (state.executionCount > 0) {
+            // New execution started → reset
+            if (state.executionCount > 0) {
+              completedAt = null;
+              return;
+            }
+
+            // Output has settled → resolve as completed
+            if (msSinceLastOutput >= OUTPUT_SETTLE_MS) {
+              console.log(`[MultiTerminalController] Output settled for "${state.name}" — resolving`);
+              resolveOnce({
+                status: 'completed',
+                output: cleaned,
+                exitCode: state.exitCode,
+                pid: state.pid,
+                name: state.name,
+              });
+              return;
+            }
+          } else if (state.executionCount > 0) {
+            // Commands still running — reset completedAt tracker
             completedAt = null;
-            return;
           }
-
-          // Settle fallback: no prompt appeared, but no output for OUTPUT_SETTLE_MS
-          if (Date.now() - completedAt >= OUTPUT_SETTLE_MS && msSinceLastOutput >= OUTPUT_SETTLE_MS) {
-            console.log(`[MultiTerminalController] Settle timeout for "${state.name}" — no prompt but output idle`);
-            resolveOnce({
-              status: 'completed',
-              output: cleaned,
-              exitCode: state.exitCode,
-              pid: state.pid,
-              name: state.name,
-            });
-            return;
-          }
-        } else if (state.executionCount > 0) {
-          // Commands still running — reset completedAt tracker
-          completedAt = null;
-        }
-      }, PROMPT_DETECTION_INTERVAL_MS);
+        })();
+      }, POLL_INTERVAL_MS);
 
       // Timeout fallback
       const timeoutTimer = setTimeout(() => {
-        const cleaned = cleanTerminalOutput(state.output);
-        const msSinceLastOutput = Date.now() - state.lastOutputTime;
-        const isWaitingForInput = state.executionCount > 0
-          && msSinceLastOutput >= OUTPUT_SETTLE_MS
-          && state.output.length > 0;
+        // Use async IIFE for native detection
+        void (async () => {
+          const cleaned = cleanTerminalOutput(state.output);
+          const msSinceLastOutput = Date.now() - state.lastOutputTime;
+          
+          // Check for waiting_for_input using native detection with fallback
+          const detection = await isWaitingForInputDetection(
+            state.pid,
+            state.executionCount,
+            msSinceLastOutput,
+            state.output.length > 0
+          );
 
-        console.log(`[MultiTerminalController] Timeout for "${state.name}" after ${timeoutMs}ms`);
+          console.log(`[MultiTerminalController] Timeout for "${state.name}" after ${timeoutMs}ms (waitingForInput: ${detection.waiting} via ${detection.method})`);
 
-        resolveOnce({
-          status: 'timeout',
-          output: cleaned,
-          exitCode: state.exitCode,
-          prompt: isWaitingForInput
-            ? cleaned.split('\n').filter(l => l.trim()).pop()
-            : undefined,
-          pid: state.pid,
-          name: state.name,
-        });
+          resolveOnce({
+            status: 'timeout',
+            output: cleaned,
+            exitCode: state.exitCode,
+            prompt: detection.waiting
+              ? cleaned.split('\n').filter(l => l.trim()).pop()
+              : undefined,
+            pid: state.pid,
+            name: state.name,
+          });
+        })();
       }, timeoutMs);
     });
   }

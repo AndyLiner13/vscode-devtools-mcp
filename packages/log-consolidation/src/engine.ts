@@ -155,6 +155,12 @@ export function compressLogs(request: CompressionRequest, filters?: FilterOption
     return noCompression(lines.join('\n'), lines.length);
   }
 
+  // Skip compression if content is already under the token limit
+  const rawContent = lines.join('\n');
+  if (rawContent.length <= charLimit) {
+    return noCompression(rawContent, totalInputLines);
+  }
+
   // Step 1: Pre-filter (pattern match on raw lines)
   if (filters?.pattern) {
     lines = applyPreFilters(lines, filters);

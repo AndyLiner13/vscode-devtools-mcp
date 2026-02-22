@@ -57,7 +57,8 @@ const loaderConfig = {
 	// Packages that must load from node_modules at runtime:
 	// - jsonc-parser: UMD entry has dynamic require('./impl/...') that esbuild can't resolve
 	// - ts-morph: large dependency tree with dynamic requires (typescript compiler)
-	external: ['vscode', 'jsonc-parser', 'ts-morph'],
+	// - koffi: native FFI library with prebuilt .node binaries
+	external: ['vscode', 'jsonc-parser', 'ts-morph', 'koffi'],
 	logLevel: 'silent',
 	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin],
 };
@@ -77,7 +78,8 @@ const runtimeConfig = {
 	// Packages that must load from node_modules at runtime:
 	// - jsonc-parser: UMD entry has dynamic require('./impl/...') that esbuild can't resolve
 	// - ts-morph: large dependency tree with dynamic requires (typescript compiler)
-	external: ['vscode', 'jsonc-parser', 'ts-morph'],
+	// - koffi: native FFI library with prebuilt .node binaries
+	external: ['vscode', 'jsonc-parser', 'ts-morph', 'koffi'],
 	logLevel: 'silent',
 	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin],
 };
