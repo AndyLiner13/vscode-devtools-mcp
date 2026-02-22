@@ -2,7 +2,7 @@ import type { CallToolResult, JsonSchema, ToolDefinition } from '../types';
 import { createInputEditor } from '../monaco-setup';
 import type * as monaco from 'monaco-editor';
 
-import { addExecution, createHistoryContainer, setCurrentTool } from './history-list';
+import { addExecution, createHistoryContainer, setCurrentTool, updateExecution } from './history-list';
 
 
 let executeHandler: ((toolName: string, args: Record<string, unknown>) => Promise<CallToolResult>) | null = null;
@@ -27,6 +27,8 @@ function disposeEditors(): void {
   activeExecutionTime = null;
 }
 
+let pendingRerunRecordId: string | null = null;
+
 async function executeCurrentInput(): Promise<void> {
   if (!executeHandler || !activeInputEditor || !activeExecuteBtn || !activeExecutionTime) {
     return;
@@ -42,6 +44,9 @@ async function executeCurrentInput(): Promise<void> {
     }
   }
 
+  const rerunId = pendingRerunRecordId;
+  pendingRerunRecordId = null;
+
   activeExecuteBtn.disabled = true;
   activeExecuteBtn.textContent = 'Running...';
 
@@ -51,29 +56,34 @@ async function executeCurrentInput(): Promise<void> {
     const result = await executeHandler(activeToolName, args);
     const elapsed = performance.now() - startTime;
     activeExecutionTime.textContent = `${elapsed.toFixed(0)}ms`;
-    await addExecution(activeToolName, inputText, result, Math.round(elapsed));
+    if (rerunId) {
+      await updateExecution(activeToolName, rerunId, result, Math.round(elapsed));
+    } else {
+      await addExecution(activeToolName, inputText, result, Math.round(elapsed));
+    }
   } catch (err) {
     const elapsed = performance.now() - startTime;
     activeExecutionTime.textContent = `${elapsed.toFixed(0)}ms`;
     const message = err instanceof Error ? err.message : String(err);
-    await addExecution(
-      activeToolName,
-      inputText,
-      { content: [{ type: 'text', text: `Error: ${message}` }], isError: true },
-      Math.round(elapsed),
-    );
+    const errorResult = { content: [{ type: 'text' as const, text: `Error: ${message}` }], isError: true };
+    if (rerunId) {
+      await updateExecution(activeToolName, rerunId, errorResult, Math.round(elapsed));
+    } else {
+      await addExecution(activeToolName, inputText, errorResult, Math.round(elapsed));
+    }
   } finally {
     activeExecuteBtn.disabled = false;
     activeExecuteBtn.textContent = 'Execute';
   }
 }
 
-export function rerunWithInput(input: string): void {
+export function rerunWithInput(input: string, recordId: string): void {
   if (!activeInputEditor) {
     return;
   }
   activeInputEditor.setValue(input);
-  executeCurrentInput();
+  pendingRerunRecordId = recordId;
+  void executeCurrentInput();
 }
 
 export function createToolDetail(): HTMLElement {

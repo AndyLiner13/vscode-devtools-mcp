@@ -9,9 +9,11 @@ import {
   onStorageChange,
   updateComment,
   updateRating,
+  updateRecordOutput,
 } from '../storage';
 
 let currentTool = '';
+let renderGeneration = 0;
 
 const expandedEntries = new Set<string>();
 const entryEditors = new Map<string, monaco.editor.IStandaloneCodeEditor>();
@@ -42,9 +44,9 @@ function createSvgIcon(pathData: string): SVGSVGElement {
   return svg;
 }
 
-let rerunHandler: ((input: string) => void) | null = null;
+let rerunHandler: ((input: string, recordId: string) => void) | null = null;
 
-export function onRerun(handler: (input: string) => void): void {
+export function onRerun(handler: (input: string, recordId: string) => void): void {
   rerunHandler = handler;
 }
 
@@ -86,6 +88,23 @@ export async function addExecution(
   await renderHistory();
 }
 
+export async function updateExecution(
+  toolName: string,
+  recordId: string,
+  result: CallToolResult,
+  durationMs: number,
+): Promise<void> {
+  await updateRecordOutput(
+    toolName,
+    recordId,
+    result.content,
+    result.isError ?? false,
+    durationMs,
+  );
+  expandedEntries.add(recordId);
+  await renderHistory();
+}
+
 function disposeAllEditors(): void {
   for (const editor of entryEditors.values()) {
     editor.dispose();
@@ -98,6 +117,8 @@ async function renderHistory(): Promise<void> {
   if (!container) {
     return;
   }
+
+  const thisGeneration = ++renderGeneration;
 
   // Preserve focus state for inline comment fields during re-render
   const activeEl = document.activeElement;
@@ -114,6 +135,11 @@ async function renderHistory(): Promise<void> {
   container.innerHTML = '';
 
   const records = await getRecords(currentTool);
+
+  // A newer render was queued while we were fetching — let it take over
+  if (thisGeneration !== renderGeneration) {
+    return;
+  }
   if (records.length === 0) {
     return;
   }
@@ -218,7 +244,7 @@ function createRerunButton(record: ExecutionRecord): HTMLElement {
 
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
-    rerunHandler?.(record.input);
+    rerunHandler?.(record.input, record.id);
   });
 
   return btn;

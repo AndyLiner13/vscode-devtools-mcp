@@ -37,9 +37,9 @@ onExecute(async (toolName, args) => {
   return client.callTool(toolName, args);
 });
 
-// Wire rerun → set input editor value and trigger execution
-onRerun((input) => {
-  rerunWithInput(input);
+// Wire rerun → update existing record in place
+onRerun((input, recordId) => {
+  rerunWithInput(input, recordId);
 });
 
 // Auto-connect on load
