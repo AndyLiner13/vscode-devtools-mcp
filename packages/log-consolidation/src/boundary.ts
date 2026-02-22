@@ -125,6 +125,13 @@ export function detectBoundaries(lines: string[]): BoundaryResult {
     entries.push(currentEntry);
   }
 
+  // Guard against degenerate case: if fewer than 10% of lines produced entries,
+  // the input lacks recognizable log headers (e.g., console messages formatted as
+  // "#ID [type] text"). Skip boundary grouping and let logpare see raw lines.
+  if (entries.length < lines.length * 0.1 && lines.length > 5) {
+    return { entries: [], hasMultiLineEntries: false, groupedLineCount: 0 };
+  }
+
   // Finalize: build flattened representations for multi-line entries
   for (const entry of entries) {
     if (entry.continuationLines.length > 0) {

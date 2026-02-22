@@ -1,6 +1,6 @@
 # Universal Log Compression System
 
-> **Status:** Blueprint v2 — Updated after logpare demo on real VS Code logs (2026-02-22)
+> **Status:** Phases 1–4 ✅ Production-verified (2026-02-22) · Phase 5 ❌ Not started · Phase 6 ❌ Deferred
 
 ## Problem Statement
 
@@ -557,7 +557,9 @@ New extension settings in `package.json`:
 
 ## Phased Implementation Plan
 
-### Phase 1: Shared Package Foundation
+### Phase 1: Shared Package Foundation ✅
+
+> **Verified 2026-02-22:** Package exists at `packages/log-consolidation/` with all modules (engine, boundary, strategy, filters, format, types, index). Both esbuild configs resolve `@packages/log-consolidation`. Boundary detector includes degenerate-case guard for non-timestamped input.
 
 **Goal:** Create `packages/log-consolidation/` with the core engine, boundary detector, custom strategy, composable filters, move existing code, set up path aliases.
 
@@ -586,7 +588,9 @@ New extension settings in `package.json`:
 - Unit test: recursive compression when drill-down still exceeds limit
 - Integration test: import from both extension and MCP server code
 
-### Phase 2: Wire Up Terminal Tools
+### Phase 2: Wire Up Terminal Tools ✅
+
+> **Verified 2026-02-22:** 73 repetitive lines → 5 patterns (93% reduction). Drill-down tested: `severity` (error/warning/info), `templateId` (raw line expansion), `timeRange` (temporal filtering). Small output passthrough (<5 lines) returns raw content. All working.
 
 **Goal:** Replace inline logpare code in `terminalLmTools.ts` with the shared package.
 
@@ -604,7 +608,9 @@ New extension settings in `package.json`:
 - Verify drill-down by templateId shows matching lines
 - Verify drill-down results are also compressed if over limit
 
-### Phase 3: Wire Up Output Read Tool
+### Phase 3: Wire Up Output Read Tool ✅
+
+> **Verified 2026-02-22:** exthost channel (2,886 lines) → 59 patterns (98% reduction, 130ms). Drill-down tested: `severity: error` (1 error template), `templateId` (raw expansion with first/last 50 lines), `pattern` (pre-filter + compressed). Combined filters compose with AND logic. All working.
 
 **Goal:** Add compression to the output_read LM tool.
 
@@ -621,7 +627,9 @@ New extension settings in `package.json`:
 - Read extension host log — verify compression
 - Verify existing `pattern`, `afterLine`, `beforeLine` still work alongside new params
 
-### Phase 4: Wire Up Console Tools
+### Phase 4: Wire Up Console Tools ✅
+
+> **Verified 2026-02-22:** 500 console messages → 19 patterns (96% reduction, 18ms). Required boundary detector fix: console messages use `#ID [type] text` format with no timestamps — degenerate case guard added to `boundary.ts`. Drill-down tested: `templateId`, `pattern`, `severity`, `types` filter. MCP `console.ts` and `log-consolidator.ts` source files removed (shared package replaces them). All working.
 
 **Goal:** Fix the dead `logFormat` in extension's console_read and update MCP console tool.
 
@@ -636,7 +644,9 @@ New extension settings in `package.json`:
 - Verify compression on repetitive console.log patterns
 - Verify drill-down works
 
-### Phase 5: Wire Up File Read for Log Files
+### Phase 5: Wire Up File Read for Log Files ❌
+
+> **Status:** Not started. `mcp-server/src/tools/file/file-read.ts` has no log file detection or compression.
 
 **Goal:** Add log file detection and compression to the MCP file_read tool.
 
@@ -655,7 +665,9 @@ New extension settings in `package.json`:
 - Verify drill-down works on log files
 - Test large log files (>1MB) for performance
 
-### Phase 6: Worker Thread Support
+### Phase 6: Worker Thread Support ❌ (Deferred)
+
+> **Status:** Deferred. Inline compression is fast enough for current workloads (18ms–145ms). Will revisit if 100K+ line files become common.
 
 **Goal:** Move compression off the main thread.
 
