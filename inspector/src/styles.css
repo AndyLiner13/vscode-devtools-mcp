@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+@theme {
+  /* VS Code Dark Theme Color Tokens
+   * When integrated into a VS Code WebView, swap these defaults
+   * for --vscode-* CSS custom properties for automatic theme adaptation. */
+  --color-vscode-bg: #1e1e1e;
+  --color-vscode-sidebar: #252526;
+  --color-vscode-input: #3c3c3c;
+  --color-vscode-border: #474747;
+  --color-vscode-text: #cccccc;
+  --color-vscode-text-dim: #969696;
+  --color-vscode-accent: #007acc;
+  --color-vscode-accent-hover: #1177bb;
+  --color-vscode-success: #4ec9b0;
+  --color-vscode-error: #f44747;
+  --color-vscode-warning: #cca700;
+  --color-vscode-header: #181818;
+  --color-vscode-active: #37373d;
+  --color-vscode-hover: #2a2d2e;
+  --color-vscode-selection: #264f78;
+  --color-vscode-badge: #4d4d4d;
+
+  --font-family-mono: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+  --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  font-family: var(--font-family-sans);
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* VS Code-style scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(121, 121, 121, 0.4);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(121, 121, 121, 0.7);
+}
+
+textarea,
+pre,
+code {
+  font-family: var(--font-family-mono);
+  font-size: 13px;
+}
+
+*:focus-visible {
+  outline: 1px solid var(--color-vscode-accent);
+  outline-offset: -1px;
+}
+
+/* ── VS Code Copilot Chat-style Tool Invocation Card ── */
+
+.tool-invocation-card {
+  border: 1px solid var(--color-vscode-border);
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.tool-invocation-card h3 {
+  font-weight: 600;
+  margin: 4px 0 8px;
+  font-size: 12px;
+  color: var(--color-vscode-text-dim);
+  user-select: none;
+}
+
+.tool-io-section {
+  padding: 0 8px;
+  margin: 8px 0;
+}
+
+.tool-io-editor-wrapper {
+  border: 1px solid var(--color-vscode-border);
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: var(--color-vscode-input);
+}
+
+/* Result section styling */
+.tool-result-section {
+  margin-top: 2px;
+  border-top: 1px solid var(--color-vscode-border);
+}
+
+.tool-result-section .tool-io-section {
+  margin-top: 12px;
+}
+
+/* Error state for the result card */
+.tool-invocation-card.error-state {
+  border-color: color-mix(in srgb, var(--color-vscode-error) 50%, transparent);
+}
+
+.tool-error-message {
+  padding: 8px 12px;
+  color: var(--color-vscode-error);
+  font-size: 13px;
+}
+
+.tool-error-message .error-label {
+  font-weight: 600;
+}
+
+/* Content block rendering inside output */
+.tool-output-image {
+  max-width: 100%;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+/* Execution time stamp */
+.tool-execution-time {
+  font-size: 11px;
+  color: var(--color-vscode-text-dim);
+}
