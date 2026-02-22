@@ -1,5 +1,5 @@
-documentation/archive/
-.devtools/
-backups/
-client-workspace/
+resources/archive/
+**/.devtools/
 tests/
+dist/
+build/
