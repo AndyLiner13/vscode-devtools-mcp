@@ -119,22 +119,12 @@ function autoSizeEditor(
   container: HTMLElement,
 ): void {
   const updateHeight = () => {
-    const model = editor.getModel();
-    if (!model) {
-      return;
-    }
-
-    const lineCount = model.getLineCount();
-    const lineHeight = editor.getOption(monaco.editor.EditorOption.lineHeight);
-    const padding = editor.getOption(monaco.editor.EditorOption.padding);
-    const topPad = padding?.top ?? 5;
-    const bottomPad = padding?.bottom ?? 5;
-
-    const contentHeight = lineCount * lineHeight + topPad + bottomPad;
+    const contentHeight = editor.getContentHeight();
     container.style.height = `${contentHeight}px`;
     editor.layout();
   };
 
   editor.onDidChangeModelContent(updateHeight);
+  editor.onDidContentSizeChange(updateHeight);
   updateHeight();
 }

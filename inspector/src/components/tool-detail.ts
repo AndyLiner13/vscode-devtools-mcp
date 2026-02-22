@@ -6,6 +6,7 @@ let executeHandler: ((toolName: string, args: Record<string, unknown>) => Promis
 
 let activeInputEditor: monaco.editor.IStandaloneCodeEditor | null = null;
 let activeOutputEditor: monaco.editor.IStandaloneCodeEditor | null = null;
+let currentToolName = '';
 
 export function onExecute(
   handler: (toolName: string, args: Record<string, unknown>) => Promise<CallToolResult>,
@@ -55,6 +56,7 @@ export function renderToolDetail(tool: ToolDefinition): void {
   const card = document.createElement('div');
   card.className = 'tool-invocation-card';
   card.id = 'tool-invocation-card';
+  currentToolName = tool.name;
 
   // ── Input Section ──
   const inputSection = document.createElement('div');
@@ -85,7 +87,7 @@ export function renderToolDetail(tool: ToolDefinition): void {
     'disabled:opacity-50 disabled:cursor-not-allowed',
     'flex items-center gap-2',
   ].join(' ');
-  executeBtn.textContent = '▶ Execute';
+  executeBtn.textContent = 'Execute';
 
   const executionTime = document.createElement('span');
   executionTime.className = 'tool-execution-time';
@@ -124,7 +126,7 @@ export function renderToolDetail(tool: ToolDefinition): void {
     }
 
     executeBtn.disabled = true;
-    executeBtn.textContent = '⏳ Running...';
+    executeBtn.textContent = 'Running...';
 
     const startTime = performance.now();
 
@@ -140,7 +142,7 @@ export function renderToolDetail(tool: ToolDefinition): void {
       renderError(resultArea, message);
     } finally {
       executeBtn.disabled = false;
-      executeBtn.textContent = '▶ Execute';
+      executeBtn.textContent = 'Execute';
     }
   });
 }
@@ -207,6 +209,41 @@ function renderResult(container: HTMLElement, result: CallToolResult): void {
   }
 
   container.appendChild(outputSection);
+
+  // ── Export Button Row ──
+  const exportRow = document.createElement('div');
+  exportRow.className = 'flex items-center gap-3 px-2 py-2';
+
+  const exportBtn = document.createElement('button');
+  exportBtn.className = [
+    'px-4 py-1.5 bg-vscode-accent text-white rounded text-sm font-medium',
+    'hover:bg-vscode-accent-hover transition-colors cursor-pointer',
+    'flex items-center gap-2',
+  ].join(' ');
+  exportBtn.textContent = 'Copy';
+
+  exportBtn.addEventListener('click', async () => {
+    const input = activeInputEditor?.getValue() ?? '';
+    const output = activeOutputEditor?.getValue() ?? '';
+    const text = [
+      `Tool: ${currentToolName}`,
+      '',
+      'Input:',
+      input || '(empty)',
+      '',
+      'Output:',
+      output || '(empty)',
+    ].join('\n');
+
+    await navigator.clipboard.writeText(text);
+    exportBtn.textContent = 'Copied!';
+    setTimeout(() => {
+      exportBtn.textContent = 'Copy';
+    }, 2000);
+  });
+
+  exportRow.appendChild(exportBtn);
+  container.appendChild(exportRow);
 }
 
 function renderError(container: HTMLElement, message: string): void {
