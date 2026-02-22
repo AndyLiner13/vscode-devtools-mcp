@@ -135,21 +135,6 @@ const timeoutSchema = {
 };
 
 /**
- * Shared schema for the logFormat parameter.
- * Used by tools that return log/output content with automatic consolidation.
- * Powered by LogPare's Drain algorithm for semantic log compression.
- */
-export const logFormatSchema = zod
-  .enum(['summary', 'detailed', 'json'])
-  .optional()
-  .default('summary')
-  .describe(
-    "Log compression format. 'summary' (default): compact overview with top templates + rare events. " +
-    "'detailed': full template list with sample variables & metadata (URLs, status codes, durations). " +
-    "'json': machine-readable JSON with complete template data.",
-  );
-
-/**
  * Check if content exceeds CHARACTER_LIMIT and throw an error with available params.
  */
 export function checkCharacterLimit(

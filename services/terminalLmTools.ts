@@ -14,9 +14,11 @@
  * - terminal_execute: Run a command or send input to a terminal
  */
 
+import type { FilterOptions, Severity } from '@packages/log-consolidation';
+
 import * as vscode from 'vscode';
-import { compressText } from 'logpare';
-import type { CompressOptions } from 'logpare';
+
+import { compressLogs, consolidateText } from '@packages/log-consolidation';
 import { SingleTerminalController, type TerminalRunResult } from './singleTerminalController';
 import { getUserActionTracker } from './userActionTracker';
 
@@ -38,13 +40,16 @@ function getController(): SingleTerminalController {
 // Input Interfaces
 // ============================================================================
 
-export type LogFormat = 'summary' | 'detailed' | 'json';
-
 export interface IReadTerminalParams {
     name?: string;
     limit?: number;
     pattern?: string;
-    logFormat?: LogFormat;
+    templateId?: string;
+    severity?: string;
+    timeRange?: string;
+    minDuration?: string;
+    correlationId?: string;
+    includeStackFrames?: boolean;
 }
 
 export interface ITerminalRunParams {
@@ -54,35 +59,35 @@ export interface ITerminalRunParams {
     name?: string;
     waitMode?: 'completion' | 'background';
     timeout?: number;
-    logFormat?: LogFormat;
     force?: boolean;
     addNewline?: boolean;
     keys?: string[];
+    templateId?: string;
+    severity?: string;
+    timeRange?: string;
+    minDuration?: string;
+    correlationId?: string;
+    includeStackFrames?: boolean;
 }
 
 // ============================================================================
-// Log Consolidation (LogPare Drain algorithm)
+// Log Compression Helpers
 // ============================================================================
 
-const MIN_LINES_FOR_COMPRESSION = 5;
-const MIN_COMPRESSION_RATIO = 0.1;
+function extractDrillDownFilters(params: IReadTerminalParams | ITerminalRunParams): FilterOptions {
+    const filters: FilterOptions = {};
+    if (params.templateId) filters.templateId = params.templateId;
+    if (params.severity) filters.severity = params.severity as Severity;
+    if (params.timeRange) filters.timeRange = params.timeRange;
+    if (params.minDuration) filters.minDuration = params.minDuration;
+    if (params.correlationId) filters.correlationId = params.correlationId;
+    if (params.includeStackFrames !== undefined) filters.includeStackFrames = params.includeStackFrames;
+    return filters;
+}
 
-function consolidateOutput(text: string, format: LogFormat): string {
-    const lineCount = text.split('\n').length;
-    if (lineCount < MIN_LINES_FOR_COMPRESSION) return text;
-
-    const options: CompressOptions = {
-        format: format === 'json' ? 'json' : format,
-        maxTemplates: 50,
-    };
-
-    const result = compressText(text, options);
-
-    const hasCompression =
-        result.stats.compressionRatio >= MIN_COMPRESSION_RATIO &&
-        result.stats.uniqueTemplates < lineCount;
-
-    if (!hasCompression) return text;
+function compressOutput(text: string, filters: FilterOptions, label?: string): string {
+    const lines = text.split('\n');
+    const result = compressLogs({ lines, label: label ?? 'Terminal Output' }, filters);
     return result.formatted;
 }
 
@@ -90,7 +95,7 @@ function consolidateOutput(text: string, format: LogFormat): string {
 // Output Formatting
 // ============================================================================
 
-function formatTerminalResult(result: TerminalRunResult, limit?: number, pattern?: string, logFormat?: LogFormat): string {
+function formatTerminalResult(result: TerminalRunResult, limit?: number, pattern?: string, filters?: FilterOptions): string {
     const lines: string[] = [];
 
     // Inject user action alerts at the top so Copilot notices immediately
@@ -133,12 +138,10 @@ function formatTerminalResult(result: TerminalRunResult, limit?: number, pattern
     }
 
     if (output.trim()) {
-        const finalOutput = logFormat ? consolidateOutput(output, logFormat) : output;
+        const finalOutput = compressOutput(output, filters ?? {}, result.name ?? 'Terminal Output');
         lines.push('');
         lines.push('**Output:**');
-        lines.push('```');
         lines.push(finalOutput);
-        lines.push('```');
     } else {
         lines.push('');
         lines.push('*(no output)*');
@@ -188,7 +191,8 @@ export class TerminalReadTool implements vscode.LanguageModelTool<IReadTerminalP
         const controller = getController();
 
         const result = controller.getState(params.name);
-        const formatted = formatTerminalResult(result, params.limit, params.pattern, params.logFormat);
+        const filters = extractDrillDownFilters(params);
+        const formatted = formatTerminalResult(result, params.limit, params.pattern, filters);
 
         return new vscode.LanguageModelToolResult([
             new vscode.LanguageModelTextPart(formatted),
@@ -267,7 +271,8 @@ export class TerminalExecuteTool implements vscode.LanguageModelTool<ITerminalRu
         if (params.keys && params.keys.length > 0) {
             try {
                 const result = await controller.sendKeys(params.keys, params.name);
-                const formatted = formatTerminalResult(result, undefined, undefined, params.logFormat);
+                const filters = extractDrillDownFilters(params);
+                const formatted = formatTerminalResult(result, undefined, undefined, filters);
 
                 if (params.ephemeral) {
                     controller.destroyTerminal(params.name);
@@ -324,7 +329,8 @@ export class TerminalExecuteTool implements vscode.LanguageModelTool<ITerminalRu
                 ]);
             }
 
-            const formatted = formatTerminalResult(result, undefined, undefined, params.logFormat);
+            const filters = extractDrillDownFilters(params);
+            const formatted = formatTerminalResult(result, undefined, undefined, filters);
 
             // Ephemeral terminals are destroyed after completed commands return output.
             // Running/waiting terminals are kept alive for continued interaction.

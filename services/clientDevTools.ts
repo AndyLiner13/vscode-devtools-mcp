@@ -12,10 +12,12 @@
  *   4. When client closes, setBrowserService(null) is called
  */
 
-import * as vscode from 'vscode';
 import type { BrowserService } from './browser';
+
+import * as vscode from 'vscode';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { consolidateText } from '@packages/log-consolidation';
 
 // ── Shared State ─────────────────────────────────────────────────────────────
 
@@ -416,7 +418,6 @@ interface ReadConsoleInput {
     textLimit?: number;
     stackDepth?: number;
     msgid?: number;
-    logFormat?: string;
     response_format?: string;
 }
 
@@ -558,7 +559,8 @@ const readConsoleTool = createClientTool<ReadConsoleInput>({
             lines.push(parts.join(' '));
         }
 
-        return textResult(header + '\n\n' + lines.join('\n'));
+        const compressed = consolidateText(lines.join('\n'), { label: 'Console Messages' });
+        return textResult(header + '\n\n' + compressed.formatted);
     },
 });
 

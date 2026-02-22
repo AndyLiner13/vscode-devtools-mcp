@@ -197,7 +197,7 @@
         "icon": "$(terminal)",
         "canBeReferencedInPrompt": true,
         "userDescription": "Read the current output and state of a host terminal",
-        "modelDescription": "Read the current output and state of any tracked host terminal.\n\nUse this to:\n- Check if a previously started command has finished\n- See the latest output from a running or completed process\n- Determine if the terminal is waiting for input\n- Search terminal output for specific patterns\n- Get just the last N lines of output\n\n**PARAMETERS:**\n- `name` (string): Terminal name. Default: 'default'\n- `limit` (number): Return only the last N lines of output\n- `pattern` (string): Regex pattern to filter output lines (case-insensitive)\n- `logFormat` ('summary'|'detailed'|'json'): Log compression format. Default: no compression. Use 'summary' for compact overview with top templates + rare events. 'detailed' for full template list. 'json' for machine-readable.\n\n**RETURNS:**\n- status: 'idle' (no terminal), 'running', 'completed', or 'waiting_for_input'\n- output: Terminal output (optionally filtered)\n- exitCode: Process exit code (if completed)\n- prompt: Detected prompt (if waiting for input)\n- pid: Process ID\n- name: Terminal name",
+        "modelDescription": "Read the current output and state of any tracked host terminal.\n\nUse this to:\n- Check if a previously started command has finished\n- See the latest output from a running or completed process\n- Determine if the terminal is waiting for input\n- Search terminal output for specific patterns\n- Get just the last N lines of output\n\n**PARAMETERS:**\n- `name` (string): Terminal name. Default: 'default'\n- `limit` (number): Return only the last N lines of output\n- `pattern` (string): Regex pattern to filter output lines (case-insensitive)\n\n**RETURNS:**\n- status: 'idle' (no terminal), 'running', 'completed', or 'waiting_for_input'\n- output: Terminal output (automatically compressed)\n- exitCode: Process exit code (if completed)\n- prompt: Detected prompt (if waiting for input)\n- pid: Process ID\n- name: Terminal name",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -212,15 +212,6 @@
             "pattern": {
               "type": "string",
               "description": "Regex pattern to filter output lines (case-insensitive)."
-            },
-            "logFormat": {
-              "type": "string",
-              "enum": [
-                "summary",
-                "detailed",
-                "json"
-              ],
-              "description": "Log compression format. 'summary': compact overview with top templates + rare events. 'detailed': full template list with sample variables & metadata. 'json': machine-readable JSON with complete template data."
             }
           }
         }
@@ -232,7 +223,7 @@
         "icon": "$(terminal)",
         "canBeReferencedInPrompt": true,
         "userDescription": "Run a command or send input in the host VS Code terminal",
-        "modelDescription": "Run a PowerShell command in the host VS Code terminal, or send input to a terminal waiting for user input.\n\n**THREE MODES:**\n\n**Run Mode** (when `cwd` is provided): Execute a command in a terminal from a specific working directory.\nBy default (waitMode: 'completion'), BLOCKS until ALL commands fully complete (including chained commands with ; && ||).\nIf the command asks for user input (e.g., [Y/n] prompts), returns immediately with status 'waiting_for_input'.\nFor long-running dev servers, use waitMode: 'background' to return immediately.\n\n**Input Mode** (when `cwd` is omitted): Send input to an existing terminal that is waiting for user input.\nUse this after terminal_execute returns status 'waiting_for_input' (e.g., answering a [Y/n] prompt, entering a password).\n\n**Keys Mode** (when `keys` is provided): Send raw keystrokes for interactive TUI navigation.\nUse for arrow keys, Enter, Escape, Ctrl+C, etc. in interactive CLI programs.\n\n**BUSY TERMINAL:** If the terminal is already running a command, returns an error with the last command and current output. Set `force=true` to kill the running process and start a new one.\n\n**PARAMETERS:**\n- `command` (string): The PowerShell command to execute, or input text to send\n- `cwd` (string): Working directory. If provided = run mode. If omitted = input mode.\n- `ephemeral` (boolean, required): If true, terminal is auto-deleted after output is returned. If false, terminal persists.\n- `name` (string): Terminal name. Default: 'default'\n- `waitMode` ('completion' | 'background'): Default 'completion' blocks until done\n- `timeout` (number): Max wait time in milliseconds. Default: 120000\n- `force` (boolean): Kill running process and start new command. Default: false\n- `addNewline` (boolean): Whether to press Enter after input. Default: true (input mode only)\n- `keys` (string[]): Key sequences for TUI navigation (e.g., ['ArrowDown', 'Enter'])\n- `logFormat` ('summary'|'detailed'|'json'): Log compression format for output. Default: no compression.\n\n**RETURNS:**\n- status: 'completed' | 'running' | 'waiting_for_input' | 'timeout'\n- output: Terminal output text\n- cwd: The working directory the command ran from\n- exitCode: Process exit code (when completed)\n- prompt: Detected prompt text (when waiting_for_input)\n- pid: Process ID\n- name: Terminal name\n- durationMs: How long the command ran",
+        "modelDescription": "Run a PowerShell command in the host VS Code terminal, or send input to a terminal waiting for user input.\n\n**THREE MODES:**\n\n**Run Mode** (when `cwd` is provided): Execute a command in a terminal from a specific working directory.\nBy default (waitMode: 'completion'), BLOCKS until ALL commands fully complete (including chained commands with ; && ||).\nIf the command asks for user input (e.g., [Y/n] prompts), returns immediately with status 'waiting_for_input'.\nFor long-running dev servers, use waitMode: 'background' to return immediately.\n\n**Input Mode** (when `cwd` is omitted): Send input to an existing terminal that is waiting for user input.\nUse this after terminal_execute returns status 'waiting_for_input' (e.g., answering a [Y/n] prompt, entering a password).\n\n**Keys Mode** (when `keys` is provided): Send raw keystrokes for interactive TUI navigation.\nUse for arrow keys, Enter, Escape, Ctrl+C, etc. in interactive CLI programs.\n\n**BUSY TERMINAL:** If the terminal is already running a command, returns an error with the last command and current output. Set `force=true` to kill the running process and start a new one.\n\n**PARAMETERS:**\n- `command` (string): The PowerShell command to execute, or input text to send\n- `cwd` (string): Working directory. If provided = run mode. If omitted = input mode.\n- `ephemeral` (boolean, required): If true, terminal is auto-deleted after output is returned. If false, terminal persists.\n- `name` (string): Terminal name. Default: 'default'\n- `waitMode` ('completion' | 'background'): Default 'completion' blocks until done\n- `timeout` (number): Max wait time in milliseconds. Default: 120000\n- `force` (boolean): Kill running process and start new command. Default: false\n- `addNewline` (boolean): Whether to press Enter after input. Default: true (input mode only)\n- `keys` (string[]): Key sequences for TUI navigation (e.g., ['ArrowDown', 'Enter'])\n\n**RETURNS:**\n- status: 'completed' | 'running' | 'waiting_for_input' | 'timeout'\n- output: Terminal output text\n- cwd: The working directory the command ran from\n- exitCode: Process exit code (when completed)\n- prompt: Detected prompt text (when waiting_for_input)\n- pid: Process ID\n- name: Terminal name\n- durationMs: How long the command ran",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -278,15 +269,6 @@
                 "type": "string"
               },
               "description": "Key sequences for interactive TUI navigation. Available keys: ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Enter, Escape, Tab, Backspace, Delete, Home, End, PageUp, PageDown, Space, Ctrl+C, Ctrl+D, Ctrl+Z, Ctrl+L, or any single character."
-            },
-            "logFormat": {
-              "type": "string",
-              "enum": [
-                "summary",
-                "detailed",
-                "json"
-              ],
-              "description": "Log compression format. 'summary': compact overview with top templates + rare events. 'detailed': full template list with sample variables & metadata. 'json': machine-readable JSON with complete template data."
             }
           },
           "required": [
@@ -664,11 +646,6 @@
             "msgid": {
               "type": "number",
               "description": "Get a specific message by ID with full details."
-            },
-            "logFormat": {
-              "type": "string",
-              "enum": ["summary", "detailed", "json"],
-              "description": "Log compression format."
             },
             "response_format": {
               "type": "string",

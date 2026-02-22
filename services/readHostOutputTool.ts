@@ -8,19 +8,28 @@
  * Client logs: <workspaceStorage>/user-data/logs/ (or fallback .devtools/user-data/logs/)
  */
 
+import type { FilterOptions, Severity } from '@packages/log-consolidation';
+
 import * as vscode from 'vscode';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
+
+import { compressLogs } from '@packages/log-consolidation';
 
 // ============================================================================
 // Module State
 // ============================================================================
 
 let clientLogsStoragePath: string | null = null;
+let hostLogUri: string | null = null;
 
 export function setClientLogsStoragePath(storagePath: string): void {
     clientLogsStoragePath = storagePath;
+}
+
+export function setHostLogUri(logUri: string): void {
+    hostLogUri = logUri;
 }
 
 function getClientLogsStoragePath(): string | null {
@@ -39,6 +48,12 @@ export interface IReadOutputChannelsParams {
     afterLine?: number;
     beforeLine?: number;
     lineLimit?: number;
+    templateId?: string;
+    severity?: string;
+    timeRange?: string;
+    minDuration?: string;
+    correlationId?: string;
+    includeStackFrames?: boolean;
 }
 
 // ============================================================================
@@ -137,6 +152,34 @@ function findLogFiles(dir: string, session: SessionType, category = 'root'): Log
 }
 
 const MAX_SESSION_SCAN = 10;
+const MAX_DIRS_TO_CHECK = 50;
+
+/**
+ * Walk up from context.logUri to find the session root directory.
+ * context.logUri = <session>/window1/exthost/<extensionId>/
+ * Session root = the directory whose parent is named 'logs'.
+ */
+function findSessionRootFromLogUri(logUri: string): string | null {
+    let current = logUri;
+    for (let i = 0; i < 6; i++) {
+        const parent = path.dirname(current);
+        if (parent === current) break;
+        if (path.basename(parent) === 'logs') {
+            return current;
+        }
+        current = parent;
+    }
+    return null;
+}
+
+function hasWindowLogs(sessionDir: string): boolean {
+    try {
+        const entries = fs.readdirSync(sessionDir, { withFileTypes: true });
+        return entries.some(e => e.isDirectory() && e.name.startsWith('window'));
+    } catch {
+        return false;
+    }
+}
 
 function getRecentSessionDirs(logsRoot: string, max = MAX_SESSION_SCAN): string[] {
     if (!fs.existsSync(logsRoot)) {
@@ -149,19 +192,44 @@ function getRecentSessionDirs(logsRoot: string, max = MAX_SESSION_SCAN): string[
             .map(d => d.name)
             .sort()
             .reverse()
-            .slice(0, max);
-        return names.map(name => path.join(logsRoot, name));
+            .slice(0, MAX_DIRS_TO_CHECK);
+
+        const result: string[] = [];
+        for (const name of names) {
+            if (result.length >= max) break;
+            const sessionDir = path.join(logsRoot, name);
+            if (hasWindowLogs(sessionDir)) {
+                result.push(sessionDir);
+            }
+        }
+        return result;
     } catch {
         return [];
     }
 }
 
 function getHostLogsDirs(): string[] {
-    const userDataDir = getUserDataDir();
-    if (!userDataDir) {
-        return [];
+    const dirs: string[] = [];
+
+    // Primary: derive current session root from context.logUri
+    if (hostLogUri) {
+        const sessionRoot = findSessionRootFromLogUri(hostLogUri);
+        if (sessionRoot && fs.existsSync(sessionRoot)) {
+            dirs.push(sessionRoot);
+        }
     }
-    return getRecentSessionDirs(path.join(userDataDir, 'logs'));
+
+    // Secondary: scan userDataDir/logs for recent window sessions
+    const userDataDir = getUserDataDir();
+    if (userDataDir) {
+        for (const dir of getRecentSessionDirs(path.join(userDataDir, 'logs'))) {
+            if (!dirs.includes(dir)) {
+                dirs.push(dir);
+            }
+        }
+    }
+
+    return dirs;
 }
 
 function getClientLogsDirs(): string[] {
@@ -498,10 +566,17 @@ export class OutputReadTool implements vscode.LanguageModelTool<IReadOutputChann
         if (indexedLines.length === 0) {
             outputLines.push('\n(no matching lines)');
         } else {
-            const formattedLines = indexedLines
-                .map(l => `${String(l.line).padStart(5, ' ')} | ${l.text}`)
-                .join('\n');
-            outputLines.push('\n```\n' + formattedLines + '\n```');
+            const rawText = indexedLines.map(l => l.text);
+            const drillDown: FilterOptions = {};
+            if (params.templateId) drillDown.templateId = params.templateId;
+            if (params.severity) drillDown.severity = params.severity as Severity;
+            if (params.timeRange) drillDown.timeRange = params.timeRange;
+            if (params.minDuration) drillDown.minDuration = params.minDuration;
+            if (params.correlationId) drillDown.correlationId = params.correlationId;
+            if (params.includeStackFrames !== undefined) drillDown.includeStackFrames = params.includeStackFrames;
+
+            const compressed = compressLogs({ lines: rawText, label: `${targetFile.name} [${sessionLabel}]` }, drillDown);
+            outputLines.push('\n' + compressed.formatted);
         }
 
         return new vscode.LanguageModelToolResult([

@@ -10,7 +10,7 @@
  */
 
 import * as vscode from 'vscode';
-import { OutputReadTool, setClientLogsStoragePath } from './readHostOutputTool';
+import { OutputReadTool, setClientLogsStoragePath, setHostLogUri } from './readHostOutputTool';
 import {
     TerminalReadTool,
     TerminalExecuteTool,
@@ -71,6 +71,7 @@ export async function activate(context: vscode.ExtensionContext) {
     if (context.storageUri) {
         setClientLogsStoragePath(context.storageUri.fsPath);
     }
+    setHostLogUri(context.logUri.fsPath);
 
     track(vscode.lm.registerTool('output_read', new OutputReadTool()));
     track(vscode.lm.registerTool('terminal_read', new TerminalReadTool()));
