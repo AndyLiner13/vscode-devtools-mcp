@@ -64,9 +64,9 @@ let currentDebugSession: vscode.DebugSession | null = null;
 
 // ── MCP Server ID Resolution ─────────────────────────────────────────────
 
-// MCP server definition ID — matches the provider ID in package.json contributes.mcpServerDefinitionProviders.
-// For provider-based servers, VS Code uses the provider ID directly.
-const MCP_SERVER_ID = 'devtools.mcp-server';
+// VS Code constructs server definition IDs as: ExtensionIdentifier.toKey(id) + '/' + label
+// Our extension ID is 'andyliner.vscode-devtools', label is 'Experimental DevTools'
+const MCP_SERVER_ID = 'andyliner.vscode-devtools/Experimental DevTools';
 
 function getMcpServerId(): string {
   return MCP_SERVER_ID;

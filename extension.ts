@@ -20,6 +20,10 @@ import pkg from './package.json';
 import { startWorker, stopWorker } from './services/codebase/codebase-worker-proxy';
 import { registerMcpServerProvider } from './services/mcpServerProvider';
 
+// VS Code constructs server definition IDs as: ExtensionIdentifier.toKey(id) + '/' + label
+const MCP_SERVER_DEF_ID = 'andyliner.vscode-devtools/Experimental DevTools';
+const MCP_PROVIDER_ID = 'devtools.mcp-server';
+
 // ── Bootstrap (Plain JS, always loads) ───────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -291,7 +295,7 @@ export async function activate(context: vscode.ExtensionContext) {
             tetheredAction = true;
             void vscode.commands.executeCommand(
               'workbench.mcp.startServer',
-              'devtools.mcp-server',
+              MCP_SERVER_DEF_ID,
               { waitForLiveTools: true },
             ).then(
               () => {
@@ -308,7 +312,7 @@ export async function activate(context: vscode.ExtensionContext) {
             updateStatusBar('disconnected');
             log('Client window disconnected — stopping MCP server via tethered lifecycle');
             tetheredAction = true;
-            void vscode.commands.executeCommand('workbench.mcp.stopServer', 'devtools.mcp-server').then(
+            void vscode.commands.executeCommand('workbench.mcp.stopServer', MCP_SERVER_DEF_ID).then(
               () => {
                 log('Tethered lifecycle: MCP server stopped successfully');
                 tetheredAction = false;
@@ -339,7 +343,7 @@ export async function activate(context: vscode.ExtensionContext) {
                   updateStatusBar('disconnected');
                 }
               }),
-              vscode.commands.executeCommand('workbench.mcp.startServer', 'devtools.mcp-server').then(
+              vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID).then(
                 () => log('MCP server started after toggle on'),
                 (err: unknown) => {
                   const msg = err instanceof Error ? err.message : String(err);
@@ -361,18 +365,30 @@ export async function activate(context: vscode.ExtensionContext) {
       log('Auto-starting client window and MCP server...');
 
       const startMcpServer = async (): Promise<void> => {
-        // Small delay to let VS Code's MCP service discover the provider
-        await new Promise<void>(r => setTimeout(r, 500));
-        try {
-          await vscode.commands.executeCommand(
-            'workbench.mcp.startServer',
-            'devtools.mcp-server',
-            { waitForLiveTools: true },
-          );
-          log('MCP server auto-started successfully');
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : String(err);
-          log('MCP server auto-start failed: ' + msg);
+        // Retry loop: VS Code may not have discovered the provider yet
+        const MAX_ATTEMPTS = 10;
+        const RETRY_DELAY_MS = 1000;
+
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+          log(`[mcp-autostart] Attempt ${attempt}/${MAX_ATTEMPTS} — calling workbench.mcp.startServer...`);
+          try {
+            await vscode.commands.executeCommand(
+              'workbench.mcp.startServer',
+              MCP_SERVER_DEF_ID,
+              { waitForLiveTools: true },
+            );
+            log(`[mcp-autostart] workbench.mcp.startServer resolved successfully on attempt ${attempt}`);
+            return;
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            log(`[mcp-autostart] workbench.mcp.startServer THREW on attempt ${attempt}: ${msg}`);
+            if (attempt < MAX_ATTEMPTS) {
+              log(`[mcp-autostart] Retrying in ${RETRY_DELAY_MS}ms...`);
+              await new Promise<void>(r => setTimeout(r, RETRY_DELAY_MS));
+            } else {
+              log('[mcp-autostart] All attempts exhausted — MCP server did NOT start');
+            }
+          }
         }
       };
 
@@ -404,7 +420,7 @@ export async function activate(context: vscode.ExtensionContext) {
         provideMcpServerDefinitions: () => [],
       };
       context.subscriptions.push(
-        vscode.lm.registerMcpServerDefinitionProvider('devtools.mcp-server', noopProvider),
+        vscode.lm.registerMcpServerDefinitionProvider(MCP_PROVIDER_ID, noopProvider),
       );
       log('Noop MCP provider registered — client will not spawn MCP server');
 
