@@ -16,7 +16,10 @@
     "noFallthroughCasesInSwitch": true,
     "declaration": false,
     "sourceMap": true,
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "@packages/log-consolidation": ["./packages/log-consolidation/src/index.ts"]
+    }
   },
   "include": [
     "**/*.ts"

@@ -18,7 +18,10 @@
     "noImplicitReturns": true,
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "@packages/log-consolidation": ["../packages/log-consolidation/src/index.ts"]
+    }
   },
   "include": [
     "src/**/*.ts"

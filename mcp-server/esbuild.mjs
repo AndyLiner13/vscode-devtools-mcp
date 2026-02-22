@@ -1,8 +1,23 @@
 import esbuild from 'esbuild';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const watch = process.argv.includes('--watch');
+
+/**
+ * Resolve @packages/* path aliases to the shared packages directory.
+ * @type {import('esbuild').Plugin}
+ */
+const packageAliasPlugin = {
+  name: 'package-alias',
+  setup(build) {
+    build.onResolve({ filter: /^@packages\/log-consolidation$/ }, () => ({
+      path: path.resolve(__dirname, '..', 'packages/log-consolidation/src/index.ts'),
+    }));
+  },
+};
 
 function findTsFiles(dir) {
   const result = [];
@@ -25,6 +40,7 @@ const config = {
   platform: 'node',
   target: 'es2023',
   sourcemap: true,
+  plugins: [packageAliasPlugin],
 };
 
 if (watch) {

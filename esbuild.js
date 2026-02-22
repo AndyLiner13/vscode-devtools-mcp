@@ -26,6 +26,19 @@ const esbuildProblemMatcherPlugin = {
 	},
 };
 
+/**
+ * Resolve @packages/* path aliases to the shared packages directory.
+ * @type {import('esbuild').Plugin}
+ */
+const packageAliasPlugin = {
+	name: 'package-alias',
+	setup(build) {
+		build.onResolve({ filter: /^@packages\/log-consolidation$/ }, () => ({
+			path: path.resolve(__dirname, 'packages/log-consolidation/src/index.ts'),
+		}));
+	},
+};
+
 // Loader build: extension/extension.ts → dist/extension.js
 // The loader starts the bridge and dynamically loads the runtime.
 // It must NOT statically bundle runtime.js — the dynamic require(path.join(...))
@@ -46,7 +59,7 @@ const loaderConfig = {
 	// - ts-morph: large dependency tree with dynamic requires (typescript compiler)
 	external: ['vscode', 'jsonc-parser', 'ts-morph'],
 	logLevel: 'silent',
-	plugins: [esbuildProblemMatcherPlugin],
+	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin],
 };
 
 // Runtime build: extension/runtime.ts → dist/runtime.js
@@ -66,7 +79,7 @@ const runtimeConfig = {
 	// - ts-morph: large dependency tree with dynamic requires (typescript compiler)
 	external: ['vscode', 'jsonc-parser', 'ts-morph'],
 	logLevel: 'silent',
-	plugins: [esbuildProblemMatcherPlugin],
+	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin],
 };
 
 // Worker build: extension/codebase-worker.ts → dist/codebase-worker.js
@@ -83,7 +96,7 @@ const workerConfig = {
 	outfile: 'dist/codebase-worker.js',
 	external: ['jsonc-parser', 'ts-morph'],
 	logLevel: 'silent',
-	plugins: [esbuildProblemMatcherPlugin],
+	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin],
 };
 
 async function main() {
