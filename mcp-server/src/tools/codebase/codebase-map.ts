@@ -199,7 +199,7 @@ function maxFolderTreeDepth(nodes: CodebaseTreeNode[], current = 0): number {
 // ── Tool Definition ──────────────────────────────────────
 
 export const map = defineTool({
-  name: 'exp_codebase_map',
+  name: 'codebase_map',
   description: 'Get a structural map of the codebase at any granularity — folders, files, or symbols.\n\n' +
     'Returns a tree with folders ending in `/`, files with extensions, and symbols as `kind name`.\n\n' +
     '**Parameters:**\n' +

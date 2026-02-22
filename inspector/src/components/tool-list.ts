@@ -44,63 +44,13 @@ export function createToolDropdown(): HTMLElement {
   badgesRow.id = 'tool-badges-row';
   badgesRow.className = 'hidden flex-wrap gap-1';
 
-  // Collapsible description
-  const descContainer = document.createElement('div');
-  descContainer.id = 'tool-desc-container';
-  descContainer.className = 'hidden';
-
-  const descText = document.createElement('p');
-  descText.id = 'tool-desc-text';
-  descText.className =
-    'text-xs text-vscode-text-dim leading-relaxed overflow-hidden max-h-[2.8em]';
-
-  const toggleBtn = document.createElement('button');
-  toggleBtn.id = 'tool-desc-toggle';
-  toggleBtn.className =
-    'mt-1 text-[11px] text-vscode-accent hover:text-vscode-accent-hover cursor-pointer hidden';
-  toggleBtn.textContent = 'Show more';
-
-  let expanded = false;
-  toggleBtn.addEventListener('click', () => {
-    expanded = !expanded;
-    if (expanded) {
-      descText.classList.remove('max-h-[2.8em]');
-      descText.classList.add('max-h-96');
-    } else {
-      descText.classList.add('max-h-[2.8em]');
-      descText.classList.remove('max-h-96');
-    }
-    toggleBtn.textContent = expanded ? 'Show less' : 'Show more';
-  });
-
-  descContainer.appendChild(descText);
-  descContainer.appendChild(toggleBtn);
-
   wrapper.appendChild(selectWrapper);
   wrapper.appendChild(badgesRow);
-  wrapper.appendChild(descContainer);
 
   select.addEventListener('change', () => {
     const tool = allTools.find(t => t.name === select.value);
     if (!tool) {
       return;
-    }
-
-    // Reset description collapse state
-    expanded = false;
-    descText.classList.add('max-h-[2.8em]');
-    descText.classList.remove('max-h-96');
-    toggleBtn.textContent = 'Show more';
-
-    const desc = tool.description ?? '';
-    descText.textContent = desc;
-
-    if (desc) {
-      descContainer.classList.remove('hidden');
-      // Show toggle only when description is long enough to overflow ~2 lines
-      toggleBtn.classList.toggle('hidden', desc.length < 120);
-    } else {
-      descContainer.classList.add('hidden');
     }
 
     // Rebuild annotation badges

@@ -66,10 +66,7 @@ export function renderToolDetail(tool: ToolDefinition): void {
   const inputEditorWrapper = document.createElement('div');
   inputEditorWrapper.className = 'tool-io-editor-wrapper';
 
-  const example = generateExample(tool.inputSchema);
-  const initialValue = Object.keys(example).length > 0
-    ? JSON.stringify(example, null, 2)
-    : getPlaceholderJson(tool.inputSchema);
+  const initialValue = buildInitialInput(tool.inputSchema);
 
   activeInputEditor = createInputEditor(inputEditorWrapper, initialValue);
 
@@ -246,60 +243,69 @@ function renderError(container: HTMLElement, message: string): void {
 
 // ── Helpers ──
 
-function getPlaceholderJson(schema: JsonSchema): string {
+function buildInitialInput(schema: JsonSchema): string {
   if (!schema.properties || Object.keys(schema.properties).length === 0) {
     return '{}';
   }
-
-  const example: Record<string, string> = {};
-  for (const [key, prop] of Object.entries(schema.properties)) {
-    const required = schema.required?.includes(key) ? ' (required)' : '';
-    example[key] = `${prop.type ?? 'any'}${required}`;
-  }
-
-  return JSON.stringify(example, null, 2);
+  return JSON.stringify(buildObjectExample(schema), null, 2);
 }
 
-function generateExample(schema: JsonSchema): Record<string, unknown> {
-  const example: Record<string, unknown> = {};
+function buildObjectExample(schema: JsonSchema): Record<string, unknown> {
   if (!schema.properties) {
-    return example;
+    return {};
   }
 
-  const requiredKeys = schema.required ?? [];
+  const required = new Set(schema.required ?? []);
+  const result: Record<string, unknown> = {};
 
-  for (const key of requiredKeys) {
+  // Required properties first, then optional
+  const sortedKeys = [
+    ...Object.keys(schema.properties).filter(k => required.has(k)),
+    ...Object.keys(schema.properties).filter(k => !required.has(k)),
+  ];
+
+  for (const key of sortedKeys) {
     const prop = schema.properties[key];
     if (!prop) {
       continue;
     }
-
-    if (prop.default !== undefined) {
-      example[key] = prop.default;
-    } else if (prop.enum && prop.enum.length > 0) {
-      example[key] = prop.enum[0];
-    } else {
-      switch (prop.type) {
-        case 'string':
-          example[key] = '';
-          break;
-        case 'number':
-        case 'integer':
-          example[key] = 0;
-          break;
-        case 'boolean':
-          example[key] = false;
-          break;
-        case 'array':
-          example[key] = [];
-          break;
-        case 'object':
-          example[key] = {};
-          break;
-      }
-    }
+    result[key] = buildValueExample(prop);
   }
 
-  return example;
+  return result;
+}
+
+function buildValueExample(prop: JsonSchema): unknown {
+  if (prop.default !== undefined) {
+    return prop.default;
+  }
+
+  if (prop.enum && prop.enum.length > 0) {
+    return prop.enum[0];
+  }
+
+  const type = Array.isArray(prop.type) ? prop.type[0] : prop.type;
+
+  switch (type) {
+    case 'string':
+      return '';
+    case 'number':
+    case 'integer':
+      return 0;
+    case 'boolean':
+      return false;
+    case 'array': {
+      // If items have enum options, pre-fill with all available options so
+      // the user can see what's available and remove what they don't need
+      if (prop.items?.enum && prop.items.enum.length > 0) {
+        return prop.items.enum;
+      }
+      return [];
+    }
+    case 'object':
+      return prop.properties ? buildObjectExample(prop) : {};
+    default:
+      return null;
+  }
 }
 
