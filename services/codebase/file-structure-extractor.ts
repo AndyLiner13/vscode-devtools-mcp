@@ -48,8 +48,18 @@ export interface ExtractedSymbol {
 function getRange(node: Node): ExtractedSymbolRange {
   const sf = node.getSourceFile();
   const fileEnd = sf.getEnd();
-  const startPos = Math.max(0, Math.min(node.getStart(), fileEnd));
+  let startPos = Math.max(0, Math.min(node.getStart(), fileEnd));
   const endPos = Math.max(startPos, Math.min(node.getEnd(), fileEnd));
+
+  // Extend start to include leading JSDoc/TSDoc (/** ... */) if present.
+  // Regular // and /* */ comments are intentionally left as orphaned content.
+  for (const comment of node.getLeadingCommentRanges()) {
+    if (comment.getText().startsWith('/**')) {
+      startPos = Math.max(0, Math.min(comment.getPos(), startPos));
+      break;
+    }
+  }
+
   const startLc = sf.compilerNode.getLineAndCharacterOfPosition(startPos);
   const endLc = sf.compilerNode.getLineAndCharacterOfPosition(endPos);
   return {
