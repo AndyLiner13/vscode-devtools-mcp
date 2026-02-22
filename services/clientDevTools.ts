@@ -22,6 +22,7 @@ import { consolidateText } from '@packages/log-consolidation';
 // ── Shared State ─────────────────────────────────────────────────────────────
 
 let activeBrowserService: BrowserService | null = null;
+let reconnectCdpCallback: (() => Promise<boolean>) | null = null;
 
 export function setBrowserService(service: BrowserService | null): void {
     activeBrowserService = service;
@@ -31,14 +32,33 @@ export function getBrowserService(): BrowserService | null {
     return activeBrowserService;
 }
 
-function requireBrowserService(): BrowserService {
-    if (!activeBrowserService) {
-        throw new Error(
-            'Client DevTools not ready. The client VS Code window has not been spawned yet. ' +
-            'Use the MCP server tools first to trigger client launch.',
-        );
+/**
+ * Register a callback that attempts CDP reconnection from a persisted session.
+ * Called by host-handlers during registration so browser LM tools can
+ * self-heal when activeBrowserService is null (e.g., after Host reload).
+ */
+export function setReconnectCdpCallback(callback: () => Promise<boolean>): void {
+    console.log('[clientDevTools] setReconnectCdpCallback: REGISTERING callback');
+    reconnectCdpCallback = callback;
+}
+
+async function requireBrowserService(): Promise<BrowserService> {
+    console.log(`[clientDevTools] requireBrowserService: activeBrowserService=${activeBrowserService ? 'SET' : 'NULL'}, reconnectCdpCallback=${reconnectCdpCallback ? 'SET' : 'NULL'}`);
+    if (activeBrowserService) return activeBrowserService;
+
+    // Lazy reconnection: try to restore CDP from a persisted session
+    if (reconnectCdpCallback) {
+        console.log('[clientDevTools] requireBrowserService: Invoking reconnectCdpCallback...');
+        const reconnected = await reconnectCdpCallback();
+        console.log(`[clientDevTools] requireBrowserService: reconnectCdpCallback returned ${reconnected}, activeBrowserService=${activeBrowserService ? 'SET' : 'NULL'}`);
+        if (reconnected && activeBrowserService) {
+            return activeBrowserService;
+        }
     }
-    return activeBrowserService;
+
+    throw new Error(
+        'Client DevTools not ready. The client VS Code window has not been spawned yet.',
+    );
 }
 
 // ── Factory ──────────────────────────────────────────────────────────────────
@@ -66,7 +86,7 @@ function createClientTool<TInput>(
             _token: vscode.CancellationToken,
         ): Promise<vscode.LanguageModelToolResult> {
             try {
-                const service = requireBrowserService();
+                const service = await requireBrowserService();
                 return await config.handler(service, options.input);
             } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);

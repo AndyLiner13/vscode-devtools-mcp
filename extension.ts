@@ -46,6 +46,8 @@ const CLIENT_PIPE_PATH = IS_WINDOWS
 interface RuntimeModule {
   activate(context: vscode.ExtensionContext): Promise<void>;
   deactivate(): Promise<void>;
+  wireReconnectCdpCallback(callback: () => Promise<boolean>): void;
+  wireBrowserService(service: unknown | null): void;
 }
 
 let runtimeModule: RuntimeModule | undefined;
@@ -53,6 +55,7 @@ let outputChannel: vscode.OutputChannel;
 let currentRole: 'host' | 'client' | undefined;
 let hostHandlersCleanup: (() => void) | undefined;
 let clientHandlersCleanup: vscode.Disposable | undefined;
+let reconnectCdpCallbackForRuntime: (() => Promise<boolean>) | undefined;
 
 function log(message: string): void {
   const timestamp = new Date().toISOString();
@@ -222,11 +225,24 @@ export async function activate(context: vscode.ExtensionContext) {
       // Dynamic import to ensure esbuild doesn't bundle host-handlers into client builds
       log('Loading host-handlers module...');
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { registerHostHandlers, cleanup, startClientWindow, stopClientWindow, onClientStateChanged } = require('./services/host-handlers');
+      const { registerHostHandlers, cleanup, startClientWindow, stopClientWindow, onClientStateChanged, createReconnectCdpCallback, onBrowserServiceChanged } = require('./services/host-handlers');
       log('host-handlers module loaded, registering handlers...');
-      registerHostHandlers(bootstrap.registerHandler, context);
+      registerHostHandlers(bootstrap.registerHandler, context, log);
       hostHandlersCleanup = cleanup;
-      log('Host handlers registered');
+      
+      // Save the callback for wiring to runtime after it loads
+      reconnectCdpCallbackForRuntime = createReconnectCdpCallback();
+      
+      // Register a callback to propagate browser service changes to runtime bundle
+      // This callback will be invoked when runtime loads and sets up runtimeModule
+      onBrowserServiceChanged((service: unknown) => {
+        if (runtimeModule) {
+          runtimeModule.wireBrowserService(service);
+          log(`Browser service ${service ? 'connected to' : 'disconnected from'} runtime bundle`);
+        }
+      });
+      
+      log('Host handlers registered, CDP reconnect callback created');
 
       // Register the MCP server provider so Copilot discovers it automatically
       const mcpProvider = registerMcpServerProvider(context);
@@ -362,6 +378,13 @@ export async function activate(context: vscode.ExtensionContext) {
 
     await runtime.activate(context);
     runtimeModule = runtime;
+
+    // Wire the CDP reconnect callback from host-handlers to runtime bundle
+    // This bridges the esbuild bundle gap - both bundles have separate clientDevTools instances
+    if (currentRole === 'host' && reconnectCdpCallbackForRuntime) {
+      runtime.wireReconnectCdpCallback(reconnectCdpCallbackForRuntime);
+      log('Wired CDP reconnect callback to runtime bundle');
+    }
 
     // Signal to VS Code that runtime loaded — views become visible
     await vscode.commands.executeCommand('setContext', 'devtools.coreLoaded', true);

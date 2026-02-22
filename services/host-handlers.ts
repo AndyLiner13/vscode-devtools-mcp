@@ -24,7 +24,7 @@ import http from 'node:http';
 import crypto from 'node:crypto';
 import { createHotReloadService, getHotReloadService, type ChangeCheckResult } from './hotReloadService';
 import { CdpClient, BrowserService } from './browser';
-import { setBrowserService } from './clientDevTools';
+import { setBrowserService, setReconnectCdpCallback } from './clientDevTools';
 
 // ── Client State Events ────────────────────────────────────────────────────
 
@@ -96,6 +96,20 @@ let reconnectPromise: Promise<boolean> | null = null;
 
 /** Active CDP client for browser automation LM tools */
 let activeCdpClient: CdpClient | null = null;
+
+/** Optional log function that writes to the extension's output channel */
+let hostLog: ((msg: string) => void) | null = null;
+
+/** Optional callback to propagate browser service changes to other bundles (e.g., runtime.js) */
+let onBrowserServiceChangedCallback: ((service: BrowserService | null) => void) | null = null;
+
+/**
+ * Register a callback to be notified when the BrowserService changes.
+ * Used by extension.ts to wire browser service to the runtime bundle.
+ */
+export function onBrowserServiceChanged(callback: (service: BrowserService | null) => void): void {
+  onBrowserServiceChangedCallback = callback;
+}
 
 // ── MCP Server Readiness Tracking ───────────────────────────────────────────
 
@@ -952,6 +966,8 @@ function stopClient(): void {
  * Creates a CdpClient + BrowserService and makes them available via setBrowserService().
  */
 async function connectCdpClient(port: number): Promise<void> {
+  console.log(`[host] connectCdpClient: ENTRY (port=${port}, hostLog=${hostLog ? 'SET' : 'NULL'})`);
+  hostLog?.(`connectCdpClient: Attempting CDP connection on port ${port}...`);
   disconnectCdpClient();
 
   try {
@@ -962,11 +978,16 @@ async function connectCdpClient(port: number): Promise<void> {
     const service = new BrowserService(client);
     service.initConsoleCollection();
     setBrowserService(service);
+    onBrowserServiceChangedCallback?.(service);
 
-    console.log(`[host] CDP client connected on port ${port} — browser LM tools active`);
+    const msg = `CDP client connected on port ${port} — browser LM tools active`;
+    console.log(`[host] ${msg}`);
+    hostLog?.(msg);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.log(`[host] Warning: CDP client connection failed: ${msg}. Browser LM tools unavailable.`);
+    const warning = `CDP client connection failed on port ${port}: ${msg}. Browser LM tools unavailable.`;
+    console.log(`[host] Warning: ${warning}`);
+    hostLog?.(warning);
     disconnectCdpClient();
   }
 }
@@ -976,6 +997,7 @@ async function connectCdpClient(port: number): Promise<void> {
  */
 function disconnectCdpClient(): void {
   setBrowserService(null);
+  onBrowserServiceChangedCallback?.(null);
   if (activeCdpClient) {
     activeCdpClient.dispose();
     activeCdpClient = null;
@@ -988,8 +1010,15 @@ function disconnectCdpClient(): void {
 /**
  * Register all Host RPC handlers with the bootstrap
  */
-export function registerHostHandlers(register: RegisterHandler, context: vscode.ExtensionContext): void {
+export function registerHostHandlers(
+  register: RegisterHandler,
+  context: vscode.ExtensionContext,
+  log?: (msg: string) => void,
+): void {
   console.log('[host] Registering Host RPC handlers');
+
+  // Store the output channel log function for CDP and lifecycle messages
+  hostLog = log ?? null;
 
   // Capture workspaceState for session persistence helpers
   hostWorkspaceState = context.workspaceState;
@@ -999,6 +1028,11 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 
   // Initialize the hot reload service (content-hash change detection)
   const hotReloadService = createHotReloadService(context.workspaceState);
+
+  // Register lazy CDP reconnection callback for browser LM tools.
+  // NOTE: The reconnect callback is no longer set here because the extension.js and
+  // runtime.js bundles have separate clientDevTools module instances. Instead, we export
+  // createReconnectCdpCallback() and extension.ts wires it to runtime.js after loading.
   
   /**
    * mcpReady — MCP announces it's online
@@ -1585,13 +1619,20 @@ function resolveClientConfig(): { clientWorkspace: string; extensionPath: string
  * Called during extension activation to auto-start the client.
  */
 export async function startClientWindow(): Promise<boolean> {
+  hostLog?.('startClientWindow: ENTRY');
+  console.log('[host] startClientWindow: ENTRY');
+  
   // Already running?
   if (cdpPort && electronPid) {
+    hostLog?.(`startClientWindow: PATH=already-running (cdpPort=${cdpPort}, pid=${electronPid})`);
     const healthy = await isClientHealthy();
     if (healthy) {
       console.log('[host] Client window already running and healthy');
       if (!activeCdpClient?.connected) {
         await connectCdpClient(cdpPort);
+      }
+      if (!activeCdpClient?.connected) {
+        hostLog?.('Client window healthy but CDP connection failed — browser LM tools unavailable until reconnection');
       }
       lastKnownClientState = true;
       _onClientStateChanged.fire(true);
@@ -1604,16 +1645,23 @@ export async function startClientWindow(): Promise<boolean> {
 
   // Try persisted session first
   const session = loadPersistedSession();
+  hostLog?.(`startClientWindow: PATH=persisted-session (session=${session ? 'FOUND' : 'NULL'})`);
   if (session) {
     electronPid = session.clientPid;
     cdpPort = session.cdpPort;
     inspectorPort = session.inspectorPort;
     currentExtensionPath = session.extensionPath;
 
+    hostLog?.(`startClientWindow: Checking persisted session health (pid=${session.clientPid}, cdpPort=${session.cdpPort})`);
     const healthy = await isClientHealthy();
+    hostLog?.(`startClientWindow: Persisted session healthy=${healthy}`);
     if (healthy) {
       console.log('[host] Reconnected to persisted client session');
+      hostLog?.(`Reconnected to persisted client session (cdpPort: ${session.cdpPort})`);
       await connectCdpClient(session.cdpPort);
+      if (!activeCdpClient?.connected) {
+        hostLog?.('Client session healthy but CDP connection failed — browser LM tools will retry on first use');
+      }
       lastKnownClientState = true;
       _onClientStateChanged.fire(true);
       startHealthMonitor();
@@ -1625,15 +1673,20 @@ export async function startClientWindow(): Promise<boolean> {
   }
 
   const resolved = resolveClientConfig();
+  hostLog?.(`startClientWindow: PATH=spawn (resolved=${resolved ? 'OK' : 'NULL'})`);
   if (!resolved) {
     console.log('[host] Cannot auto-start client: no workspace folder or config');
+    hostLog?.('startClientWindow: FAILED — no workspace folder or config');
     return false;
   }
 
   try {
     console.log('[host] Auto-starting client window...');
+    hostLog?.(`startClientWindow: Spawning client window...`);
     const result = await spawnClient(resolved.clientWorkspace, resolved.extensionPath, resolved.launchFlags);
+    hostLog?.(`startClientWindow: Client spawned, connecting CDP on port ${result.cdpPort}...`);
     await connectCdpClient(result.cdpPort);
+    hostLog?.(`startClientWindow: CDP connection attempt complete, activeCdpClient.connected=${activeCdpClient?.connected}`);
     console.log('[host] Client window auto-started successfully (cdpPort: ' + result.cdpPort + ')');
     lastKnownClientState = true;
     _onClientStateChanged.fire(true);
@@ -1642,6 +1695,7 @@ export async function startClientWindow(): Promise<boolean> {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.log('[host] Failed to auto-start client window: ' + msg);
+    hostLog?.(`startClientWindow: FAILED — ${msg}`);
     return false;
   }
 }
@@ -1691,6 +1745,39 @@ function stopHealthMonitor(): void {
     clearInterval(clientHealthMonitorInterval);
     clientHealthMonitorInterval = null;
   }
+}
+
+/**
+ * Creates the lazy CDP reconnection callback for wiring to runtime.js bundle.
+ * Called by extension.ts after loading the runtime module to bridge the bundle gap.
+ */
+export function createReconnectCdpCallback(): () => Promise<boolean> {
+  return async () => {
+    console.log('[host] lazyReconnectCallback: INVOKED');
+    hostLog?.('lazyReconnectCallback: Attempting CDP reconnection...');
+    
+    const session = loadPersistedSession();
+    hostLog?.(`lazyReconnectCallback: session=${session ? `FOUND(cdpPort=${session.cdpPort})` : 'NULL'}`);
+    if (!session?.cdpPort) return false;
+
+    const healthy = await isClientHealthy();
+    hostLog?.(`lazyReconnectCallback: isClientHealthy=${healthy}`);
+    if (!healthy) return false;
+
+    // Restore module state from persisted session
+    if (!cdpPort) {
+      electronPid = session.clientPid;
+      cdpPort = session.cdpPort;
+      inspectorPort = session.inspectorPort;
+      currentExtensionPath = session.extensionPath;
+    }
+
+    hostLog?.(`lazyReconnectCallback: Calling connectCdpClient(${session.cdpPort})...`);
+    await connectCdpClient(session.cdpPort);
+    const result = activeCdpClient?.connected === true;
+    hostLog?.(`lazyReconnectCallback: RESULT=${result}`);
+    return result;
+  };
 }
 
 /**

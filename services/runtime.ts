@@ -18,11 +18,32 @@ import {
 import { WaitTool } from './waitLmTool';
 import { McpStatusTool } from './mcpStatusTool';
 import { getUserActionTracker, disposeUserActionTracker } from './userActionTracker';
-import { getClientDevTools } from './clientDevTools';
+import { getClientDevTools, setReconnectCdpCallback as _setReconnectCdpCallback, setBrowserService as _setBrowserService } from './clientDevTools';
+import type { BrowserService } from './browser';
 
 // ============================================================================
 // Runtime Activation
 // ============================================================================
+
+/**
+ * Re-export setReconnectCdpCallback so extension.ts can wire the callback
+ * from the host-handlers module (which is in a separate esbuild bundle).
+ * This ensures the callback is set in THIS bundle's clientDevTools module instance.
+ */
+export function wireReconnectCdpCallback(callback: () => Promise<boolean>): void {
+    console.log('[devtools:runtime] wireReconnectCdpCallback called');
+    _setReconnectCdpCallback(callback);
+}
+
+/**
+ * Re-export setBrowserService so extension.ts can wire the browser service
+ * from the host-handlers module (which is in a separate esbuild bundle).
+ * This ensures the service is set in THIS bundle's clientDevTools module instance.
+ */
+export function wireBrowserService(service: BrowserService | null): void {
+    console.log(`[devtools:runtime] wireBrowserService called (service=${service ? 'SET' : 'NULL'})`);
+    _setBrowserService(service);
+}
 
 export async function activate(context: vscode.ExtensionContext) {
     console.log('[devtools:runtime] Runtime module loading...');
