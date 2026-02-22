@@ -1,11 +1,11 @@
 /**
  * Process State Detection Utilities
  *
- * Adapted from DesktopCommanderMCP's process-detection.ts
- * Detects when terminal processes are waiting for user input vs finished vs running.
+ * Terminal output cleaning and status types for SingleTerminalController.
  *
- * Used by SingleTerminalController to determine terminal state
- * when Shell Integration events alone are insufficient (e.g. mid-command prompts).
+ * Input detection is event-driven via VS Code shell integration:
+ * execution started (onDidStartTerminalShellExecution) + output stream idle
+ * signals the process is waiting for user input — no regex pattern matching needed.
  */
 
 export type TerminalStatus =
@@ -14,96 +14,6 @@ export type TerminalStatus =
   | 'completed'
   | 'waiting_for_input'
   | 'timeout';
-
-export interface ProcessState {
-  status: TerminalStatus;
-  detectedPrompt?: string;
-  exitCode?: number;
-  lastOutputLine: string;
-}
-
-// Known REPL prompt patterns (from DesktopCommanderMCP)
-const REPL_PROMPTS: Record<string, string[]> = {
-  python: ['>>> ', '... '],
-  node: ['> ', '... '],
-  r: ['> ', '+ '],
-  julia: ['julia> '],
-  shell: ['$ ', '# ', '% '],
-  mysql: ['mysql> ', '    -> '],
-  postgres: ['=# ', '-# '],
-  redis: ['redis> '],
-  mongo: ['> '],
-};
-
-// Interactive prompt patterns (yes/no, confirmations, password, etc.)
-const INTERACTIVE_PROMPT_PATTERNS = [
-  /\?\s*$/,                         // Ends with ?
-  /\[Y\/n\]\s*$/i,                  // [Y/n]
-  /\[y\/N\]\s*$/i,                  // [y/N]
-  /\(yes\/no\)\s*$/i,               // (yes/no)
-  /\(y\/n\)\s*$/i,                  // (y/n)
-  /:\s*$/,                          // Ends with :  (password prompts, etc.)
-  /Enter\s+.*:\s*$/i,               // Enter something:
-  /Password\s*:\s*$/i,              // Password:
-  /passphrase\s*:\s*$/i,            // passphrase:
-  /Are you sure\s*\?/i,             // Are you sure?
-  /Press\s+.*\s+to\s+continue/i,    // Press any key to continue
-  /Continue\s*\?\s*$/i,             // Continue?
-  /Overwrite\s*\?\s*$/i,            // Overwrite?
-  /proceed\s*\?\s*$/i,              // proceed?
-];
-
-// All flattened REPL prompts for fast lookup
-const ALL_REPL_PROMPTS = Object.values(REPL_PROMPTS).flat();
-
-/**
- * Analyze terminal output to determine if the process is waiting for user input.
- *
- * This is a heuristic — there is no definitive API to detect stdin reads.
- * We check the last line of output against known prompt patterns.
- */
-export function analyzeProcessOutput(output: string): ProcessState {
-  if (!output || output.trim().length === 0) {
-    return {
-      status: 'running',
-      lastOutputLine: '',
-    };
-  }
-
-  const lines = output.split('\n');
-  const lastLine = lines[lines.length - 1] ?? '';
-  const trimmedLastLine = lastLine.trimEnd();
-
-  // Check for REPL prompts
-  const detectedRepl = ALL_REPL_PROMPTS.find(
-    (prompt) => trimmedLastLine.endsWith(prompt) || trimmedLastLine === prompt.trim(),
-  );
-
-  if (detectedRepl) {
-    return {
-      status: 'waiting_for_input',
-      detectedPrompt: trimmedLastLine,
-      lastOutputLine: trimmedLastLine,
-    };
-  }
-
-  // Check for interactive prompt patterns
-  for (const pattern of INTERACTIVE_PROMPT_PATTERNS) {
-    if (pattern.test(trimmedLastLine)) {
-      return {
-        status: 'waiting_for_input',
-        detectedPrompt: trimmedLastLine,
-        lastOutputLine: trimmedLastLine,
-      };
-    }
-  }
-
-  // Default: still running
-  return {
-    status: 'running',
-    lastOutputLine: trimmedLastLine,
-  };
-}
 
 /**
  * Clean ANSI escape sequences and control characters from terminal output.

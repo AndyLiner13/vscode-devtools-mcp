@@ -19,7 +19,7 @@
  */
 
 import * as vscode from 'vscode';
-import { analyzeProcessOutput, cleanTerminalOutput, type TerminalStatus } from './processDetection';
+import { cleanTerminalOutput, type TerminalStatus } from './processDetection';
 import { getProcessLedger, type TerminalSessionInfo } from './processLedger';
 import { getUserActionTracker } from './userActionTracker';
 
@@ -412,15 +412,19 @@ export class SingleTerminalController {
     }
 
     const cleaned = cleanTerminalOutput(state.output);
-    const analysis = analyzeProcessOutput(cleaned);
+    const msSinceLastOutput = Date.now() - state.lastOutputTime;
+    const isWaitingForInput = state.status === 'running'
+      && state.executionCount > 0
+      && msSinceLastOutput >= OUTPUT_SETTLE_MS
+      && state.output.length > 0;
 
     return this.withProcessSummary({
-      status: state.status === 'running' && analysis.status === 'waiting_for_input'
-        ? 'waiting_for_input'
-        : state.status,
+      status: isWaitingForInput ? 'waiting_for_input' : state.status,
       output: cleaned,
       exitCode: state.exitCode,
-      prompt: analysis.detectedPrompt,
+      prompt: isWaitingForInput
+        ? cleaned.split('\n').filter(l => l.trim()).pop()
+        : undefined,
       pid: state.pid,
       name: terminalName,
     });
@@ -737,22 +741,21 @@ export class SingleTerminalController {
 
       const pollInterval = setInterval(() => {
         const cleaned = cleanTerminalOutput(state.output);
-        const analysis = analyzeProcessOutput(cleaned);
-
-        // Priority 1: Interactive prompt detection
         const msSinceLastOutput = Date.now() - state.lastOutputTime;
-        if (msSinceLastOutput >= OUTPUT_SETTLE_MS && state.output.length > 0) {
-          if (analysis.status === 'waiting_for_input') {
-            state.status = 'waiting_for_input';
-            resolveOnce({
-              status: 'waiting_for_input',
-              output: cleaned,
-              prompt: analysis.detectedPrompt,
-              pid: state.pid,
-              name: state.name,
-            });
-            return;
-          }
+
+        // Priority 1: Event-based input detection
+        // Shell execution is running (started, not ended) but output has stopped → waiting for input
+        if (state.executionCount > 0 && msSinceLastOutput >= OUTPUT_SETTLE_MS && state.output.length > 0) {
+          const lastLine = cleaned.split('\n').filter(l => l.trim()).pop() ?? '';
+          state.status = 'waiting_for_input';
+          resolveOnce({
+            status: 'waiting_for_input',
+            output: cleaned,
+            prompt: lastLine,
+            pid: state.pid,
+            name: state.name,
+          });
+          return;
         }
 
         // Priority 2: All shell executions finished — use prompt detection
@@ -804,7 +807,10 @@ export class SingleTerminalController {
       // Timeout fallback
       const timeoutTimer = setTimeout(() => {
         const cleaned = cleanTerminalOutput(state.output);
-        const analysis = analyzeProcessOutput(cleaned);
+        const msSinceLastOutput = Date.now() - state.lastOutputTime;
+        const isWaitingForInput = state.executionCount > 0
+          && msSinceLastOutput >= OUTPUT_SETTLE_MS
+          && state.output.length > 0;
 
         console.log(`[MultiTerminalController] Timeout for "${state.name}" after ${timeoutMs}ms`);
 
@@ -812,7 +818,9 @@ export class SingleTerminalController {
           status: 'timeout',
           output: cleaned,
           exitCode: state.exitCode,
-          prompt: analysis.detectedPrompt,
+          prompt: isWaitingForInput
+            ? cleaned.split('\n').filter(l => l.trim()).pop()
+            : undefined,
           pid: state.pid,
           name: state.name,
         });
