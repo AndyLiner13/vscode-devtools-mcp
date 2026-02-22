@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vscode/codicons": "^0.0.44",
     "monaco-editor": "^0.52.2"
   },
   "devDependencies": {

@@ -58,3 +58,26 @@ export interface ConnectionStatus {
   toolCount: number;
   error?: string;
 }
+
+// ── Inspector Test Manager ──
+
+export type RecordRating = 'good' | 'bad' | null;
+
+export interface ExecutionRecord {
+  id: string;
+  toolName: string;
+  input: string;
+  output: ContentBlock[];
+  isError: boolean;
+  createdAt: string;
+  lastRunAt: string | null;
+  rating: RecordRating;
+  comment: string;
+  priority: number;
+  durationMs: number;
+}
+
+export interface InspectorStorage {
+  records: Record<string, ExecutionRecord[]>;
+  version: number;
+}

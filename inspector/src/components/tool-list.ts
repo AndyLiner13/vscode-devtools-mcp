@@ -67,6 +67,7 @@ export function createToolDropdown(): HTMLElement {
       badgesRow.classList.remove('flex');
     }
 
+    localStorage.setItem('mcp-inspector-selected-tool', tool.name);
     toolSelectHandler?.(tool);
   });
 
@@ -99,8 +100,10 @@ export function renderToolList(tools: ToolDefinition[]): void {
     select.appendChild(opt);
   }
 
-  // Auto-select first tool
-  select.value = tools[0].name;
+  // Restore previously selected tool, or default to first
+  const savedTool = localStorage.getItem('mcp-inspector-selected-tool');
+  const restoreTool = savedTool && tools.some(t => t.name === savedTool) ? savedTool : tools[0].name;
+  select.value = restoreTool;
   select.dispatchEvent(new Event('change'));
 }
 

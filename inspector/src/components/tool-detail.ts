@@ -1,12 +1,15 @@
-import type { CallToolResult, ContentBlock, JsonSchema, ToolDefinition } from '../types';
-import { createInputEditor, createOutputEditor } from '../monaco-setup';
+import type { CallToolResult, JsonSchema, ToolDefinition } from '../types';
+import { createInputEditor } from '../monaco-setup';
 import type * as monaco from 'monaco-editor';
+
+import { addExecution, createHistoryContainer, setCurrentTool } from './history-list';
 
 let executeHandler: ((toolName: string, args: Record<string, unknown>) => Promise<CallToolResult>) | null = null;
 
 let activeInputEditor: monaco.editor.IStandaloneCodeEditor | null = null;
-let activeOutputEditor: monaco.editor.IStandaloneCodeEditor | null = null;
-let currentToolName = '';
+let activeExecuteBtn: HTMLButtonElement | null = null;
+let activeExecutionTime: HTMLElement | null = null;
+let activeToolName = '';
 
 export function onExecute(
   handler: (toolName: string, args: Record<string, unknown>) => Promise<CallToolResult>,
@@ -19,10 +22,57 @@ function disposeEditors(): void {
     activeInputEditor.dispose();
     activeInputEditor = null;
   }
-  if (activeOutputEditor) {
-    activeOutputEditor.dispose();
-    activeOutputEditor = null;
+  activeExecuteBtn = null;
+  activeExecutionTime = null;
+}
+
+async function executeCurrentInput(): Promise<void> {
+  if (!executeHandler || !activeInputEditor || !activeExecuteBtn || !activeExecutionTime) {
+    return;
   }
+
+  const inputText = activeInputEditor.getValue().trim();
+  let args: Record<string, unknown> = {};
+  if (inputText) {
+    try {
+      args = JSON.parse(inputText) as Record<string, unknown>;
+    } catch {
+      return;
+    }
+  }
+
+  activeExecuteBtn.disabled = true;
+  activeExecuteBtn.textContent = 'Running...';
+
+  const startTime = performance.now();
+
+  try {
+    const result = await executeHandler(activeToolName, args);
+    const elapsed = performance.now() - startTime;
+    activeExecutionTime.textContent = `${elapsed.toFixed(0)}ms`;
+    addExecution(activeToolName, inputText, result, Math.round(elapsed));
+  } catch (err) {
+    const elapsed = performance.now() - startTime;
+    activeExecutionTime.textContent = `${elapsed.toFixed(0)}ms`;
+    const message = err instanceof Error ? err.message : String(err);
+    addExecution(
+      activeToolName,
+      inputText,
+      { content: [{ type: 'text', text: `Error: ${message}` }], isError: true },
+      Math.round(elapsed),
+    );
+  } finally {
+    activeExecuteBtn.disabled = false;
+    activeExecuteBtn.textContent = 'Execute';
+  }
+}
+
+export function rerunWithInput(input: string): void {
+  if (!activeInputEditor) {
+    return;
+  }
+  activeInputEditor.setValue(input);
+  executeCurrentInput();
 }
 
 export function createToolDetail(): HTMLElement {
@@ -56,7 +106,8 @@ export function renderToolDetail(tool: ToolDefinition): void {
   const card = document.createElement('div');
   card.className = 'tool-invocation-card';
   card.id = 'tool-invocation-card';
-  currentToolName = tool.name;
+  activeToolName = tool.name;
+  setCurrentTool(tool.name);
 
   // ── Input Section ──
   const inputSection = document.createElement('div');
@@ -80,202 +131,36 @@ export function renderToolDetail(tool: ToolDefinition): void {
   const executeRow = document.createElement('div');
   executeRow.className = 'flex items-center gap-3 px-2 py-2';
 
-  const executeBtn = document.createElement('button');
-  executeBtn.className = [
+  activeExecuteBtn = document.createElement('button');
+  activeExecuteBtn.className = [
     'px-4 py-1.5 bg-vscode-accent text-white rounded text-sm font-medium',
     'hover:bg-vscode-accent-hover transition-colors cursor-pointer',
     'disabled:opacity-50 disabled:cursor-not-allowed',
     'flex items-center gap-2',
   ].join(' ');
-  executeBtn.textContent = 'Execute';
+  activeExecuteBtn.textContent = 'Execute';
 
-  const executionTime = document.createElement('span');
-  executionTime.className = 'tool-execution-time';
+  activeExecutionTime = document.createElement('span');
+  activeExecutionTime.className = 'tool-execution-time';
 
-  executeRow.appendChild(executeBtn);
-  executeRow.appendChild(executionTime);
+  executeRow.appendChild(activeExecuteBtn);
+  executeRow.appendChild(activeExecutionTime);
   card.appendChild(executeRow);
 
-  // ── Result Area (always visible) ──
-  const resultArea = document.createElement('div');
-  resultArea.className = 'tool-result-section';
-  resultArea.id = 'tool-result-area';
+  // ── History List ──
+  const historyContainer = createHistoryContainer();
+  card.appendChild(historyContainer);
 
-  // Pre-render empty Output so it's always visible
-  renderResult(resultArea, { content: [], isError: false });
-
-  card.appendChild(resultArea);
   scrollContainer.appendChild(card);
   panel.appendChild(scrollContainer);
 
+  // Trigger initial render of persisted records
+  setCurrentTool(tool.name);
+
   // ── Execute Handler ──
-  executeBtn.addEventListener('click', async () => {
-    if (!executeHandler || !activeInputEditor) {
-      return;
-    }
-
-    const inputText = activeInputEditor.getValue().trim();
-    let args: Record<string, unknown> = {};
-    if (inputText) {
-      try {
-        args = JSON.parse(inputText) as Record<string, unknown>;
-      } catch {
-        renderError(resultArea, 'Invalid JSON input');
-        return;
-      }
-    }
-
-    executeBtn.disabled = true;
-    executeBtn.textContent = 'Running...';
-
-    const startTime = performance.now();
-
-    try {
-      const result = await executeHandler(tool.name, args);
-      const elapsed = performance.now() - startTime;
-      executionTime.textContent = `${elapsed.toFixed(0)}ms`;
-      renderResult(resultArea, result);
-    } catch (err) {
-      const elapsed = performance.now() - startTime;
-      executionTime.textContent = `${elapsed.toFixed(0)}ms`;
-      const message = err instanceof Error ? err.message : String(err);
-      renderError(resultArea, message);
-    } finally {
-      executeBtn.disabled = false;
-      executeBtn.textContent = 'Execute';
-    }
+  activeExecuteBtn.addEventListener('click', () => {
+    executeCurrentInput();
   });
-}
-
-// ── Result Rendering ──
-
-function renderResult(container: HTMLElement, result: CallToolResult): void {
-  container.innerHTML = '';
-
-  const card = document.getElementById('tool-invocation-card');
-  if (result.isError && card) {
-    card.classList.add('error-state');
-  } else if (card) {
-    card.classList.remove('error-state');
-  }
-
-  const outputSection = document.createElement('div');
-  outputSection.className = 'tool-io-section';
-
-  const outputLabel = document.createElement('h3');
-  outputLabel.textContent = 'Output';
-  outputSection.appendChild(outputLabel);
-
-  // Collect text content and render in a Monaco editor
-  const textParts: string[] = [];
-  const imageParts: ContentBlock[] = [];
-
-  for (const block of result.content) {
-    if (block.type === 'image' && block.data) {
-      imageParts.push(block);
-    } else if (block.text) {
-      textParts.push(block.text);
-    }
-  }
-
-  const combinedText = textParts.join('\n');
-
-  // Detect if the combined text is valid JSON for syntax highlighting
-  let languageId = 'plaintext';
-  try {
-    JSON.parse(combinedText);
-    languageId = 'json';
-  } catch {
-    // Not JSON — use plaintext
-  }
-
-  const outputEditorWrapper = document.createElement('div');
-  outputEditorWrapper.className = 'tool-io-editor-wrapper';
-
-  if (activeOutputEditor) {
-    activeOutputEditor.dispose();
-    activeOutputEditor = null;
-  }
-
-  activeOutputEditor = createOutputEditor(outputEditorWrapper, combinedText, languageId);
-  outputSection.appendChild(outputEditorWrapper);
-
-  // Render image blocks
-  for (const img of imageParts) {
-    const imgEl = document.createElement('img');
-    imgEl.className = 'tool-output-image';
-    imgEl.src = `data:${img.mimeType ?? 'image/png'};base64,${img.data}`;
-    outputSection.appendChild(imgEl);
-  }
-
-  container.appendChild(outputSection);
-
-  // ── Export Button Row ──
-  const exportRow = document.createElement('div');
-  exportRow.className = 'flex items-center gap-3 px-2 py-2';
-
-  const exportBtn = document.createElement('button');
-  exportBtn.className = [
-    'px-4 py-1.5 bg-vscode-accent text-white rounded text-sm font-medium',
-    'hover:bg-vscode-accent-hover transition-colors cursor-pointer',
-    'flex items-center gap-2',
-  ].join(' ');
-  exportBtn.textContent = 'Copy';
-
-  exportBtn.addEventListener('click', async () => {
-    const input = activeInputEditor?.getValue() ?? '';
-    const output = activeOutputEditor?.getValue() ?? '';
-    const text = [
-      `Tool: ${currentToolName}`,
-      '',
-      'Input:',
-      input || '(empty)',
-      '',
-      'Output:',
-      output || '(empty)',
-    ].join('\n');
-
-    await navigator.clipboard.writeText(text);
-    exportBtn.textContent = 'Copied!';
-    setTimeout(() => {
-      exportBtn.textContent = 'Copy';
-    }, 2000);
-  });
-
-  exportRow.appendChild(exportBtn);
-  container.appendChild(exportRow);
-}
-
-function renderError(container: HTMLElement, message: string): void {
-  container.innerHTML = '';
-
-  const card = document.getElementById('tool-invocation-card');
-  if (card) {
-    card.classList.add('error-state');
-  }
-
-  const outputSection = document.createElement('div');
-  outputSection.className = 'tool-io-section';
-
-  const outputLabel = document.createElement('h3');
-  outputLabel.textContent = 'Output';
-
-  const errorDiv = document.createElement('div');
-  errorDiv.className = 'tool-error-message';
-
-  const label = document.createElement('span');
-  label.className = 'error-label';
-  label.textContent = 'Error: ';
-
-  const msg = document.createElement('span');
-  msg.textContent = message;
-
-  errorDiv.appendChild(label);
-  errorDiv.appendChild(msg);
-
-  outputSection.appendChild(outputLabel);
-  outputSection.appendChild(errorDiv);
-  container.appendChild(outputSection);
 }
 
 // ── Helpers ──
