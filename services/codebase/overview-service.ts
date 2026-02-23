@@ -185,7 +185,6 @@ function injectIgnoredEntries(
   }
 
   for (const entry of entries) {
-    if (existingNames.has(entry.name)) continue;
     if (!entry.isFile() && !entry.isDirectory()) continue;
 
     const fullPath = path.join(dirPath, entry.name).replace(/\\/g, '/');
@@ -193,7 +192,22 @@ function injectIgnoredEntries(
       ? fullPath.slice(normalizedScanRoot.length + 1)
       : fullPath;
 
-    if (applyIgnoreRules(relative, ignoreRules, toolScope)) {
+    const isIgnored = applyIgnoreRules(relative, ignoreRules, toolScope);
+
+    if (existingNames.has(entry.name)) {
+      // Entry was already added (e.g. as a directory stub) — mark it ignored if applicable
+      if (isIgnored) {
+        const existing = tree.find(n => n.name === entry.name);
+        if (existing && !existing.ignored) {
+          existing.ignored = true;
+          existing.children = undefined;
+          existing.symbols = undefined;
+        }
+      }
+      continue;
+    }
+
+    if (isIgnored) {
       tree.push({
         name: entry.name,
         type: entry.isDirectory() ? 'directory' : 'file',
