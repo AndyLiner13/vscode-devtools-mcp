@@ -21,7 +21,7 @@ import * as vscode from 'vscode';
 import * as bootstrap from './bootstrap';
 import pkg from './package.json';
 import { startWorker, stopWorker } from './services/codebase/codebase-worker-proxy';
-import { registerInspectorCommands, shutdownInspector } from './services/inspectorManager';
+import { ensureInspectorRunning, registerInspectorCommands, shutdownInspector } from './services/inspectorManager';
 import { registerMcpServerProvider } from './services/mcpServerProvider';
 
 // VS Code constructs server definition IDs as: ExtensionIdentifier.toKey(id) + '/' + label
@@ -144,7 +144,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				statusBarItem.backgroundColor = undefined;
 				break;
 			case 'connecting':
-				statusBarItem.text = '$(sync~spin) VS Code DevTools Host';
+				statusBarItem.text = '$(debug-disconnect) VS Code DevTools Host';
 				statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Host\nClient Window: Connecting...\nMCP Server: Starting...`;
 				statusBarItem.command = undefined;
 				statusBarItem.backgroundColor = undefined;
@@ -263,6 +263,15 @@ export async function activate(context: vscode.ExtensionContext) {
 			if (workspacePath) {
 				registerInspectorCommands(context, workspacePath, log);
 				log('Inspector commands registered');
+
+				// Auto-start the inspector Vite dev server (idempotent — no-op if already running)
+				void ensureInspectorRunning(workspacePath).then(
+					(ok) => log(`Inspector auto-start: ${ok ? 'ready' : 'failed'}`),
+					(err: unknown) => {
+						const msg = err instanceof Error ? err.message : String(err);
+						log(`Inspector auto-start error: ${msg}`);
+					}
+				);
 			}
 
 			// Listen for settings changes and refresh MCP server definitions
@@ -277,10 +286,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
 			// ── MCP Server Lifecycle Commands ──────────────────────────────────
 			context.subscriptions.push(
-				vscode.commands.registerCommand('devtools.startMcpServer', async () => {
+				vscode.commands.registerCommand('devtools.startMcpServer', async (options?: { silent?: boolean }) => {
 					if (mcpProvider.enabled) {
 						log('Start MCP Server: already enabled — ensuring server is running');
-						vscode.window.showInformationMessage('MCP Server is already running.');
+						if (!options?.silent) {
+							vscode.window.showInformationMessage('MCP Server is already running.');
+						}
 						// Re-fire start in case the server crashed while enabled
 						void startClientWindow();
 						void vscode.commands.executeCommand(
@@ -405,17 +416,28 @@ export async function activate(context: vscode.ExtensionContext) {
 			updateStatusBar('connecting');
 			log('Auto-starting MCP server (will spawn client via ensureConnection)...');
 
-			void vscode.commands.executeCommand(
-				'workbench.mcp.startServer',
-				MCP_SERVER_DEF_ID,
-				{ waitForLiveTools: true },
-			).then(
-				() => log('[auto-start] MCP server started'),
-				(err: unknown) => {
-					const msg = err instanceof Error ? err.message : String(err);
-					log(`[auto-start] MCP server start failed: ${msg}`);
-					updateStatusBar('disconnected');
+			void vscode.window.withProgress(
+				{
+					cancellable: false,
+					location: vscode.ProgressLocation.Notification,
+					title: 'VS Code DevTools'
 				},
+				async (progress) => {
+					progress.report({ message: 'Starting MCP server…' });
+					try {
+						await vscode.commands.executeCommand(
+							'workbench.mcp.startServer',
+							MCP_SERVER_DEF_ID,
+							{ waitForLiveTools: true },
+						);
+						log('[auto-start] MCP server started');
+						progress.report({ message: 'Waiting for client window…' });
+					} catch (err: unknown) {
+						const msg = err instanceof Error ? err.message : String(err);
+						log(`[auto-start] MCP server start failed: ${msg}`);
+						updateStatusBar('disconnected');
+					}
+				}
 			);
 		} else {
 			log('Loading client-handlers module...');

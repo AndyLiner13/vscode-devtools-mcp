@@ -128,6 +128,54 @@ async function startInspector(workspacePath: string): Promise<boolean> {
 	return true;
 }
 
+/**
+ * Ensure the Vite dev server is running without opening the browser.
+ * Idempotent — does nothing if already listening.
+ */
+async function ensureInspectorRunning(workspacePath: string): Promise<boolean> {
+	const alreadyListening = await isPortListening(INSPECTOR_PORT);
+	if (alreadyListening) {
+		log('Inspector already running — no action needed');
+		return true;
+	}
+
+	const inspectorDir = path.join(workspacePath, 'inspector');
+	log(`Auto-starting Vite dev server in ${inspectorDir}`);
+
+	const isWindows = process.platform === 'win32';
+
+	const child = spawn('npm', ['run', 'dev'], {
+		cwd: inspectorDir,
+		detached: !isWindows,
+		shell: isWindows,
+		stdio: 'ignore',
+		windowsHide: true
+	});
+
+	inspectorProcess = child;
+
+	child.on('error', (err) => {
+		log(`Inspector process error: ${err.message}`);
+		inspectorProcess = null;
+	});
+
+	child.on('exit', (code) => {
+		log(`Inspector process exited (code ${code ?? 'unknown'})`);
+		inspectorProcess = null;
+	});
+
+	child.unref();
+
+	const ready = await waitForPort(INSPECTOR_PORT, STARTUP_TIMEOUT_MS);
+	if (!ready) {
+		log('Inspector auto-start: did not become responsive within timeout');
+		return false;
+	}
+
+	log('Inspector auto-start: Vite dev server is ready');
+	return true;
+}
+
 async function waitForPort(port: number, timeoutMs: number): Promise<boolean> {
 	return new Promise((resolve) => {
 		const deadline = Date.now() + timeoutMs;
@@ -185,10 +233,36 @@ async function stopInspector(): Promise<boolean> {
 		return true;
 	}
 
-	// Port is listening but we don't own the process (started externally)
-	log('Inspector appears to be running but was not started by this extension');
-	vscode.window.showWarningMessage('MCP Inspector is running but was not started by this extension. Please stop it manually.');
-	return false;
+	// Port is listening but we don't own the process — kill whatever is on the port
+	log('Inspector running but not owned by this extension — killing process on port');
+	try {
+		if (process.platform === 'win32') {
+			// Find PID listening on the inspector port and kill it
+			const output = execSync(`netstat -ano | findstr LISTENING | findstr :${INSPECTOR_PORT}`, { encoding: 'utf8' });
+			const pids = new Set<string>();
+			for (const line of output.split('\n')) {
+				const parts = line.trim().split(/\s+/);
+				const pid = parts[parts.length - 1];
+				if (pid && /^\d+$/.test(pid) && pid !== '0') {
+					pids.add(pid);
+				}
+			}
+			for (const pid of pids) {
+				try {
+					execSync(`taskkill /PID ${pid} /T /F`, { stdio: 'ignore' });
+				} catch {
+					// process may have already exited
+				}
+			}
+		} else {
+			execSync(`lsof -ti:${INSPECTOR_PORT} | xargs kill -9`, { stdio: 'ignore' });
+		}
+		log('Killed external inspector process');
+		return true;
+	} catch {
+		log('Failed to kill external inspector process');
+		return false;
+	}
 }
 
 // ── Command Handlers ─────────────────────────────────────────────────────────
@@ -244,6 +318,12 @@ export function registerInspectorCommands(context: vscode.ExtensionContext, work
 
 	log('Inspector commands registered');
 }
+
+/**
+ * Ensure the inspector Vite dev server is running (auto-start on activation).
+ * Does not open the browser — just ensures the server process is alive.
+ */
+export { ensureInspectorRunning };
 
 /**
  * Forcibly stop the inspector if it's running.

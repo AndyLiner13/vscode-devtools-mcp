@@ -1398,8 +1398,7 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 						return { error: msg, restarted: false };
 					}
 
-					progress.report({ increment: 34, message: '✅ Restarted' });
-					await delay(3000);
+					vscode.window.showInformationMessage('✅ MCP Server restarted');
 					return { restarted: true, toolCacheCleared: true };
 				}
 			);
@@ -1502,8 +1501,7 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 							result.newClientStartedAt = spawnResult.clientStartedAt;
 							console.log(`[host] Client restarted with fresh extension code (cdpPort: ${spawnResult.cdpPort})`);
 
-							progress.report({ message: '✅ Client reconnected' });
-							await delay(3000);
+							vscode.window.showInformationMessage('✅ Extension rebuilt — client reconnected');
 						}
 					}
 				);
@@ -1558,8 +1556,7 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 						await bridgePromise;
 						clearTimeout(safetyTimeout);
 
-						progress.report({ message: '✅ Restarted' });
-						await delay(3000);
+						vscode.window.showInformationMessage('✅ MCP Server restarted');
 					}
 				);
 
@@ -1596,7 +1593,7 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 	 */
 	register('ensureMcpServer', async () => {
 		console.log('[host] ensureMcpServer called from Inspector');
-		await vscode.commands.executeCommand('devtools.startMcpServer');
+		await vscode.commands.executeCommand('devtools.startMcpServer', { silent: true });
 		return { ok: true };
 	});
 

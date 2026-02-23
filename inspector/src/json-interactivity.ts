@@ -29,13 +29,18 @@ export function setupJsonInteractivity(
 ): monacoNs.IDisposable {
 	const disposables: monacoNs.IDisposable[] = [];
 
+	// Shared tracked active values for enum arrays.
+	// When an enum array is expanded, the model text includes ALL values (active + inactive),
+	// so we can't rely on JSON.parse to know which are active. This map is the authority.
+	const trackedActiveValues = new Map<string, Set<string>>();
+
 	disposables.push(setupBooleanToggle(editor));
 	disposables.push(setupIntegerSelect(editor));
 	disposables.push(setupFilePathIntellisense(editor, schema));
-	disposables.push(setupEnumArrayToggle(editor, schema));
+	disposables.push(setupEnumArrayToggle(editor, schema, trackedActiveValues));
 	disposables.push(setupValueAutoSelect(editor, schema));
 	disposables.push(setupClickableCursorDecorations(editor, schema));
-	disposables.push(setupTabToggle(editor, schema));
+	disposables.push(setupTabToggle(editor, schema, trackedActiveValues));
 	disposables.push(setupFieldNavigation(editor, schema));
 
 	return {
@@ -414,7 +419,8 @@ interface EnumArrayInfo {
  */
 function setupEnumArrayToggle(
 	editor: monacoNs.editor.IStandaloneCodeEditor,
-	schema: JsonSchema
+	schema: JsonSchema,
+	trackedActiveValues: Map<string, Set<string>>
 ): monacoNs.IDisposable {
 	const enumArrays = findEnumArrayProperties(schema);
 	if (enumArrays.length === 0) {
@@ -451,9 +457,13 @@ function setupEnumArrayToggle(
 	};
 
 	/**
-	 * Get active values from the current JSON model for a property.
+	 * Get active values for a property. Uses tracked state when expanded,
+	 * falls back to parsing the model when collapsed.
 	 */
 	const getActiveValues = (model: monacoNs.editor.ITextModel, propertyName: string): Set<string> => {
+		const tracked = trackedActiveValues.get(propertyName);
+		if (tracked) return new Set(tracked);
+
 		try {
 			const parsed = JSON.parse(model.getValue()) as Record<string, unknown>;
 			if (Array.isArray(parsed[propertyName])) {
@@ -548,6 +558,7 @@ function setupEnumArrayToggle(
 		if (!model) return;
 
 		const activeSet = getActiveValues(model, info.propertyName);
+		trackedActiveValues.set(info.propertyName, new Set(activeSet));
 		const newArrayText = buildExpandedArrayText(info, activeSet);
 
 		const bounds = findArrayBounds(model, info.propertyName);
@@ -581,7 +592,10 @@ function setupEnumArrayToggle(
 
 		decorationCollection.set([]);
 
-		const activeSet = getActiveValues(model, info.propertyName);
+		// Use tracked active values (authoritative while expanded), then clear tracking
+		const tracked = trackedActiveValues.get(info.propertyName);
+		const activeSet = tracked ? new Set(tracked) : getActiveValues(model, info.propertyName);
+		trackedActiveValues.delete(info.propertyName);
 		const newArrayText = buildCollapsedArrayText(info, activeSet);
 
 		const bounds = findArrayBounds(model, info.propertyName);
@@ -663,6 +677,9 @@ function setupEnumArrayToggle(
 				} else {
 					activeSet.add(clickedValue);
 				}
+
+				// Update tracked state so subsequent toggles and collapse use correct values
+				trackedActiveValues.set(expandedInfo.propertyName, new Set(activeSet));
 
 				// Build new expanded array text with toggled state
 				const newArrayText = buildExpandedArrayText(expandedInfo, activeSet);
@@ -1093,7 +1110,8 @@ function isLineInsideEnumArray(
  */
 function setupTabToggle(
 	editor: monacoNs.editor.IStandaloneCodeEditor,
-	schema: JsonSchema
+	schema: JsonSchema,
+	trackedActiveValues: Map<string, Set<string>>
 ): monacoNs.IDisposable {
 	const enumArrays = findEnumArrayProperties(schema);
 
@@ -1162,26 +1180,19 @@ function setupTabToggle(
 					e.preventDefault();
 					e.stopPropagation();
 
-					// Toggle: parse current active values and flip this one
-					let parsed: Record<string, unknown>;
-					try {
-						parsed = JSON.parse(model.getValue());
-					} catch {
-						return;
-					}
+					// Use tracked active values (authoritative while expanded)
+					const tracked = trackedActiveValues.get(info.propertyName);
+					const activeSet = tracked ? new Set(tracked) : new Set<string>();
 
-					const currentValues: string[] = Array.isArray(parsed[info.propertyName])
-						? (parsed[info.propertyName] as unknown[]).map(String)
-						: [];
-
-					const idx = currentValues.indexOf(itemValue);
-					if (idx !== -1) {
-						currentValues.splice(idx, 1);
+					if (activeSet.has(itemValue)) {
+						activeSet.delete(itemValue);
 					} else {
-						currentValues.push(itemValue);
+						activeSet.add(itemValue);
 					}
 
-					const activeSet = new Set(currentValues);
+					// Update tracked state
+					trackedActiveValues.set(info.propertyName, new Set(activeSet));
+
 					const sortedActive = info.enumValues
 						.filter((v) => activeSet.has(v))
 						.sort((a, b) => a.localeCompare(b));
