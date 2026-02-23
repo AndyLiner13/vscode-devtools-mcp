@@ -306,10 +306,6 @@ code {
 
 /* ── Interactive JSON: Enum Array Toggle ─────────────────────────────── */
 
-.enum-toggle-zone {
-	/* Zero-width marker — no visual impact */
-}
-
 .enum-inactive-options {
 	color: rgba(150, 150, 150, 0.45) !important;
 	font-style: italic;
