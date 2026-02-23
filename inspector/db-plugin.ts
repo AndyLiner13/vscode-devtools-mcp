@@ -82,6 +82,47 @@ async function parseBody(req: IncomingMessage): Promise<Record<string, unknown>>
 	});
 }
 
+interface FlatSymbol {
+	kind: string;
+	name: string;
+}
+
+// Root-level symbols with these kinds are file-level wrappers (VS Code adds a
+// Module/File symbol whose name is the file's basename). We skip adding them to
+// the flat list but still recurse into their children so child paths are
+// relative ("UserService.findById" instead of "MyFile.UserService.findById").
+const FILE_WRAPPER_KINDS = new Set(['module', 'file', 'namespace']);
+
+/**
+ * Flatten a nested NativeDocumentSymbol tree into dot-notation paths.
+ * e.g. class UserService { findById() {} } → ["UserService", "UserService.findById"]
+ * Root-level Module/File/Namespace symbols are skipped (they're file wrappers)
+ * but their children are still included.
+ */
+function flattenDocumentSymbols(
+	symbols: Array<{ children?: unknown[]; kind?: string; name?: string }>,
+	prefix = '',
+	out: FlatSymbol[] = []
+): FlatSymbol[] {
+	for (const sym of symbols) {
+		if (!sym.name) continue;
+		const kind = sym.kind ?? 'Unknown';
+		const isFileWrapper = prefix === '' && FILE_WRAPPER_KINDS.has(kind.toLowerCase());
+		const fullName = isFileWrapper ? '' : (prefix ? `${prefix}.${sym.name}` : sym.name);
+		if (!isFileWrapper) {
+			out.push({ kind, name: fullName });
+		}
+		if (Array.isArray(sym.children) && sym.children.length > 0) {
+			flattenDocumentSymbols(
+				sym.children as Array<{ children?: unknown[]; kind?: string; name?: string }>,
+				fullName,
+				out
+			);
+		}
+	}
+	return out;
+}
+
 export function inspectorDbPlugin(): Plugin {
 	return {
 		configureServer(server) {
@@ -381,6 +422,32 @@ export function inspectorDbPlugin(): Plugin {
 					} catch (err) {
 						log(`[browse] ERROR: ${String(err)}`);
 						json(res, { debug, entries: [], error: String(err), root: workspaceRoot });
+					}
+					return;
+				}
+
+				// GET /api/symbols?file=<path> — document symbols for symbol intellisense
+				if (pathname === '/api/symbols' && method === 'GET') {
+					const workspaceRoot = resolve(process.cwd(), '..');
+					const requestedFile = url.searchParams.get('file') ?? '';
+					const filePath = requestedFile
+						? (requestedFile.startsWith('/') || /^[A-Za-z]:/.test(requestedFile)
+							? requestedFile
+							: resolve(workspaceRoot, requestedFile))
+						: '';
+
+					if (!filePath) {
+						json(res, { symbols: [] });
+						return;
+					}
+
+					try {
+						const result = await sendHostRpc('file.getSymbols', { filePath }) as { symbols?: Array<{ children?: unknown[]; kind?: string; name?: string }> };
+						const symbols = flattenDocumentSymbols(result.symbols ?? []);
+						json(res, { symbols });
+					} catch (err) {
+						log(`[symbols] ERROR for ${filePath}: ${String(err)}`);
+						json(res, { error: String(err), symbols: [] }, 502);
 					}
 					return;
 				}

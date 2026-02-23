@@ -76,6 +76,9 @@ export function createInputEditor(container: HTMLElement, initialValue: string):
 		ariaLabel: 'Tool input parameters (JSON)',
 		domReadOnly: false,
 		language: 'json',
+		// Only our explicit triggers (file paths, symbols) should open the suggest
+		// widget — block Monaco's automatic per-keystroke triggering.
+		quickSuggestions: false,
 		readOnly: false,
 		value: initialValue
 	});

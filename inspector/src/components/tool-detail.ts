@@ -1,7 +1,7 @@
 import type { CallToolResult, ContentBlock, JsonSchema, ToolDefinition } from '../types';
 import type * as monaco from 'monaco-editor';
 
-import { setupJsonInteractivity } from '../json-interactivity';
+import { setupJsonInteractivity, setupLockedEditing } from '../json-interactivity';
 import { createInputEditor, createOutputEditor, setModelLanguage } from '../monaco-setup';
 import { addExecution, createHistoryContainer, setCurrentTool, updateExecution } from './history-list';
 
@@ -9,8 +9,8 @@ let executeHandler: ((toolName: string, args: Record<string, unknown>) => Promis
 
 let activeInputEditor: monaco.editor.IStandaloneCodeEditor | null = null;
 let activeOutputEditor: monaco.editor.IStandaloneCodeEditor | null = null;
-let activeExecuteBtn: HTMLButtonElement | null = null;
 let activeExecutionTime: HTMLElement | null = null;
+let isExecuting = false;
 let activeOutputSection: HTMLElement | null = null;
 let activeToolName = '';
 let inputSaveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -72,7 +72,7 @@ function disposeEditors(): void {
 		activeOutputEditor.dispose();
 		activeOutputEditor = null;
 	}
-	activeExecuteBtn = null;
+	isExecuting = false;
 	activeExecutionTime = null;
 	activeOutputSection = null;
 }
@@ -80,7 +80,7 @@ function disposeEditors(): void {
 let pendingRerunRecordId: null | string = null;
 
 async function executeCurrentInput(): Promise<void> {
-	if (!executeHandler || !activeInputEditor || !activeExecuteBtn || !activeExecutionTime) {
+	if (!executeHandler || !activeInputEditor || isExecuting || !activeExecutionTime) {
 		return;
 	}
 
@@ -97,8 +97,8 @@ async function executeCurrentInput(): Promise<void> {
 	const rerunId = pendingRerunRecordId;
 	pendingRerunRecordId = null;
 
-	activeExecuteBtn.disabled = true;
-	activeExecuteBtn.textContent = 'Running...';
+	isExecuting = true;
+	activeExecutionTime.textContent = 'Running…';
 
 	const startTime = performance.now();
 
@@ -124,8 +124,7 @@ async function executeCurrentInput(): Promise<void> {
 			await addExecution(activeToolName, inputText, errorResult, Math.round(elapsed));
 		}
 	} finally {
-		activeExecuteBtn.disabled = false;
-		activeExecuteBtn.textContent = 'Execute';
+		isExecuting = false;
 	}
 }
 
@@ -185,8 +184,15 @@ export function renderToolDetail(tool: ToolDefinition): void {
 
 	activeInputEditor = createInputEditor(inputEditorWrapper, initialValue);
 
-	// Wire up interactive JSON features (boolean toggle, integer select, enum array toggle)
-	activeInteractivity = setupJsonInteractivity(activeInputEditor, tool.inputSchema);
+	// Wire up interactive JSON features and structural edit lock
+	const interactivity = setupJsonInteractivity(activeInputEditor, tool.inputSchema);
+	const lockedEditing = setupLockedEditing(activeInputEditor);
+	activeInteractivity = {
+		dispose(): void {
+			interactivity.dispose();
+			lockedEditing.dispose();
+		}
+	};
 
 	activeInputEditor.onDidChangeModelContent(() => {
 		if (inputSaveTimer) clearTimeout(inputSaveTimer);
@@ -201,32 +207,24 @@ export function renderToolDetail(tool: ToolDefinition): void {
 	inputSection.appendChild(inputEditorWrapper);
 	card.appendChild(inputSection);
 
-	// ── Execute Button Row ──
-	const executeRow = document.createElement('div');
-	executeRow.className = 'flex items-center gap-3 px-2 py-2';
-
-	activeExecuteBtn = document.createElement('button');
-	activeExecuteBtn.className = ['px-3 py-1 bg-vscode-accent text-white rounded text-[13px] font-medium', 'hover:bg-vscode-accent-hover transition-colors cursor-pointer', 'disabled:opacity-50 disabled:cursor-not-allowed', 'flex items-center gap-2'].join(
-		' '
-	);
-	activeExecuteBtn.textContent = 'Execute';
-
-	activeExecutionTime = document.createElement('span');
-	activeExecutionTime.className = 'tool-execution-time';
-
-	executeRow.appendChild(activeExecuteBtn);
-	executeRow.appendChild(activeExecutionTime);
-	card.appendChild(executeRow);
-
 	// ── Live Output Section (visible by default, empty until execution) ──
 	activeOutputSection = document.createElement('div');
 	activeOutputSection.id = 'live-output-section';
 	activeOutputSection.className = 'tool-io-section';
 
+	const outputHeader = document.createElement('div');
+	outputHeader.className = 'flex items-center gap-2';
+
 	const outputLabel = document.createElement('h3');
 	outputLabel.id = 'live-output-label';
 	outputLabel.textContent = 'Output';
-	activeOutputSection.appendChild(outputLabel);
+
+	activeExecutionTime = document.createElement('span');
+	activeExecutionTime.className = 'tool-execution-time';
+
+	outputHeader.appendChild(outputLabel);
+	outputHeader.appendChild(activeExecutionTime);
+	activeOutputSection.appendChild(outputHeader);
 
 	const outputWrapper = document.createElement('div');
 	outputWrapper.className = 'tool-io-editor-wrapper';
@@ -252,8 +250,14 @@ export function renderToolDetail(tool: ToolDefinition): void {
 	scrollContainer.appendChild(card);
 	panel.appendChild(scrollContainer);
 
-	// ── Execute Handler ──
-	activeExecuteBtn.addEventListener('click', () => {
+	// ── Enter key executes; setupLockedEditing handles blocking Shift+Enter ──
+	activeInputEditor.onKeyDown((e) => {
+		if (e.code !== 'Enter' || e.shiftKey) return;
+		// Let Monaco's suggest widget accept a suggestion with Enter
+		const dom = activeInputEditor?.getDomNode();
+		if (dom?.querySelector('.suggest-widget.visible')) return;
+		e.preventDefault();
+		e.stopPropagation();
 		void executeCurrentInput();
 	});
 

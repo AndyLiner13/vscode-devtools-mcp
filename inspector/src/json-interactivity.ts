@@ -55,6 +55,7 @@ export function setupJsonInteractivity(
 	disposables.push(setupBooleanToggle(editor));
 	disposables.push(setupIntegerSelect(editor));
 	disposables.push(setupFilePathIntellisense(editor, schema));
+	disposables.push(setupSymbolIntellisense(editor, schema));
 	disposables.push(setupEnumArrayToggle(editor, schema, trackedActiveValues));
 	disposables.push(setupValueAutoSelect(editor, schema));
 	disposables.push(setupClickableCursorDecorations(editor, schema));
@@ -214,12 +215,12 @@ interface BrowseResponse {
 }
 
 /**
- * Auto-triggers filesystem intellisense when cursor enters a file/dir
- * string value (including empty values). Escape dismisses until the
- * cursor leaves the field and re-enters.
+ * Registers filesystem path completions for file/dir string fields.
+ * Completions are triggered manually (Tab in an empty field) rather than
+ * auto-shown whenever the cursor enters the field.
  */
 function setupFilePathIntellisense(
-	editor: monacoNs.editor.IStandaloneCodeEditor,
+	_editor: monacoNs.editor.IStandaloneCodeEditor,
 	schema: JsonSchema
 ): monacoNs.IDisposable {
 	const fileProps = findFilePathProperties(schema);
@@ -227,92 +228,12 @@ function setupFilePathIntellisense(
 		return { dispose: noop };
 	}
 
-	const disposables: monacoNs.IDisposable[] = [];
-
-	// Track whether intellisense was dismissed via Escape for the current field.
-	// Reset when cursor leaves the field.
-	let dismissedAtLine = -1;
-	let wasInFileField = false;
-
-	// Register a completion provider that fetches filesystem items
-	disposables.push(
-		monacoNs.languages.registerCompletionItemProvider('json', {
-			provideCompletionItems: async (model, position) => {
-				return providePathCompletions(model, position, fileProps);
-			},
-			triggerCharacters: ['/', '\\', '"']
-		})
-	);
-
-	// Listen for Escape key to suppress re-triggering until cursor moves out
-	disposables.push(editor.onKeyDown((e) => {
-		if (e.keyCode === monacoNs.KeyCode.Escape) {
-			const pos = editor.getPosition();
-			if (pos) {
-				dismissedAtLine = pos.lineNumber;
-			}
-		}
-	}));
-
-	// Auto-trigger on cursor position change (handles arrow keys, click, tab, etc.)
-	disposables.push(editor.onDidChangeCursorPosition((e) => {
-		const model = editor.getModel();
-		if (!model) return;
-
-		const line = model.getLineContent(e.position.lineNumber);
-		const stringRange = findStringValueRange(line, e.position.column, fileProps);
-
-		if (!stringRange) {
-			// Cursor left a file field — reset dismiss state
-			if (wasInFileField) {
-				wasInFileField = false;
-				dismissedAtLine = -1;
-			}
-			return;
-		}
-
-		wasInFileField = true;
-
-		// If dismissed at this line, don't re-trigger
-		if (dismissedAtLine === e.position.lineNumber) return;
-
-		queueMicrotask(() => {
-			editor.trigger('file-intellisense', 'editor.action.triggerSuggest', {});
-		});
-	}));
-
-	// Click handler: select string value content and trigger suggestions
-	disposables.push(editor.onMouseUp((e) => {
-		if (e.target.type !== monacoNs.editor.MouseTargetType.CONTENT_TEXT) return;
-
-		const { position } = e.target;
-		const model = editor.getModel();
-		if (!model) return;
-
-		const line = model.getLineContent(position.lineNumber);
-		const stringRange = findStringValueRange(line, position.column, fileProps);
-		if (!stringRange) return;
-
-		// Reset dismiss on explicit click
-		dismissedAtLine = -1;
-
-		// Select the string content (excluding quotes) and trigger suggest
-		queueMicrotask(() => {
-			editor.setSelection(new monacoNs.Selection(
-				position.lineNumber, stringRange.contentStart,
-				position.lineNumber, stringRange.contentEnd
-			));
-			editor.trigger('file-intellisense', 'editor.action.triggerSuggest', {});
-		});
-	}));
-
-	return {
-		dispose() {
-			for (const d of disposables) {
-				d.dispose();
-			}
-		}
-	};
+	return monacoNs.languages.registerCompletionItemProvider('json', {
+		provideCompletionItems: async (model, position) => {
+			return providePathCompletions(model, position, fileProps);
+		},
+		triggerCharacters: ['/', '\\', '"']
+	});
 }
 
 /**
@@ -460,7 +381,13 @@ async function providePathCompletions(
 		);
 		log(`[intellisense]   replaceRange: ${replaceRange.startColumn} - ${replaceRange.endColumn}`);
 
-		const filtered = data.entries.filter((entry) => entry.name.toLowerCase().startsWith(prefix.toLowerCase()));
+		const filtered = data.entries.filter((entry) => {
+			if (!entry.name.toLowerCase().startsWith(prefix.toLowerCase())) return false;
+			// Don't offer a suggestion for the path that is already fully typed in the field
+			const insertPath = dirPath ? `${dirPath}/${entry.name}` : entry.name;
+			const insertText = entry.type === 'dir' ? `${insertPath}/` : insertPath;
+			return insertText !== fullValue;
+		});
 		log(`[intellisense]   Filtered count (prefix=${JSON.stringify(prefix)}): ${filtered.length}`);
 
 		const suggestions: monacoNs.languages.CompletionItem[] = filtered
@@ -495,6 +422,159 @@ async function providePathCompletions(
 		log(`[intellisense]   ERROR: ${String(err)}`);
 		return empty;
 	}
+}
+
+// ── Feature 3b: Symbol Intellisense ──────────────────────────────────────────
+
+const SYMBOLS_ENDPOINT = '/api/symbols';
+
+interface SymbolEntry {
+	kind: string;
+	name: string;
+}
+
+interface SymbolsResponse {
+	error?: string;
+	symbols: SymbolEntry[];
+}
+
+/**
+ * Find schema properties that represent code symbol names, paired with the
+ * file-path property they read symbols from.
+ * Returns a Map<symbolPropName, filePropName>.
+ */
+function findSymbolProperties(schema: JsonSchema): Map<string, string> {
+	const result = new Map<string, string>();
+	if (!schema.properties) return result;
+
+	const propNames = Object.keys(schema.properties);
+	// Only the literal property name "symbol" for now — covers file_read and file_edit
+	const symbolProps = propNames.filter((n) => n === 'symbol');
+	if (symbolProps.length === 0) return result;
+
+	// Pair with the first file-path property found in the same schema
+	const fileProp = propNames.find((n) => FILE_DIR_PROPERTY_NAMES.has(n));
+	if (!fileProp) return result;
+
+	for (const sp of symbolProps) {
+		result.set(sp, fileProp);
+	}
+	return result;
+}
+
+/**
+ * Read the current JSON string value of a named property from the model.
+ * Handles basic JSON string escapes. Returns null if the property is missing
+ * or its value is not a string.
+ */
+function readStringPropertyValue(model: monacoNs.editor.ITextModel, propertyName: string): null | string {
+	const keyPattern = `"${propertyName}"`;
+	for (let i = 1; i <= model.getLineCount(); i++) {
+		const line = model.getLineContent(i);
+		const keyIdx = line.indexOf(keyPattern);
+		if (keyIdx === -1) continue;
+		const afterKey = line.substring(keyIdx + keyPattern.length);
+		const match = afterKey.match(/^\s*:\s*"((?:[^"\\]|\\.)*)"/);
+		if (match) {
+			return match[1].replace(/\\\\/g, '\\').replace(/\\"/g, '"');
+		}
+	}
+	return null;
+}
+
+/** Map a VS Code DocumentSymbol kind string to a Monaco CompletionItemKind. */
+function symbolKindToCompletionKind(kind: string): monacoNs.languages.CompletionItemKind {
+	switch (kind.toLowerCase()) {
+		case 'class': return monacoNs.languages.CompletionItemKind.Class;
+		case 'function': return monacoNs.languages.CompletionItemKind.Function;
+		case 'method': return monacoNs.languages.CompletionItemKind.Method;
+		case 'property': return monacoNs.languages.CompletionItemKind.Property;
+		case 'field': return monacoNs.languages.CompletionItemKind.Field;
+		case 'variable': return monacoNs.languages.CompletionItemKind.Variable;
+		case 'constant': return monacoNs.languages.CompletionItemKind.Constant;
+		case 'interface': return monacoNs.languages.CompletionItemKind.Interface;
+		case 'enum': return monacoNs.languages.CompletionItemKind.Enum;
+		case 'enummember': return monacoNs.languages.CompletionItemKind.EnumMember;
+		case 'namespace':
+		case 'module': return monacoNs.languages.CompletionItemKind.Module;
+		case 'constructor': return monacoNs.languages.CompletionItemKind.Constructor;
+		case 'struct': return monacoNs.languages.CompletionItemKind.Struct;
+		case 'typeparameter': return monacoNs.languages.CompletionItemKind.TypeParameter;
+		default: return monacoNs.languages.CompletionItemKind.Text;
+	}
+}
+
+/**
+ * Registers symbol completions for symbol string fields.
+ * Completions are triggered manually (Tab in an empty field) rather than
+ * auto-shown whenever the cursor enters the field.
+ */
+function setupSymbolIntellisense(
+	_editor: monacoNs.editor.IStandaloneCodeEditor,
+	schema: JsonSchema
+): monacoNs.IDisposable {
+	const symbolProps = findSymbolProperties(schema);
+	if (symbolProps.size === 0) {
+		return { dispose: noop };
+	}
+
+	const symbolPropNames = new Set(symbolProps.keys());
+
+	// In-memory cache so we don't re-fetch on every keystroke
+	let cachedFilePath: null | string = null;
+	let cachedSymbols: SymbolEntry[] = [];
+
+	return monacoNs.languages.registerCompletionItemProvider('json', {
+		provideCompletionItems: async (model, position) => {
+			const empty: monacoNs.languages.CompletionList = { suggestions: [] };
+
+			const line = model.getLineContent(position.lineNumber);
+			const valueRange = findStringValueRange(line, position.column, symbolPropNames);
+			if (!valueRange) return empty;
+
+			const fileProp = symbolProps.get(valueRange.propertyName);
+			if (!fileProp) return empty;
+
+			const filePath = readStringPropertyValue(model, fileProp);
+			if (!filePath) return empty;
+
+			if (filePath !== cachedFilePath) {
+				try {
+					const resp = await fetch(`${SYMBOLS_ENDPOINT}?file=${encodeURIComponent(filePath)}`);
+					if (!resp.ok) return empty;
+					const data = await resp.json() as SymbolsResponse;
+					cachedFilePath = filePath;
+					cachedSymbols = data.symbols ?? [];
+				} catch {
+					return empty;
+				}
+			}
+
+			if (cachedSymbols.length === 0) return empty;
+
+			const replaceRange = new monacoNs.Range(
+				position.lineNumber, valueRange.contentStart,
+				position.lineNumber, valueRange.contentEnd
+			);
+
+			// Don't offer a suggestion for the value that is already fully typed
+			const currentValue = line.substring(valueRange.contentStart - 1, valueRange.contentEnd - 1);
+			const visibleSymbols = cachedSymbols.filter((sym) => sym.name !== currentValue);
+
+			const suggestions: monacoNs.languages.CompletionItem[] = visibleSymbols.map((sym, idx) => ({
+				detail: sym.kind,
+				filterText: sym.name,
+				insertText: sym.name,
+				kind: symbolKindToCompletionKind(sym.kind),
+				label: sym.name,
+				range: replaceRange,
+				sortText: String(idx).padStart(6, '0')
+			}));
+
+			return { suggestions };
+		},
+		triggerCharacters: ['"', '.']
+	});
 }
 
 // ── Feature 4: Enum Array Inline Toggle ──────────────────────────────────────
@@ -768,11 +848,13 @@ function setupEnumArrayToggle(
 				const clickedValue = match[1];
 				if (!expandedInfo.enumValues.includes(clickedValue)) continue;
 
-				// Select the entire quoted value (including quotes)
+				// Select the content only (excluding quotes) to match findArrayItemsOnLine
+				const contentStart = startCol + 1;
+				const contentEnd = contentStart + match[1].length;
 				queueMicrotask(() => {
 					editor.setSelection(new monacoNs.Selection(
-						position.lineNumber, startCol,
-						position.lineNumber, endCol
+						position.lineNumber, contentStart,
+						position.lineNumber, contentEnd
 					));
 				});
 				return;
@@ -895,14 +977,10 @@ function setupValueAutoSelect(
 ): monacoNs.IDisposable {
 	const enumArrayProps = new Set(findEnumArrayProperties(schema).map((e) => e.propertyName));
 
-	// Prevent re-entrant selection from our own setSelection call
 	let settingSelection = false;
-	// Track whether a value was selected so arrow keys can escape without re-selecting
 	let hadSelection = false;
-	// Track the range of the object that was manually escaped from
-	// This object cannot be re-selected until a DIFFERENT object is selected first
-	let escapedRange: { line: number; start: number; end: number } | null = null;
-	// Suppress auto-select on the next cursor move if the user just typed something
+	// Range the user escaped from — won't be re-selected until a different range is reached
+	let escapedRange: { end: number; line: number; start: number } | null = null;
 	let suppressAutoSelect = false;
 
 	const disposables: monacoNs.IDisposable[] = [];
@@ -913,81 +991,43 @@ function setupValueAutoSelect(
 		hadSelection = sel !== null && !sel.isEmpty();
 	}));
 
-	// When the model content changes (user typed), suppress the next auto-select
-	// so typing into a field doesn't immediately re-select the entire value
 	disposables.push(editor.onDidChangeModelContent(() => {
 		if (settingSelection) return;
 		suppressAutoSelect = true;
-		// Ranges are now invalid since text changed
 		escapedRange = null;
 	}));
 
 	disposables.push(editor.onDidChangeCursorPosition((e) => {
 		if (settingSelection) return;
 
-		// Skip auto-select when the cursor moved because the user typed
 		if (suppressAutoSelect) {
 			suppressAutoSelect = false;
 			return;
 		}
 
-		// Only auto-select on keyboard-driven cursor moves
-		if (e.source !== 'keyboard') return;
-
 		const model = editor.getModel();
 		if (!model) return;
 
 		const line = model.getLineContent(e.position.lineNumber);
+		const col = e.position.column;
 
-		// If the user just collapsed a selection via arrow keys, remember what they escaped from
-		// EXCEPT for arrays — arrays are exempt from the consent system since left/right
-		// is used to navigate between items, not to escape
+		// When the user collapses a selection via arrow keys, record the escaped range
+		// Arrays are exempt — Left/Right navigates between items, not escapes
 		if (hadSelection) {
 			hadSelection = false;
+			if (findArrayItemsOnLine(line).length > 0) return;
 
-			// Don't apply consent system inside any array (check if line has array items)
-			if (findArrayItemsOnLine(line).length > 0) {
-				// Just let the array navigation handler deal with this
-				return;
-			}
-
-			// Record the range they escaped from so we don't immediately re-select it
-			const sel = editor.getSelection();
-			if (sel && !sel.isEmpty()) {
-				escapedRange = {
-					end: sel.endColumn,
-					line: sel.startLineNumber,
-					start: sel.startColumn
-				};
-			} else {
-				// Selection was collapsed, use the previous position info
-				const valueRange = findJsonValueRange(line, e.position.column);
-				if (valueRange) {
-					escapedRange = {
-						end: valueRange.end,
-						line: e.position.lineNumber,
-						start: valueRange.start
-					};
-				}
+			const valueRange = findJsonValueRange(line, col);
+			if (valueRange) {
+				escapedRange = { end: valueRange.end, line: e.position.lineNumber, start: valueRange.start };
 			}
 			return;
 		}
 
-		const col = e.position.column;
-
 		// Inside an enum array: select the nearest quoted item
 		if (isCursorInEnumArraySimple(model, e.position, enumArrayProps)) {
 			const itemRange = findEnumItemAtPosition(model, e.position, enumArrayProps);
-			if (itemRange) {
-				// Check if this is the same range we escaped from
-				if (escapedRange &&
-					escapedRange.line === e.position.lineNumber &&
-					escapedRange.start === itemRange.start &&
-					escapedRange.end === itemRange.end) {
-					// Still inside the escaped object - don't re-select
-					return;
-				}
-				// Different object - clear escape state and select
+			if (itemRange && !isEscapedRange(escapedRange, e.position.lineNumber, itemRange)) {
 				escapedRange = null;
 				settingSelection = true;
 				queueMicrotask(() => {
@@ -1001,22 +1041,13 @@ function setupValueAutoSelect(
 			return;
 		}
 
-		// Skip if cursor is on a property key (only select values)
 		if (isCursorOnPropertyKey(line, col)) return;
 
 		const valueRange = findJsonValueRange(line, col);
 		if (!valueRange) return;
 
-		// Check if this is the same range we escaped from
-		if (escapedRange &&
-			escapedRange.line === e.position.lineNumber &&
-			escapedRange.start === valueRange.start &&
-			escapedRange.end === valueRange.end) {
-			// Still inside the escaped object - don't re-select
-			return;
-		}
+		if (isEscapedRange(escapedRange, e.position.lineNumber, valueRange)) return;
 
-		// Different object - clear escape state and select
 		escapedRange = null;
 		settingSelection = true;
 		queueMicrotask(() => {
@@ -1028,28 +1059,25 @@ function setupValueAutoSelect(
 		});
 	}));
 
-	// Left/right arrow navigation between array items when selection is active
-	// Works for ANY array (not just enum arrays) so up/down navigation into arrays works seamlessly
+	// Left/right arrow navigation between array items
 	disposables.push(editor.onKeyDown((e) => {
 		if (e.keyCode !== monacoNs.KeyCode.LeftArrow && e.keyCode !== monacoNs.KeyCode.RightArrow) return;
-
-		const sel = editor.getSelection();
-		if (!sel || sel.isEmpty()) return;
 
 		const model = editor.getModel();
 		if (!model) return;
 
-		const position = sel.getStartPosition();
+		const position = editor.getPosition();
+		if (!position) return;
+
 		const line = model.getLineContent(position.lineNumber);
 
 		// Find all quoted items in any array on this line
 		const items = findArrayItemsOnLine(line);
 		if (items.length === 0) return;
 
-		// Find which item is currently selected by matching ranges
-		const currentIdx = items.findIndex((r) =>
-			r.start === sel.startColumn && r.end === sel.endColumn
-		);
+		// Find which item the cursor is within (not exact match)
+		const col = position.column;
+		const currentIdx = items.findIndex((r) => col >= r.start && col <= r.end);
 		if (currentIdx === -1) return;
 
 		const direction = e.keyCode === monacoNs.KeyCode.LeftArrow ? -1 : 1;
@@ -1065,44 +1093,6 @@ function setupValueAutoSelect(
 			editor.setSelection(new monacoNs.Selection(
 				position.lineNumber, nextItem.start,
 				position.lineNumber, nextItem.end
-			));
-			settingSelection = false;
-		});
-	}));
-
-	// Up/down arrow navigation to select value on adjacent line
-	disposables.push(editor.onKeyDown((e) => {
-		if (e.keyCode !== monacoNs.KeyCode.UpArrow && e.keyCode !== monacoNs.KeyCode.DownArrow) return;
-
-		const sel = editor.getSelection();
-		if (!sel || sel.isEmpty()) return;
-
-		const model = editor.getModel();
-		if (!model) return;
-
-		const direction = e.keyCode === monacoNs.KeyCode.UpArrow ? -1 : 1;
-		const targetLineNum = sel.startLineNumber + direction;
-
-		// Check bounds
-		if (targetLineNum < 1 || targetLineNum > model.getLineCount()) return;
-
-		const targetLine = model.getLineContent(targetLineNum);
-
-		// Find the value on the target line
-		const valueRange = findValueOnLine(targetLine);
-		if (!valueRange) return;
-
-		e.preventDefault();
-		e.stopPropagation();
-
-		// Clear escaped range since we're moving to a different line/object
-		escapedRange = null;
-
-		settingSelection = true;
-		queueMicrotask(() => {
-			editor.setSelection(new monacoNs.Selection(
-				targetLineNum, valueRange.start,
-				targetLineNum, valueRange.end
 			));
 			settingSelection = false;
 		});
@@ -1125,6 +1115,18 @@ function isCursorOnPropertyKey(line: string, column: number): boolean {
 	const colonIdx = line.indexOf(':');
 	if (colonIdx === -1) return false;
 	return idx <= colonIdx;
+}
+
+/** Returns true if the given range matches the currently escaped range. */
+function isEscapedRange(
+	escaped: { end: number; line: number; start: number } | null,
+	lineNumber: number,
+	range: { end: number; start: number }
+): boolean {
+	return escaped !== null &&
+		escaped.line === lineNumber &&
+		escaped.start === range.start &&
+		escaped.end === range.end;
 }
 
 /**
@@ -1297,6 +1299,15 @@ function findValueOnLine(line: string): null | { end: number; start: number } {
 	}
 
 	return null;
+}
+
+/**
+ * Returns true when the line contains an empty inline array: "key": []
+ */
+function isEmptyArrayLine(line: string): boolean {
+	const colonIdx = line.indexOf(':');
+	if (colonIdx === -1) return false;
+	return /^\s*\[\s*\]/.test(line.substring(colonIdx + 1));
 }
 
 /**
@@ -1492,6 +1503,10 @@ function setupTabToggle(
 		const position = editor.getPosition();
 		if (!position) return;
 
+		// When the suggest widget is open, let Monaco handle Tab natively
+		// (accepts the highlighted suggestion).
+		if (isSuggestWidgetVisible(editor)) return;
+
 		const line = model.getLineContent(position.lineNumber);
 
 		// Also check selection — the cursor may be at one end of a selected value
@@ -1570,7 +1585,21 @@ function setupTabToggle(
 						const tracked = trackedActiveValues.get(info.propertyName);
 						const activeSet = tracked ? new Set(tracked) : new Set<string>();
 
-						if (activeSet.has(itemValue)) {
+						// Record which section (active/inactive) and position within that
+						// section the cursor was at BEFORE the toggle, so we can land on
+						// whatever fills that same slot after items re-sort.
+						const preSortedActive = info.enumValues
+							.filter((v) => activeSet.has(v))
+							.sort((a, b) => a.localeCompare(b));
+						const preSortedInactive = info.enumValues
+							.filter((v) => !activeSet.has(v))
+							.sort((a, b) => a.localeCompare(b));
+						const wasActive = activeSet.has(itemValue);
+						const sectionIndex = wasActive
+							? preSortedActive.indexOf(itemValue)
+							: preSortedInactive.indexOf(itemValue);
+
+						if (wasActive) {
 							activeSet.delete(itemValue);
 						} else {
 							activeSet.add(itemValue);
@@ -1588,6 +1617,20 @@ function setupTabToggle(
 						const allItems = [...sortedActive, ...sortedInactive];
 						const newArrayText = `[${allItems.map((v) => `"${v}"`).join(', ')}]`;
 
+						// Decide which item to land on after the toggle:
+						// Stay in the same section the cursor was in and pick the item that
+						// now occupies the same slot. This way the cursor "stays put" and
+						// selects whatever fills the gap rather than chasing the toggled item.
+						const postSection = wasActive ? sortedActive : sortedInactive;
+						let targetItem: string;
+						if (postSection.length > 0) {
+							targetItem = postSection[Math.min(sectionIndex, postSection.length - 1)];
+						} else {
+							// Section is now empty — fall back to the other section
+							const fallback = wasActive ? sortedInactive : sortedActive;
+							targetItem = fallback[fallback.length - 1] ?? itemValue;
+						}
+
 						const currentBounds = findArrayBounds(model, info.propertyName);
 						if (!currentBounds) return;
 
@@ -1596,148 +1639,97 @@ function setupTabToggle(
 							currentBounds.closeLine, currentBounds.closeCol + 1
 						);
 
+						// Find which index the target item will be at in the new array
+						const targetIndex = allItems.indexOf(targetItem);
+
 						editor.executeEdits('tab-toggle-enum', [{
 							forceMoveMarkers: true,
 							range: arrayRange,
 							text: newArrayText
 						}]);
 
-						// Re-select the toggled item in its new position
-						queueMicrotask(() => {
-							const updatedBounds = findArrayBounds(model, info.propertyName);
-							if (!updatedBounds) return;
-							const updatedLine = model.getLineContent(updatedBounds.openLine);
-							const updatedSlice = updatedLine.substring(updatedBounds.openCol);
-							const findRegex = /"([^"\\]*)"/g;
-							let findMatch;
-							while ((findMatch = findRegex.exec(updatedSlice)) !== null) {
-								if (findMatch[1] === itemValue) {
-									const itemStartCol = updatedBounds.openCol + findMatch.index + 1;
-									const itemEndCol = itemStartCol + findMatch[0].length;
-									editor.setSelection(new monacoNs.Selection(
-										updatedBounds.openLine, itemStartCol,
-										updatedBounds.openLine, itemEndCol
-									));
-									break;
-								}
+						// After the edit, find all items on the updated line and select
+						// the one at targetIndex. Using setTimeout(0) ensures this runs
+						// after Monaco's internal handlers complete.
+						setTimeout(() => {
+							const updatedLine = model.getLineContent(currentBounds.openLine);
+							const items = findArrayItemsOnLine(updatedLine);
+							const targetRange = items[Math.min(targetIndex, items.length - 1)];
+							if (targetRange) {
+								editor.setSelection(new monacoNs.Selection(
+									currentBounds.openLine, targetRange.start,
+									currentBounds.openLine, targetRange.end
+								));
 							}
+						}, 0);
+
+						return;
+					}
+				}
+			}
+		}
+
+		// Tab in an empty file-path field → open IntelliSense
+		const fileProps = findFilePathProperties(schema);
+		if (fileProps.size > 0) {
+			const fileRange = findStringValueRange(line, position.column, fileProps);
+			if (fileRange && fileRange.contentStart === fileRange.contentEnd) {
+				e.preventDefault();
+				e.stopPropagation();
+				queueMicrotask(() => {
+					editor.trigger('tab-intellisense', 'editor.action.triggerSuggest', {});
+				});
+				return;
+			}
+		}
+
+		// Tab in an empty symbol field (when its linked file path is set) → open IntelliSense
+		const symbolPropMap = findSymbolProperties(schema);
+		if (symbolPropMap.size > 0) {
+			const symbolPropNames = new Set(symbolPropMap.keys());
+			const symRange = findStringValueRange(line, position.column, symbolPropNames);
+			if (symRange && symRange.contentStart === symRange.contentEnd) {
+				const fileProp = symbolPropMap.get(symRange.propertyName);
+				if (fileProp) {
+					const filePath = readStringPropertyValue(model, fileProp);
+					if (filePath) {
+						e.preventDefault();
+						e.stopPropagation();
+						queueMicrotask(() => {
+							editor.trigger('tab-intellisense', 'editor.action.triggerSuggest', {});
 						});
 						return;
 					}
 				}
 			}
 		}
+
+		// Block Tab from doing anything else (no field jump, no indent)
+		e.preventDefault();
+		e.stopPropagation();
 	});
 }
 
 // ── Feature 8: Up/Down Field Navigation ──────────────────────────────────────
 
 /**
- * Find the selectable range of a bare array item on a line (no key-colon prefix).
- * Handles strings, numbers, booleans, and null.
- * Returns 1-based { start, end } or null.
- */
-function findBareArrayItemRange(line: string): { end: number; start: number } | null {
-	const trimmed = line.trim();
-	if (!trimmed) return null;
-
-	const stringMatch = trimmed.match(/^"([^"\\]*)"/);
-	if (stringMatch) {
-		const firstQuoteIdx = line.indexOf('"');
-		const contentStart = firstQuoteIdx + 2; // 1-based, skip opening quote
-		return { end: contentStart + stringMatch[1].length, start: contentStart };
-	}
-
-	const numberMatch = trimmed.match(/^(-?\d+(?:\.\d+)?)/);
-	if (numberMatch) {
-		const firstCharIdx = line.search(/\S/);
-		return { end: firstCharIdx + 1 + numberMatch[1].length, start: firstCharIdx + 1 };
-	}
-
-	const keywordMatch = trimmed.match(/^(true|false|null)\b/);
-	if (keywordMatch) {
-		const firstCharIdx = line.search(/\S/);
-		return { end: firstCharIdx + 1 + keywordMatch[1].length, start: firstCharIdx + 1 };
-	}
-
-	return null;
-}
-
-/**
- * Starting from the line after an array opener, scan forward to find the first
- * selectable item in the array. Handles nesting by tracking bracket depth.
- */
-function findFirstArrayItem(
-	model: monacoNs.editor.ITextModel,
-	openerLine: number
-): { line: number; range: { end: number; start: number } } | null {
-	const lineCount = model.getLineCount();
-	let depth = 0;
-
-	for (let i = openerLine + 1; i <= lineCount; i++) {
-		const lineContent = model.getLineContent(i);
-		const trimmed = lineContent.trim();
-		if (!trimmed) continue;
-
-		if (trimmed.endsWith('[')) { depth++; continue; }
-		if (trimmed === ']' || trimmed === '],') {
-			if (depth === 0) break;
-			depth--;
-			continue;
-		}
-
-		if (depth === 0) {
-			const range = findBareArrayItemRange(lineContent);
-			if (range) return { line: i, range };
-		}
-	}
-	return null;
-}
-
-/**
- * Starting from the line before an array closer, scan backward to find the last
- * selectable item in the array. Handles nesting by tracking bracket depth.
- */
-function findLastArrayItem(
-	model: monacoNs.editor.ITextModel,
-	closerLine: number
-): { line: number; range: { end: number; start: number } } | null {
-	let depth = 0;
-
-	for (let i = closerLine - 1; i >= 1; i--) {
-		const lineContent = model.getLineContent(i);
-		const trimmed = lineContent.trim();
-		if (!trimmed) continue;
-
-		if (trimmed === ']' || trimmed === '],') { depth++; continue; }
-		if (trimmed.endsWith('[')) {
-			if (depth === 0) break;
-			depth--;
-			continue;
-		}
-
-		if (depth === 0) {
-			const range = findBareArrayItemRange(lineContent);
-			if (range) return { line: i, range };
-		}
-	}
-	return null;
-}
-
-/**
- * Up/down arrow keys navigate between JSON property values on adjacent lines.
- * When pressed, the cursor moves to the value on the previous/next line and
- * selects it (content only, excluding quotes for strings).
+ * Up/down arrow keys navigate between JSON property values.
+ * Scans in the pressed direction past structural lines (braces, brackets,
+ * blank lines) until a line with a navigable value is found, then selects it.
+ * Always prevents the default arrow action so the cursor never lands on a
+ * structural line and triggers a snap-back cycle.
  */
 function setupFieldNavigation(
 	editor: monacoNs.editor.IStandaloneCodeEditor,
-	schema: JsonSchema
+	_schema: JsonSchema
 ): monacoNs.IDisposable {
-	const enumArrayProps = new Set(findEnumArrayProperties(schema).map((e) => e.propertyName));
-	const fileProps = findFilePathProperties(schema);
-
 	return editor.onKeyDown((e) => {
-		if (e.keyCode !== monacoNs.KeyCode.UpArrow && e.keyCode !== monacoNs.KeyCode.DownArrow) return;
+		// Only handle Up/Down arrows
+		const isUp = e.keyCode === monacoNs.KeyCode.UpArrow;
+		const isDown = e.keyCode === monacoNs.KeyCode.DownArrow;
+		if (!isUp && !isDown) return;
+
+		if (isSuggestWidgetVisible(editor)) return;
 
 		const model = editor.getModel();
 		if (!model) return;
@@ -1745,89 +1737,353 @@ function setupFieldNavigation(
 		const position = editor.getPosition();
 		if (!position) return;
 
-		// Don't intercept if cursor is inside an enum array (let Feature 4 handle it)
-		if (isCursorInEnumArraySimple(model, position, enumArrayProps)) return;
-
-		// Don't intercept if cursor is in a file/dir path field (let suggest widget handle arrows)
-		const line = model.getLineContent(position.lineNumber);
-		if (findStringValueRange(line, position.column, fileProps)) return;
-
-		const direction = e.keyCode === monacoNs.KeyCode.UpArrow ? -1 : 1;
-		const targetLine = position.lineNumber + direction;
-
-		if (targetLine < 1 || targetLine > model.getLineCount()) return;
-
-		const targetLineContent = model.getLineContent(targetLine);
-
-		// For lines that contain an inline array, pick first or last item based on direction
-		// rather than always defaulting to the first item like findValueOnLine does.
-		const inlineArrayItems = findArrayItemsOnLine(targetLineContent);
-		if (inlineArrayItems.length > 0) {
-			const chosen = direction === -1
-				? inlineArrayItems[inlineArrayItems.length - 1]
-				: inlineArrayItems[0];
-			e.preventDefault();
-			e.stopPropagation();
-			queueMicrotask(() => {
-				editor.setSelection(new monacoNs.Selection(
-					targetLine, chosen.start,
-					targetLine, chosen.end
-				));
-			});
-			return;
-		}
-
-		// Find a value on the target line
-		const valueRange = findValueOnLine(targetLineContent);
-		if (!valueRange) {
-			const trimmedTarget = targetLineContent.trim();
-
-			// Going DOWN into a multi-line array opener → jump to first item
-			if (direction === 1 && trimmedTarget.endsWith('[')) {
-				const firstItem = findFirstArrayItem(model, targetLine);
-				if (!firstItem) return;
-				e.preventDefault();
-				e.stopPropagation();
-				queueMicrotask(() => {
-					editor.setSelection(new monacoNs.Selection(
-						firstItem.line, firstItem.range.start,
-						firstItem.line, firstItem.range.end
-					));
-				});
-				return;
-			}
-
-			// Going UP into a multi-line array closer → jump to last item
-			if (direction === -1 && (trimmedTarget === ']' || trimmedTarget === '],')) {
-				const lastItem = findLastArrayItem(model, targetLine);
-				if (!lastItem) return;
-				e.preventDefault();
-				e.stopPropagation();
-				queueMicrotask(() => {
-					editor.setSelection(new monacoNs.Selection(
-						lastItem.line, lastItem.range.start,
-						lastItem.line, lastItem.range.end
-					));
-				});
-				return;
-			}
-
-			return;
-		}
-
 		e.preventDefault();
 		e.stopPropagation();
 
-		// Select the value content on the target line.
-		// No reveal call — the container is always sized to fit all content, so
-		// the outer scroll container handles viewport positioning. Calling
-		// revealLine… here would set Monaco's internal scrollTop and cause the
-		// top-of-editor clipping glitch.
-		queueMicrotask(() => {
-			editor.setSelection(new monacoNs.Selection(
-				targetLine, valueRange.start,
-				targetLine, valueRange.end
-			));
-		});
+		const direction = isUp ? -1 : 1;
+		const lineCount = model.getLineCount();
+
+		// Scan for next navigable field, skipping the current line
+		for (let line = position.lineNumber + direction; line >= 1 && line <= lineCount; line += direction) {
+			const content = model.getLineContent(line);
+
+			// Check for array items first (non-empty array)
+			const inlineArrayItems = findArrayItemsOnLine(content);
+			if (inlineArrayItems.length > 0) {
+				const chosen = direction === 1
+					? inlineArrayItems[0]
+					: inlineArrayItems[inlineArrayItems.length - 1];
+				queueMicrotask(() => {
+					editor.setSelection(new monacoNs.Selection(
+						line, chosen.start,
+						line, chosen.end
+					));
+				});
+				return;
+			}
+
+			// Check for empty array: place cursor inside the brackets
+			if (isEmptyArrayLine(content)) {
+				const colonIdx = content.indexOf(':');
+				const afterColon = content.substring(colonIdx + 1);
+				const bracketIdx = afterColon.indexOf('[');
+				// Column just after '[' — cursor sits inside the empty brackets
+				const cursorCol = colonIdx + 1 + bracketIdx + 2; // 1-based
+				queueMicrotask(() => {
+					editor.setPosition(new monacoNs.Position(line, cursorCol));
+				});
+				return;
+			}
+
+			// Check for regular value
+			const valueRange = findValueOnLine(content);
+			if (valueRange) {
+				queueMicrotask(() => {
+					editor.setSelection(new monacoNs.Selection(
+						line, valueRange.start,
+						line, valueRange.end
+					));
+				});
+				return;
+			}
+		}
 	});
+}
+
+// ── Shared widget-visibility helper ────────────────────────────────────────────
+
+/**
+ * Returns true when the Monaco suggest widget (autocomplete dropdown) is
+ * currently visible inside the editor. Used to bail out of custom key
+ * interceptors so IntelliSense can operate normally.
+ */
+function isSuggestWidgetVisible(editor: monacoNs.editor.IStandaloneCodeEditor): boolean {
+	const dom = editor.getDomNode();
+	if (!dom) return false;
+	return !!dom.querySelector('.suggest-widget.visible');
+}
+
+// ── Feature 9: Locked Editing – Only value zones are editable ────────────────
+
+interface ValueZone {
+	endCol: number;
+	endLine: number;
+	startCol: number;
+	startLine: number;
+	type: 'boolean' | 'number' | 'string';
+}
+
+/**
+ * Scan every line of the document and return the editable value zones.
+ * Each zone covers only the content of a value (e.g. inside the quotes for
+ * strings, or the digit sequence for numbers). Structural characters —
+ * property keys, colons, brackets, quotes — are never included.
+ */
+function computeValueZones(model: monacoNs.editor.ITextModel): ValueZone[] {
+	const result: ValueZone[] = [];
+	const lineCount = model.getLineCount();
+
+	for (let i = 1; i <= lineCount; i++) {
+		const line = model.getLineContent(i);
+		const colonIdx = line.indexOf(':');
+
+		if (colonIdx !== -1) {
+			// Inline array: "key": ["a", "b"] — each quoted item becomes its own zone
+			const inlineItems = findArrayItemsOnLine(line);
+			if (inlineItems.length > 0) {
+				for (const item of inlineItems) {
+					result.push({ endCol: item.end, endLine: i, startCol: item.start, startLine: i, type: 'string' });
+				}
+				continue;
+			}
+
+			const afterColon = line.substring(colonIdx + 1);
+			const trimOffset = afterColon.length - afterColon.trimStart().length;
+
+			// String: "key": "value"  →  zone covers content between the quotes
+			const stringMatch = afterColon.match(/^\s*"([^"\\]*)"/);
+			if (stringMatch) {
+				const startCol = colonIdx + 1 + trimOffset + 2; // 1-based; skip opening quote
+				result.push({ endCol: startCol + stringMatch[1].length, endLine: i, startCol, startLine: i, type: 'string' });
+				continue;
+			}
+
+			// Number: "key": 42  →  zone covers the digit sequence
+			const numberMatch = afterColon.match(/^\s*(-?\d+(?:\.\d+)?)/);
+			if (numberMatch) {
+				const startCol = colonIdx + 1 + trimOffset + 1; // 1-based
+				result.push({ endCol: startCol + numberMatch[1].length, endLine: i, startCol, startLine: i, type: 'number' });
+				continue;
+			}
+
+			// Boolean / null: "key": true | false | null  →  zone covers the literal
+			const boolNullMatch = afterColon.match(/^\s*(true|false|null)/);
+			if (boolNullMatch) {
+				const startCol = colonIdx + 1 + trimOffset + 1; // 1-based
+				result.push({ endCol: startCol + boolNullMatch[1].length, endLine: i, startCol, startLine: i, type: 'boolean' });
+				continue;
+			}
+		} else {
+			// No colon — may be a bare array item on its own line (multi-line array)
+			const trimmed = line.trim();
+			if (!trimmed) continue;
+			// Skip structural lines
+			if (/^[[\]{},]$/.test(trimmed) || /^[[\]{},]$/.test(trimmed.replace(/,$/, ''))) continue;
+
+			// Quoted string item (possibly with trailing comma)
+			const strItemMatch = trimmed.match(/^"([^"\\]*)"[,]?$/);
+			if (strItemMatch) {
+				const firstQuote = line.indexOf('"');
+				const startCol = firstQuote + 2; // 1-based; skip opening quote
+				result.push({ endCol: startCol + strItemMatch[1].length, endLine: i, startCol, startLine: i, type: 'string' });
+				continue;
+			}
+
+			// Number item (possibly with trailing comma)
+			const numItemMatch = trimmed.match(/^(-?\d+(?:\.\d+)?)[,]?$/);
+			if (numItemMatch) {
+				const firstNonSpace = line.search(/\S/);
+				const startCol = firstNonSpace + 1; // 1-based
+				result.push({ endCol: startCol + numItemMatch[1].length, endLine: i, startCol, startLine: i, type: 'number' });
+				continue;
+			}
+		}
+	}
+
+	return result;
+}
+
+function findZoneAt(pos: monacoNs.Position, zones: ValueZone[]): ValueZone | null {
+	for (const z of zones) {
+		if (pos.lineNumber === z.startLine && pos.column >= z.startCol && pos.column <= z.endCol) {
+			return z;
+		}
+	}
+	return null;
+}
+
+function findNextZone(pos: monacoNs.Position, zones: ValueZone[]): ValueZone | null {
+	let best: ValueZone | null = null;
+	for (const z of zones) {
+		const after = z.startLine > pos.lineNumber || (z.startLine === pos.lineNumber && z.startCol > pos.column);
+		if (!after) continue;
+		if (!best || z.startLine < best.startLine || (z.startLine === best.startLine && z.startCol < best.startCol)) {
+			best = z;
+		}
+	}
+	return best ?? (zones.length > 0 ? zones[zones.length - 1] : null);
+}
+
+function findPrevZone(pos: monacoNs.Position, zones: ValueZone[]): ValueZone | null {
+	let best: ValueZone | null = null;
+	for (const z of zones) {
+		const before = z.endLine < pos.lineNumber || (z.endLine === pos.lineNumber && z.endCol < pos.column);
+		if (!before) continue;
+		if (!best || z.endLine > best.endLine || (z.endLine === best.endLine && z.endCol > best.endCol)) {
+			best = z;
+		}
+	}
+	return best ?? (zones.length > 0 ? zones[0] : null);
+}
+
+/** Returns true for key codes that produce or remove characters in the document. */
+function isEditingCode(code: string): boolean {
+	return (
+		code === 'Backspace' || code === 'Delete' || code === 'Tab' ||
+		code.startsWith('Key') || code.startsWith('Digit') || code.startsWith('Numpad') ||
+		code === 'Space' || code === 'Minus' || code === 'Equal' ||
+		code === 'BracketLeft' || code === 'BracketRight' ||
+		code === 'Semicolon' || code === 'Quote' || code === 'Backquote' ||
+		code === 'Comma' || code === 'Period' || code === 'Slash' || code === 'Backslash'
+	);
+}
+
+/** Returns true for key codes acceptable inside a number value zone. */
+function isNumericCode(code: string): boolean {
+	return (
+		code === 'Backspace' || code === 'Delete' ||
+		code.startsWith('Digit') ||
+		code === 'Numpad0' || code === 'Numpad1' || code === 'Numpad2' ||
+		code === 'Numpad3' || code === 'Numpad4' || code === 'Numpad5' ||
+		code === 'Numpad6' || code === 'Numpad7' || code === 'Numpad8' || code === 'Numpad9' ||
+		code === 'Minus' || code === 'Period' || code === 'NumpadDecimal' || code === 'NumpadSubtract'
+	);
+}
+
+/**
+ * Constrains the Monaco editor so only value zones are editable.
+ *
+ * - Clicking or navigating outside a value zone snaps the cursor to the
+ *   nearest zone boundary.
+ * - Enter and Shift+Enter are blocked (Enter = execute via the parent
+ *   handler; newlines are not meaningful in structured JSON input).
+ * - Backspace / Delete cannot eat past the zone boundary into structural
+ *   characters (quotes, brackets, key names).
+ * - Number zones reject alphabetic and punctuation input.
+ * - Cross-zone or out-of-zone selections are automatically collapsed to the
+ *   active-cursor zone before an edit can proceed.
+ */
+export function setupLockedEditing(
+	editor: monacoNs.editor.IStandaloneCodeEditor
+): monacoNs.IDisposable {
+	let zones: ValueZone[] = [];
+	let isSnapping = false;
+	let lastPos: null | monacoNs.Position = null;
+
+	function refresh(): void {
+		const m = editor.getModel();
+		zones = m ? computeValueZones(m) : [];
+	}
+	refresh();
+
+	// ── Snap cursor to the nearest zone when it lands outside all zones ──────
+	const cursorDisposable = editor.onDidChangeCursorPosition((e) => {
+		if (isSnapping) return;
+		// Don't fight IntelliSense cursor movement (suggest widget navigates by moving cursor)
+		if (isSuggestWidgetVisible(editor)) return;
+		// Programmatic setPosition / setSelection calls (reason = Explicit) come from our
+		// own navigation code (setupFieldNavigation) which already placed the cursor/selection
+		// exactly where it should be. Snapping those would collapse the selection to a cursor.
+		if (e.reason === monacoNs.editor.CursorChangeReason.Explicit) {
+			lastPos = e.position;
+			return;
+		}
+		const pos = e.position;
+		if (findZoneAt(pos, zones)) {
+			lastPos = pos;
+			return;
+		}
+		isSnapping = true;
+		const prev = lastPos;
+		const goingForward =
+			!prev ||
+			pos.lineNumber > prev.lineNumber ||
+			(pos.lineNumber === prev.lineNumber && pos.column >= prev.column);
+		const target = goingForward ? findNextZone(pos, zones) : findPrevZone(pos, zones);
+		if (target) {
+			const snapCol = goingForward ? target.startCol : target.endCol;
+			const snapPos = new monacoNs.Position(target.startLine, snapCol);
+			editor.setPosition(snapPos);
+			lastPos = snapPos;
+		}
+		isSnapping = false;
+	});
+
+	// ── Block structural edits and enforce value-type constraints ────────────
+	const keyDisposable = editor.onKeyDown((e) => {
+		// Block Enter and Shift+Enter — no newlines allowed in the structured editor.
+		// Exception: let Enter accept a suggestion when the suggest widget is open.
+		if (e.code === 'Enter') {
+			if (isSuggestWidgetVisible(editor)) return;
+			e.preventDefault();
+			e.stopPropagation();
+			return;
+		}
+
+		// Allow Ctrl / Meta shortcuts (undo, redo, copy, paste, select-all, etc.)
+		if (e.ctrlKey || e.metaKey) return;
+
+		if (!isEditingCode(e.code)) return;
+
+		const pos = editor.getPosition();
+		if (!pos) return;
+
+		// If there is a non-empty selection, collapse it to the active position
+		// before checking — prevents accidentally deleting structural content.
+		const sel = editor.getSelection();
+		if (sel && !sel.isEmpty()) {
+			const startZone = findZoneAt(new monacoNs.Position(sel.startLineNumber, sel.startColumn), zones);
+			const endZone   = findZoneAt(new monacoNs.Position(sel.endLineNumber,   sel.endColumn),   zones);
+			const sameZone  = startZone && endZone &&
+				startZone.startLine === endZone.startLine && startZone.startCol === endZone.startCol;
+			if (!sameZone) {
+				e.preventDefault();
+				e.stopPropagation();
+				// Collapse selection to whichever end is inside a zone
+				const safeZone = endZone ?? startZone;
+				if (safeZone) {
+					queueMicrotask(() => { editor.setPosition(new monacoNs.Position(safeZone.startLine, safeZone.startCol)); });
+				}
+				return;
+			}
+		}
+
+		const zone = findZoneAt(pos, zones);
+		if (!zone) {
+			e.preventDefault();
+			e.stopPropagation();
+			return;
+		}
+
+		// Prevent Backspace from eating the opening quote / structural character
+		if (e.code === 'Backspace' && pos.column <= zone.startCol) {
+			e.preventDefault();
+			e.stopPropagation();
+			return;
+		}
+
+		// Prevent Delete from eating the closing quote / structural character
+		if (e.code === 'Delete' && pos.column >= zone.endCol) {
+			e.preventDefault();
+			e.stopPropagation();
+			return;
+		}
+
+		// Number zones: reject non-numeric characters
+		if (zone.type === 'number' && !isNumericCode(e.code)) {
+			e.preventDefault();
+			e.stopPropagation();
+		}
+	});
+
+	// Re-compute zones after every content change (values change length)
+	const contentDisposable = editor.onDidChangeModelContent(() => { refresh(); });
+
+	return {
+		dispose(): void {
+			cursorDisposable.dispose();
+			keyDisposable.dispose();
+			contentDisposable.dispose();
+		}
+	};
 }

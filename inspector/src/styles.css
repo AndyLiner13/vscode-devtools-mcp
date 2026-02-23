@@ -33,6 +33,13 @@ body {
 	-webkit-font-smoothing: antialiased;
 }
 
+/* Hide the Monaco suggest widget entirely when it has no items to show.
+ * Monaco adds the "empty" class when the suggestion list is empty, which
+ * is what produces the "No suggestions." label. */
+.suggest-widget.empty {
+	display: none !important;
+}
+
 /* VS Code-style scrollbar */
 ::-webkit-scrollbar {
 	width: 10px;
