@@ -343,41 +343,49 @@ function findStringValueRange(
 	log(`[findStringValueRange] line: ${JSON.stringify(line)}`);
 	log(`[findStringValueRange] column: ${column} fileProps: ${[...fileProps]}`);
 
-	// Match "propName": "value" patterns (value can be empty)
-	const regex = /"([^"\\]*)"\s*:\s*"([^"\\]*)"/g;
+	// Two-pass approach: first find the property key (keys never contain backslashes),
+	// then locate the value boundaries by scanning for quotes while skipping \\ escapes.
+	// This handles Windows paths (C:\\Users\\...) that break the single-regex approach.
+	const keyRegex = /"([^"\\]*)"\s*:/g;
 	let match;
-	while ((match = regex.exec(line)) !== null) {
+	while ((match = keyRegex.exec(line)) !== null) {
 		const propName = match[1];
-		log(`[findStringValueRange]   Found property: ${JSON.stringify(propName)} value: ${JSON.stringify(match[2])}`);
+		log(`[findStringValueRange]   Found property: ${JSON.stringify(propName)}`);
 		if (!fileProps.has(propName)) {
 			log(`[findStringValueRange]   → Not a file prop, skipping`);
 			continue;
 		}
 
-		// Find the value string's position (the second quoted string)
-		const colonIdx = line.indexOf(':', match.index + match[1].length + 2);
-		if (colonIdx === -1) continue;
+		// Find the opening quote of the value (after the ':')
+		const afterColonIdx = match.index + match[0].length;
+		const openQuoteIdx = line.indexOf('"', afterColonIdx);
+		if (openQuoteIdx === -1) continue;
 
-		const valueQuoteStart = line.indexOf('"', colonIdx + 1);
-		if (valueQuoteStart === -1) continue;
+		// Walk forward to find the closing quote, skipping \\-escaped characters
+		let closeQuoteIdx = openQuoteIdx + 1;
+		while (closeQuoteIdx < line.length) {
+			if (line[closeQuoteIdx] === '\\') {
+				closeQuoteIdx += 2; // skip the escaped character
+				continue;
+			}
+			if (line[closeQuoteIdx] === '"') break;
+			closeQuoteIdx++;
+		}
+		if (closeQuoteIdx >= line.length) continue;
 
-		const valueQuoteEnd = line.indexOf('"', valueQuoteStart + 1);
-		if (valueQuoteEnd === -1) continue;
+		// Content is between the quotes (1-based columns)
+		const contentStart = openQuoteIdx + 2; // 1-based, character after opening quote
+		const contentEnd = closeQuoteIdx + 1;   // 1-based, at the closing quote
 
-		// Content is between the quotes (1-based, exclusive end)
-		const contentStart = valueQuoteStart + 2; // 1-based, after opening quote
-		const contentEnd = valueQuoteEnd + 1; // 1-based, at closing quote
-
-		log(`[findStringValueRange]   valueQuoteStart: ${valueQuoteStart} valueQuoteEnd: ${valueQuoteEnd}`);
+		log(`[findStringValueRange]   openQuoteIdx: ${openQuoteIdx} closeQuoteIdx: ${closeQuoteIdx}`);
 		log(`[findStringValueRange]   contentStart: ${contentStart} contentEnd: ${contentEnd}`);
 
-		// For empty strings, contentStart === contentEnd — cursor between
-		// the two quotes should also match
+		// For empty strings contentStart === contentEnd — cursor exactly between quotes matches
 		const cursorInQuotes = contentStart === contentEnd
 			? column === contentStart
 			: column >= contentStart && column <= contentEnd;
 
-		log(`[findStringValueRange]   cursorInQuotes: ${cursorInQuotes} (column ${column} in range ${contentStart} - ${contentEnd})`);
+		log(`[findStringValueRange]   cursorInQuotes: ${cursorInQuotes} (column ${column} in range ${contentStart}-${contentEnd})`);
 
 		if (cursorInQuotes) {
 			log(`[findStringValueRange]   → MATCH!`);
@@ -458,8 +466,15 @@ async function providePathCompletions(
 		const suggestions: monacoNs.languages.CompletionItem[] = filtered
 			.map((entry, idx) => {
 				const insertPath = dirPath ? `${dirPath}/${entry.name}` : entry.name;
+				const insertText = entry.type === 'dir' ? `${insertPath}/` : insertPath;
 				const item: monacoNs.languages.CompletionItem = {
-					insertText: entry.type === 'dir' ? `${insertPath}/` : insertPath,
+					// filterText must match the whole path so Monaco's built-in word filter
+					// doesn't hide suggestions. Monaco checks "does filterText start with the
+					// text from range.startColumn to cursor?". Since insertText is always an
+					// extension of the current value (e.g. "hw-workspace/src/" extends
+					// "hw-workspace/"), this passes the filter for all matching entries.
+					filterText: insertText,
+					insertText,
 					kind: entry.type === 'dir'
 						? monacoNs.languages.CompletionItemKind.Folder
 						: monacoNs.languages.CompletionItemKind.File,
@@ -1659,13 +1674,16 @@ function setupFieldNavigation(
 		e.preventDefault();
 		e.stopPropagation();
 
-		// Select the value content on the target line
+		// Select the value content on the target line.
+		// No reveal call — the container is always sized to fit all content, so
+		// the outer scroll container handles viewport positioning. Calling
+		// revealLine… here would set Monaco's internal scrollTop and cause the
+		// top-of-editor clipping glitch.
 		queueMicrotask(() => {
 			editor.setSelection(new monacoNs.Selection(
 				targetLine, valueRange.start,
 				targetLine, valueRange.end
 			));
-			editor.revealLineInCenterIfOutsideViewport(targetLine);
 		});
 	});
 }

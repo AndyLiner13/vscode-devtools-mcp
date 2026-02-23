@@ -126,4 +126,18 @@ function autoSizeEditor(editor: monaco.editor.IStandaloneCodeEditor, container: 
 	editor.onDidChangeModelContent(updateHeight);
 	editor.onDidContentSizeChange(updateHeight);
 	updateHeight();
+
+	// The container is always sized to exactly fit the content, so Monaco's
+	// internal scrollTop must always be 0. Monaco's revealCursor() (triggered
+	// by any setSelection/setPosition call, including arrow-key navigation)
+	// can push scrollTop to a non-zero value without firing a content/size
+	// change event, causing the top of the content to be clipped.
+	// Intercept every scroll change and snap it back immediately.
+	let suppressScrollReset = false;
+	editor.onDidScrollChange((e) => {
+		if (suppressScrollReset || !e.scrollTopChanged || e.scrollTop === 0) return;
+		suppressScrollReset = true;
+		editor.setScrollTop(0);
+		suppressScrollReset = false;
+	});
 }
