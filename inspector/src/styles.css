@@ -303,3 +303,16 @@ code {
 	border-color: var(--vscode-inputOption-activeBorder, #007acc);
 	background-color: var(--vscode-inputOption-activeBackground, rgba(0, 122, 204, 0.3));
 }
+
+/* ── Interactive JSON: Enum Array Toggle ─────────────────────────────── */
+
+.enum-toggle-zone {
+	/* Zero-width marker — no visual impact */
+}
+
+.enum-inactive-options {
+	color: rgba(150, 150, 150, 0.45) !important;
+	font-style: italic;
+	cursor: pointer;
+	letter-spacing: 0.02em;
+}

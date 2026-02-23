@@ -28,12 +28,21 @@ function resolveFilePath(file: string): string {
 	return path.resolve(getClientWorkspace(), file);
 }
 
-// Special target keywords for orphaned content
-const SPECIAL_TARGETS = ['#imports', '#exports', '#comments'] as const;
-type SpecialTarget = (typeof SPECIAL_TARGETS)[number];
+// Group values for orphaned content categories
+const GROUP_VALUES = ['imports', 'exports', 'comments', 'directives', 'footnotes', 'linkdefs'] as const;
+type GroupValue = (typeof GROUP_VALUES)[number];
 
-function isSpecialTarget(target: string): target is SpecialTarget {
-	return SPECIAL_TARGETS.includes(target as SpecialTarget);
+// Map group enum value to the internal OrphanedCategory
+function groupToCategory(group: GroupValue): string {
+	const mapping: Record<GroupValue, string> = {
+		comments: 'comment',
+		directives: 'directive',
+		exports: 'export',
+		footnotes: 'footnote',
+		imports: 'import',
+		linkdefs: 'linkdef'
+	};
+	return mapping[group];
 }
 
 /**
@@ -762,38 +771,28 @@ export const /**
 			title: 'File Read'
 		},
 		description:
-			'Read file content with flexible targeting and output modes.\n\n' +
-			'**Two Required Choices:**\n' +
-			'1. Do I want code or just structure? → `rawContent` (true = source code, false = skeleton)\n' +
-			'2. Do I want line number prefixes? → `lineNumbers` (true = `[N]` prefix on each line, false = plain)\n\n' +
+			'Read file content with flexible targeting and output modes. Line numbers are always included.\n\n' +
 			'**Parameters:**\n' +
 			'- `file` (required) — Path to file (relative or absolute)\n' +
 			'- `rawContent` (required) — true = source code, false = skeleton (names + line ranges)\n' +
-			'- `lineNumbers` (required) — true = prefix each line with `[N]`, false = plain content\n' +
-			'- `target` — What to read: symbol names, or special keywords:\n' +
-			'  - `"#imports"` — All import declarations\n' +
-			'  - `"#exports"` — All export declarations\n' +
-			'  - `"#comments"` — Orphan comments (section headers, annotations)\n' +
-			'  - `"UserService"` — Symbol by name\n' +
-			'  - `"UserService.findById"` — Nested symbol\n' +
-			'  - Can be array: `["#imports", "UserService"]`\n' +
-			'- `recursive` — true = expand children, false = placeholders (default)\n' +
+			'- `symbol` — Symbol to read by name (dot notation for nesting, e.g. "UserService.findById")\n' +
+			'- `groups` — Array of content categories to include: imports, exports, comments, directives, footnotes, linkdefs\n' +
 			'- `startLine` / `endLine` — Read a structured range (1-indexed). ' +
 			'Shows raw source for non-symbols, collapsed stubs for symbols. ' +
-			'Cannot be used with `target`.\n\n' +
+			'Cannot be used with `symbol`/`groups`.\n\n' +
 			'**Structured Range Mode (startLine/endLine):**\n' +
 			'For supported file types (TS/JS, Markdown, JSON/JSONC), shows non-symbol content as raw source ' +
-			'and collapses symbols into stubs. Use `target` to read a specific symbol. ' +
+			'and collapses symbols into stubs. Use `symbol` to read a specific symbol. ' +
 			'Non-symbol blocks are atomic: if the range touches any line of a block, the full block is included. ' +
 			'Set `rawContent: false` to also collapse import/export/comment blocks into stubs.\n\n' +
+			'Children are always expanded when possible, with automatic compression to stay within token budget.\n\n' +
 			'**EXAMPLES:**\n' +
-			'- File skeleton: `{ file: "src/service.ts", rawContent: false, lineNumbers: false }`\n' +
-			'- Read a function with line numbers: `{ file: "src/utils.ts", rawContent: true, lineNumbers: true, target: "calculateTotal" }`\n' +
-			'- Read plain content: `{ file: "src/utils.ts", rawContent: true, lineNumbers: false, target: "calculateTotal" }`\n' +
-			'- Structured range: `{ file: "src/service.ts", rawContent: true, lineNumbers: true, startLine: 1, endLine: 50 }`\n' +
-			'- Compact range: `{ file: "src/service.ts", rawContent: false, lineNumbers: false, startLine: 1, endLine: 50 }`\n' +
-			'- Only imports: `{ file: "src/service.ts", rawContent: true, lineNumbers: true, target: "#imports" }`\n' +
-			'- Import + symbol: `{ file: "src/service.ts", rawContent: true, lineNumbers: true, target: ["#imports", "UserService"] }`\n\n' +
+			'- File skeleton: `{ file: "src/service.ts", rawContent: false }`\n' +
+			'- Read a function: `{ file: "src/utils.ts", rawContent: true, symbol: "calculateTotal" }`\n' +
+			'- Import + symbol: `{ file: "src/service.ts", rawContent: true, symbol: "UserService", groups: ["imports"] }`\n' +
+			'- Only imports: `{ file: "src/service.ts", rawContent: true, groups: ["imports"] }`\n' +
+			'- Structured range: `{ file: "src/service.ts", rawContent: true, startLine: 1, endLine: 50 }`\n' +
+			'- Compact range: `{ file: "src/service.ts", rawContent: false, startLine: 1, endLine: 50 }`\n\n' +
 			'**Log Files:**\n' +
 			'Log file extensions (.log, .out, .err, .trace, .jsonl, etc.) must be read with `logFile_read` instead. ' +
 			'This tool will show a redirect notice for those file types.',
@@ -833,50 +832,27 @@ export const /**
 					'**Error:** `rawContent` is a required parameter.\n\n' +
 						'- `rawContent: true` — Returns source code content\n' +
 						'- `rawContent: false` — Returns skeleton (symbol names + line ranges)\n\n' +
-						'Example: `{ file: "src/service.ts", rawContent: true, lineNumbers: true }`'
-				);
-				return;
-			}
-			if (params.lineNumbers === undefined) {
-				response.appendResponseLine(
-					'**Error:** `lineNumbers` is a required parameter.\n\n' +
-						'- `lineNumbers: true` — Prefix each line with `[N]` (e.g. `[42] const x = 5`)\n' +
-						'- `lineNumbers: false` — Plain content without line number prefixes\n\n' +
-						'Example: `{ file: "src/service.ts", rawContent: true, lineNumbers: true }`'
+						'Example: `{ file: "src/service.ts", rawContent: true }`'
 				);
 				return;
 			}
 
 			const rawContent = params.rawContent;
-			const lineNumbers = params.lineNumbers;
-			const recursive = params.recursive ?? false;
+			const lineNumbers = true;
+			const recursive = true;
 
-			// Normalize target to array
-			let targets: string[] = [];
-			if (params.target) {
-				if (Array.isArray(params.target)) {
-					targets = params.target as string[];
-				} else if (typeof params.target === 'string' && params.target.startsWith('[')) {
-					try {
-						const parsed: unknown = JSON.parse(params.target);
-						if (Array.isArray(parsed)) {
-							targets = parsed.filter((item): item is string => typeof item === 'string');
-						}
-					} catch {
-						targets = [params.target];
-					}
-				} else {
-					targets = [params.target];
-				}
-			}
+			// Build targets from the new symbol + groups params
+			const symbolTarget = params.symbol?.trim() || '';
+			const groups: GroupValue[] = (params.groups ?? []) as GroupValue[];
+			const hasTargets = symbolTarget.length > 0 || groups.length > 0;
 
 			const relativePath = path.relative(getClientWorkspace(), filePath).replaceAll('\\', '/');
 
-			// ── Mutual exclusivity: target + startLine/endLine ─────
+			// ── Mutual exclusivity: symbol/groups + startLine/endLine ─────
 			// Treat 0 as "not specified" since lines are 1-indexed
 			const hasLineRange = (params.startLine !== undefined && params.startLine !== 0) || (params.endLine !== undefined && params.endLine !== 0);
-			if (targets.length > 0 && hasLineRange) {
-				response.appendResponseLine('**Error:** `target` and `startLine`/`endLine` cannot be used together. ' + 'Use `target` to read specific symbols, or `startLine`/`endLine` to read a structured range.');
+			if (hasTargets && hasLineRange) {
+				response.appendResponseLine('**Error:** `symbol`/`groups` and `startLine`/`endLine` cannot be used together. ' + 'Use `symbol`/`groups` to read specific content, or `startLine`/`endLine` to read a structured range.');
 				return;
 			}
 
@@ -890,7 +866,7 @@ export const /**
 			}
 
 			// ── Structured line-range mode ────────────────────────────
-			if (hasLineRange && targets.length === 0) {
+			if (hasLineRange && !hasTargets) {
 				const totalLines = structure ? structure.totalLines : allLines.length;
 
 				// For non-structured files, fall back to raw content
@@ -950,7 +926,7 @@ export const /**
 			}
 
 			// ── Skeleton mode (no targets, no line range) ─────────────
-			if (targets.length === 0 && !rawContent) {
+			if (!hasTargets && !rawContent) {
 				if (!structure) {
 					response.appendResponseLine(`This file type does not support structured reading (skeleton mode). ` + `Use \`startLine\`/\`endLine\` for line-range reading, or set \`rawContent: true\` to read the full file.`);
 					return;
@@ -970,7 +946,7 @@ export const /**
 			}
 
 			// ── Full file mode (no targets, rawContent, no line range) ──
-			if (targets.length === 0) {
+			if (!hasTargets) {
 				const content = await fileReadContent(filePath);
 				fileHighlightReadRange(filePath, content.startLine, content.endLine);
 
@@ -991,57 +967,51 @@ export const /**
 				return;
 			}
 
-			for (const target of targets) {
-				if (isSpecialTarget(target)) {
-					// Handle special keywords: #imports, #exports, #comments
-					const categoryFilter = target === '#imports' ? 'import' : target === '#exports' ? 'export' : 'comment';
-					const items = structure.orphaned.items.filter((i) => i.category === categoryFilter);
+			// Process groups first
+			for (const group of groups) {
+				const categoryFilter = groupToCategory(group);
+				const items = structure.orphaned.items.filter((i) => i.category === categoryFilter);
 
-					// Focus the file in the client editor for special targets
-					if (items.length > 0) {
-						const firstStart = items[0].range.start - 1;
-						const lastEnd = items[items.length - 1].range.end - 1;
-						fileHighlightReadRange(filePath, firstStart, lastEnd);
-					}
+				if (items.length > 0) {
+					const firstStart = items[0].range.start - 1;
+					const lastEnd = items[items.length - 1].range.end - 1;
+					fileHighlightReadRange(filePath, firstStart, lastEnd);
+				}
 
-					if (!rawContent) {
-						for (const item of items) {
-							const entries = formatSkeletonEntry(item, '', 0);
-							for (const entry of entries) response.appendResponseLine(entry);
-						}
-					} else {
-						for (const item of items) {
-							// For inline exports (export class/function/interface/etc.), only show the
-							// declaration header line rather than dumping the entire body
-							const isInlineExport = item.kind === 'inline-export';
-							const displayEnd = isInlineExport ? item.range.start : item.range.end;
-							const numbered = addLineNumbers(getContentSlice(allLines, item.range.start, displayEnd), item.range.start, lineNumbers);
-							response.appendResponseLine(numbered);
-						}
+				if (!rawContent) {
+					for (const item of items) {
+						const entries = formatSkeletonEntry(item, '', 0);
+						for (const entry of entries) response.appendResponseLine(entry);
 					}
 				} else {
-					// Symbol targeting (1-indexed ranges)
-					const match = resolveSymbolTarget(structure.symbols, target);
-
-					if (!match) {
-						const available = structure.symbols.map((s) => `${s.kind} ${s.name}`).join(', ');
-						response.appendResponseLine(`"${target}": Not found. Available: ${available || 'none'}`);
-
-						// Check if the target exists as a nested child and suggest qualified path
-						const qualifiedPaths = findQualifiedPaths(structure.symbols, target);
-						if (qualifiedPaths.length > 0) {
-							const suggestions = qualifiedPaths.map((p) => `"${p}"`).join(', ');
-							response.appendResponseLine(`Hint: Did you mean ${suggestions}? Use the qualified dot-path to target nested symbols.`);
-						}
-						continue;
+					for (const item of items) {
+						const isInlineExport = item.kind === 'inline-export';
+						const displayEnd = isInlineExport ? item.range.start : item.range.end;
+						const numbered = addLineNumbers(getContentSlice(allLines, item.range.start, displayEnd), item.range.start, lineNumbers);
+						response.appendResponseLine(numbered);
 					}
+				}
+			}
 
+			// Process symbol target
+			if (symbolTarget) {
+				const match = resolveSymbolTarget(structure.symbols, symbolTarget);
+
+				if (!match) {
+					const available = structure.symbols.map((s) => `${s.kind} ${s.name}`).join(', ');
+					response.appendResponseLine(`"${symbolTarget}": Not found. Available: ${available || 'none'}`);
+
+					const qualifiedPaths = findQualifiedPaths(structure.symbols, symbolTarget);
+					if (qualifiedPaths.length > 0) {
+						const suggestions = qualifiedPaths.map((p) => `"${p}"`).join(', ');
+						response.appendResponseLine(`Hint: Did you mean ${suggestions}? Use the qualified dot-path to target nested symbols.`);
+					}
+				} else {
 					const { symbol } = match;
 					const { startLine } = symbol.range;
 					const { endLine } = symbol.range;
 
 					if (!rawContent) {
-						// Focus the symbol range in the client editor (convert 1-indexed to 0-indexed)
 						fileHighlightReadRange(filePath, startLine - 1, endLine - 1);
 
 						const maxNesting = recursive ? getSymbolTreeDepth(symbol) : 0;
@@ -1051,7 +1021,6 @@ export const /**
 						}
 						response.appendResponseLine(result.output);
 					} else {
-						// Highlight in editor (convert 1-indexed to 0-indexed for VS Code)
 						fileHighlightReadRange(filePath, startLine - 1, endLine - 1);
 
 						const result = compressTargetContent(symbol, allLines, structure, recursive, lineNumbers);
@@ -1066,19 +1035,21 @@ export const /**
 		name: 'file_read',
 		schema: {
 			file: zod.string().describe('Path to file (relative to workspace root or absolute).'),
-			lineNumbers: zod.boolean().describe('true = prefix each content line with [N], false = plain content. REQUIRED.'),
+			groups: zod
+				.array(zod.enum(['imports', 'exports', 'comments', 'directives', 'footnotes', 'linkdefs']))
+				.optional()
+				.describe('Content categories to include. Can be combined with symbol.'),
 			rawContent: zod.boolean().describe('true = source code content, false = skeleton (names + line ranges). REQUIRED.'),
-			recursive: zod.boolean().optional().describe('true = expand children, false = show placeholders (default).'),
-			target: zod
+			symbol: zod
 				.string()
 				.optional()
-				.describe('What to read. Can be symbol names ("UserService.findById"), special keywords ' + '("#imports", "#exports", "#comments"), or a JSON array of multiple targets ' + '(e.g. \'["#imports", "UserService"]\').'),
+				.describe('Symbol to read by name. Use dot notation for nested symbols (e.g. "UserService.findById"). Can be combined with groups.'),
 			// Structured range parameters (mutually exclusive with target)
 			endLine: zod.number().int().optional().describe('End line (1-indexed) for structured range reading. If omitted with startLine, reads to end of file.'),
 			startLine: zod
 				.number()
 				.int()
 				.optional()
-				.describe('Start line (1-indexed) for structured range reading. Shows raw source for non-symbols, ' + 'collapsed stubs for symbols. Cannot be used with target.')
+				.describe('Start line (1-indexed) for structured range reading. Shows raw source for non-symbols, ' + 'collapsed stubs for symbols. Cannot be used with symbol/groups.')
 		}
 	});

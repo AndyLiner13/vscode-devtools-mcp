@@ -8,9 +8,13 @@
  * MCP Socket Server — JSON-RPC 2.0 named-pipe server
  *
  * Runs inside the MCP server process so the extension (or other callers)
- * can send commands directly to this process. The pipe path is deterministic
- * (derived from the workspace path) so callers can compute it without
- * discovery.
+ * can send commands directly to this process. Uses a static pipe name
+ * so callers can connect without discovery. Only one MCP server instance
+ * can exist at a time.
+ *
+ * Pipe path:
+ *   Windows: \\.\pipe\vscode-devtools-mcp
+ *   Unix:    /tmp/vscode-devtools-mcp.sock
  *
  * Protocol: JSON-RPC 2.0 over newline-delimited JSON.
  *
@@ -19,13 +23,12 @@
  *    debug window on shutdown instead of tearing it down.
  */
 
-import crypto from 'node:crypto';
 import net from 'node:net';
-import path from 'node:path';
 
 import { logger } from './logger.js';
 
 const IS_WINDOWS = process.platform === 'win32';
+const MCP_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-mcp' : '/tmp/vscode-devtools-mcp.sock';
 
 // ── State ───────────────────────────────────────────────
 
@@ -45,32 +48,19 @@ function clearWatchRestartPending(): void {
 	watchRestartPending = false;
 }
 
-/**
- * Compute the deterministic pipe path for the MCP socket server.
- *
- * Windows: \\.\pipe\vscode-devtools-mcp-<8-char-hash>
- * Unix:    <workspacePath>/.vscode/vscode-devtools-mcp.sock
- */
-function computeMcpSocketPath(workspacePath: string): string {
-	if (IS_WINDOWS) {
-		const resolved = path.resolve(workspacePath);
-		const hash = crypto.createHash('sha256').update(resolved.toLowerCase()).digest('hex').slice(0, 8);
-		return `\\\\.\\pipe\\vscode-devtools-mcp-${hash}`;
-	}
-	return path.join(workspacePath, '.vscode', 'vscode-devtools-mcp.sock');
-}
+
 
 /**
- * Start the MCP socket server on the deterministic pipe path.
+ * Start the MCP socket server on the static pipe path.
  * Idempotent — calling when already running is a no-op.
  */
-export function startMcpSocketServer(workspacePath: string): void {
+export function startMcpSocketServer(): void {
 	if (server) {
 		logger('MCP socket server already running');
 		return;
 	}
 
-	pipePath = computeMcpSocketPath(workspacePath);
+	pipePath = MCP_PIPE_PATH;
 
 	const srv = net.createServer(handleConnection);
 

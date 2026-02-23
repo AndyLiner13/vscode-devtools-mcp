@@ -181,7 +181,7 @@ lifecycleService.init({
 });
 
 // Start MCP socket server so the extension can send commands (e.g. detach-gracefully)
-startMcpSocketServer(config.hostWorkspace);
+startMcpSocketServer();
 
 // Register process-level shutdown handlers (stdin end, SIGINT, etc.)
 lifecycleService.registerShutdownHandlers();

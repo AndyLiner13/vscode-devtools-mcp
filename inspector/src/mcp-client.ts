@@ -35,10 +35,17 @@ export class McpInspectorClient {
 
 	/**
 	 * Connect to the MCP server with automatic retries.
-	 * Handles the case where the server is rebuilding/restarting after code
-	 * changes — keeps retrying until it comes up or the max attempts are hit.
+	 * First asks the Host extension to ensure the MCP server is running,
+	 * then retries the MCP handshake until it comes up or max attempts are hit.
 	 */
 	async connect(maxAttempts = 15, retryDelayMs = 2000): Promise<void> {
+		// Ask Host extension to start MCP server if not running
+		try {
+			await fetch('/api/ensure-mcp', { method: 'POST' });
+		} catch {
+			console.log('[mcp-client] /api/ensure-mcp unavailable — continuing with direct connect');
+		}
+
 		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 			this.onStateChange('connecting');
 

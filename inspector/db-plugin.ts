@@ -2,9 +2,14 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
 
 import { createRequire } from 'node:module';
-import { join } from 'node:path';
+import { readdirSync, statSync } from 'node:fs';
+import net from 'node:net';
+import { join, resolve } from 'node:path';
 
 const nodeRequire = createRequire(import.meta.url);
+
+const IS_WINDOWS = process.platform === 'win32';
+const HOST_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-host' : '/tmp/vscode-devtools-host.sock';
 
 interface DbRow {
 	comment: string;
@@ -118,6 +123,48 @@ export function inspectorDbPlugin(): Plugin {
 				res.end(JSON.stringify(data));
 			}
 
+			// Send a JSON-RPC 2.0 request to the Host extension pipe
+			function sendHostRpc(method: string, params: Record<string, unknown>): Promise<Record<string, unknown>> {
+				return new Promise((resolve, reject) => {
+					const socket = net.createConnection(HOST_PIPE_PATH);
+					let acc = '';
+					const timeout = setTimeout(() => {
+						socket.destroy();
+						reject(new Error('Host pipe timeout'));
+					}, 5000);
+
+					socket.on('connect', () => {
+						const payload = { id: 1, jsonrpc: '2.0', method, params };
+						socket.write(`${JSON.stringify(payload)}\n`);
+					});
+
+					socket.setEncoding('utf8');
+					socket.on('data', (chunk: string) => {
+						acc += chunk;
+						const idx = acc.indexOf('\n');
+						if (idx !== -1) {
+							clearTimeout(timeout);
+							try {
+								const resp = JSON.parse(acc.slice(0, idx)) as { error?: { message: string }; result?: Record<string, unknown> };
+								if (resp.error) {
+									reject(new Error(resp.error.message));
+								} else {
+									resolve(resp.result ?? {});
+								}
+							} catch {
+								reject(new Error('Invalid response from Host pipe'));
+							}
+							socket.end();
+						}
+					});
+
+					socket.on('error', (err) => {
+						clearTimeout(timeout);
+						reject(new Error(`Host pipe connection failed: ${err.message}`));
+					});
+				});
+			}
+
 			async function handleApi(req: IncomingMessage, res: ServerResponse): Promise<void> {
 				const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
 				const { pathname } = url;
@@ -133,6 +180,18 @@ export function inspectorDbPlugin(): Plugin {
 					res.write('data: connected\n\n');
 					sseClients.add(res);
 					req.on('close', () => sseClients.delete(res));
+					return;
+				}
+
+				// POST /api/ensure-mcp — tell Host extension to start MCP server if not running
+				if (pathname === '/api/ensure-mcp' && method === 'POST') {
+					try {
+						await sendHostRpc('ensureMcpServer', {});
+						json(res, { ok: true });
+					} catch (err) {
+						const message = err instanceof Error ? err.message : String(err);
+						json(res, { error: message, ok: false }, 502);
+					}
 					return;
 				}
 
@@ -265,6 +324,35 @@ export function inspectorDbPlugin(): Plugin {
 					reorder();
 					broadcast(toolName);
 					json(res, { ok: true });
+					return;
+				}
+
+				// GET /api/browse?path=<dir> — list directory contents for file/dir intellisense
+				if (pathname === '/api/browse' && method === 'GET') {
+					const workspaceRoot = resolve(process.cwd(), '..');
+					const requestedPath = url.searchParams.get('path') ?? '';
+					const targetDir = requestedPath
+						? (requestedPath.startsWith('/') || /^[A-Za-z]:/.test(requestedPath)
+							? requestedPath
+							: resolve(workspaceRoot, requestedPath))
+						: workspaceRoot;
+
+					try {
+						const entries = readdirSync(targetDir, { withFileTypes: true })
+							.filter((e) => !e.name.startsWith('.'))
+							.map((e) => ({
+								name: e.name,
+								type: e.isDirectory() ? 'dir' as const : 'file' as const
+							}))
+							.sort((a, b) => {
+								if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
+								return a.name.localeCompare(b.name);
+							});
+
+						json(res, { entries, root: workspaceRoot });
+					} catch {
+						json(res, { entries: [], root: workspaceRoot });
+					}
 					return;
 				}
 

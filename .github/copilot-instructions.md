@@ -64,4 +64,13 @@ Only add dependencies to workspaces when they are:
 - If tools aren't available yet, call any MCP tool — it will auto-reload and then work.
 - Get straight to testing. Skip all rebuild/reinstall steps. It's all automatic.
 
+## CRITICAL: Ask Questions Formatting
+
+- When using the ask_questions tool, keep the question text SHORT and PLAIN TEXT only.
+- DO NOT put long explanations, markdown headers, bold text, bullet lists, code blocks, or multi-paragraph content inside the question field.
+- The ask_questions UI does NOT render markdown properly — complex formatting is unreadable.
+- If you need to explain context before asking a question, write the explanation in normal chat text FIRST, then follow up with a short, plain-text ask_questions call.
+- Question text should be a single short sentence or two at most.
+- Option labels and descriptions should also be short and plain text.
+
 ASK QUESTIONS AS OFTEN AS YOU POSSIBLY CAN. DO NOT MAKE ANY ASSUMPTIONS ABOUT THE USERS INTENT OR PREFERENCES. IF THE USER HAS NOT EXPLICITLY PROVIDED CONSENT TO A CHANGE, DO NO PROCEED WITHOUT ASKING FIRST VIA THE #tool:vscode/askQuestions TOOL.

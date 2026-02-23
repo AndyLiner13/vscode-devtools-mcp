@@ -8,15 +8,15 @@
  * Handles lifecycle management for the VS Code DevTools MCP system.
  * The Host is the VSIX-installed extension in the main VS Code window.
  *
- * API Surface (4 methods only):
+ * API Surface (4 methods + Inspector lifecycle):
  * - mcpReady: MCP announces presence → Host spawns/reconnects Client → returns connection info
  * - hotReloadRequired: Extension files changed → Host rebuilds, restarts Client → returns new connection
  * - getStatus: Query current state
  * - takeover: Another VS Code instance wants to become Host
+ * - ensureMcpServer: Inspector requests that the MCP server is running
  */
 
 import { type ChildProcess, exec, execSync, spawn } from 'node:child_process';
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 import http from 'node:http';
 import net from 'node:net';
@@ -43,6 +43,7 @@ let lastKnownClientState = false;
 
 const IS_WINDOWS = process.platform === 'win32';
 const CLIENT_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-client' : '/tmp/vscode-devtools-client.sock';
+const MCP_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-mcp' : '/tmp/vscode-devtools-mcp.sock';
 
 // ── Module State ─────────────────────────────────────────────────────────────
 
@@ -203,24 +204,9 @@ function getWorkspacePath(): null | string {
 	return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
 }
 
-function computeMcpSocketPath(workspacePath: string): string {
-	if (IS_WINDOWS) {
-		const resolved = path.resolve(workspacePath);
-		const hash = crypto.createHash('sha256').update(resolved.toLowerCase()).digest('hex').slice(0, 8);
-		return `\\\\.\\pipe\\vscode-devtools-mcp-${hash}`;
-	}
-	return path.join(workspacePath, '.vscode', 'vscode-devtools-mcp.sock');
-}
-
 async function notifyMcpClientReconnected(params: { electronPid: null | number; cdpPort: number; inspectorPort: number; at: number }): Promise<void> {
-	const workspacePath = getWorkspacePath();
-	if (!workspacePath) {
-		return;
-	}
-
-	const socketPath = computeMcpSocketPath(workspacePath);
 	await new Promise<void>((resolve) => {
-		const socket = net.createConnection(socketPath);
+		const socket = net.createConnection(MCP_PIPE_PATH);
 		let settled = false;
 
 		const done = () => {
@@ -1602,6 +1588,16 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 		}
 
 		return result;
+	});
+
+	/**
+	 * ensureMcpServer — Inspector requests that the MCP server is running.
+	 * Executes the startMcpServer command (idempotent — no-op if already running).
+	 */
+	register('ensureMcpServer', async () => {
+		console.log('[host] ensureMcpServer called from Inspector');
+		await vscode.commands.executeCommand('devtools.startMcpServer');
+		return { ok: true };
 	});
 
 	// Track debug session lifecycle

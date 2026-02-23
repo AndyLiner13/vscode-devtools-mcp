@@ -1,6 +1,7 @@
 import type { CallToolResult, ContentBlock, JsonSchema, ToolDefinition } from '../types';
 import type * as monaco from 'monaco-editor';
 
+import { setupJsonInteractivity } from '../json-interactivity';
 import { createInputEditor, createOutputEditor, setModelLanguage } from '../monaco-setup';
 import { addExecution, createHistoryContainer, setCurrentTool, updateExecution } from './history-list';
 
@@ -13,6 +14,7 @@ let activeExecutionTime: HTMLElement | null = null;
 let activeOutputSection: HTMLElement | null = null;
 let activeToolName = '';
 let inputSaveTimer: ReturnType<typeof setTimeout> | null = null;
+let activeInteractivity: { dispose(): void } | null = null;
 
 const INPUT_STORAGE_PREFIX = 'mcp-inspector-input:';
 const OUTPUT_STORAGE_PREFIX = 'mcp-inspector-output:';
@@ -54,6 +56,10 @@ function disposeEditors(): void {
 	if (inputSaveTimer) {
 		clearTimeout(inputSaveTimer);
 		inputSaveTimer = null;
+	}
+	if (activeInteractivity) {
+		activeInteractivity.dispose();
+		activeInteractivity = null;
 	}
 	if (activeInputEditor) {
 		if (activeToolName) {
@@ -178,6 +184,9 @@ export function renderToolDetail(tool: ToolDefinition): void {
 	const initialValue = savedInput ?? buildInitialInput(tool.inputSchema);
 
 	activeInputEditor = createInputEditor(inputEditorWrapper, initialValue);
+
+	// Wire up interactive JSON features (boolean toggle, integer select, enum array toggle)
+	activeInteractivity = setupJsonInteractivity(activeInputEditor, tool.inputSchema);
 
 	activeInputEditor.onDidChangeModelContent(() => {
 		if (inputSaveTimer) clearTimeout(inputSaveTimer);
@@ -318,10 +327,6 @@ function buildObjectExample(schema: JsonSchema): Record<string, unknown> {
 }
 
 function buildValueExample(prop: JsonSchema): unknown {
-	if (prop.default !== undefined) {
-		return prop.default;
-	}
-
 	if (prop.enum && prop.enum.length > 0) {
 		return prop.enum[0];
 	}
@@ -333,20 +338,19 @@ function buildValueExample(prop: JsonSchema): unknown {
 			return '';
 		case 'number':
 		case 'integer':
-			return 0;
+			return prop.default ?? 0;
 		case 'boolean':
-			return false;
+			return prop.default ?? false;
 		case 'array': {
-			// If items have enum options, pre-fill with all available options so
-			// the user can see what's available and remove what they don't need
+			// Pre-fill with all enum options so users can see what's available
 			if (prop.items?.enum && prop.items.enum.length > 0) {
 				return prop.items.enum;
 			}
-			return [];
+			return prop.default ?? [];
 		}
 		case 'object':
 			return prop.properties ? buildObjectExample(prop) : {};
 		default:
-			return null;
+			return prop.default ?? null;
 	}
 }
