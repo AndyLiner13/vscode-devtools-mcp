@@ -2,6 +2,7 @@ import type { SymbolNode } from './types';
 // IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
 import type { SourceFile} from 'ts-morph';
 
+import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { Node } from 'ts-morph';
 
@@ -496,7 +497,7 @@ export function findProjectRoot(filePath: string): string {
     for (const file of candidates) {
       const p = path.join(dir, file);
       try {
-        require('node:fs').accessSync(p);
+        fs.accessSync(p);
         return dir;
       } catch {
         // Continue searching

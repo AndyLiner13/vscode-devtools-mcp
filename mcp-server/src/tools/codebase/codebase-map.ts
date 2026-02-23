@@ -63,10 +63,10 @@ function folderMeta(node: CodebaseTreeNode): string {
 
 function fileMeta(node: CodebaseTreeNode): string {
   const parts: string[] = [];
-  if (node.lineCount != null) parts.push(`${node.lineCount}L`);
+  if (node.lineCount !== undefined) parts.push(`${node.lineCount}L`);
   const symCount = node.symbolCount ?? (node.symbols ? countSymbolsDeep(node.symbols) : 0);
   if (symCount > 0) parts.push(`${symCount}S`);
-  if (node.totalReferences != null && node.totalReferences > 0) parts.push(`${node.totalReferences}R`);
+  if ((node.totalReferences ?? 0) > 0) parts.push(`${node.totalReferences}R`);
   return parts.length > 0 ? `[${parts.join('|')}]` : '';
 }
 
@@ -74,8 +74,8 @@ function formatSymbol(symbol: CodebaseSymbolNode, depth: number, maxSymbolDepth?
   const indent = INDENT.repeat(depth);
   // Show reference/implementation metadata if available
   const metaParts: string[] = [];
-  if (symbol.referenceCount != null) metaParts.push(`${symbol.referenceCount}R`);
-  if (symbol.implementationCount != null) metaParts.push(`${symbol.implementationCount}I`);
+  if ((symbol.referenceCount ?? 0) > 0) metaParts.push(`${symbol.referenceCount}R`);
+  if ((symbol.implementationCount ?? 0) > 0) metaParts.push(`${symbol.implementationCount}I`);
   const meta = metaParts.length > 0 ? `[${metaParts.join('|')}] ` : '';
   let output = `${indent}${meta}${symbol.kind} ${symbol.name}\n`;
   if (symbol.children && (maxSymbolDepth === undefined || currentSymbolDepth < maxSymbolDepth)) {
@@ -123,7 +123,7 @@ function formatTree(
         || (opts.maxFileFolderDepth !== undefined && depth >= opts.maxFileFolderDepth);
 
       const hasContent = !!node.children?.length;
-      const hasStubMeta = node.fileCount != null || node.dirCount != null;
+      const hasStubMeta = node.fileCount !== undefined || node.dirCount !== undefined;
       const isCompressed = (hasContent || hasStubMeta) && (!willRecurse || childFilesHidden);
 
       const showMeta = opts.metadata === true

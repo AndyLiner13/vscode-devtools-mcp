@@ -230,7 +230,6 @@ export async function activate(context: vscode.ExtensionContext) {
     if (currentRole === 'host') {
       // Dynamic import to ensure esbuild doesn't bundle host-handlers into client builds
       log('Loading host-handlers module...');
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { cleanup, createReconnectCdpCallback, onBrowserServiceChanged, onClientStateChanged, registerHostHandlers, startClientWindow, stopClientWindow } = require('./services/host-handlers');
       log('host-handlers module loaded, registering handlers...');
       registerHostHandlers(bootstrap.registerHandler, context, log);
@@ -414,7 +413,6 @@ export async function activate(context: vscode.ExtensionContext) {
       ]);
     } else {
       log('Loading client-handlers module...');
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { registerClientHandlers } = require('./services/client-handlers');
       log('client-handlers module loaded, registering handlers...');
       const disposable = registerClientHandlers(bootstrap.registerHandler, context.workspaceState);
@@ -453,7 +451,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
   try {
     const runtimePath = path.join(__dirname, 'runtime.js');
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const runtime: RuntimeModule = require(runtimePath);
 
     await runtime.activate(context);

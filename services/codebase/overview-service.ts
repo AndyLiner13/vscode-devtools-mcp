@@ -775,7 +775,7 @@ function buildIdentifierMap(sourceFile: SourceFile): Map<string, Node> {
 function sumSymbolRefs(symbols: SymbolNode[]): number {
   let total = 0;
   for (const sym of symbols) {
-    if (sym.referenceCount != null) total += sym.referenceCount;
+    total += sym.referenceCount ?? 0;
     if (sym.children) total += sumSymbolRefs(sym.children);
   }
   return total;

@@ -102,17 +102,26 @@ export interface ProcessTreeResult {
     readonly hasLiveChildren: boolean;
 }
 
-// Module state - using any to avoid import() type annotations which are forbidden by eslint
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let koffiModule: any = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let ntdll: any = null;
-let NtQuerySystemInformation: ((
+// Minimal interface for koffi FFI module (dynamically loaded native module)
+interface KoffiDll {
+    func<T extends (...args: never[]) => unknown>(name: string, retType: string, params: string[]): T;
+}
+interface KoffiModule {
+    load(name: string): KoffiDll;
+}
+
+// Type for NtQuerySystemInformation Windows API function
+type NtQuerySystemInfoFn = (
     infoClass: number,
     buffer: Uint8Array,
     bufferLength: number,
     returnLength: number[]
-) => number) | null = null;
+) => number;
+
+// Module state for Windows FFI
+let koffiModule: KoffiModule | null = null;
+let ntdll: KoffiDll | null = null;
+let NtQuerySystemInformation: NtQuerySystemInfoFn | null = null;
 
 let initialized = false;
 let initError: null | string = null;
@@ -134,11 +143,12 @@ async function initializeKoffi(): Promise<void> {
 
     try {
         // Dynamic import of koffi - using require to avoid TypeScript module issues
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        koffiModule = require('koffi');
+        const koffi = require('koffi') as KoffiModule;
+        koffiModule = koffi;
         
         // Load ntdll.dll
-        ntdll = koffiModule.load('ntdll.dll');
+        const dll = koffi.load('ntdll.dll');
+        ntdll = dll;
         
         // Define NtQuerySystemInformation signature
         // NTSTATUS NtQuerySystemInformation(
@@ -147,7 +157,7 @@ async function initializeKoffi(): Promise<void> {
         //   ULONG SystemInformationLength,
         //   PULONG ReturnLength
         // )
-        NtQuerySystemInformation = ntdll.func(
+        NtQuerySystemInformation = dll.func<NtQuerySystemInfoFn>(
             'NtQuerySystemInformation',
             'int',  // NTSTATUS return
             [

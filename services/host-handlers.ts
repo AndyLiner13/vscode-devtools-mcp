@@ -134,10 +134,9 @@ export function onBrowserServiceChanged(callback: (service: BrowserService | nul
 let mcpReadyDeferred: null | { promise: Promise<void>; resolve: () => void } = null;
 
 function expectMcpRestart(): void {
-  let resolver: () => void;
+  let resolver!: () => void;  // Definite assignment: Promise executor runs synchronously
   const promise = new Promise<void>(r => { resolver = r; });
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  mcpReadyDeferred = { promise, resolve: resolver! };
+  mcpReadyDeferred = { promise, resolve: resolver };
   console.log('[host] MCP restart expected — mcpStatus will block until mcpReady');
 }
 

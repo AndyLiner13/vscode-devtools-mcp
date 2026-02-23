@@ -3,3 +3,5 @@ CHANGELOG.md
 **/dist/
 **/build/
 client-workspace/
+.github/
+resources/
