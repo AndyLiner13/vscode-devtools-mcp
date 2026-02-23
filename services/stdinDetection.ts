@@ -15,63 +15,63 @@
  * - jcode: https://github.com/1jehuang/jcode (stdin_detect.rs)
  */
 
-import * as os from 'os';
+import * as os from 'node:os';
 
 // Thread state enum from Windows NT kernel
 const KTHREAD_STATE = {
+    DeferredReady: 7,
+    GateWait: 8,
     Initialized: 0,
     Ready: 1,
     Running: 2,
     Standby: 3,
     Terminated: 4,
-    Waiting: 5,      // Thread is waiting for something
     Transition: 6,
-    DeferredReady: 7,
-    GateWait: 8,
+    Waiting: 5,      // Thread is waiting for something
 } as const;
 
 // Wait reason enum from Windows NT kernel  
 // WrUserRequest (13) is the key indicator for stdin waiting
 const KWAIT_REASON = {
+    DelayExecution: 4,
     Executive: 0,
     FreePage: 1,
     PageIn: 2,
     PoolAllocation: 3,
-    DelayExecution: 4,
     Suspended: 5,
     UserRequest: 6,         // User-mode I/O request (stdin!)
-    WrExecutive: 7,
-    WrFreePage: 8,
-    WrPageIn: 9,
-    WrPoolAllocation: 10,
+    WrAlertByThreadId: 37,
+    WrCalloutStack: 25,
+    WrCpuRateControl: 24,
+    WrDeferredPreempt: 38,
     WrDelayExecution: 11,
-    WrSuspended: 12,
-    WrUserRequest: 13,      // User-mode I/O request (stdin!)
+    WrDispatchInt: 31,
     WrEventPair: 14,
-    WrQueue: 15,
+    WrExecutive: 7,
+    WrFastMutex: 34,
+    WrFreePage: 8,
+    WrGuardedMutex: 35,
+    WrKernel: 26,
+    WrKeyedEvent: 21,
     WrLpcReceive: 16,
     WrLpcReply: 17,
-    WrVirtualMemory: 18,
-    WrPageOut: 19,
-    WrRendezvous: 20,
-    WrKeyedEvent: 21,
-    WrTerminated: 22,
-    WrProcessInSwap: 23,
-    WrCpuRateControl: 24,
-    WrCalloutStack: 25,
-    WrKernel: 26,
-    WrResource: 27,
-    WrPushLock: 28,
     WrMutex: 29,
-    WrQuantumEnd: 30,
-    WrDispatchInt: 31,
+    WrPageIn: 9,
+    WrPageOut: 19,
+    WrPoolAllocation: 10,
     WrPreempted: 32,
-    WrYieldExecution: 33,
-    WrFastMutex: 34,
-    WrGuardedMutex: 35,
+    WrProcessInSwap: 23,
+    WrPushLock: 28,
+    WrQuantumEnd: 30,
+    WrQueue: 15,
+    WrRendezvous: 20,
+    WrResource: 27,
     WrRundown: 36,
-    WrAlertByThreadId: 37,
-    WrDeferredPreempt: 38,
+    WrSuspended: 12,
+    WrTerminated: 22,
+    WrUserRequest: 13,      // User-mode I/O request (stdin!)
+    WrVirtualMemory: 18,
+    WrYieldExecution: 33,
 } as const;
 
 // SystemProcessInformation = 5
@@ -79,27 +79,27 @@ const SystemProcessInformation = 5;
 
 // Result type for stdin detection
 export interface StdinDetectionResult {
+    readonly detectedWaitReasons: number[];
+    readonly error?: string;
     readonly isWaitingForStdin: boolean;
     readonly threadCount: number;
     readonly waitingThreadCount: number;
-    readonly detectedWaitReasons: number[];
-    readonly error?: string;
 }
 
 // Parsed process entry from NtQuerySystemInformation
 interface ProcessEntry {
-    pid: number;
     parentPid: number;
+    pid: number;
     threadCount: number;
     threads: ReadonlyArray<{ threadState: number; waitReason: number }>;
 }
 
 // Process tree detection result
 export interface ProcessTreeResult {
-    readonly hasLiveChildren: boolean;
     readonly childPids: readonly number[];
     readonly commandPid: number | undefined;
     readonly error?: string;
+    readonly hasLiveChildren: boolean;
 }
 
 // Module state - using any to avoid import() type annotations which are forbidden by eslint
@@ -115,7 +115,7 @@ let NtQuerySystemInformation: ((
 ) => number) | null = null;
 
 let initialized = false;
-let initError: string | null = null;
+let initError: null | string = null;
 
 /**
  * Initialize the koffi FFI and load ntdll.dll
@@ -215,8 +215,8 @@ function parseProcessEntry(buffer: Uint8Array, offset: number): {
     }
     
     return {
+        entry: { parentPid, pid, threadCount: numberOfThreads, threads },
         nextEntryOffset,
-        entry: { pid, parentPid, threadCount: numberOfThreads, threads },
     };
 }
 
@@ -266,7 +266,7 @@ function snapshotProcessTable(): Map<number, ProcessEntry> | string {
     let offset = 0;
 
     while (offset < returnLength[0]) {
-        const { nextEntryOffset, entry } = parseProcessEntry(buffer, offset);
+        const { entry, nextEntryOffset } = parseProcessEntry(buffer, offset);
         table.set(entry.pid, entry);
 
         if (nextEntryOffset === 0) {
@@ -297,7 +297,7 @@ function checkThreadsForStdin(entry: ProcessEntry): { waitingCount: number; reas
         }
     }
     
-    return { waitingCount, reasons };
+    return { reasons, waitingCount };
 }
 
 /**
@@ -308,34 +308,34 @@ export async function isProcessWaitingForStdin(pid: number): Promise<StdinDetect
     await initializeKoffi();
     
     if (initError) {
-        return { isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0, detectedWaitReasons: [], error: initError };
+        return { detectedWaitReasons: [], error: initError, isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0 };
     }
     
     try {
         const table = snapshotProcessTable();
         if (typeof table === 'string') {
-            return { isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0, detectedWaitReasons: [], error: table };
+            return { detectedWaitReasons: [], error: table, isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0 };
         }
 
         const entry = table.get(pid);
         if (!entry) {
-            return { isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0, detectedWaitReasons: [], error: `Process ${pid} not found` };
+            return { detectedWaitReasons: [], error: `Process ${pid} not found`, isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0 };
         }
 
-        const { waitingCount, reasons } = checkThreadsForStdin(entry);
+        const { reasons, waitingCount } = checkThreadsForStdin(entry);
         return {
+            detectedWaitReasons: reasons,
             isWaitingForStdin: waitingCount > 0,
             threadCount: entry.threadCount,
             waitingThreadCount: waitingCount,
-            detectedWaitReasons: reasons,
         };
     } catch (err) {
         return {
+            detectedWaitReasons: [],
+            error: `Detection failed: ${err instanceof Error ? err.message : String(err)}`,
             isWaitingForStdin: false,
             threadCount: 0,
             waitingThreadCount: 0,
-            detectedWaitReasons: [],
-            error: `Detection failed: ${err instanceof Error ? err.message : String(err)}`,
         };
     }
 }
@@ -380,13 +380,13 @@ export async function getProcessTree(shellPid: number): Promise<ProcessTreeResul
     await initializeKoffi();
 
     if (initError) {
-        return { hasLiveChildren: false, childPids: [], commandPid: undefined, error: initError };
+        return { childPids: [], commandPid: undefined, error: initError, hasLiveChildren: false };
     }
 
     try {
         const table = snapshotProcessTable();
         if (typeof table === 'string') {
-            return { hasLiveChildren: false, childPids: [], commandPid: undefined, error: table };
+            return { childPids: [], commandPid: undefined, error: table, hasLiveChildren: false };
         }
 
         const childPids = collectDescendants(shellPid, table);
@@ -395,23 +395,23 @@ export async function getProcessTree(shellPid: number): Promise<ProcessTreeResul
         let commandPid: number | undefined;
         for (const pid of childPids) {
             const entry = table.get(pid);
-            if (entry && entry.parentPid === shellPid) {
+            if (entry?.parentPid === shellPid) {
                 commandPid = pid;
                 break;
             }
         }
 
         return {
-            hasLiveChildren: childPids.length > 0,
             childPids,
             commandPid,
+            hasLiveChildren: childPids.length > 0,
         };
     } catch (err) {
         return {
-            hasLiveChildren: false,
             childPids: [],
             commandPid: undefined,
             error: `Tree detection failed: ${err instanceof Error ? err.message : String(err)}`,
+            hasLiveChildren: false,
         };
     }
 }
@@ -425,20 +425,20 @@ export async function isTreeWaitingForStdin(shellPid: number): Promise<StdinDete
     await initializeKoffi();
 
     if (initError) {
-        return { isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0, detectedWaitReasons: [], error: initError };
+        return { detectedWaitReasons: [], error: initError, isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0 };
     }
 
     try {
         const table = snapshotProcessTable();
         if (typeof table === 'string') {
-            return { isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0, detectedWaitReasons: [], error: table };
+            return { detectedWaitReasons: [], error: table, isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0 };
         }
 
         const childPids = collectDescendants(shellPid, table);
 
         // No children → nothing to check
         if (childPids.length === 0) {
-            return { isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0, detectedWaitReasons: [] };
+            return { detectedWaitReasons: [], isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0 };
         }
 
         // Check all descendant processes for stdin waiting
@@ -448,25 +448,25 @@ export async function isTreeWaitingForStdin(shellPid: number): Promise<StdinDete
                 continue;
             }
 
-            const { waitingCount, reasons } = checkThreadsForStdin(entry);
+            const { reasons, waitingCount } = checkThreadsForStdin(entry);
             if (waitingCount > 0) {
                 return {
+                    detectedWaitReasons: reasons,
                     isWaitingForStdin: true,
                     threadCount: entry.threadCount,
                     waitingThreadCount: waitingCount,
-                    detectedWaitReasons: reasons,
                 };
             }
         }
 
-        return { isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0, detectedWaitReasons: [] };
+        return { detectedWaitReasons: [], isWaitingForStdin: false, threadCount: 0, waitingThreadCount: 0 };
     } catch (err) {
         return {
+            detectedWaitReasons: [],
+            error: `Tree stdin detection failed: ${err instanceof Error ? err.message : String(err)}`,
             isWaitingForStdin: false,
             threadCount: 0,
             waitingThreadCount: 0,
-            detectedWaitReasons: [],
-            error: `Tree stdin detection failed: ${err instanceof Error ? err.message : String(err)}`,
         };
     }
 }
@@ -476,29 +476,29 @@ export async function isTreeWaitingForStdin(shellPid: number): Promise<StdinDete
  */
 export function getWaitReasonName(reason: number): string {
     const names: Record<number, string> = {
+        [KWAIT_REASON.DelayExecution]: 'DelayExecution',
         [KWAIT_REASON.Executive]: 'Executive',
         [KWAIT_REASON.FreePage]: 'FreePage',
         [KWAIT_REASON.PageIn]: 'PageIn',
         [KWAIT_REASON.PoolAllocation]: 'PoolAllocation',
-        [KWAIT_REASON.DelayExecution]: 'DelayExecution',
         [KWAIT_REASON.Suspended]: 'Suspended',
         [KWAIT_REASON.UserRequest]: 'UserRequest',
+        [KWAIT_REASON.WrDelayExecution]: 'WrDelayExecution',
+        [KWAIT_REASON.WrEventPair]: 'WrEventPair',
         [KWAIT_REASON.WrExecutive]: 'WrExecutive',
         [KWAIT_REASON.WrFreePage]: 'WrFreePage',
-        [KWAIT_REASON.WrPageIn]: 'WrPageIn',
-        [KWAIT_REASON.WrPoolAllocation]: 'WrPoolAllocation',
-        [KWAIT_REASON.WrDelayExecution]: 'WrDelayExecution',
-        [KWAIT_REASON.WrSuspended]: 'WrSuspended',
-        [KWAIT_REASON.WrUserRequest]: 'WrUserRequest',
-        [KWAIT_REASON.WrEventPair]: 'WrEventPair',
-        [KWAIT_REASON.WrQueue]: 'WrQueue',
+        [KWAIT_REASON.WrKeyedEvent]: 'WrKeyedEvent',
         [KWAIT_REASON.WrLpcReceive]: 'WrLpcReceive',
         [KWAIT_REASON.WrLpcReply]: 'WrLpcReply',
-        [KWAIT_REASON.WrVirtualMemory]: 'WrVirtualMemory',
+        [KWAIT_REASON.WrPageIn]: 'WrPageIn',
         [KWAIT_REASON.WrPageOut]: 'WrPageOut',
+        [KWAIT_REASON.WrPoolAllocation]: 'WrPoolAllocation',
+        [KWAIT_REASON.WrQueue]: 'WrQueue',
         [KWAIT_REASON.WrRendezvous]: 'WrRendezvous',
-        [KWAIT_REASON.WrKeyedEvent]: 'WrKeyedEvent',
+        [KWAIT_REASON.WrSuspended]: 'WrSuspended',
         [KWAIT_REASON.WrTerminated]: 'WrTerminated',
+        [KWAIT_REASON.WrUserRequest]: 'WrUserRequest',
+        [KWAIT_REASON.WrVirtualMemory]: 'WrVirtualMemory',
     };
     return names[reason] ?? `Unknown(${reason})`;
 }
@@ -514,6 +514,6 @@ export async function isStdinDetectionAvailable(): Promise<boolean> {
 /**
  * Get initialization error if any
  */
-export function getInitError(): string | null {
+export function getInitError(): null | string {
     return initError;
 }

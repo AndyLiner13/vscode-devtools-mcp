@@ -1,6 +1,8 @@
+import type { FileSymbol, SymbolNode } from './types';
+
 // IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
 import * as jsoncParser from 'jsonc-parser';
-import type { SymbolNode, FileSymbol } from './types';
+
 import { parseMarkdown } from './markdown';
 
 // ── Custom Parser Dispatch ─────────────────────────────
@@ -103,15 +105,15 @@ function jsonNodeToSymbols(
 
       const kind = jsonNodeTypeLabel(valueNode);
       const symbol: SymbolNode = {
-        name: key,
         kind,
-        range: { start: startLine, end: endLine },
+        name: key,
+        range: { end: endLine, start: startLine },
       };
 
       if (kind === 'string' || kind === 'number' || kind === 'boolean' || kind === 'null') {
         const val = jsoncParser.getNodeValue(valueNode);
         const strVal = String(val);
-        symbol.detail = strVal.length > 60 ? strVal.slice(0, 57) + '...' : strVal;
+        symbol.detail = strVal.length > 60 ? `${strVal.slice(0, 57)  }...` : strVal;
       } else if (kind === 'array') {
         const itemCount = valueNode.children?.length ?? 0;
         symbol.detail = `${itemCount} items`;
@@ -136,9 +138,9 @@ function jsonNodeToSymbols(
       const kind = jsonNodeTypeLabel(item);
 
       const symbol: SymbolNode = {
-        name: `[${i}]`,
         kind,
-        range: { start: startLine, end: endLine },
+        name: `[${i}]`,
+        range: { end: endLine, start: startLine },
       };
 
       if (kind === 'string' || kind === 'number' || kind === 'boolean' || kind === 'null') {
@@ -179,19 +181,19 @@ function parseJsonlSymbols(text: string, maxDepth: number): SymbolNode[] {
     const tree = jsoncParser.parseTree(lineText);
     if (!tree) {
       result.push({
-        name: `[${i}]`,
-        kind: 'error',
         detail: 'parse error',
-        range: { start: i + 1, end: i + 1 },
+        kind: 'error',
+        name: `[${i}]`,
+        range: { end: i + 1, start: i + 1 },
       });
       continue;
     }
 
     const kind = jsonNodeTypeLabel(tree);
     const lineNode: SymbolNode = {
-      name: `[${i}]`,
       kind,
-      range: { start: i + 1, end: i + 1 },
+      name: `[${i}]`,
+      range: { end: i + 1, start: i + 1 },
     };
 
     if (kind === 'string' || kind === 'number' || kind === 'boolean' || kind === 'null') {
@@ -221,10 +223,10 @@ function convertFileSymbolsToNodes(symbols: FileSymbol[]): SymbolNode[] {
 
   return filtered.map(sym => {
     const node: SymbolNode = {
-      name: sym.name,
-      kind: sym.kind,
       detail: sym.detail,
-      range: { start: sym.range.startLine, end: sym.range.endLine },
+      kind: sym.kind,
+      name: sym.name,
+      range: { end: sym.range.endLine, start: sym.range.startLine },
     };
     if (sym.children.length > 0) {
       node.children = convertFileSymbolsToNodes(sym.children);

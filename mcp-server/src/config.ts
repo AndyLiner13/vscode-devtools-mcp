@@ -20,27 +20,30 @@ const __dirname = dirname(__filename);
  * extensionDevelopmentPath, user-data-dir, target folder).
  */
 export interface LaunchFlags {
-  /** Suppress the release-notes tab (--skip-release-notes). */
-  skipReleaseNotes: boolean;
-  /** Suppress the welcome tab (--skip-welcome). */
-  skipWelcome: boolean;
   /** Disable GPU hardware acceleration (--disable-gpu). */
   disableGpu: boolean;
   /** Disable workspace-trust dialog (--disable-workspace-trust). */
   disableWorkspaceTrust: boolean;
-  /** Enable verbose logging (--verbose). */
-  verbose: boolean;
   /** Arbitrary extra CLI flags forwarded verbatim. */
   extraArgs: string[];
+  /** Suppress the release-notes tab (--skip-release-notes). */
+  skipReleaseNotes: boolean;
+  /** Suppress the welcome tab (--skip-welcome). */
+  skipWelcome: boolean;
+  /** Enable verbose logging (--verbose). */
+  verbose: boolean;
 }
 
-export const DEFAULT_LAUNCH_FLAGS: LaunchFlags = {
-  skipReleaseNotes: true,
-  skipWelcome: true,
+export const /**
+ *
+ */
+DEFAULT_LAUNCH_FLAGS: LaunchFlags = {
   disableGpu: false,
   disableWorkspaceTrust: false,
-  verbose: false,
   extraArgs: [],
+  skipReleaseNotes: true,
+  skipWelcome: true,
+  verbose: false,
 };
 
 /**
@@ -66,17 +69,17 @@ const DEFAULT_HOT_RELOAD_CONFIG: HotReloadConfig = {
  * Resolved configuration with all paths made absolute
  */
 export interface ResolvedConfig {
-  /** The host workspace where VS Code is running */
-  hostWorkspace: string;
   /** The client workspace that the MCP server controls */
   clientWorkspace: string;
-  /** Path to the extension folder, or empty string when no extension is configured */
-  extensionBridgePath: string;
   /** True when extensionPath was explicitly set in host config */
   explicitExtensionDevelopmentPath: boolean;
-  launch: LaunchFlags;
+  /** Path to the extension folder, or empty string when no extension is configured */
+  extensionBridgePath: string;
+  /** The host workspace where VS Code is running */
+  hostWorkspace: string;
   /** Resolved hot-reload configuration with defaults applied */
   hotReload: HotReloadConfig;
+  launch: LaunchFlags;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -205,12 +208,12 @@ export function loadConfig(): ResolvedConfig {
     const hostRoot = getHostWorkspace();
     _resolvedClientWorkspace = hostRoot;
     return {
-      hostWorkspace: hostRoot,
       clientWorkspace: hostRoot,
-      extensionBridgePath: '',
       explicitExtensionDevelopmentPath: false,
-      launch: {...DEFAULT_LAUNCH_FLAGS},
+      extensionBridgePath: '',
+      hostWorkspace: hostRoot,
       hotReload: {...DEFAULT_HOT_RELOAD_CONFIG},
+      launch: {...DEFAULT_LAUNCH_FLAGS},
     };
   }
 
@@ -222,12 +225,12 @@ export function loadConfig(): ResolvedConfig {
       logger('DEVTOOLS_CONFIG is not a valid JSON object — using defaults');
       _resolvedClientWorkspace = hostRoot;
       return {
-        hostWorkspace: hostRoot,
         clientWorkspace: hostRoot,
-        extensionBridgePath: '',
         explicitExtensionDevelopmentPath: false,
-        launch: {...DEFAULT_LAUNCH_FLAGS},
+        extensionBridgePath: '',
+        hostWorkspace: hostRoot,
         hotReload: {...DEFAULT_HOT_RELOAD_CONFIG},
+        launch: {...DEFAULT_LAUNCH_FLAGS},
       };
     }
 
@@ -252,23 +255,23 @@ export function loadConfig(): ResolvedConfig {
     logger('Loaded config from DEVTOOLS_CONFIG environment variable');
 
     return {
-      hostWorkspace: hostRoot,
       clientWorkspace,
-      extensionBridgePath: extensionPath,
       explicitExtensionDevelopmentPath,
-      launch: resolveLaunchFlags(launchPartial),
+      extensionBridgePath: extensionPath,
+      hostWorkspace: hostRoot,
       hotReload: resolveHotReloadConfig(hotReloadPartial),
+      launch: resolveLaunchFlags(launchPartial),
     };
   } catch (error) {
     logger(`Failed to parse DEVTOOLS_CONFIG: ${error} — using defaults`);
     _resolvedClientWorkspace = hostRoot;
     return {
-      hostWorkspace: hostRoot,
       clientWorkspace: hostRoot,
-      extensionBridgePath: '',
       explicitExtensionDevelopmentPath: false,
-      launch: {...DEFAULT_LAUNCH_FLAGS},
+      extensionBridgePath: '',
+      hostWorkspace: hostRoot,
       hotReload: {...DEFAULT_HOT_RELOAD_CONFIG},
+      launch: {...DEFAULT_LAUNCH_FLAGS},
     };
   }
 }

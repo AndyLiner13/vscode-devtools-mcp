@@ -6,10 +6,10 @@ const MCP_ENDPOINT = 'http://localhost:6274/mcp';
 const PROTOCOL_VERSION = '2025-03-26';
 
 interface JsonRpcResponse {
-  jsonrpc: '2.0';
-  id?: string | number;
-  result?: Record<string, unknown>;
   error?: { code: number; message: string; data?: unknown };
+  id?: number | string;
+  jsonrpc: '2.0';
+  result?: Record<string, unknown>;
 }
 
 /**
@@ -17,12 +17,12 @@ interface JsonRpcResponse {
  * Connects directly to the MCP server's HTTP endpoint — no proxy needed.
  */
 export class McpInspectorClient {
-  private sessionId: string | null = null;
+  private sessionId: null | string = null;
   private requestId = 0;
-  private onStateChange: StateChangeHandler;
+  private readonly onStateChange: StateChangeHandler;
 
-  serverInfo: ServerInfo | null = null;
-  capabilities: ServerCapabilities | null = null;
+  serverInfo: null | ServerInfo = null;
+  capabilities: null | ServerCapabilities = null;
   tools: ToolDefinition[] = [];
 
   constructor(onStateChange: StateChangeHandler) {
@@ -44,12 +44,12 @@ export class McpInspectorClient {
 
       try {
         const initResult = await this.sendRequest('initialize', {
-          protocolVersion: PROTOCOL_VERSION,
           capabilities: {},
           clientInfo: {
             name: 'devtools-inspector',
             version: '1.0.0',
           },
+          protocolVersion: PROTOCOL_VERSION,
         });
 
         this.serverInfo = (initResult.serverInfo as ServerInfo) ?? null;
@@ -78,7 +78,7 @@ export class McpInspectorClient {
     }
   }
 
-  private delay(ms: number): Promise<void> {
+  private async delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
@@ -89,7 +89,7 @@ export class McpInspectorClient {
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<CallToolResult> {
-    const result = await this.sendRequest('tools/call', { name, arguments: args });
+    const result = await this.sendRequest('tools/call', { arguments: args, name });
     return result as unknown as CallToolResult;
   }
 
@@ -97,8 +97,8 @@ export class McpInspectorClient {
     if (this.sessionId) {
       try {
         await fetch(MCP_ENDPOINT, {
-          method: 'DELETE',
           headers: { 'mcp-session-id': this.sessionId },
+          method: 'DELETE',
         });
       } catch {
         // Best effort — server may already be gone
@@ -114,18 +114,18 @@ export class McpInspectorClient {
 
   private async sendRequest(method: string, params: Record<string, unknown>): Promise<Record<string, unknown>> {
     const id = ++this.requestId;
-    const body = JSON.stringify({ jsonrpc: '2.0', id, method, params });
+    const body = JSON.stringify({ id, jsonrpc: '2.0', method, params });
 
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
       'Accept': 'application/json, text/event-stream',
+      'Content-Type': 'application/json',
     };
 
     if (this.sessionId) {
       headers['mcp-session-id'] = this.sessionId;
     }
 
-    const response = await fetch(MCP_ENDPOINT, { method: 'POST', headers, body });
+    const response = await fetch(MCP_ENDPOINT, { body, headers, method: 'POST' });
 
     const responseSessionId = response.headers.get('mcp-session-id');
     if (responseSessionId) {
@@ -160,15 +160,15 @@ export class McpInspectorClient {
     });
 
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
       'Accept': 'application/json, text/event-stream',
+      'Content-Type': 'application/json',
     };
 
     if (this.sessionId) {
       headers['mcp-session-id'] = this.sessionId;
     }
 
-    await fetch(MCP_ENDPOINT, { method: 'POST', headers, body });
+    await fetch(MCP_ENDPOINT, { body, headers, method: 'POST' });
   }
 
   private async parseSSEResponse(response: Response): Promise<Record<string, unknown>> {

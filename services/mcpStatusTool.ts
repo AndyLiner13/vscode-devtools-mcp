@@ -10,6 +10,7 @@
  */
 
 import type * as vscode from 'vscode';
+
 import { waitForMcpReady } from './host-handlers';
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -45,7 +46,7 @@ export class McpStatusTool implements vscode.LanguageModelTool<IMcpStatusParams>
   async prepareInvocation(
     _options: vscode.LanguageModelToolInvocationPrepareOptions<IMcpStatusParams>,
     _token: vscode.CancellationToken,
-  ): Promise<vscode.PreparedToolInvocation | undefined> {
+  ): Promise<undefined | vscode.PreparedToolInvocation> {
     return {
       invocationMessage: 'Waiting for MCP server to be ready…',
     };
@@ -61,11 +62,11 @@ export class McpStatusTool implements vscode.LanguageModelTool<IMcpStatusParams>
     const ready = await Promise.race([
       waitForMcpReady(timeoutMs),
       new Promise<boolean>((_, reject) => {
-        token.onCancellationRequested(() => reject(new Error('mcpStatus cancelled')));
+        token.onCancellationRequested(() => { reject(new Error('mcpStatus cancelled')); });
       }),
     ]);
 
-    const { LanguageModelToolResult, LanguageModelTextPart } = await import('vscode');
+    const { LanguageModelTextPart, LanguageModelToolResult } = await import('vscode');
 
     if (ready) {
       return new LanguageModelToolResult([

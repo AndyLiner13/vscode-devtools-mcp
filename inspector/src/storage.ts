@@ -31,18 +31,18 @@ async function apiGet<T>(url: string): Promise<T> {
 
 async function apiPost<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
   });
   return res.json() as Promise<T>;
 }
 
 async function apiPatch(url: string, body: unknown): Promise<void> {
   await fetch(url, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' },
+    method: 'PATCH',
   });
 }
 
@@ -70,11 +70,11 @@ export async function addRecord(
   durationMs: number,
 ): Promise<ExecutionRecord> {
   return apiPost<ExecutionRecord>('/api/records', {
-    toolName,
-    input,
-    output,
-    isError,
     durationMs,
+    input,
+    isError,
+    output,
+    toolName,
   });
 }
 
@@ -84,8 +84,8 @@ export async function updateRating(
   rating: RecordRating,
 ): Promise<void> {
   await apiPatch(`/api/records/${encodeURIComponent(recordId)}/rating`, {
-    toolName,
     rating,
+    toolName,
   });
 }
 
@@ -95,8 +95,8 @@ export async function updateComment(
   comment: string,
 ): Promise<void> {
   await apiPatch(`/api/records/${encodeURIComponent(recordId)}/comment`, {
-    toolName,
     comment,
+    toolName,
   });
 }
 
@@ -108,10 +108,10 @@ export async function updateRecordOutput(
   durationMs: number,
 ): Promise<void> {
   await apiPatch(`/api/records/${encodeURIComponent(recordId)}/output`, {
-    toolName,
-    output,
-    isError,
     durationMs,
+    isError,
+    output,
+    toolName,
   });
 }
 
@@ -128,5 +128,5 @@ export async function reorderRecords(
   toolName: string,
   orderedIds: string[],
 ): Promise<void> {
-  await apiPost('/api/records/reorder', { toolName, orderedIds });
+  await apiPost('/api/records/reorder', { orderedIds, toolName });
 }

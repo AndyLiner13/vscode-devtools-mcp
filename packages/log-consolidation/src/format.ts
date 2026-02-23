@@ -26,8 +26,8 @@ import type { ConsolidationResult } from './types.js';
  *   **Drill-down:** Use `templateId`, `severity`, `minDuration`, etc.
  */
 export function formatOverview(result: ConsolidationResult, label: string): string {
-  const { stats, raw } = result;
-  const templates = raw.templates;
+  const { raw, stats } = result;
+  const {templates} = raw;
 
   if (templates.length === 0) {
     return result.formatted;
@@ -98,9 +98,9 @@ export function formatOverview(result: ConsolidationResult, label: string): stri
   for (const t of sorted) {
     // Truncate very long patterns for the table
     const pattern = t.pattern.length > 120
-      ? t.pattern.slice(0, 117) + '...'
+      ? `${t.pattern.slice(0, 117)  }...`
       : t.pattern;
-    const escaped = pattern.replace(/\|/g, '\\|');
+    const escaped = pattern.replaceAll('|', '\\|');
     lines.push(`| ${t.id} | ${escaped} | ${formatNumber(t.occurrences)} | ${t.severity} |`);
   }
 

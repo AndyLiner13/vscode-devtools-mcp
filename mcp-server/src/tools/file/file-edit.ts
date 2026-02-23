@@ -5,10 +5,10 @@
  */
 
 import path from 'node:path';
+import {z as zod} from 'zod';
 
 import {fileExtractStructure, fileReadContent} from '../../client-pipe.js';
 import {getClientWorkspace} from '../../config.js';
-import {z as zod} from 'zod';
 import {ToolCategory} from '../categories.js';
 import {defineTool} from '../ToolDefinition.js';
 import {executeEditWithSafetyLayer} from './safety-layer.js';
@@ -19,8 +19,19 @@ function resolveFilePath(file: string): string {
   return path.resolve(getClientWorkspace(), file);
 }
 
-export const edit = defineTool({
-  name: 'file_edit',
+export const /**
+ *
+ */
+edit = defineTool({
+  annotations: {
+    category: ToolCategory.CODEBASE_ANALYSIS,
+    conditions: ['client-pipe'],
+    destructiveHint: true,
+    idempotentHint: false,
+    openWorldHint: false,
+    readOnlyHint: false,
+    title: 'File Edit',
+  },
   description:
     'Direct model-to-code editing with an intelligent safety layer.\n\n' +
     'The model you selected writes the code, this tool applies it directly — ' +
@@ -41,38 +52,11 @@ export const edit = defineTool({
     '- Edit a section: `{ file: "README.md", target: "Installation", code: "..." }`\n' +
     '- Edit by lines: `{ file: "src/config.ts", startLine: 10, endLine: 25, code: "..." }`\n' +
     '- Replace full file: `{ file: "src/types.ts", code: "..." }`',
-  timeoutMs: 30_000,
-  annotations: {
-    title: 'File Edit',
-    category: ToolCategory.CODEBASE_ANALYSIS,
-    readOnlyHint: false,
-    destructiveHint: true,
-    idempotentHint: false,
-    openWorldHint: false,
-    conditions: ['client-pipe'],
-  },
-  schema: {
-    file: zod.string().describe('Path to file (relative to workspace root or absolute).'),
-    code: zod.string().describe(
-      'The complete new content for the targeted region. ' +
-      'When targeting a symbol, this replaces the entire symbol body.',
-    ),
-    target: zod.string().optional().describe(
-      'Symbol name to scope the edit: "UserService.findById". ' +
-      'Supported for TS/JS, Markdown (.md, .markdown), and JSON (.json, .jsonc, .json5, .jsonl) files.',
-    ),
-    startLine: zod.number().int().optional().describe(
-      'Fallback: start line (1-indexed). Used when target is not specified.',
-    ),
-    endLine: zod.number().int().optional().describe(
-      'Fallback: end line (1-indexed). Used when target is not specified.',
-    ),
-  },
   handler: async (request, response) => {
     const {params} = request;
     const filePath = resolveFilePath(params.file);
-    const code = params.code;
-    const relativePath = path.relative(getClientWorkspace(), filePath).replace(/\\/g, '/');
+    const {code} = params;
+    const relativePath = path.relative(getClientWorkspace(), filePath).replaceAll('\\', '/');
 
     // ── Input validation ──────────────────────────────────────────
 
@@ -97,7 +81,7 @@ export const edit = defineTool({
     if (params.startLine !== undefined || params.endLine !== undefined) {
       try {
         const contentResult = await fileReadContent(filePath);
-        const totalLines = contentResult.totalLines;
+        const {totalLines} = contentResult;
 
         if (params.startLine !== undefined && (params.startLine < 1 || params.startLine > totalLines)) {
           response.appendResponseLine(
@@ -250,4 +234,23 @@ export const edit = defineTool({
       response.appendResponseLine(`❌ ${result.summary}`);
     }
   },
+  name: 'file_edit',
+  schema: {
+    code: zod.string().describe(
+      'The complete new content for the targeted region. ' +
+      'When targeting a symbol, this replaces the entire symbol body.',
+    ),
+    endLine: zod.number().int().optional().describe(
+      'Fallback: end line (1-indexed). Used when target is not specified.',
+    ),
+    file: zod.string().describe('Path to file (relative to workspace root or absolute).'),
+    startLine: zod.number().int().optional().describe(
+      'Fallback: start line (1-indexed). Used when target is not specified.',
+    ),
+    target: zod.string().optional().describe(
+      'Symbol name to scope the edit: "UserService.findById". ' +
+      'Supported for TS/JS, Markdown (.md, .markdown), and JSON (.json, .jsonc, .json5, .jsonl) files.',
+    ),
+  },
+  timeoutMs: 30_000,
 });

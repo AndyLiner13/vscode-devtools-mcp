@@ -21,8 +21,9 @@
  * same batch skip the check. A batch ends when the queue drains to empty.
  */
 
-import {logger} from '../logger.js';
 import type {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
+
+import {logger} from '../logger.js';
 
 // ── Deterministic Messages ───────────────────────────────
 
@@ -64,22 +65,22 @@ const EXT_REBUILT_BANNER =
  * The extension is the single authority for all change detection.
  */
 export interface ChangeCheckResult {
+  extBuildError: null | string;
+  extChanged: boolean;
+  extClientReloaded: boolean;
+  extRebuilt: boolean;
+  mcpBuildError: null | string;
   mcpChanged: boolean;
   mcpRebuilt: boolean;
-  mcpBuildError: string | null;
-  extChanged: boolean;
-  extRebuilt: boolean;
-  extBuildError: string | null;
-  extClientReloaded: boolean;
   newCdpPort?: number;
   newClientStartedAt?: number;
 }
 
 interface PipelineEntry {
-  toolName: string;
   execute: () => Promise<CallToolResult>;
-  resolve: (result: CallToolResult) => void;
   reject: (error: Error) => void;
+  resolve: (result: CallToolResult) => void;
+  toolName: string;
 }
 
 /**
@@ -89,29 +90,29 @@ interface PipelineEntry {
 export interface PipelineDeps {
   /** Call the extension's checkForChanges RPC. */
   checkForChanges: (mcpServerRoot: string, extensionPath: string) => Promise<ChangeCheckResult>;
-  /** Signal the extension that the MCP server is ready to be killed. */
-  readyToRestart: () => Promise<void>;
+  /** Extension root (absolute path), or empty string if no extension configured. */
+  extensionPath: string;
+  /** Master switch — when false, all hot-reload checks are skipped. */
+  hotReloadEnabled: boolean;
+  /** MCP server package root (absolute path). */
+  mcpServerRoot: string;
+  /** Restore CDP disconnect handling + reconnect CDP if extension reloaded Client. */
+  onAfterChangeCheck?: (result: ChangeCheckResult) => Promise<void>;
+  /** Suppress CDP disconnect handling before checkForChanges (extension may kill Client). */
+  onBeforeChangeCheck?: () => void;
   /**
    * Close the inspector HTTP server and any other transport-level resources.
    * Called during graceful shutdown before process.exit().
    */
   onShutdown: () => Promise<void>;
-  /** MCP server package root (absolute path). */
-  mcpServerRoot: string;
-  /** Extension root (absolute path), or empty string if no extension configured. */
-  extensionPath: string;
-  /** Master switch — when false, all hot-reload checks are skipped. */
-  hotReloadEnabled: boolean;
-  /** Suppress CDP disconnect handling before checkForChanges (extension may kill Client). */
-  onBeforeChangeCheck?: () => void;
-  /** Restore CDP disconnect handling + reconnect CDP if extension reloaded Client. */
-  onAfterChangeCheck?: (result: ChangeCheckResult) => Promise<void>;
+  /** Signal the extension that the MCP server is ready to be killed. */
+  readyToRestart: () => Promise<void>;
 }
 
 // ── RequestPipeline ──────────────────────────────────────
 
 export class RequestPipeline {
-  private queue: PipelineEntry[] = [];
+  private readonly queue: PipelineEntry[] = [];
   private processing = false;
   private restartScheduled = false;
   private batchChecked = false;
@@ -131,15 +132,15 @@ export class RequestPipeline {
    * The execute() function is called AFTER queue wait and hot-reload
    * checking, so tool timeouts should be applied inside execute().
    */
-  submit(toolName: string, execute: () => Promise<CallToolResult>): Promise<CallToolResult> {
+  async submit(toolName: string, execute: () => Promise<CallToolResult>): Promise<CallToolResult> {
     if (this.restartScheduled) {
       return Promise.resolve({
-        content: [{type: 'text', text: RESTARTING_QUEUED_MESSAGE}],
+        content: [{text: RESTARTING_QUEUED_MESSAGE, type: 'text'}],
       });
     }
 
     return new Promise<CallToolResult>((resolve, reject) => {
-      this.queue.push({toolName, execute, resolve, reject});
+      this.queue.push({execute, reject, resolve, toolName});
 
       if (!this.processing) {
         void this.processLoop();
@@ -183,7 +184,7 @@ export class RequestPipeline {
         const result = await entry.execute();
 
         if (extRebuiltThisTool) {
-          result.content.unshift({type: 'text', text: EXT_REBUILT_BANNER});
+          result.content.unshift({text: EXT_REBUILT_BANNER, type: 'text'});
         }
 
         entry.resolve(result);
@@ -192,7 +193,7 @@ export class RequestPipeline {
         const message = err instanceof Error ? err.message : String(err);
         logger(`[pipeline] Unexpected error for ${entry.toolName}: ${message}`);
         entry.resolve({
-          content: [{type: 'text', text: message}],
+          content: [{text: message, type: 'text'}],
           isError: true,
         });
       }
@@ -225,13 +226,13 @@ export class RequestPipeline {
       const message = err instanceof Error ? err.message : String(err);
       logger(`[pipeline] checkForChanges RPC failed: ${message} — proceeding without hot-reload check`);
       check = {
+        extBuildError: null,
+        extChanged: false,
+        extClientReloaded: false,
+        extRebuilt: false,
+        mcpBuildError: null,
         mcpChanged: false,
         mcpRebuilt: false,
-        mcpBuildError: null,
-        extChanged: false,
-        extRebuilt: false,
-        extBuildError: null,
-        extClientReloaded: false,
       };
     }
 
@@ -246,7 +247,7 @@ export class RequestPipeline {
     // Extension build failure → return error, skip tool execution
     if (check.extBuildError) {
       entry.resolve({
-        content: [{type: 'text', text: formatBuildFailure('Extension', check.extBuildError)}],
+        content: [{text: formatBuildFailure('Extension', check.extBuildError), type: 'text'}],
         isError: true,
       });
       return null;
@@ -255,7 +256,7 @@ export class RequestPipeline {
     // MCP build failure → return error, skip tool execution (no restart)
     if (check.mcpBuildError) {
       entry.resolve({
-        content: [{type: 'text', text: formatBuildFailure('MCP server', check.mcpBuildError)}],
+        content: [{text: formatBuildFailure('MCP server', check.mcpBuildError), type: 'text'}],
         isError: true,
       });
       return null;
@@ -264,7 +265,7 @@ export class RequestPipeline {
     // MCP rebuilt → signal restart, return restart message
     if (check.mcpRebuilt) {
       entry.resolve({
-        content: [{type: 'text', text: RESTART_MESSAGE}],
+        content: [{text: RESTART_MESSAGE, type: 'text'}],
       });
       this.signalRestart('MCP server source changed and rebuilt');
       return null;
@@ -318,7 +319,7 @@ export class RequestPipeline {
       const entry = this.queue.shift();
       if (!entry) break;
       entry.resolve({
-        content: [{type: 'text', text: RESTARTING_QUEUED_MESSAGE}],
+        content: [{text: RESTARTING_QUEUED_MESSAGE, type: 'text'}],
       });
     }
   }

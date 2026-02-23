@@ -4,20 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import {z as zod} from 'zod';
+
 import {
+  type CircularChain,
   codebaseFindDeadCode,
   codebaseFindDuplicates,
   codebaseGetDiagnostics,
   codebaseGetImportGraph,
   type DeadCodeResult,
-  type DuplicateDetectionResult,
-  type DiagnosticsResult,
   type DiagnosticItem,
+  type DiagnosticsResult,
+  type DuplicateDetectionResult,
   type ImportGraphResult,
-  type CircularChain,
 } from '../../client-pipe.js';
 import {getClientWorkspace} from '../../config.js';
-import {z as zod} from 'zod';
 import {ToolCategory} from '../categories.js';
 import {
   defineTool,
@@ -33,8 +34,19 @@ const TIMEOUT_BROAD_SCOPE_MS = 30_000;
 
 // ── Tool Definition ──────────────────────────────────────
 
-export const lint = defineTool({
-  name: 'codebase_lint',
+export const /**
+ *
+ */
+lint = defineTool({
+  annotations: {
+    category: ToolCategory.CODEBASE_ANALYSIS,
+    conditions: ['client-pipe', 'codebase-sequential'],
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+    readOnlyHint: true,
+    title: 'Codebase Lint',
+  },
   description: 'Find dead code, unused exports, and code quality issues.\n\n' +
     'Runs automated checks on TypeScript/JavaScript files. Use the `checks` parameter\n' +
     'to control which analyses to run.\n\n' +
@@ -61,91 +73,9 @@ export const lint = defineTool({
     '- Include test files: `{ excludeTests: false }`\n' +
     '- Check for errors: `{ checks: [\'errors\'] }`\n' +
     '- Check for circular deps: `{ checks: [\'circular-deps\'] }`',
-  annotations: {
-    title: 'Codebase Lint',
-    category: ToolCategory.CODEBASE_ANALYSIS,
-    readOnlyHint: true,
-    destructiveHint: false,
-    idempotentHint: true,
-    openWorldHint: false,
-    conditions: ['client-pipe', 'codebase-sequential'],
-  },
-  schema: {
-    checks: zod
-      .array(
-        zod.enum(['all', 'dead-code', 'duplicates', 'errors', 'warnings', 'circular-deps']),
-      )
-      .optional()
-      .default(['all'])
-      .describe(
-        "Which lint checks to run. Default: ['all']. " +
-          "Available: 'dead-code', 'duplicates', 'errors', 'warnings', 'circular-deps'.",
-      ),
-    exportedOnly: zod
-      .boolean()
-      .optional()
-      .default(true)
-      .describe(
-        'Only check exported symbols. Default: true. ' +
-          'Set to false to also find unreachable functions, dead variables, unused types, etc.',
-      ),
-    excludeTests: zod
-      .boolean()
-      .optional()
-      .default(true)
-      .describe(
-        'Skip test files (*.test.*, *.spec.*, __tests__/*). Default: true.',
-      ),
-    kinds: zod
-      .array(
-        zod.enum([
-          'function',
-          'class',
-          'interface',
-          'type',
-          'variable',
-          'constant',
-          'enum',
-        ]),
-      )
-      .optional()
-      .describe('Symbol kinds to check.'),
-    limit: zod
-      .number()
-      .int()
-      .min(1)
-      .max(500)
-      .optional()
-      .default(100)
-      .describe('Max results to return. Default: 100.'),
-    duplicateThreshold: zod
-      .number()
-      .min(0.5)
-      .max(1.0)
-      .optional()
-      .default(0.75)
-      .describe(
-        'Minimum similarity score for duplicate detection. ' +
-          '1.0 = exact structural match only. Default: 0.75.',
-      ),
-    includePatterns: zod
-      .array(zod.string())
-      .optional()
-      .describe(
-        'Glob patterns to restrict analysis to matching files only. ' +
-          'excludePatterns further narrow within the included set.',
-      ),
-    excludePatterns: zod
-      .array(zod.string())
-      .optional()
-      .describe(
-        'Glob patterns to exclude files from analysis. ' +
-          'Applied in addition to .devtoolsignore rules.',
-      ),
-  },
   handler: async (request, response) => {
     const {params} = request;
-    const checks = params.checks;
+    const {checks} = params;
     const runAll = checks.includes('all');
     const runDeadCode = runAll || checks.includes('dead-code');
     const runDuplicates = runAll || checks.includes('duplicates');
@@ -238,24 +168,98 @@ export const lint = defineTool({
     }
     response.appendResponseLine(JSON.stringify(jsonResult, null, 2));
   },
+  name: 'codebase_lint',
+  schema: {
+    checks: zod
+      .array(
+        zod.enum(['all', 'dead-code', 'duplicates', 'errors', 'warnings', 'circular-deps']),
+      )
+      .optional()
+      .default(['all'])
+      .describe(
+        "Which lint checks to run. Default: ['all']. " +
+          "Available: 'dead-code', 'duplicates', 'errors', 'warnings', 'circular-deps'.",
+      ),
+    duplicateThreshold: zod
+      .number()
+      .min(0.5)
+      .max(1.0)
+      .optional()
+      .default(0.75)
+      .describe(
+        'Minimum similarity score for duplicate detection. ' +
+          '1.0 = exact structural match only. Default: 0.75.',
+      ),
+    excludePatterns: zod
+      .array(zod.string())
+      .optional()
+      .describe(
+        'Glob patterns to exclude files from analysis. ' +
+          'Applied in addition to .devtoolsignore rules.',
+      ),
+    excludeTests: zod
+      .boolean()
+      .optional()
+      .default(true)
+      .describe(
+        'Skip test files (*.test.*, *.spec.*, __tests__/*). Default: true.',
+      ),
+    exportedOnly: zod
+      .boolean()
+      .optional()
+      .default(true)
+      .describe(
+        'Only check exported symbols. Default: true. ' +
+          'Set to false to also find unreachable functions, dead variables, unused types, etc.',
+      ),
+    includePatterns: zod
+      .array(zod.string())
+      .optional()
+      .describe(
+        'Glob patterns to restrict analysis to matching files only. ' +
+          'excludePatterns further narrow within the included set.',
+      ),
+    kinds: zod
+      .array(
+        zod.enum([
+          'function',
+          'class',
+          'interface',
+          'type',
+          'variable',
+          'constant',
+          'enum',
+        ]),
+      )
+      .optional()
+      .describe('Symbol kinds to check.'),
+    limit: zod
+      .number()
+      .int()
+      .min(1)
+      .max(500)
+      .optional()
+      .default(100)
+      .describe('Max results to return. Default: 100.'),
+  },
 });
 
 // ── Types ────────────────────────────────────────────────
 
 interface LintSection {
   check: string;
-  deadCodeResult?: DeadCodeResult;
-  duplicatesResult?: DuplicateDetectionResult;
-  diagnosticsResult?: DiagnosticsResult;
   circularDepsResult?: ImportGraphResult;
+  deadCodeResult?: DeadCodeResult;
+  diagnosticsResult?: DiagnosticsResult;
+  duplicatesResult?: DuplicateDetectionResult;
 }
 
 interface LintJsonResult {
   checks: string[];
-  diagnostics?: DiagnosticItem[];
-  deadCode?: DeadCodeResult;
-  duplicates?: DuplicateDetectionResult;
   circularDeps?: CircularChain[];
+  deadCode?: DeadCodeResult;
+  diagnostics?: DiagnosticItem[];
+  duplicates?: DuplicateDetectionResult;
   summary: {
     totalIssues: number;
     totalErrors?: number;
@@ -309,18 +313,18 @@ function buildJsonResult(sections: LintSection[]): LintJsonResult {
 
   return {
     checks: checksRun,
-    diagnostics: diagnosticItems,
-    deadCode,
-    duplicates,
     circularDeps,
+    deadCode,
+    diagnostics: diagnosticItems,
+    duplicates,
     summary: {
-      totalIssues,
-      totalErrors: diagnosticItems ? totalErrors : undefined,
-      totalWarnings: diagnosticItems ? totalWarnings : undefined,
+      checksRun,
+      totalCircularDeps: circularDeps ? totalCircularDeps : undefined,
       totalDeadCode: deadCode ? totalDeadCode : undefined,
       totalDuplicateGroups: duplicates ? totalDuplicateGroups : undefined,
-      totalCircularDeps: circularDeps ? totalCircularDeps : undefined,
-      checksRun,
+      totalErrors: diagnosticItems ? totalErrors : undefined,
+      totalIssues,
+      totalWarnings: diagnosticItems ? totalWarnings : undefined,
     },
   };
 }

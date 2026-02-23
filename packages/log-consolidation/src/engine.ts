@@ -26,11 +26,11 @@ import { vsCodeStrategy } from './strategy.js';
 
 function buildLogpareOptions(format: LogFormat, maxTemplates: number): CompressOptions {
   return {
-    format: format === 'json' ? 'json' : format,
-    maxTemplates,
     drain: {
       preprocessing: vsCodeStrategy,
     },
+    format: format === 'json' ? 'json' : format,
+    maxTemplates,
   };
 }
 
@@ -44,40 +44,40 @@ function wrapResult(
 
   return {
     formatted: result.formatted,
-    stats: {
-      inputLines: result.stats.inputLines,
-      uniqueTemplates: result.stats.uniqueTemplates,
-      compressionRatio: result.stats.compressionRatio,
-      estimatedTokenReduction: result.stats.estimatedTokenReduction,
-      processingTimeMs: result.stats.processingTimeMs,
-    },
     hasCompression,
     raw: result,
+    stats: {
+      compressionRatio: result.stats.compressionRatio,
+      estimatedTokenReduction: result.stats.estimatedTokenReduction,
+      inputLines: result.stats.inputLines,
+      processingTimeMs: result.stats.processingTimeMs,
+      uniqueTemplates: result.stats.uniqueTemplates,
+    },
   };
 }
 
 function noCompression(text: string, lineCount: number): ConsolidationResult {
   const emptyResult: LogpareResult = {
-    templates: [],
+    formatted: text,
     stats: {
-      inputLines: lineCount,
-      uniqueTemplates: lineCount,
       compressionRatio: 0,
       estimatedTokenReduction: 0,
+      inputLines: lineCount,
+      uniqueTemplates: lineCount,
     },
-    formatted: text,
+    templates: [],
   };
 
   return {
     formatted: text,
-    stats: {
-      inputLines: lineCount,
-      uniqueTemplates: lineCount,
-      compressionRatio: 0,
-      estimatedTokenReduction: 0,
-    },
     hasCompression: false,
     raw: emptyResult,
+    stats: {
+      compressionRatio: 0,
+      estimatedTokenReduction: 0,
+      inputLines: lineCount,
+      uniqueTemplates: lineCount,
+    },
   };
 }
 
@@ -184,7 +184,7 @@ export function compressLogs(request: CompressionRequest, filters?: FilterOption
     if (raw.length <= charLimit) {
       return noCompression(raw, totalInputLines);
     }
-    const truncated = raw.slice(0, charLimit) + `\n\n... (truncated — ${totalInputLines} total lines)`;
+    const truncated = `${raw.slice(0, charLimit)  }\n\n... (truncated — ${totalInputLines} total lines)`;
     return noCompression(truncated, totalInputLines);
   }
 
@@ -202,8 +202,8 @@ export function compressLogs(request: CompressionRequest, filters?: FilterOption
       if (recompressed.hasCompression && recompressed.formatted.length <= charLimit) {
         return recompressed;
       }
-      const truncated = filterResult.formatted.slice(0, charLimit)
-        + `\n\n... (truncated drill-down — use more specific filters)`;
+      const truncated = `${filterResult.formatted.slice(0, charLimit)
+         }\n\n... (truncated drill-down — use more specific filters)`;
       return { ...filterResult, formatted: truncated };
     }
   }
@@ -223,8 +223,8 @@ export function compressLogs(request: CompressionRequest, filters?: FilterOption
     return { ...reducedConsolidated, formatted: reducedOverview };
   }
 
-  const truncatedOverview = reducedOverview.slice(0, charLimit)
-    + `\n\n... (truncated overview — ${totalInputLines} total lines)`;
+  const truncatedOverview = `${reducedOverview.slice(0, charLimit)
+     }\n\n... (truncated overview — ${totalInputLines} total lines)`;
   return { ...reducedConsolidated, formatted: truncatedOverview };
 }
 
@@ -236,20 +236,20 @@ export function toConsolidatedJson(
 ): Record<string, unknown> {
   return {
     compression: {
-      inputLines: result.stats.inputLines,
-      uniqueTemplates: result.stats.uniqueTemplates,
       compressionRatio: Math.round(result.stats.compressionRatio * 100),
       estimatedTokenReduction: Math.round(result.stats.estimatedTokenReduction * 100),
+      inputLines: result.stats.inputLines,
       processingTimeMs: result.stats.processingTimeMs,
+      uniqueTemplates: result.stats.uniqueTemplates,
     },
     templates: result.raw.templates.map(t => ({
-      id: t.id,
-      pattern: t.pattern,
-      occurrences: t.occurrences,
-      severity: t.severity,
       firstSeen: t.firstSeen,
-      lastSeen: t.lastSeen,
+      id: t.id,
       isStackFrame: t.isStackFrame,
+      lastSeen: t.lastSeen,
+      occurrences: t.occurrences,
+      pattern: t.pattern,
+      severity: t.severity,
       ...(t.sampleVariables.length > 0 ? { sampleVariables: t.sampleVariables } : {}),
       ...(t.urlSamples.length > 0 ? { urls: t.urlSamples } : {}),
       ...(t.statusCodeSamples.length > 0 ? { statusCodes: t.statusCodeSamples } : {}),

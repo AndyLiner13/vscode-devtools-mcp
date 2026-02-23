@@ -1,22 +1,25 @@
-// IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
-import { SourceFile, Node } from 'ts-morph';
-import * as path from 'path';
 import type { SymbolNode } from './types';
+// IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
+import type { SourceFile} from 'ts-morph';
+
+import * as path from 'node:path';
+import { Node } from 'ts-morph';
+
 import { getWorkspaceProject } from './ts-project';
 
 // ── Orphaned Content Types ───────────────────────────────
 
 export interface OrphanedContentResult {
-  /** Import declaration nodes with line ranges */
-  imports: SymbolNode[];
-  /** Export declaration nodes with line ranges */
-  exports: SymbolNode[];
-  /** Standalone comments (not attached to symbols) */
-  orphanComments: SymbolNode[];
   /** Shebangs, prologue directives, and other special constructs */
   directives: SymbolNode[];
+  /** Export declaration nodes with line ranges */
+  exports: SymbolNode[];
   /** Gap ranges (lines not covered by any symbol, import, export, or comment) */
   gaps: Array<{ start: number; end: number; type: 'blank' | 'unknown' }>;
+  /** Import declaration nodes with line ranges */
+  imports: SymbolNode[];
+  /** Standalone comments (not attached to symbols) */
+  orphanComments: SymbolNode[];
   /** Statistics */
   stats: {
     totalImports: number;
@@ -89,18 +92,18 @@ export function extractOrphanedContent(
     const coveragePercent = totalLines > 0 ? (coveredLines.size / totalLines) * 100 : 100;
 
     return {
-      imports,
-      exports,
-      orphanComments,
       directives,
+      exports,
       gaps,
+      imports,
+      orphanComments,
       stats: {
-        totalImports: imports.length,
-        totalExports: exports.length,
-        totalOrphanComments: orphanComments.length,
-        totalDirectives: directives.length,
-        totalBlankLines,
         coveragePercent: Math.round(coveragePercent * 10) / 10,
+        totalBlankLines,
+        totalDirectives: directives.length,
+        totalExports: exports.length,
+        totalImports: imports.length,
+        totalOrphanComments: orphanComments.length,
       },
     };
   } catch {
@@ -148,10 +151,10 @@ function extractImports(sourceFile: SourceFile): SymbolNode[] {
     // Don't expand import ranges with leading comments — those are detected
     // independently as orphan comments with proper classification
     result.push({
-      name,
-      kind: importType,
       detail: `from "${moduleSpecifier}"`,
-      range: { start: startLine, end: endLine },
+      kind: importType,
+      name,
+      range: { end: endLine, start: startLine },
     });
   }
 
@@ -188,10 +191,10 @@ function extractExports(sourceFile: SourceFile): SymbolNode[] {
     }
 
     result.push({
-      name,
-      kind: exportType,
       detail: moduleSpecifier ? `from "${moduleSpecifier}"` : undefined,
-      range: { start: startLine, end: endLine },
+      kind: exportType,
+      name,
+      range: { end: endLine, start: startLine },
     });
   }
 
@@ -202,9 +205,9 @@ function extractExports(sourceFile: SourceFile): SymbolNode[] {
     const isExportEquals = exportAssign.isExportEquals();
 
     result.push({
-      name: isExportEquals ? 'export =' : 'export default',
       kind: isExportEquals ? 'commonjs-export' : 'default-export',
-      range: { start: startLine, end: endLine },
+      name: isExportEquals ? 'export =' : 'export default',
+      range: { end: endLine, start: startLine },
     });
   }
 
@@ -255,9 +258,9 @@ function extractExports(sourceFile: SourceFile): SymbolNode[] {
     }
 
     result.push({
-      name,
       kind,
-      range: { start: startLine, end: endLine },
+      name,
+      range: { end: endLine, start: startLine },
     });
   }
 
@@ -277,9 +280,9 @@ function extractDirectives(sourceFile: SourceFile): SymbolNode[] {
     const firstNewline = fullText.indexOf('\n');
     const shebangText = firstNewline >= 0 ? fullText.slice(0, firstNewline).trim() : fullText.trim();
     result.push({
-      name: shebangText,
       kind: 'shebang',
-      range: { start: 1, end: 1 },
+      name: shebangText,
+      range: { end: 1, start: 1 },
     });
   }
 
@@ -293,9 +296,9 @@ function extractDirectives(sourceFile: SourceFile): SymbolNode[] {
     const prologues = ['use strict', 'use client', 'use server'];
     if (prologues.includes(value)) {
       result.push({
-        name: `"${value}"`,
         kind: 'prologue-directive',
-        range: { start: stmt.getStartLineNumber(), end: stmt.getEndLineNumber() },
+        name: `"${value}"`,
+        range: { end: stmt.getEndLineNumber(), start: stmt.getStartLineNumber() },
       });
     } else {
       break;
@@ -359,9 +362,9 @@ function extractOrphanComments(
         if (!alreadyCovered) {
           const commentType = classifyComment(text);
           result.push({
-            name: extractCommentTitle(text),
             kind: commentType,
-            range: { start: startLine, end: endLine },
+            name: extractCommentTitle(text),
+            range: { end: endLine, start: startLine },
           });
 
           // Mark these lines as covered
@@ -396,9 +399,9 @@ function extractOrphanComments(
       if (!alreadyCovered) {
         const commentType = classifyComment(text);
         result.push({
-          name: extractCommentTitle(text),
           kind: commentType,
-          range: { start: startLine, end: endLine },
+          name: extractCommentTitle(text),
+          range: { end: endLine, start: startLine },
         });
 
         for (let line = startLine; line <= endLine; line++) {
@@ -429,7 +432,7 @@ function computeGaps(
   const textLines = fullText.split('\n');
 
   const gaps: Array<{ start: number; end: number; type: 'blank' | 'unknown' }> = [];
-  let gapStart: number | null = null;
+  let gapStart: null | number = null;
   let gapType: 'blank' | 'unknown' | null = null;
 
   for (let line = 1; line <= totalLines; line++) {
@@ -443,13 +446,13 @@ function computeGaps(
         gapType = currentType;
       } else if (currentType !== gapType) {
         // Type changed, close the previous gap and start a new one
-        gaps.push({ start: gapStart, end: line - 1, type: gapType! });
+        gaps.push({ end: line - 1, start: gapStart, type: gapType! });
         gapStart = line;
         gapType = currentType;
       }
     } else {
       if (gapStart !== null) {
-        gaps.push({ start: gapStart, end: line - 1, type: gapType! });
+        gaps.push({ end: line - 1, start: gapStart, type: gapType! });
         gapStart = null;
         gapType = null;
       }
@@ -458,7 +461,7 @@ function computeGaps(
 
   // Handle trailing gap
   if (gapStart !== null) {
-    gaps.push({ start: gapStart, end: totalLines, type: gapType! });
+    gaps.push({ end: totalLines, start: gapStart, type: gapType! });
   }
 
   return gaps;
@@ -468,32 +471,32 @@ function computeGaps(
 
 function emptyResult(): OrphanedContentResult {
   return {
-    imports: [],
-    exports: [],
-    orphanComments: [],
     directives: [],
+    exports: [],
     gaps: [],
+    imports: [],
+    orphanComments: [],
     stats: {
-      totalImports: 0,
-      totalExports: 0,
-      totalOrphanComments: 0,
-      totalDirectives: 0,
-      totalBlankLines: 0,
       coveragePercent: 100,
+      totalBlankLines: 0,
+      totalDirectives: 0,
+      totalExports: 0,
+      totalImports: 0,
+      totalOrphanComments: 0,
     },
   };
 }
 
 export function findProjectRoot(filePath: string): string {
   let dir = path.dirname(filePath);
-  const root = path.parse(dir).root;
+  const {root} = path.parse(dir);
 
   while (dir !== root) {
     const candidates = ['package.json', 'tsconfig.json', 'jsconfig.json'];
     for (const file of candidates) {
       const p = path.join(dir, file);
       try {
-        require('fs').accessSync(p);
+        require('node:fs').accessSync(p);
         return dir;
       } catch {
         // Continue searching
@@ -561,21 +564,21 @@ function extractCommentTitle(text: string): string {
   const jsdocMatch = text.match(/\/\*\*\s*\n?\s*\*?\s*(.+)/);
   if (jsdocMatch) {
     const firstLine = jsdocMatch[1].replace(/\*+\/$/, '').trim();
-    return firstLine.length > 50 ? firstLine.slice(0, 47) + '...' : firstLine;
+    return firstLine.length > 50 ? `${firstLine.slice(0, 47)  }...` : firstLine;
   }
 
   // For block comments
   const blockMatch = text.match(/\/\*\s*(.+)/);
   if (blockMatch) {
     const firstLine = blockMatch[1].replace(/\*+\/$/, '').trim();
-    return firstLine.length > 50 ? firstLine.slice(0, 47) + '...' : firstLine;
+    return firstLine.length > 50 ? `${firstLine.slice(0, 47)  }...` : firstLine;
   }
 
   // For line comments
   const lineMatch = text.match(/\/\/\s*(.+)/);
   if (lineMatch) {
     const content = lineMatch[1].trim();
-    return content.length > 50 ? content.slice(0, 47) + '...' : content;
+    return content.length > 50 ? `${content.slice(0, 47)  }...` : content;
   }
 
   return text.slice(0, 50);

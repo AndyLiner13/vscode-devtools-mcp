@@ -17,7 +17,7 @@ const serverDir = dirname(scriptDir);
 
 const entryUrl = new URL('../build/src/index.js', import.meta.url);
 if (!existsSync(entryUrl)) {
-	execSync('npm run build', {stdio: 'inherit', cwd: serverDir});
+	execSync('npm run build', {cwd: serverDir, stdio: 'inherit'});
 }
 
 await import(entryUrl.toString());

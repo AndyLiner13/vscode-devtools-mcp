@@ -4,88 +4,88 @@
 // ── Overview Types ───────────────────────────────────────
 
 export interface OverviewParams {
-  /** Workspace root directory (used for .devtoolsignore resolution). */
-  rootDir: string;
   /** Folder to map. Absolute or relative to rootDir. */
   dir: string;
-  /** When true, recurse into subdirectories. When false, show immediate children only. */
-  recursive: boolean;
-  /** When true, include symbol skeleton (name + kind, hierarchically nested). */
-  symbols: boolean;
   /** When true, populate lineCount on file nodes and enable metadata display. */
   metadata?: boolean;
+  /** When true, recurse into subdirectories. When false, show immediate children only. */
+  recursive: boolean;
+  /** Workspace root directory (used for .devtoolsignore resolution). */
+  rootDir: string;
+  /** When true, include symbol skeleton (name + kind, hierarchically nested). */
+  symbols: boolean;
   /** Tool scope for per-tool .devtoolsignore sections (e.g. 'codebase_map'). */
   toolScope?: string;
 }
 
 export interface TreeNode {
-  name: string;
-  type: 'directory' | 'file';
   children?: TreeNode[];
-  symbols?: SymbolNode[];
-  lineCount?: number;
-  ignored?: boolean;
-  /** Immediate file count (populated on directory stubs when children aren't expanded). */
-  fileCount?: number;
   /** Immediate subdirectory count (populated on directory stubs when children aren't expanded). */
   dirCount?: number;
+  /** Immediate file count (populated on directory stubs when children aren't expanded). */
+  fileCount?: number;
+  ignored?: boolean;
+  lineCount?: number;
+  name: string;
   /** Total symbol count including nested children (populated when metadata is enabled). */
   symbolCount?: number;
+  symbols?: SymbolNode[];
   /** Aggregate reference count across all symbols in this file. */
   totalReferences?: number;
+  type: 'directory' | 'file';
 }
 
 export interface SymbolNode {
-  name: string;
-  kind: string;
-  detail?: string;
-  range: { start: number; end: number };
   children?: SymbolNode[];
-  /** Number of references to this symbol across the codebase. */
-  referenceCount?: number;
+  detail?: string;
   /** Number of implementations of this symbol (interfaces, abstract members). */
   implementationCount?: number;
+  kind: string;
+  name: string;
+  range: { start: number; end: number };
+  /** Number of references to this symbol across the codebase. */
+  referenceCount?: number;
 }
 
 export interface OverviewResult {
   projectRoot: string;
-  tree: TreeNode[];
   summary: {
     totalFiles: number;
     totalDirectories: number;
     totalSymbols: number;
     diagnosticCounts?: { errors: number; warnings: number };
   };
+  tree: TreeNode[];
 }
 
 // ── Exports Types ────────────────────────────────────────
 
 export interface ExportsParams {
-  path: string;
-  rootDir: string;
-  includeTypes?: boolean;
-  includeJSDoc?: boolean;
-  kind?: string;
-  /** Glob patterns to include (whitelist). If specified, only matching files are considered. */
-  includePatterns?: string[];
   /** Glob patterns to exclude (blacklist). Applied after include patterns to further narrow results. */
   excludePatterns?: string[];
+  includeJSDoc?: boolean;
+  /** Glob patterns to include (whitelist). If specified, only matching files are considered. */
+  includePatterns?: string[];
+  includeTypes?: boolean;
+  kind?: string;
+  path: string;
+  rootDir: string;
 }
 
 export interface ExportInfo {
-  name: string;
-  kind: string;
-  signature?: string;
-  jsdoc?: string;
-  line: number;
   isDefault: boolean;
   isReExport: boolean;
+  jsdoc?: string;
+  kind: string;
+  line: number;
+  name: string;
   reExportSource?: string;
+  signature?: string;
 }
 
 export interface ExportsResult {
-  module: string;
   exports: ExportInfo[];
+  module: string;
   reExports: Array<{ name: string; from: string }>;
   summary: string;
 }
@@ -93,197 +93,200 @@ export interface ExportsResult {
 // ── Trace Symbol Types ───────────────────────────────────
 
 export interface TraceSymbolParams {
-  symbol: string;
-  rootDir: string;
-  file?: string;
-  line?: number;
   column?: number;
   depth?: number;
-  include?: string[];
-  includeImpact?: boolean;
-  /** Max references to return (default: 500). Prevents runaway scans on large codebases. */
-  maxReferences?: number;
-  /** Timeout in milliseconds (default: 30000). Returns partial results if exceeded. */
-  timeout?: number;
-  /** Force invalidate project cache before tracing. Use after adding new files. */
-  forceRefresh?: boolean;
-  /** Glob patterns to include (whitelist). If specified, only matching files are considered. */
-  includePatterns?: string[];
   /** Glob patterns to exclude (blacklist). Added to .devtoolsignore exclusions. */
   excludePatterns?: string[];
+  file?: string;
+  /** Force invalidate project cache before tracing. Use after adding new files. */
+  forceRefresh?: boolean;
+  include?: string[];
+  includeImpact?: boolean;
+  /** Glob patterns to include (whitelist). If specified, only matching files are considered. */
+  includePatterns?: string[];
+  line?: number;
+  /** Max references to return (default: 500). Prevents runaway scans on large codebases. */
+  maxReferences?: number;
+  rootDir: string;
+  symbol: string;
+  /** Timeout in milliseconds (default: 30000). Returns partial results if exceeded. */
+  timeout?: number;
 }
 
 export interface SymbolLocationInfo {
-  file: string;
-  line: number;
   column: number;
+  file: string;
   kind?: string;
+  line: number;
   signature?: string;
   unresolved?: boolean;
 }
 
 export interface ReferenceInfo {
-  file: string;
-  line: number;
   column: number;
   context: string;
-  kind: 'read' | 'write' | 'call' | 'import' | 'type-ref' | 'unknown';
+  file: string;
+  kind: 'call' | 'import' | 'read' | 'type-ref' | 'unknown' | 'write';
+  line: number;
 }
 
 export interface ReExportInfo {
+  exportedAs: string;
   file: string;
+  from: string;
   line: number;
   originalName: string;
-  exportedAs: string;
-  from: string;
 }
 
 export interface CallChainNode {
-  symbol: string;
+  column: number;
   file: string;
   line: number;
-  column: number;
+  symbol: string;
 }
 
 export interface CallChainInfo {
   incomingCalls: CallChainNode[];
-  outgoingCalls: CallChainNode[];
   incomingTruncated?: boolean;
+  outgoingCalls: CallChainNode[];
   outgoingTruncated?: boolean;
 }
 
 export interface TypeFlowInfo {
-  direction: 'parameter' | 'return' | 'extends' | 'implements' | 'property';
-  type: string;
+  direction: 'extends' | 'implements' | 'parameter' | 'property' | 'return';
   traceTo?: { symbol: string; file: string; line: number };
+  type: string;
 }
 
 export interface ImpactDependentInfo {
-  symbol: string;
   file: string;
-  line: number;
   kind: string;
+  line: number;
+  symbol: string;
 }
 
 export interface ImpactInfo {
   directDependents: ImpactDependentInfo[];
-  transitiveDependents: ImpactDependentInfo[];
   impactSummary: {
     directFiles: number;
     transitiveFiles: number;
     totalSymbolsAffected: number;
-    riskLevel: 'low' | 'medium' | 'high';
+    riskLevel: 'high' | 'low' | 'medium';
   };
+  transitiveDependents: ImpactDependentInfo[];
 }
 
 export interface TypeHierarchyNode {
-  name: string;
-  kind: 'class' | 'interface' | 'type-alias';
-  file: string;
-  line: number;
   column: number;
+  file: string;
+  kind: 'class' | 'interface' | 'type-alias';
+  line: number;
+  name: string;
 }
 
 export interface TypeHierarchyInfo {
-  supertypes: TypeHierarchyNode[];
-  subtypes: TypeHierarchyNode[];
   stats: {
     totalSupertypes: number;
     totalSubtypes: number;
     maxDepth: number;
   };
+  subtypes: TypeHierarchyNode[];
+  supertypes: TypeHierarchyNode[];
 }
 
 export interface TraceSymbolResult {
-  symbol: string;
-  definition?: SymbolLocationInfo;
-  references: ReferenceInfo[];
-  reExports: ReExportInfo[];
-  callChain: CallChainInfo;
-  typeFlows: TypeFlowInfo[];
-  hierarchy?: TypeHierarchyInfo;
-  summary: {
-    totalReferences: number;
-    totalFiles: number;
-    maxCallDepth: number;
-  };
-  impact?: ImpactInfo;
-  /** True if results were truncated due to timeout or maxReferences limit. */
-  partial?: boolean;
-  /** Reason for partial results (e.g., 'timeout', 'max-references'). */
-  partialReason?: 'timeout' | 'max-references';
-  /** Elapsed time in milliseconds. */
-  elapsedMs?: number;
-  /** Number of source files in the project (for diagnostics). */
-  sourceFileCount?: number;
-  /** Calculated effective timeout in milliseconds (max of user timeout and dynamic calculation). */
-  effectiveTimeout?: number;
-  /** Error message if an error occurred during tracing. */
-  errorMessage?: string;
-  /** Reason why symbol was not found (if definition is missing). */
-  notFoundReason?: 'no-project' | 'no-matching-files' | 'symbol-not-found' | 'file-not-in-project' | 'parse-error';
-  /** Resolved absolute path used as the project root. */
-  resolvedRootDir?: string;
-  /** Diagnostic messages (e.g., excessive node_modules references, pattern match warnings). */
-  diagnostics?: string[];
   /** Metadata when call hierarchy depth was auto-reduced to stay within token budget. */
   _autoOptimizedCallDepth?: {
     requestedDepth: number;
     usedDepth: number;
     reason: string;
   };
+  callChain: CallChainInfo;
+  definition?: SymbolLocationInfo;
+  /** Diagnostic messages (e.g., excessive node_modules references, pattern match warnings). */
+  diagnostics?: string[];
+  /** Calculated effective timeout in milliseconds (max of user timeout and dynamic calculation). */
+  effectiveTimeout?: number;
+  /** Elapsed time in milliseconds. */
+  elapsedMs?: number;
+  /** Error message if an error occurred during tracing. */
+  errorMessage?: string;
+  hierarchy?: TypeHierarchyInfo;
+  impact?: ImpactInfo;
+  /** Reason why symbol was not found (if definition is missing). */
+  notFoundReason?: 'file-not-in-project' | 'no-matching-files' | 'no-project' | 'parse-error' | 'symbol-not-found';
+  /** True if results were truncated due to timeout or maxReferences limit. */
+  partial?: boolean;
+  /** Reason for partial results (e.g., 'timeout', 'max-references'). */
+  partialReason?: 'max-references' | 'timeout';
+  reExports: ReExportInfo[];
+  references: ReferenceInfo[];
+  /** Resolved absolute path used as the project root. */
+  resolvedRootDir?: string;
+  /** Number of source files in the project (for diagnostics). */
+  sourceFileCount?: number;
+  summary: {
+    totalReferences: number;
+    totalFiles: number;
+    maxCallDepth: number;
+  };
+  symbol: string;
+  typeFlows: TypeFlowInfo[];
 }
 
 // ── Unused Symbol Detection Types ────────────────────────
 
 export interface DeadCodeParams {
-  rootDir: string;
-  /** File or glob pattern to search within (e.g., 'src/**\/*.ts') */
-  pattern?: string;
+  /** Glob patterns to exclude (blacklist). Added to .devtoolsignore exclusions. */
+  excludePatterns?: string[];
+  /** Exclude test files (files matching *.test.*, *.spec.*, __tests__/*). Default: true */
+  excludeTests?: boolean;
   /** Only check exported symbols (default: true). When false, also detects unreachable non-exported functions and dead variables. */
   exportedOnly?: boolean;
   /** Glob patterns to include (whitelist). If specified, only matching files are considered. */
   includePatterns?: string[];
-  /** Glob patterns to exclude (blacklist). Added to .devtoolsignore exclusions. */
-  excludePatterns?: string[];
   /** Symbol kinds to check (default: all) */
   kinds?: string[];
   /** Max symbols to return (default: 100) */
   limit?: number;
-  /** Exclude test files (files matching *.test.*, *.spec.*, __tests__/*). Default: true */
-  excludeTests?: boolean;
+  /** File or glob pattern to search within (e.g., 'src/**\/*.ts') */
+  pattern?: string;
+  rootDir: string;
 }
 
 export interface DeadCodeItem {
-  name: string;
-  kind: string;
-  file: string;
-  line: number;
+  /** Detection confidence: high = zero refs, medium = likely unused, low = possibly unused. */
+  confidence: 'high' | 'low' | 'medium';
   exported: boolean;
+  file: string;
+  kind: string;
+  line: number;
+  name: string;
   /** Why this symbol is considered dead code. */
   reason: string;
-  /** Detection confidence: high = zero refs, medium = likely unused, low = possibly unused. */
-  confidence: 'high' | 'medium' | 'low';
 }
 
 export interface DeadCodeResult {
   deadCode: DeadCodeItem[];
+  /** Diagnostic messages (e.g., excessive node_modules references, pattern match warnings). */
+  diagnostics?: string[];
+  /** Error message if scan failed. */
+  errorMessage?: string;
+  /** Resolved absolute path used as the project root. */
+  resolvedRootDir?: string;
   summary: {
     totalScanned: number;
     totalDead: number;
     scanDurationMs: number;
     byKind?: Record<string, number>;
   };
-  /** Error message if scan failed. */
-  errorMessage?: string;
-  /** Resolved absolute path used as the project root. */
-  resolvedRootDir?: string;
-  /** Diagnostic messages (e.g., excessive node_modules references, pattern match warnings). */
-  diagnostics?: string[];
 }
 
 /** File extensions that ts-morph can parse for import extraction */
-export const TS_PARSEABLE_EXTS = new Set([
+export const /**
+ *
+ */
+TS_PARSEABLE_EXTS = new Set([
   'ts', 'tsx', 'js', 'jsx', 'mts', 'mjs', 'cts', 'cjs',
 ]);
 
@@ -294,21 +297,21 @@ export const TS_PARSEABLE_EXTS = new Set([
  * TS/JS provides columns, but many languages (Markdown, JSON) only need lines.
  */
 export interface FileSymbolRange {
-  startLine: number;
+  endChar?: number;
   endLine: number;
   startChar?: number;
-  endChar?: number;
+  startLine: number;
 }
 
 /** Shared symbol interface for all file types. */
 export interface FileSymbol {
-  name: string;
-  kind: string;
-  detail?: string;
-  range: FileSymbolRange;
   children: FileSymbol[];
+  detail?: string;
   exported?: boolean;
+  kind: string;
   modifiers?: string[];
+  name: string;
+  range: FileSymbolRange;
 }
 
 /**
@@ -316,20 +319,20 @@ export interface FileSymbol {
  * Maps to special target keywords (#imports, #exports, #comments) in file_read.
  */
 export type OrphanedCategory =
-  | 'import'
-  | 'export'
   | 'comment'
   | 'directive'
+  | 'export'
   | 'footnote'
+  | 'import'
   | 'linkdef';
 
 export interface OrphanedItem {
-  name: string;
-  kind: string;
-  detail?: string;
-  range: { start: number; end: number };
-  children?: OrphanedItem[];
   category: OrphanedCategory;
+  children?: OrphanedItem[];
+  detail?: string;
+  kind: string;
+  name: string;
+  range: { start: number; end: number };
 }
 
 export interface OrphanedContent {
@@ -337,21 +340,21 @@ export interface OrphanedContent {
 }
 
 export interface FileStructureStats {
-  totalSymbols: number;
-  totalOrphaned: number;
-  totalBlankLines: number;
   coveragePercent: number;
+  totalBlankLines: number;
+  totalOrphaned: number;
+  totalSymbols: number;
 }
 
 /** Shared structure returned by all language service extractors. */
 export interface FileStructure {
-  symbols: FileSymbol[];
   content: string;
-  totalLines: number;
-  fileType: 'typescript' | 'markdown' | 'json' | 'unknown';
-  orphaned: OrphanedContent;
+  fileType: 'json' | 'markdown' | 'typescript' | 'unknown';
   gaps: Array<{ start: number; end: number; type: 'blank' | 'unknown' }>;
+  orphaned: OrphanedContent;
   stats: FileStructureStats;
+  symbols: FileSymbol[];
+  totalLines: number;
 }
 
 // ── Chunk Types (Hierarchical Chunker) ───────────────────
@@ -362,26 +365,26 @@ export interface FileStructure {
  * for use across file_read, file_edit, and codebase_search.
  */
 export interface Chunk {
-  /** Deterministic ID derived from file path + symbol breadcrumb + range */
-  id: string;
-  /** Relative file path (from workspace root) */
-  filePath: string;
-  /** The text content of this chunk */
-  content: string;
-  /** Human-readable symbol name (e.g., "UserService.findById") */
-  symbolName: string;
-  /** Symbol kind (e.g., "class", "method", "function", "heading") */
-  symbolKind: string;
   /** Full path from root symbol (e.g., "UserService > findById") */
   breadcrumb: string;
-  /** Hierarchy depth (0 = file-level, 1 = top-level symbol, 2 = member, etc.) */
-  depth: number;
-  /** 1-indexed line range in the source file */
-  range: { start: number; end: number };
-  /** Chunk ID of the parent (null for top-level chunks) */
-  parentChunkId: string | null;
   /** Chunk IDs of direct children */
   childChunkIds: string[];
+  /** The text content of this chunk */
+  content: string;
+  /** Hierarchy depth (0 = file-level, 1 = top-level symbol, 2 = member, etc.) */
+  depth: number;
+  /** Relative file path (from workspace root) */
+  filePath: string;
+  /** Deterministic ID derived from file path + symbol breadcrumb + range */
+  id: string;
+  /** Chunk ID of the parent (null for top-level chunks) */
+  parentChunkId: null | string;
+  /** 1-indexed line range in the source file */
+  range: { start: number; end: number };
+  /** Symbol kind (e.g., "class", "method", "function", "heading") */
+  symbolKind: string;
+  /** Human-readable symbol name (e.g., "UserService.findById") */
+  symbolName: string;
   /** Approximate token count of the content */
   tokenCount: number;
 }
@@ -392,10 +395,10 @@ export interface Chunk {
 export interface ChunkFileParams {
   /** Absolute file path */
   filePath: string;
-  /** Workspace root for computing relative paths */
-  rootDir: string;
   /** Max hierarchy depth to chunk (default: Infinity) */
   maxDepth?: number;
+  /** Workspace root for computing relative paths */
+  rootDir: string;
   /** Max tokens per chunk before splitting (default: 512) */
   tokenBudget?: number;
 }
@@ -406,33 +409,33 @@ export interface ChunkFileParams {
 export interface ChunkFileResult {
   /** All chunks from this file, flat array with parent/child pointers */
   chunks: Chunk[];
-  /** The SymbolNode tree that was used for chunking */
-  symbols: SymbolNode[];
   /** Chunking statistics */
   stats: {
     totalChunks: number;
     maxDepth: number;
     oversizedSplits: number;
   };
+  /** The SymbolNode tree that was used for chunking */
+  symbols: SymbolNode[];
 }
 
 // ── Import Graph Types ───────────────────────────────────
 
 export interface ImportGraphParams {
-  rootDir: string;
-  /** Glob patterns to include (whitelist) */
-  includePatterns?: string[];
   /** Glob patterns to exclude (blacklist) */
   excludePatterns?: string[];
+  /** Glob patterns to include (whitelist) */
+  includePatterns?: string[];
+  rootDir: string;
 }
 
 export interface ImportGraphModule {
-  /** Relative path of the module */
-  path: string;
-  /** Modules this file imports (relative paths) */
-  imports: string[];
   /** Modules that import this file (relative paths) */
   importedBy: string[];
+  /** Modules this file imports (relative paths) */
+  imports: string[];
+  /** Relative path of the module */
+  path: string;
 }
 
 export interface CircularChain {
@@ -441,10 +444,10 @@ export interface CircularChain {
 }
 
 export interface ImportGraphResult {
-  /** Map of module path → import/importedBy */
-  modules: Record<string, ImportGraphModule>;
   /** Detected circular dependency chains */
   circular: CircularChain[];
+  /** Map of module path → import/importedBy */
+  modules: Record<string, ImportGraphModule>;
   /** Modules with no importers (potential entry points or orphans) */
   orphans: string[];
   stats: {
@@ -458,51 +461,51 @@ export interface ImportGraphResult {
 // ── Duplicate Detection Types ────────────────────────────
 
 export interface DuplicateDetectionParams {
+  /** Glob patterns to exclude */
+  excludePatterns?: string[];
+  /** Glob patterns to include */
+  includePatterns?: string[];
+  /** Kinds to check for duplicates */
+  kinds?: string[];
+  /** Max results. Default: 50 */
+  limit?: number;
   rootDir: string;
   /** Minimum similarity threshold (0-1). Default: 0.9 */
   threshold?: number;
-  /** Kinds to check for duplicates */
-  kinds?: string[];
-  /** Glob patterns to include */
-  includePatterns?: string[];
-  /** Glob patterns to exclude */
-  excludePatterns?: string[];
-  /** Max results. Default: 50 */
-  limit?: number;
 }
 
 export interface DuplicateGroup {
   /** Structural hash of the duplicate */
   hash: string;
+  /** The duplicate instances */
+  instances: DuplicateInstance[];
   /** Kind of the duplicated symbol (function, class, etc.) */
   kind: string;
   /** Number of lines in each instance */
   lineCount: number;
-  /** The duplicate instances */
-  instances: DuplicateInstance[];
 }
 
 export interface DuplicateInstance {
-  /** File path */
-  file: string;
-  /** Symbol name */
-  name: string;
-  /** Start line */
-  line: number;
   /** End line */
   endLine: number;
+  /** File path */
+  file: string;
+  /** Start line */
+  line: number;
+  /** Symbol name */
+  name: string;
 }
 
 export interface DuplicateDetectionResult {
+  diagnostics?: string[];
+  errorMessage?: string;
   /** Groups of duplicated code */
   groups: DuplicateGroup[];
+  resolvedRootDir?: string;
   summary: {
     totalGroups: number;
     totalDuplicateInstances: number;
     filesWithDuplicates: number;
     scanDurationMs: number;
   };
-  resolvedRootDir?: string;
-  diagnostics?: string[];
-  errorMessage?: string;
 }

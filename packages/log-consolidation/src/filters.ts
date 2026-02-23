@@ -65,7 +65,7 @@ export function applyFilters(
   }
 
   // Apply remaining template-level filters
-  let templates = result.raw.templates;
+  let {templates} = result.raw;
 
   // Severity filter
   if (filters.severity) {
@@ -106,9 +106,9 @@ export function applyFilters(
   if (templates.length === 0) {
     return {
       formatted: '(no templates match the applied filters)',
-      stats: result.stats,
       hasCompression: false,
       raw: { ...result.raw, templates: [] },
+      stats: result.stats,
     };
   }
 
@@ -121,12 +121,12 @@ export function applyFilters(
 
   return {
     formatted,
+    hasCompression: true,
+    raw: { ...result.raw, templates },
     stats: {
       ...result.stats,
       uniqueTemplates: templates.length,
     },
-    hasCompression: true,
-    raw: { ...result.raw, templates },
   };
 }
 
@@ -143,9 +143,9 @@ function expandTemplate(
   if (!template) {
     return {
       formatted: `Template "${templateId}" not found. Available: ${result.raw.templates.map(t => t.id).join(', ')}`,
-      stats: result.stats,
       hasCompression: false,
       raw: result.raw,
+      stats: result.stats,
     };
   }
 
@@ -184,9 +184,9 @@ function expandTemplate(
 
   return {
     formatted,
-    stats: result.stats,
     hasCompression: false,
     raw: result.raw,
+    stats: result.stats,
   };
 }
 
@@ -219,8 +219,8 @@ function parseDuration(duration: string): number {
 }
 
 interface TimeRange {
-  startMinutes: number;
   endMinutes: number;
+  startMinutes: number;
 }
 
 /**
@@ -239,7 +239,7 @@ function parseTimeRange(range: string): TimeRange | undefined {
     return undefined;
   }
 
-  return { startMinutes, endMinutes };
+  return { endMinutes, startMinutes };
 }
 
 function parseTimeToMinutes(time: string): number {

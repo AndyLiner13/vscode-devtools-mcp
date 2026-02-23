@@ -2,29 +2,31 @@
 // Runs all codebase analysis operations in a dedicated worker thread.
 // Holds ts-morph Project instances in memory permanently for instant reuse.
 
-import * as path from 'node:path';
-import { parentPort } from 'node:worker_threads';
-import { getOverview } from './overview-service';
-import { getExports } from './exports-service';
-import { traceSymbol, findDeadCode } from './trace-symbol-service';
-import { getImportGraph } from './import-graph-service';
-import { findDuplicates } from './duplicate-detection-service';
-import { chunkFile } from './chunker';
-import { invalidateWorkspaceProject } from './ts-project';
-import { extractOrphanedContent, type OrphanedContentResult } from './orphaned-content';
-import { extractFileStructure } from './file-structure-extractor';
 import type { UnifiedFileResult } from './file-structure-extractor';
-import { LanguageServiceRegistry } from './language-service-registry';
-import { TypeScriptLanguageService } from './language-services';
-import { MarkdownLanguageService } from './language-services';
-import { JsonLanguageService } from './language-services';
-import type { OverviewParams, OverviewResult, FileStructure } from './types';
+import type { FileStructure, OverviewParams, OverviewResult } from './types';
 import type { ExportsParams, ExportsResult } from './types';
 import type { TraceSymbolParams, TraceSymbolResult } from './types';
 import type { DeadCodeParams, DeadCodeResult } from './types';
 import type { ImportGraphParams, ImportGraphResult } from './types';
 import type { DuplicateDetectionParams, DuplicateDetectionResult } from './types';
 import type { ChunkFileParams, ChunkFileResult } from './types';
+
+import * as path from 'node:path';
+import { parentPort } from 'node:worker_threads';
+
+import { chunkFile } from './chunker';
+import { findDuplicates } from './duplicate-detection-service';
+import { getExports } from './exports-service';
+import { extractFileStructure } from './file-structure-extractor';
+import { getImportGraph } from './import-graph-service';
+import { LanguageServiceRegistry } from './language-service-registry';
+import { TypeScriptLanguageService } from './language-services';
+import { MarkdownLanguageService } from './language-services';
+import { JsonLanguageService } from './language-services';
+import { extractOrphanedContent, type OrphanedContentResult } from './orphaned-content';
+import { getOverview } from './overview-service';
+import { findDeadCode, traceSymbol } from './trace-symbol-service';
+import { invalidateWorkspaceProject } from './ts-project';
 
 // ── Language Service Registry ────────────────────────────
 
@@ -42,34 +44,24 @@ interface WorkerRequest {
 }
 
 interface WorkerResponse {
-  type: 'response';
+  error?: string;
   id: number;
   result?: unknown;
-  error?: string;
   stack?: string;
+  type: 'response';
 }
 
 // ── Operation Registry ───────────────────────────────────
 
-type OperationHandler = (params: never) => unknown | Promise<unknown>;
+type OperationHandler = (params: never) => Promise<unknown> | unknown;
 
 const operations: Record<string, OperationHandler> = {
-  getOverview: (params: OverviewParams) => getOverview(params),
-  getExports: (params: ExportsParams) => getExports(params),
-  traceSymbol: (params: TraceSymbolParams) => traceSymbol(params),
-  findDeadCode: (params: DeadCodeParams) => findDeadCode(params),
-  getImportGraph: (params: ImportGraphParams) => getImportGraph(params),
-  findDuplicates: (params: DuplicateDetectionParams) => findDuplicates(params),
   chunkFile: (params: ChunkFileParams) => chunkFile(params),
-  invalidateProject: (params: { rootDir?: string }) => {
-    invalidateWorkspaceProject(params.rootDir);
-    return { ok: true };
+  extractFileStructure: (params: { filePath: string }) => {
+    return extractFileStructure(params.filePath);
   },
   extractOrphanedContent: (params: { filePath: string; symbolRanges?: Array<{ start: number; end: number }> }) => {
     return extractOrphanedContent(params.filePath, params.symbolRanges);
-  },
-  extractFileStructure: (params: { filePath: string }) => {
-    return extractFileStructure(params.filePath);
   },
   extractStructure: async (params: { filePath: string }) => {
     const ext = path.extname(params.filePath).slice(1).toLowerCase();
@@ -77,6 +69,16 @@ const operations: Record<string, OperationHandler> = {
     if (!service) return null;
     return service.extractStructure(params.filePath);
   },
+  findDeadCode: async (params: DeadCodeParams) => findDeadCode(params),
+  findDuplicates: async (params: DuplicateDetectionParams) => findDuplicates(params),
+  getExports: (params: ExportsParams) => getExports(params),
+  getImportGraph: async (params: ImportGraphParams) => getImportGraph(params),
+  getOverview: (params: OverviewParams) => getOverview(params),
+  invalidateProject: (params: { rootDir?: string }) => {
+    invalidateWorkspaceProject(params.rootDir);
+    return { ok: true };
+  },
+  traceSymbol: async (params: TraceSymbolParams) => traceSymbol(params),
 };
 
 // ── Message Handler ──────────────────────────────────────
@@ -93,19 +95,19 @@ parentPort.on('message', async (msg: WorkerRequest) => {
   if (!port) return;
 
   if (!handler) {
-    const response: WorkerResponse = { type: 'response', id, error: `Unknown operation: ${operation}` };
+    const response: WorkerResponse = { error: `Unknown operation: ${operation}`, id, type: 'response' };
     port.postMessage(response);
     return;
   }
 
   try {
     const result = await handler(params as never);
-    const response: WorkerResponse = { type: 'response', id, result };
+    const response: WorkerResponse = { id, result, type: 'response' };
     port.postMessage(response);
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     const errorStack = err instanceof Error ? err.stack : undefined;
-    const response: WorkerResponse = { type: 'response', id, error: errorMessage, stack: errorStack };
+    const response: WorkerResponse = { error: errorMessage, id, stack: errorStack, type: 'response' };
     port.postMessage(response);
   }
 });

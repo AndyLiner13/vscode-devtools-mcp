@@ -1,23 +1,24 @@
 // IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
 // Pure Node.js file utilities — no VS Code API dependency.
-import * as fs from 'fs';
-import * as path from 'path';
-import { parseIgnoreRules, applyIgnoreRules, globToRegex } from './ignore-rules';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+
+import { applyIgnoreRules, globToRegex, parseIgnoreRules } from './ignore-rules';
 
 export interface DiscoverFilesOptions {
-  rootDir: string;
-  includeGlob?: string;
   excludeGlob?: string;
-  includePatterns?: string[];
   excludePatterns?: string[];
-  maxResults?: number;
-  respectIgnoreRules?: boolean;
-  /** Directory to load .devtoolsignore from (defaults to rootDir). */
-  ignoreRulesRoot?: string;
-  /** Maximum directory depth to walk. 1 = immediate children only. undefined = unlimited. */
-  maxDepth?: number;
   /** File extensions to include (e.g., Set(['.ts', '.md'])). undefined = all extensions. */
   fileExtensions?: Set<string>;
+  /** Directory to load .devtoolsignore from (defaults to rootDir). */
+  ignoreRulesRoot?: string;
+  includeGlob?: string;
+  includePatterns?: string[];
+  /** Maximum directory depth to walk. 1 = immediate children only. undefined = unlimited. */
+  maxDepth?: number;
+  maxResults?: number;
+  respectIgnoreRules?: boolean;
+  rootDir: string;
   /** Tool scope for per-tool .devtoolsignore sections (e.g. 'codebase_map'). */
   toolScope?: string;
 }
@@ -28,16 +29,16 @@ export interface DiscoverFilesOptions {
  */
 export function discoverFiles(options: DiscoverFilesOptions): Map<string, string> {
   const {
-    rootDir,
-    includeGlob,
     excludeGlob,
-    includePatterns,
     excludePatterns,
+    fileExtensions,
+    ignoreRulesRoot,
+    includeGlob,
+    includePatterns,
+    maxDepth,
     maxResults = 5000,
     respectIgnoreRules = true,
-    ignoreRulesRoot,
-    maxDepth,
-    fileExtensions,
+    rootDir,
     toolScope,
   } = options;
 
@@ -48,18 +49,18 @@ export function discoverFiles(options: DiscoverFilesOptions): Map<string, string
   const callerIncludes = (includePatterns ?? []).map(p => globToRegex(p));
   const callerExcludes = (excludePatterns ?? []).map(p => globToRegex(p));
 
-  const normalizedRoot = rootDir.replace(/\\/g, '/').replace(/\/+$/, '');
+  const normalizedRoot = rootDir.replaceAll('\\', '/').replace(/\/+$/, '');
   const fileMap = new Map<string, string>();
 
   walkDirectory(rootDir, normalizedRoot, fileMap, {
+    callerExcludes,
+    callerIncludes,
+    excludeMatcher,
+    fileExtensions,
     ignoreRules,
     includeMatcher,
-    excludeMatcher,
-    callerIncludes,
-    callerExcludes,
-    maxResults,
     maxDepth,
-    fileExtensions,
+    maxResults,
     toolScope,
   });
 
@@ -67,14 +68,14 @@ export function discoverFiles(options: DiscoverFilesOptions): Map<string, string
 }
 
 interface WalkContext {
-  ignoreRules: ReturnType<typeof parseIgnoreRules>;
-  includeMatcher: RegExp | null;
-  excludeMatcher: RegExp | null;
-  callerIncludes: RegExp[];
   callerExcludes: RegExp[];
-  maxResults: number;
-  maxDepth?: number;
+  callerIncludes: RegExp[];
+  excludeMatcher: null | RegExp;
   fileExtensions?: Set<string>;
+  ignoreRules: ReturnType<typeof parseIgnoreRules>;
+  includeMatcher: null | RegExp;
+  maxDepth?: number;
+  maxResults: number;
   toolScope?: string;
 }
 
@@ -84,7 +85,7 @@ function walkDirectory(
   fileMap: Map<string, string>,
   ctx: WalkContext,
   visitedInodes?: Set<string>,
-  currentDepth: number = 0,
+  currentDepth = 0,
 ): void {
   if (fileMap.size >= ctx.maxResults) return;
 
@@ -110,8 +111,8 @@ function walkDirectory(
     if (fileMap.size >= ctx.maxResults) return;
 
     const fullPath = path.join(dir, entry.name);
-    const normalizedFull = fullPath.replace(/\\/g, '/');
-    const relative = normalizedFull.startsWith(normalizedRoot + '/')
+    const normalizedFull = fullPath.replaceAll('\\', '/');
+    const relative = normalizedFull.startsWith(`${normalizedRoot  }/`)
       ? normalizedFull.slice(normalizedRoot.length + 1)
       : normalizedFull.startsWith(normalizedRoot)
         ? normalizedFull.slice(normalizedRoot.length).replace(/^\//, '')
@@ -155,13 +156,13 @@ export function readFileText(filePath: string): { text: string; lineCount: numbe
   for (let i = 0; i < text.length; i++) {
     if (text.charCodeAt(i) === 10) lineCount++;
   }
-  return { text, lineCount };
+  return { lineCount, text };
 }
 
 /**
  * Determine whether a path is a file or directory.
  */
-export function getPathType(filePath: string): 'file' | 'directory' {
+export function getPathType(filePath: string): 'directory' | 'file' {
   const stat = fs.statSync(filePath);
   if (stat.isDirectory()) return 'directory';
   return 'file';

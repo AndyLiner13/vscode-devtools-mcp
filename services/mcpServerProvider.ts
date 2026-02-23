@@ -9,10 +9,10 @@
  * This provider only handles server definition provisioning and toggle logic.
  */
 
-import * as path from 'path';
-import * as vscode from 'vscode';
 import { exec } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import * as path from 'node:path';
+import * as vscode from 'vscode';
 
 const PROVIDER_ID = 'devtools.mcp-server';
 const TOGGLE_COMMAND = 'devtools.toggleMcpServer';
@@ -36,17 +36,17 @@ function buildConfigEnv(workspacePath: string): Record<string, string> {
   const resolvedConfig = {
     clientWorkspace,
     extensionPath,
-    launch: {
-      skipReleaseNotes: config.get<boolean>('launch.skipReleaseNotes', true),
-      skipWelcome: config.get<boolean>('launch.skipWelcome', true),
-      disableGpu: config.get<boolean>('launch.disableGpu', false),
-      disableWorkspaceTrust: config.get<boolean>('launch.disableWorkspaceTrust', false),
-      verbose: config.get<boolean>('launch.verbose', false),
-      extraArgs: config.get<string[]>('launch.extraArgs', []),
-    },
     hotReload: {
       enabled: config.get<boolean>('hotReload.enabled', true),
       mcpStatusTimeout: config.get<number>('hotReload.mcpStatusTimeout', 60000),
+    },
+    launch: {
+      disableGpu: config.get<boolean>('launch.disableGpu', false),
+      disableWorkspaceTrust: config.get<boolean>('launch.disableWorkspaceTrust', false),
+      extraArgs: config.get<string[]>('launch.extraArgs', []),
+      skipReleaseNotes: config.get<boolean>('launch.skipReleaseNotes', true),
+      skipWelcome: config.get<boolean>('launch.skipWelcome', true),
+      verbose: config.get<boolean>('launch.verbose', false),
     },
   };
 
@@ -136,19 +136,19 @@ export class McpServerProvider implements vscode.McpServerDefinitionProvider<vsc
 
     if (buildError) {
       console.log(`[mcpServerProvider] Build FAILED after ${buildDuration}ms: ${buildError.substring(0, 200)}`);
-      throw new Error('MCP server build failed:\n' + buildError);
+      throw new Error(`MCP server build failed:\n${  buildError}`);
     }
 
     console.log(`[mcpServerProvider] Build succeeded in ${buildDuration}ms — server ready to start`);
     return server;
   }
 
-  private _runBuild(packageRoot: string, token: vscode.CancellationToken): Promise<string | null> {
+  private async _runBuild(packageRoot: string, token: vscode.CancellationToken): Promise<null | string> {
     return new Promise(resolve => {
       const pm = this._detectPackageManager(packageRoot);
-      const cmd = pm + ' run build';
+      const cmd = `${pm  } run build`;
 
-      console.log('[mcpServerProvider] Pre-start build: ' + cmd + ' in ' + packageRoot);
+      console.log(`[mcpServerProvider] Pre-start build: ${  cmd  } in ${  packageRoot}`);
 
       const child = exec(cmd, { cwd: packageRoot, timeout: 300_000 }, (error, stdout, stderr) => {
         if (token.isCancellationRequested) {

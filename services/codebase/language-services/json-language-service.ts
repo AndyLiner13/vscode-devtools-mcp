@@ -16,10 +16,10 @@ const JSON_EXTENSIONS = ['json', 'jsonc', 'json5', 'jsonl', 'webmanifest', 'geoj
 const COMMENT_EXTS = new Set(['jsonc', 'json5']);
 
 interface CommentRange {
-  offset: number;
-  length: number;
-  startLine: number;
   endLine: number;
+  length: number;
+  offset: number;
+  startLine: number;
   text: string;
 }
 
@@ -39,10 +39,10 @@ function extractJsoncComments(text: string): CommentRange[] {
       const endLine = oneLine + newlineCount;
 
       comments.push({
-        offset,
-        length,
-        startLine: oneLine,
         endLine,
+        length,
+        offset,
+        startLine: oneLine,
         text: commentText.trim(),
       });
     },
@@ -75,14 +75,14 @@ function extractJsonCommentTitle(text: string): string {
   const blockMatch = text.match(/\/\*\s*\*?\s*(.+)/);
   if (blockMatch) {
     const firstLine = blockMatch[1].replace(/\*+\/$/, '').trim();
-    return firstLine.length > 50 ? firstLine.slice(0, 47) + '...' : firstLine;
+    return firstLine.length > 50 ? `${firstLine.slice(0, 47)  }...` : firstLine;
   }
 
   // Line comments
   const lineMatch = text.match(/\/\/\s*(.+)/);
   if (lineMatch) {
     const content = lineMatch[1].trim();
-    return content.length > 50 ? content.slice(0, 47) + '...' : content;
+    return content.length > 50 ? `${content.slice(0, 47)  }...` : content;
   }
 
   return text.slice(0, 50);
@@ -90,20 +90,20 @@ function extractJsonCommentTitle(text: string): string {
 
 function convertSymbolNodeRange(range: { start: number; end: number }): FileSymbolRange {
   return {
-    startLine: range.start,
+    endChar: 0,
     endLine: range.end,
     startChar: 0,
-    endChar: 0,
+    startLine: range.start,
   };
 }
 
 function convertSymbolNode(node: SymbolNode): FileSymbol {
   return {
-    name: node.name,
-    kind: node.kind,
-    detail: node.detail,
-    range: convertSymbolNodeRange(node.range),
     children: node.children ? node.children.map(convertSymbolNode) : [],
+    detail: node.detail,
+    kind: node.kind,
+    name: node.name,
+    range: convertSymbolNodeRange(node.range),
   };
 }
 
@@ -146,13 +146,13 @@ function computeGaps(
       }
     } else {
       if (gapStart !== undefined) {
-        gaps.push({ start: gapStart, end: line - 1, type: 'blank' });
+        gaps.push({ end: line - 1, start: gapStart, type: 'blank' });
         gapStart = undefined;
       }
     }
   }
   if (gapStart !== undefined) {
-    gaps.push({ start: gapStart, end: totalLines, type: 'blank' });
+    gaps.push({ end: totalLines, start: gapStart, type: 'blank' });
   }
 
   return gaps;
@@ -172,7 +172,7 @@ export class JsonLanguageService implements LanguageService {
       return this.emptyStructure('');
     }
 
-    const { text, lineCount } = readFileText(filePath);
+    const { lineCount, text } = readFileText(filePath);
     const symbolNodes = parser(text, Infinity);
     const symbols = symbolNodes.map(convertSymbolNode);
 
@@ -193,10 +193,10 @@ export class JsonLanguageService implements LanguageService {
       const comments = extractJsoncComments(text);
       for (const comment of comments) {
         orphanedItems.push({
-          name: extractJsonCommentTitle(comment.text),
-          kind: classifyJsonComment(comment.text),
-          range: { start: comment.startLine, end: comment.endLine },
           category: 'comment',
+          kind: classifyJsonComment(comment.text),
+          name: extractJsonCommentTitle(comment.text),
+          range: { end: comment.endLine, start: comment.startLine },
         });
       }
     }
@@ -220,35 +220,35 @@ export class JsonLanguageService implements LanguageService {
     const coveragePercent = lineCount > 0 ? Math.round((covered.size / lineCount) * 100) : 100;
 
     return {
-      symbols,
       content: text,
-      totalLines: lineCount,
       fileType: 'json',
-      orphaned: { items: orphanedItems },
       gaps,
+      orphaned: { items: orphanedItems },
       stats: {
-        totalSymbols,
-        totalOrphaned: orphanedItems.length,
-        totalBlankLines: blankLines,
         coveragePercent,
+        totalBlankLines: blankLines,
+        totalOrphaned: orphanedItems.length,
+        totalSymbols,
       },
+      symbols,
+      totalLines: lineCount,
     };
   }
 
   private emptyStructure(content: string): FileStructure {
     return {
-      symbols: [],
       content,
-      totalLines: content.split('\n').length,
       fileType: 'json',
-      orphaned: { items: [] },
       gaps: [],
+      orphaned: { items: [] },
       stats: {
-        totalSymbols: 0,
-        totalOrphaned: 0,
-        totalBlankLines: 0,
         coveragePercent: 0,
+        totalBlankLines: 0,
+        totalOrphaned: 0,
+        totalSymbols: 0,
       },
+      symbols: [],
+      totalLines: content.split('\n').length,
     };
   }
 }

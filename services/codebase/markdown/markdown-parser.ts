@@ -1,18 +1,20 @@
 // IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
 // Pure Node.js — remark-based Markdown parser producing FileSymbol[] hierarchy.
 
-import { unified } from 'unified';
-import remarkParse from 'remark-parse';
+import type { FileSymbol, FileSymbolRange } from '../types';
+import type { Blockquote, Code, Content, Heading, Html, List, ListItem, Root, Table, ThematicBreak, Yaml } from 'mdast';
+import type { ContainerDirective, LeafDirective } from 'mdast-util-directive';
+import type { Math as MathNode } from 'mdast-util-math';
+
+import remarkDirective from 'remark-directive';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
-import remarkDirective from 'remark-directive';
-import type { Root, Content, Heading, Code, Table, List, ListItem, Blockquote, Html, Yaml, ThematicBreak } from 'mdast';
-import type { Math as MathNode } from 'mdast-util-math';
-import type { ContainerDirective, LeafDirective } from 'mdast-util-directive';
+import remarkParse from 'remark-parse';
+import { unified } from 'unified';
 import YAML from 'yaml';
-import type { FileSymbol, FileSymbolRange } from '../types';
-import { MD_KINDS, CALLOUT_PATTERN } from './markdown-types';
+
+import { CALLOUT_PATTERN, MD_KINDS } from './markdown-types';
 
 // ── Unified Processors ───────────────────────────────────
 
@@ -31,7 +33,7 @@ const markdownProcessor = unified()
  * until a sibling or parent heading is encountered.
  */
 export function parseMarkdown(text: string): FileSymbol[] {
-  const ast = markdownProcessor.parse(text) as Root;
+  const ast = markdownProcessor.parse(text);
   const totalLines = text.split('\n').length;
   return buildHierarchy(ast.children, totalLines);
 }
@@ -56,23 +58,23 @@ function buildHierarchy(nodes: Content[], totalLines: number): FileSymbol[] {
 
     switch (node.type) {
       case 'yaml': {
-        const fmSymbol = buildFrontmatter(node as Yaml);
+        const fmSymbol = buildFrontmatter(node);
         result.push(fmSymbol);
         break;
       }
 
       case 'heading': {
-        const heading = node as Heading;
+        const heading = node;
         const level = heading.depth;
         const title = extractText(heading);
         const sectionEnd = calculateSectionEnd(startLine, level, headingPositions, totalLines);
 
         const sectionSymbol: FileSymbol = {
-          name: title,
-          kind: MD_KINDS.section,
-          detail: '#'.repeat(level),
-          range: { startLine, endLine: sectionEnd },
           children: [],
+          detail: '#'.repeat(level),
+          kind: MD_KINDS.section,
+          name: title,
+          range: { endLine: sectionEnd, startLine },
         };
 
         // Pop stack until parent section found
@@ -86,31 +88,31 @@ function buildHierarchy(nodes: Content[], totalLines: number): FileSymbol[] {
       }
 
       case 'code': {
-        const codeSymbol = buildCodeBlock(node as Code, startLine, endLine);
+        const codeSymbol = buildCodeBlock(node, startLine, endLine);
         addToContext(result, sectionStack, codeSymbol);
         break;
       }
 
       case 'table': {
-        const tableSymbol = buildTable(node as Table, startLine, endLine);
+        const tableSymbol = buildTable(node, startLine, endLine);
         addToContext(result, sectionStack, tableSymbol);
         break;
       }
 
       case 'list': {
-        const listSymbol = buildList(node as List, startLine, endLine);
+        const listSymbol = buildList(node, startLine, endLine);
         addToContext(result, sectionStack, listSymbol);
         break;
       }
 
       case 'blockquote': {
-        const bqSymbol = buildBlockquote(node as Blockquote, startLine, endLine);
+        const bqSymbol = buildBlockquote(node, startLine, endLine);
         addToContext(result, sectionStack, bqSymbol);
         break;
       }
 
       case 'html': {
-        const htmlSymbol = buildHtmlBlock(node as Html, startLine, endLine);
+        const htmlSymbol = buildHtmlBlock(node, startLine, endLine);
         if (htmlSymbol) {
           addToContext(result, sectionStack, htmlSymbol);
         }
@@ -125,10 +127,10 @@ function buildHierarchy(nodes: Content[], totalLines: number): FileSymbol[] {
 
       case 'thematicBreak': {
         const ruleSymbol: FileSymbol = {
-          name: '---',
-          kind: MD_KINDS.rule,
-          range: { startLine, endLine },
           children: [],
+          kind: MD_KINDS.rule,
+          name: '---',
+          range: { endLine, startLine },
         };
         addToContext(result, sectionStack, ruleSymbol);
         break;
@@ -143,10 +145,10 @@ function buildHierarchy(nodes: Content[], totalLines: number): FileSymbol[] {
       case 'leafDirective': {
         const leafDir = node as unknown as LeafDirective;
         const leafSymbol: FileSymbol = {
-          name: leafDir.name ?? 'directive',
-          kind: MD_KINDS.directive,
-          range: { startLine, endLine },
           children: [],
+          kind: MD_KINDS.directive,
+          name: leafDir.name ?? 'directive',
+          range: { endLine, startLine },
         };
         addToContext(result, sectionStack, leafSymbol);
         break;
@@ -174,18 +176,18 @@ function addToContext(result: FileSymbol[], sectionStack: SectionFrame[], symbol
 // ── Heading Section Range ────────────────────────────────
 
 interface HeadingPosition {
-  line: number;
   depth: number;
+  line: number;
 }
 
 function collectHeadingPositions(nodes: Content[]): HeadingPosition[] {
   const positions: HeadingPosition[] = [];
   for (const node of nodes) {
     if (node.type === 'heading') {
-      const heading = node as Heading;
+      const heading = node;
       positions.push({
-        line: node.position?.start.line ?? 1,
         depth: heading.depth,
+        line: node.position?.start.line ?? 1,
       });
     }
   }
@@ -218,10 +220,10 @@ function buildFrontmatter(node: Yaml): FileSymbol {
   const endLine = node.position?.end.line ?? startLine;
 
   const symbol: FileSymbol = {
-    name: 'frontmatter',
-    kind: MD_KINDS.frontmatter,
-    range: { startLine, endLine },
     children: [],
+    kind: MD_KINDS.frontmatter,
+    name: 'frontmatter',
+    range: { endLine, startLine },
   };
 
   if (node.value) {
@@ -234,11 +236,11 @@ function buildFrontmatter(node: Yaml): FileSymbol {
 function buildCodeBlock(node: Code, startLine: number, endLine: number): FileSymbol {
   const lang = node.lang ?? '';
   return {
-    name: lang || 'code',
-    kind: MD_KINDS.code,
-    detail: lang || undefined,
-    range: { startLine, endLine },
     children: [],
+    detail: lang || undefined,
+    kind: MD_KINDS.code,
+    name: lang || 'code',
+    range: { endLine, startLine },
   };
 }
 
@@ -247,19 +249,19 @@ function buildTable(node: Table, startLine: number, endLine: number): FileSymbol
   const headers = headerRow?.children.map(cell => extractText(cell)) ?? [];
 
   const tableSymbol: FileSymbol = {
-    name: 'table',
-    kind: MD_KINDS.table,
-    detail: `${headers.length} cols`,
-    range: { startLine, endLine },
     children: [],
+    detail: `${headers.length} cols`,
+    kind: MD_KINDS.table,
+    name: 'table',
+    range: { endLine, startLine },
   };
 
   if (headers.length > 0) {
     tableSymbol.children = headers.map(h => ({
-      name: h,
-      kind: MD_KINDS.column,
-      range: { startLine, endLine: startLine } as FileSymbolRange,
       children: [],
+      kind: MD_KINDS.column,
+      name: h,
+      range: { endLine: startLine, startLine } as FileSymbolRange,
     }));
   }
 
@@ -269,11 +271,11 @@ function buildTable(node: Table, startLine: number, endLine: number): FileSymbol
 function buildList(node: List, startLine: number, endLine: number): FileSymbol {
   const ordered = node.ordered ?? false;
   const listSymbol: FileSymbol = {
-    name: ordered ? 'ordered list' : 'list',
-    kind: MD_KINDS.list,
-    detail: ordered ? 'ol' : 'ul',
-    range: { startLine, endLine },
     children: [],
+    detail: ordered ? 'ol' : 'ul',
+    kind: MD_KINDS.list,
+    name: ordered ? 'ordered list' : 'list',
+    range: { endLine, startLine },
   };
 
   for (const item of node.children) {
@@ -290,22 +292,22 @@ function buildListItem(node: ListItem, _ordered: boolean): FileSymbol {
   const firstText = extractFirstLineText(node);
 
   const itemSymbol: FileSymbol = {
-    name: firstText || 'item',
-    kind: MD_KINDS.item,
-    range: { startLine: itemStart, endLine: itemEnd },
     children: [],
+    kind: MD_KINDS.item,
+    name: firstText || 'item',
+    range: { endLine: itemEnd, startLine: itemStart },
   };
 
   // Recurse into container children (nested lists, code blocks)
   for (const child of node.children) {
     if (child.type === 'list') {
-      const nestedList = buildList(child as List, child.position?.start.line ?? itemStart, child.position?.end.line ?? itemEnd);
+      const nestedList = buildList(child, child.position?.start.line ?? itemStart, child.position?.end.line ?? itemEnd);
       itemSymbol.children.push(nestedList);
     } else if (child.type === 'code') {
-      const code = buildCodeBlock(child as Code, child.position?.start.line ?? itemStart, child.position?.end.line ?? itemEnd);
+      const code = buildCodeBlock(child, child.position?.start.line ?? itemStart, child.position?.end.line ?? itemEnd);
       itemSymbol.children.push(code);
     } else if (child.type === 'table') {
-      const table = buildTable(child as Table, child.position?.start.line ?? itemStart, child.position?.end.line ?? itemEnd);
+      const table = buildTable(child, child.position?.start.line ?? itemStart, child.position?.end.line ?? itemEnd);
       itemSymbol.children.push(table);
     }
   }
@@ -323,21 +325,21 @@ function buildBlockquote(node: Blockquote, startLine: number, endLine: number): 
       if (calloutMatch) {
         const calloutType = calloutMatch[1].toUpperCase();
         return {
-          name: calloutType,
-          kind: MD_KINDS.directive,
-          detail: calloutType.toLowerCase(),
-          range: { startLine, endLine },
           children: [],
+          detail: calloutType.toLowerCase(),
+          kind: MD_KINDS.directive,
+          name: calloutType,
+          range: { endLine, startLine },
         };
       }
     }
   }
 
   const bqSymbol: FileSymbol = {
-    name: 'blockquote',
-    kind: MD_KINDS.blockquote,
-    range: { startLine, endLine },
     children: [],
+    kind: MD_KINDS.blockquote,
+    name: 'blockquote',
+    range: { endLine, startLine },
   };
 
   // Recurse into blockquote children for nested blocks
@@ -346,13 +348,13 @@ function buildBlockquote(node: Blockquote, startLine: number, endLine: number): 
     const childEnd = child.position?.end.line ?? endLine;
 
     if (child.type === 'code') {
-      bqSymbol.children.push(buildCodeBlock(child as Code, childStart, childEnd));
+      bqSymbol.children.push(buildCodeBlock(child, childStart, childEnd));
     } else if (child.type === 'blockquote') {
-      bqSymbol.children.push(buildBlockquote(child as Blockquote, childStart, childEnd));
+      bqSymbol.children.push(buildBlockquote(child, childStart, childEnd));
     } else if (child.type === 'list') {
-      bqSymbol.children.push(buildList(child as List, childStart, childEnd));
+      bqSymbol.children.push(buildList(child, childStart, childEnd));
     } else if (child.type === 'table') {
-      bqSymbol.children.push(buildTable(child as Table, childStart, childEnd));
+      bqSymbol.children.push(buildTable(child, childStart, childEnd));
     }
   }
 
@@ -364,28 +366,28 @@ function buildHtmlBlock(node: Html, startLine: number, endLine: number): FileSym
   // Skip HTML comments — they become orphaned content
   if (value.startsWith('<!--') && value.endsWith('-->')) {
     return {
-      name: 'comment',
-      kind: MD_KINDS.html,
-      detail: 'comment',
-      range: { startLine, endLine },
       children: [],
+      detail: 'comment',
+      kind: MD_KINDS.html,
+      name: 'comment',
+      range: { endLine, startLine },
     };
   }
 
   return {
-    name: 'html',
-    kind: MD_KINDS.html,
-    range: { startLine, endLine },
     children: [],
+    kind: MD_KINDS.html,
+    name: 'html',
+    range: { endLine, startLine },
   };
 }
 
 function buildMathBlock(node: MathNode, startLine: number, endLine: number): FileSymbol {
   return {
-    name: 'math',
-    kind: MD_KINDS.math,
-    range: { startLine, endLine },
     children: [],
+    kind: MD_KINDS.math,
+    name: 'math',
+    range: { endLine, startLine },
   };
 }
 
@@ -393,11 +395,11 @@ function buildContainerDirective(node: ContainerDirective, startLine: number, en
   // Extract the label from the directive's children or attributes
   const label = extractText(node as unknown as Content) || node.name;
   return {
-    name: label,
-    kind: MD_KINDS.directive,
-    detail: node.name,
-    range: { startLine, endLine },
     children: [],
+    detail: node.name,
+    kind: MD_KINDS.directive,
+    name: label,
+    range: { endLine, startLine },
   };
 }
 
@@ -421,7 +423,7 @@ function extractFirstLineText(node: ListItem): string {
       const text = extractText(child);
       // Truncate long text for the symbol name
       if (text.length > 60) {
-        return text.substring(0, 57) + '...';
+        return `${text.substring(0, 57)  }...`;
       }
       return text;
     }
@@ -434,7 +436,7 @@ function extractFirstLineText(node: ListItem): string {
 function extractYamlKeys(yamlText: string, fmStartLine: number): FileSymbol[] {
   try {
     const doc = YAML.parseDocument(yamlText, { version: '1.1' });
-    const contents = doc.contents;
+    const {contents} = doc;
     if (!contents || !('items' in contents)) {
       return [];
     }
@@ -442,7 +444,7 @@ function extractYamlKeys(yamlText: string, fmStartLine: number): FileSymbol[] {
     const results: FileSymbol[] = [];
     const yamlMap = contents as YAML.YAMLMap;
     for (const pair of yamlMap.items) {
-      const key = pair.key;
+      const {key} = pair;
       if (key === null || key === undefined) continue;
 
       const keyName = typeof key === 'object' && 'value' in key
@@ -452,7 +454,7 @@ function extractYamlKeys(yamlText: string, fmStartLine: number): FileSymbol[] {
       // YAML content starts on fmStartLine + 1
       let keyLine = fmStartLine + 1;
       if (typeof key === 'object' && key !== null && 'range' in key) {
-        const range = (key as YAML.Scalar).range;
+        const {range} = (key as YAML.Scalar);
         if (range && range.length >= 1) {
           const offset = range[0];
           let lineWithinYaml = 0;
@@ -464,10 +466,10 @@ function extractYamlKeys(yamlText: string, fmStartLine: number): FileSymbol[] {
       }
 
       results.push({
-        name: keyName,
-        kind: MD_KINDS.key,
-        range: { startLine: keyLine, endLine: keyLine },
         children: [],
+        kind: MD_KINDS.key,
+        name: keyName,
+        range: { endLine: keyLine, startLine: keyLine },
       });
     }
     return results;

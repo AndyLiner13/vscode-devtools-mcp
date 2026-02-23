@@ -1,33 +1,35 @@
+import type { OverviewParams, OverviewResult, SymbolNode, TreeNode } from './types';
+
 // IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
 // Pure Node.js — no VS Code API dependency.
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import {
-  type SourceFile,
-  type ClassDeclaration,
-  type InterfaceDeclaration,
-  type EnumDeclaration,
-  type Node,
-  type FunctionDeclaration,
-  type MethodDeclaration,
-  type ConstructorDeclaration,
-  type GetAccessorDeclaration,
-  type SetAccessorDeclaration,
   type ArrowFunction,
+  type ClassDeclaration,
+  type ConstructorDeclaration,
+  type EnumDeclaration,
+  type FunctionDeclaration,
   type FunctionExpression,
+  type GetAccessorDeclaration,
+  type InterfaceDeclaration,
+  type MethodDeclaration,
+  type Node,
+  type SetAccessorDeclaration,
+  type SourceFile,
   SyntaxKind,
 } from 'ts-morph';
-import type { OverviewParams, OverviewResult, TreeNode, SymbolNode } from './types';
-import { TS_PARSEABLE_EXTS } from './types';
-import { getTsProject, getWorkspaceProject } from './ts-project';
-import { getCustomParser } from './parsers';
+
 import { discoverFiles, readFileText } from './file-utils';
-import { parseIgnoreRules, applyIgnoreRules } from './ignore-rules';
+import { applyIgnoreRules, parseIgnoreRules } from './ignore-rules';
+import { getCustomParser } from './parsers';
+import { getTsProject, getWorkspaceProject } from './ts-project';
+import { TS_PARSEABLE_EXTS } from './types';
 
 // ── Public API ─────────────────────────────────────────
 
 export function getOverview(params: OverviewParams): OverviewResult {
-  const { rootDir, dir, recursive, symbols, metadata, toolScope } = params;
+  const { dir, metadata, recursive, rootDir, symbols, toolScope } = params;
 
   // Resolve dir against rootDir
   const resolvedFolder = path.isAbsolute(dir)
@@ -38,10 +40,10 @@ export function getOverview(params: OverviewParams): OverviewResult {
   const maxDepth = recursive ? undefined : 0;
 
   const fileMap = discoverFiles({
-      rootDir: resolvedFolder,
       ignoreRulesRoot: rootDir,
-      maxResults: 5000,
       maxDepth,
+      maxResults: 5000,
+      rootDir: resolvedFolder,
       toolScope,
     });
 
@@ -72,12 +74,12 @@ export function getOverview(params: OverviewParams): OverviewResult {
 
   return {
     projectRoot: resolvedFolder,
-    tree,
     summary: {
-      totalFiles: fileMap.size,
       totalDirectories: countDirectories(tree),
+      totalFiles: fileMap.size,
       totalSymbols,
     },
+    tree,
   };
 }
 
@@ -96,7 +98,7 @@ function buildTree(
     }
     const parent = dirChildren.get(parentKey)!;
     if (!parent.has(name)) {
-      const node: TreeNode = { name, type: 'directory', children: [] };
+      const node: TreeNode = { children: [], name, type: 'directory' };
       parent.set(name, node);
     }
   };
@@ -175,7 +177,7 @@ function injectIgnoredEntries(
   if (ignoreRules.length === 0) return;
 
   const existingNames = new Set(tree.map(n => n.name));
-  const normalizedScanRoot = scanRoot.replace(/\\/g, '/').replace(/\/+$/, '');
+  const normalizedScanRoot = scanRoot.replaceAll('\\', '/').replace(/\/+$/, '');
 
   let entries: fs.Dirent[];
   try {
@@ -187,8 +189,8 @@ function injectIgnoredEntries(
   for (const entry of entries) {
     if (!entry.isFile() && !entry.isDirectory()) continue;
 
-    const fullPath = path.join(dirPath, entry.name).replace(/\\/g, '/');
-    const relative = fullPath.startsWith(normalizedScanRoot + '/')
+    const fullPath = path.join(dirPath, entry.name).replaceAll('\\', '/');
+    const relative = fullPath.startsWith(`${normalizedScanRoot  }/`)
       ? fullPath.slice(normalizedScanRoot.length + 1)
       : fullPath;
 
@@ -209,9 +211,9 @@ function injectIgnoredEntries(
 
     if (isIgnored) {
       tree.push({
+        ignored: true,
         name: entry.name,
         type: entry.isDirectory() ? 'directory' : 'file',
-        ignored: true,
       });
     }
   }
@@ -255,9 +257,9 @@ export function getTypeScriptSymbols(text: string, fileName: string): SymbolNode
     for (const fn of sourceFile.getFunctions()) {
       const name = fn.getName() ?? '<anonymous>';
       const node: SymbolNode = {
-        name,
         kind: 'function',
-        range: { start: fn.getStartLineNumber(), end: fn.getEndLineNumber() },
+        name,
+        range: { end: fn.getEndLineNumber(), start: fn.getStartLineNumber() },
       };
       const bodyChildren = extractBodyDeclarations(fn);
       if (bodyChildren.length > 0) node.children = bodyChildren;
@@ -267,38 +269,38 @@ export function getTypeScriptSymbols(text: string, fileName: string): SymbolNode
     for (const cls of sourceFile.getClasses()) {
       const name = cls.getName() ?? '<anonymous>';
       const node: SymbolNode = {
-        name,
-        kind: 'class',
-        range: { start: cls.getStartLineNumber(), end: cls.getEndLineNumber() },
         children: getClassMembers(cls),
+        kind: 'class',
+        name,
+        range: { end: cls.getEndLineNumber(), start: cls.getStartLineNumber() },
       };
       symbols.push(node);
     }
 
     for (const iface of sourceFile.getInterfaces()) {
       const node: SymbolNode = {
-        name: iface.getName(),
-        kind: 'interface',
-        range: { start: iface.getStartLineNumber(), end: iface.getEndLineNumber() },
         children: getInterfaceMembers(iface),
+        kind: 'interface',
+        name: iface.getName(),
+        range: { end: iface.getEndLineNumber(), start: iface.getStartLineNumber() },
       };
       symbols.push(node);
     }
 
     for (const alias of sourceFile.getTypeAliases()) {
       symbols.push({
-        name: alias.getName(),
         kind: 'type',
-        range: { start: alias.getStartLineNumber(), end: alias.getEndLineNumber() },
+        name: alias.getName(),
+        range: { end: alias.getEndLineNumber(), start: alias.getStartLineNumber() },
       });
     }
 
     for (const en of sourceFile.getEnums()) {
       const node: SymbolNode = {
-        name: en.getName(),
-        kind: 'enum',
-        range: { start: en.getStartLineNumber(), end: en.getEndLineNumber() },
         children: getEnumMembers(en),
+        kind: 'enum',
+        name: en.getName(),
+        range: { end: en.getEndLineNumber(), start: en.getStartLineNumber() },
       };
       symbols.push(node);
     }
@@ -307,9 +309,9 @@ export function getTypeScriptSymbols(text: string, fileName: string): SymbolNode
       const isConst = stmt.getDeclarationKind().toString() === 'const';
       for (const decl of stmt.getDeclarations()) {
         const varNode: SymbolNode = {
-          name: decl.getName(),
           kind: isConst ? 'constant' : 'variable',
-          range: { start: decl.getStartLineNumber(), end: decl.getEndLineNumber() },
+          name: decl.getName(),
+          range: { end: decl.getEndLineNumber(), start: decl.getStartLineNumber() },
         };
         // Check if the initializer is an arrow function or function expression
         const init = decl.getInitializer();
@@ -326,9 +328,9 @@ export function getTypeScriptSymbols(text: string, fileName: string): SymbolNode
 
     for (const mod of sourceFile.getModules()) {
       symbols.push({
-        name: mod.getName(),
         kind: 'namespace',
-        range: { start: mod.getStartLineNumber(), end: mod.getEndLineNumber() },
+        name: mod.getName(),
+        range: { end: mod.getEndLineNumber(), start: mod.getStartLineNumber() },
       });
     }
   } finally {
@@ -344,9 +346,9 @@ function getClassMembers(cls: ClassDeclaration): SymbolNode[] {
 
   for (const ctor of cls.getConstructors()) {
     const ctorNode: SymbolNode = {
-      name: 'constructor',
       kind: 'constructor',
-      range: { start: ctor.getStartLineNumber(), end: ctor.getEndLineNumber() },
+      name: 'constructor',
+      range: { end: ctor.getEndLineNumber(), start: ctor.getStartLineNumber() },
     };
     const bodyChildren = extractBodyDeclarations(ctor);
     if (bodyChildren.length > 0) ctorNode.children = bodyChildren;
@@ -355,9 +357,9 @@ function getClassMembers(cls: ClassDeclaration): SymbolNode[] {
 
   for (const method of cls.getMethods()) {
     const methodNode: SymbolNode = {
-      name: method.getName(),
       kind: 'method',
-      range: { start: method.getStartLineNumber(), end: method.getEndLineNumber() },
+      name: method.getName(),
+      range: { end: method.getEndLineNumber(), start: method.getStartLineNumber() },
     };
     const bodyChildren = extractBodyDeclarations(method);
     if (bodyChildren.length > 0) methodNode.children = bodyChildren;
@@ -366,9 +368,9 @@ function getClassMembers(cls: ClassDeclaration): SymbolNode[] {
 
   for (const prop of cls.getProperties()) {
     const propNode: SymbolNode = {
-      name: prop.getName(),
       kind: 'property',
-      range: { start: prop.getStartLineNumber(), end: prop.getEndLineNumber() },
+      name: prop.getName(),
+      range: { end: prop.getEndLineNumber(), start: prop.getStartLineNumber() },
     };
     // Check for arrow function / function expression initializers
     const init = prop.getInitializer();
@@ -384,9 +386,9 @@ function getClassMembers(cls: ClassDeclaration): SymbolNode[] {
 
   for (const getter of cls.getGetAccessors()) {
     const getterNode: SymbolNode = {
-      name: getter.getName(),
       kind: 'getter',
-      range: { start: getter.getStartLineNumber(), end: getter.getEndLineNumber() },
+      name: getter.getName(),
+      range: { end: getter.getEndLineNumber(), start: getter.getStartLineNumber() },
     };
     const bodyChildren = extractBodyDeclarations(getter);
     if (bodyChildren.length > 0) getterNode.children = bodyChildren;
@@ -395,9 +397,9 @@ function getClassMembers(cls: ClassDeclaration): SymbolNode[] {
 
   for (const setter of cls.getSetAccessors()) {
     const setterNode: SymbolNode = {
-      name: setter.getName(),
       kind: 'setter',
-      range: { start: setter.getStartLineNumber(), end: setter.getEndLineNumber() },
+      name: setter.getName(),
+      range: { end: setter.getEndLineNumber(), start: setter.getStartLineNumber() },
     };
     const bodyChildren = extractBodyDeclarations(setter);
     if (bodyChildren.length > 0) setterNode.children = bodyChildren;
@@ -411,13 +413,13 @@ function getClassMembers(cls: ClassDeclaration): SymbolNode[] {
 // ── Body Declaration Extraction ──────────────────────
 
 type FunctionLikeNode =
-  | FunctionDeclaration
-  | MethodDeclaration
-  | ConstructorDeclaration
-  | GetAccessorDeclaration
-  | SetAccessorDeclaration
   | ArrowFunction
-  | FunctionExpression;
+  | ConstructorDeclaration
+  | FunctionDeclaration
+  | FunctionExpression
+  | GetAccessorDeclaration
+  | MethodDeclaration
+  | SetAccessorDeclaration;
 
 /**
  * Extract named declarations from the body of a function-like node.
@@ -448,9 +450,9 @@ function walkStatements(node: Node, results: SymbolNode[]): void {
       const isConst = declKind === 'const';
       for (const decl of varStmt.getDeclarations()) {
         const varNode: SymbolNode = {
-          name: decl.getName(),
           kind: isConst ? 'constant' : 'variable',
-          range: { start: decl.getStartLineNumber(), end: decl.getEndLineNumber() },
+          name: decl.getName(),
+          range: { end: decl.getEndLineNumber(), start: decl.getStartLineNumber() },
         };
         const init = decl.getInitializer();
         if (init) {
@@ -466,9 +468,9 @@ function walkStatements(node: Node, results: SymbolNode[]): void {
       const fn = child.asKindOrThrow(SyntaxKind.FunctionDeclaration);
       const name = fn.getName() ?? '<anonymous>';
       const fnSymbol: SymbolNode = {
-        name,
         kind: 'function',
-        range: { start: fn.getStartLineNumber(), end: fn.getEndLineNumber() },
+        name,
+        range: { end: fn.getEndLineNumber(), start: fn.getStartLineNumber() },
       };
       const bodyChildren = extractBodyDeclarations(fn);
       if (bodyChildren.length > 0) fnSymbol.children = bodyChildren;
@@ -477,10 +479,10 @@ function walkStatements(node: Node, results: SymbolNode[]): void {
       const cls = child.asKindOrThrow(SyntaxKind.ClassDeclaration);
       const name = cls.getName() ?? '<anonymous>';
       results.push({
-        name,
-        kind: 'class',
-        range: { start: cls.getStartLineNumber(), end: cls.getEndLineNumber() },
         children: getClassMembers(cls),
+        kind: 'class',
+        name,
+        range: { end: cls.getEndLineNumber(), start: cls.getStartLineNumber() },
       });
     }
   }
@@ -504,17 +506,17 @@ function getInterfaceMembers(iface: InterfaceDeclaration): SymbolNode[] {
 
   for (const prop of iface.getProperties()) {
     members.push({
-      name: prop.getName(),
       kind: 'property',
-      range: { start: prop.getStartLineNumber(), end: prop.getEndLineNumber() },
+      name: prop.getName(),
+      range: { end: prop.getEndLineNumber(), start: prop.getStartLineNumber() },
     });
   }
 
   for (const method of iface.getMethods()) {
     members.push({
-      name: method.getName(),
       kind: 'method',
-      range: { start: method.getStartLineNumber(), end: method.getEndLineNumber() },
+      name: method.getName(),
+      range: { end: method.getEndLineNumber(), start: method.getStartLineNumber() },
     });
   }
 
@@ -527,9 +529,9 @@ function getEnumMembers(en: EnumDeclaration): SymbolNode[] {
 
   for (const member of en.getMembers()) {
     members.push({
-      name: member.getName(),
       kind: 'enumMember',
-      range: { start: member.getStartLineNumber(), end: member.getEndLineNumber() },
+      name: member.getName(),
+      range: { end: member.getEndLineNumber(), start: member.getStartLineNumber() },
     });
   }
 
@@ -562,7 +564,7 @@ function populateSymbols(
     const ext = node.name.split('.').pop()?.toLowerCase() ?? '';
 
     try {
-      const { text, lineCount } = readFileText(absPath);
+      const { lineCount, text } = readFileText(absPath);
       if (storeLineCount) node.lineCount = lineCount;
 
       if (TS_PARSEABLE_EXTS.has(ext)) {
@@ -614,7 +616,7 @@ function populateFileMetadata(
     const ext = node.name.split('.').pop()?.toLowerCase() ?? '';
 
     try {
-      const { text, lineCount } = readFileText(absPath);
+      const { lineCount, text } = readFileText(absPath);
       node.lineCount = lineCount;
 
       let symbolCount = 0;
@@ -711,7 +713,7 @@ function populateReferenceCounts(
       const ext = node.name.split('.').pop()?.toLowerCase() ?? '';
       if (!TS_PARSEABLE_EXTS.has(ext)) continue;
 
-      const filePath = path.join(parentDir, node.name).replace(/\\/g, '/');
+      const filePath = path.join(parentDir, node.name).replaceAll('\\', '/');
       const sourceFile = project.getSourceFile(filePath);
       if (!sourceFile) continue;
 

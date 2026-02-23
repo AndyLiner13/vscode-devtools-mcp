@@ -37,13 +37,13 @@ function log(message: string): void {
 
 // ── Port Probe ───────────────────────────────────────────────────────────────
 
-function isPortListening(port: number): Promise<boolean> {
+async function isPortListening(port: number): Promise<boolean> {
   return new Promise((resolve) => {
     const req = http.get(`http://localhost:${port}/`, (res) => {
       res.resume();
       resolve(true);
     });
-    req.on('error', () => resolve(false));
+    req.on('error', () => { resolve(false); });
     req.setTimeout(1500, () => {
       req.destroy();
       resolve(false);
@@ -92,9 +92,9 @@ async function startInspector(workspacePath: string): Promise<boolean> {
 
   const child = spawn('npm', ['run', 'dev'], {
     cwd: inspectorDir,
-    stdio: 'ignore',
-    shell: isWindows,
     detached: !isWindows,
+    shell: isWindows,
+    stdio: 'ignore',
     windowsHide: true,
   });
 
@@ -128,7 +128,7 @@ async function startInspector(workspacePath: string): Promise<boolean> {
   return true;
 }
 
-function waitForPort(port: number, timeoutMs: number): Promise<boolean> {
+async function waitForPort(port: number, timeoutMs: number): Promise<boolean> {
   return new Promise((resolve) => {
     const deadline = Date.now() + timeoutMs;
 
@@ -162,7 +162,7 @@ async function stopInspector(): Promise<boolean> {
     try {
       if (process.platform === 'win32') {
         // On Windows, spawn is not detached — use taskkill to kill the tree
-        const pid = inspectorProcess.pid;
+        const {pid} = inspectorProcess;
         if (pid) {
           try {
             execSync(`taskkill /PID ${pid} /T /F`, { stdio: 'ignore' });
@@ -172,7 +172,7 @@ async function stopInspector(): Promise<boolean> {
         }
       } else {
         // On Unix, the process group was created with detached: true
-        const pid = inspectorProcess.pid;
+        const {pid} = inspectorProcess;
         if (pid) {
           process.kill(-pid, 'SIGTERM');
         }

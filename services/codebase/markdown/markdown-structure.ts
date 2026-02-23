@@ -1,10 +1,11 @@
 // IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
 // Pure Node.js — orchestrates markdown parsing into FileStructure.
 
-import type { FileStructure, FileSymbol, OrphanedItem, OrphanedCategory } from '../types';
+import type { FileStructure, FileSymbol, OrphanedCategory, OrphanedItem } from '../types';
+
+import { readFileText } from '../file-utils';
 import { parseMarkdown } from './markdown-parser';
 import { MD_KINDS } from './markdown-types';
-import { readFileText } from '../file-utils';
 
 // ── Public API ───────────────────────────────────────────
 
@@ -26,7 +27,7 @@ export function extractMarkdownStructureFromText(text: string): FileStructure {
   const totalLines = lines.length;
 
   // Root-level HTML comments become orphaned content (targetable via #comments)
-  const { symbols, commentOrphans } = extractRootHtmlComments(allSymbols);
+  const { commentOrphans, symbols } = extractRootHtmlComments(allSymbols);
 
   const orphaned = [
     ...commentOrphans,
@@ -36,13 +37,13 @@ export function extractMarkdownStructureFromText(text: string): FileStructure {
   const stats = computeStats(symbols, orphaned, lines);
 
   return {
-    symbols,
     content: text,
-    totalLines,
     fileType: 'markdown',
-    orphaned: { items: orphaned },
     gaps,
+    orphaned: { items: orphaned },
     stats,
+    symbols,
+    totalLines,
   };
 }
 
@@ -63,17 +64,17 @@ function extractRootHtmlComments(allSymbols: FileSymbol[]): {
   for (const sym of allSymbols) {
     if (sym.kind === MD_KINDS.html && sym.name === 'comment') {
       commentOrphans.push({
-        name: sym.name,
-        kind: 'comment',
-        range: { start: sym.range.startLine, end: sym.range.endLine },
         category: 'comment',
+        kind: 'comment',
+        name: sym.name,
+        range: { end: sym.range.endLine, start: sym.range.startLine },
       });
     } else {
       symbols.push(sym);
     }
   }
 
-  return { symbols, commentOrphans };
+  return { commentOrphans, symbols };
 }
 
 function detectOrphanedContent(
@@ -111,10 +112,10 @@ function detectOrphanedContent(
     const footnoteMatch = /^\[\^([^\]]+)\]:\s*(.*)/.exec(line);
     if (footnoteMatch) {
       orphaned.push({
-        name: `[^${footnoteMatch[1]}]`,
-        kind: 'footnote',
-        range: { start: i, end: i },
         category: 'footnote',
+        kind: 'footnote',
+        name: `[^${footnoteMatch[1]}]`,
+        range: { end: i, start: i },
       });
       i++;
       continue;
@@ -124,10 +125,10 @@ function detectOrphanedContent(
     const linkDefMatch = /^\[([^\]^][^\]]*)\]:\s+\S+/.exec(line);
     if (linkDefMatch) {
       orphaned.push({
-        name: `[${linkDefMatch[1]}]`,
-        kind: 'linkdef',
-        range: { start: i, end: i },
         category: 'linkdef',
+        kind: 'linkdef',
+        name: `[${linkDefMatch[1]}]`,
+        range: { end: i, start: i },
       });
       i++;
       continue;
@@ -175,13 +176,13 @@ function computeGaps(
       if (gapStart === undefined) gapStart = line;
     } else {
       if (gapStart !== undefined) {
-        gaps.push({ start: gapStart, end: line - 1, type: 'blank' });
+        gaps.push({ end: line - 1, start: gapStart, type: 'blank' });
         gapStart = undefined;
       }
     }
   }
   if (gapStart !== undefined) {
-    gaps.push({ start: gapStart, end: totalLines, type: 'blank' });
+    gaps.push({ end: totalLines, start: gapStart, type: 'blank' });
   }
 
   return gaps;
@@ -230,9 +231,9 @@ function computeStats(
   const coveragePercent = totalLines > 0 ? Math.round((covered.size / totalLines) * 100) : 100;
 
   return {
-    totalSymbols,
-    totalOrphaned: orphaned.length,
-    totalBlankLines: blankLines,
     coveragePercent,
+    totalBlankLines: blankLines,
+    totalOrphaned: orphaned.length,
+    totalSymbols,
   };
 }

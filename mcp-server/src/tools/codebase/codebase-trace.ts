@@ -4,19 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import {z as zod} from 'zod';
+
 import {
+  type CallChainNode,
   codebaseTraceSymbol,
   type CodebaseTraceSymbolResult,
-  type SymbolLocationInfo,
-  type ReferenceInfo,
+  type ImpactInfo,
   type ReExportInfo,
-  type CallChainNode,
+  type ReferenceInfo,
+  type SymbolLocationInfo,
   type TypeFlowInfo,
   type TypeHierarchyInfo,
-  type ImpactInfo,
 } from '../../client-pipe.js';
 import {getClientWorkspace} from '../../config.js';
-import {z as zod} from 'zod';
 import {ToolCategory} from '../categories.js';
 import {
   defineTool,
@@ -37,18 +38,18 @@ const CHARS_PER_TOKEN = 4;
 const OUTPUT_CHAR_LIMIT = OUTPUT_TOKEN_LIMIT * CHARS_PER_TOKEN;
 
 type ReductionLevel =
-  | 'stripped-dts-refs'
   | 'collapsed-outgoing-calls'
   | 'collapsed-type-flows'
-  | 'reduced-depth';
+  | 'reduced-depth'
+  | 'stripped-dts-refs';
 
 interface OutputScaling {
-  requestedDepth: number;
   effectiveDepth: number;
-  reductionsApplied: ReductionLevel[];
   estimatedTokens: number;
-  tokenLimit: number;
+  reductionsApplied: ReductionLevel[];
+  requestedDepth: number;
   suggestions: string[];
+  tokenLimit: number;
 }
 
 function estimateTokens(obj: unknown): number {
@@ -123,19 +124,30 @@ function applyProgressiveReduction(
   }
 
   return {
-    requestedDepth,
     effectiveDepth,
-    reductionsApplied,
     estimatedTokens: estimateTokens(result),
-    tokenLimit: OUTPUT_TOKEN_LIMIT,
+    reductionsApplied,
+    requestedDepth,
     suggestions,
+    tokenLimit: OUTPUT_TOKEN_LIMIT,
   };
 }
 
 // ── Tool Definition ──────────────────────────────────────
 
-export const trace = defineTool({
-  name: 'codebase_trace',
+export const /**
+ *
+ */
+trace = defineTool({
+  annotations: {
+    category: ToolCategory.CODEBASE_ANALYSIS,
+    conditions: ['client-pipe', 'codebase-sequential'],
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+    readOnlyHint: true,
+    title: 'Codebase Trace',
+  },
   description: 'Trace a symbol through the codebase to understand its full lifecycle.\n\n' +
     "Finds a symbol's definition, all references, re-export chains, call hierarchy\n" +
     '(who calls it / what it calls), type flows (parameter types, return types,\n' +
@@ -156,102 +168,6 @@ export const trace = defineTool({
     '- Only references: `{ symbol: "config", include: ["references"] }`\n' +
     '- Call hierarchy: `{ symbol: "handleRequest", include: ["calls"], depth: 5 }`\n' +
     '- Full impact: `{ symbol: "BaseEntity", includeImpact: true }`',
-  annotations: {
-    title: 'Codebase Trace',
-    category: ToolCategory.CODEBASE_ANALYSIS,
-    readOnlyHint: true,
-    destructiveHint: false,
-    idempotentHint: true,
-    openWorldHint: false,
-    conditions: ['client-pipe', 'codebase-sequential'],
-  },
-  schema: {
-    symbol: zod
-      .string()
-      .describe('Name of the symbol to trace (function, class, variable, etc.).'),
-    file: zod
-      .string()
-      .optional()
-      .describe(
-        'File path where the symbol is defined. ' +
-          'Helps disambiguate when multiple symbols share the same name. ' +
-          'Can be relative or absolute.',
-      ),
-    line: zod
-      .number()
-      .int()
-      .positive()
-      .optional()
-      .describe('Line number of the symbol (1-based). Use with file for precise location.'),
-    column: zod
-      .number()
-      .int()
-      .min(0)
-      .optional()
-      .describe('Column number of the symbol (0-based). Use with file and line.'),
-    depth: zod
-      .number()
-      .int()
-      .min(1)
-      .max(10)
-      .optional()
-      .default(3)
-      .describe(
-        'Call hierarchy traversal depth. Higher values find deeper call chains ' +
-          'but take longer. Default: 3.',
-      ),
-    include: zod
-      .array(
-        zod.enum([
-          'all',
-          'definitions',
-          'references',
-          'reexports',
-          'calls',
-          'type-flows',
-          'hierarchy',
-        ]),
-      )
-      .min(1)
-      .optional()
-      .default(['all'])
-      .describe(
-        "Which analyses to include. Default: ['all']. " +
-          "Use specific modes like ['references', 'calls'] to reduce output.",
-      ),
-    includeImpact: zod
-      .boolean()
-      .optional()
-      .default(false)
-      .describe(
-        'Compute blast-radius impact analysis. Shows direct and transitive ' +
-          'dependents with risk level assessment. Default: false.',
-      ),
-    forceRefresh: zod
-      .boolean()
-      .optional()
-      .default(false)
-      .describe(
-        'Force invalidate project cache before tracing. Use after adding new files ' +
-          'or when the project structure has changed. Default: false.',
-      ),
-    includePatterns: zod
-      .array(zod.string())
-      .optional()
-      .describe(
-        'Glob patterns to restrict analysis to matching files only. ' +
-          'When provided, only files matching at least one pattern are analyzed. ' +
-          'excludePatterns further narrow within the included set.',
-      ),
-    excludePatterns: zod
-      .array(zod.string())
-      .optional()
-      .describe(
-        'Glob patterns to exclude files from analysis. ' +
-          'Applied in addition to .devtoolsignore rules. ' +
-          "Example: ['**/*.test.ts', '**/fixtures/**']",
-      ),
-  },
   handler: async (request, response) => {
     if (!request.params.symbol || request.params.symbol.trim() === '') {
       response.setSkipLedger();
@@ -321,10 +237,8 @@ export const trace = defineTool({
     // Final size check — if still too large after all reductions, return error with summary
     if (estimateTokens(output) > OUTPUT_TOKEN_LIMIT) {
       const errorResult = {
-        error: 'Response too large even after progressive reduction',
-        symbol: result.symbol,
-        summary: result.summary,
         definition: result.definition,
+        error: 'Response too large even after progressive reduction',
         outputScaling: {
           ...scaling,
           estimatedTokens: estimateTokens(output),
@@ -334,12 +248,102 @@ export const trace = defineTool({
           `Reduce depth from ${request.params.depth} to limit call hierarchy size`,
           'Use includePatterns to restrict analysis to specific files',
         ],
+        summary: result.summary,
+        symbol: result.symbol,
       };
       response.appendResponseLine(JSON.stringify(errorResult, null, 2));
       return;
     }
 
     response.appendResponseLine(JSON.stringify(output, null, 2));
+  },
+  name: 'codebase_trace',
+  schema: {
+    column: zod
+      .number()
+      .int()
+      .min(0)
+      .optional()
+      .describe('Column number of the symbol (0-based). Use with file and line.'),
+    depth: zod
+      .number()
+      .int()
+      .min(1)
+      .max(10)
+      .optional()
+      .default(3)
+      .describe(
+        'Call hierarchy traversal depth. Higher values find deeper call chains ' +
+          'but take longer. Default: 3.',
+      ),
+    excludePatterns: zod
+      .array(zod.string())
+      .optional()
+      .describe(
+        'Glob patterns to exclude files from analysis. ' +
+          'Applied in addition to .devtoolsignore rules. ' +
+          "Example: ['**/*.test.ts', '**/fixtures/**']",
+      ),
+    file: zod
+      .string()
+      .optional()
+      .describe(
+        'File path where the symbol is defined. ' +
+          'Helps disambiguate when multiple symbols share the same name. ' +
+          'Can be relative or absolute.',
+      ),
+    forceRefresh: zod
+      .boolean()
+      .optional()
+      .default(false)
+      .describe(
+        'Force invalidate project cache before tracing. Use after adding new files ' +
+          'or when the project structure has changed. Default: false.',
+      ),
+    include: zod
+      .array(
+        zod.enum([
+          'all',
+          'definitions',
+          'references',
+          'reexports',
+          'calls',
+          'type-flows',
+          'hierarchy',
+        ]),
+      )
+      .min(1)
+      .optional()
+      .default(['all'])
+      .describe(
+        "Which analyses to include. Default: ['all']. " +
+          "Use specific modes like ['references', 'calls'] to reduce output.",
+      ),
+    includeImpact: zod
+      .boolean()
+      .optional()
+      .default(false)
+      .describe(
+        'Compute blast-radius impact analysis. Shows direct and transitive ' +
+          'dependents with risk level assessment. Default: false.',
+      ),
+    includePatterns: zod
+      .array(zod.string())
+      .optional()
+      .describe(
+        'Glob patterns to restrict analysis to matching files only. ' +
+          'When provided, only files matching at least one pattern are analyzed. ' +
+          'excludePatterns further narrow within the included set.',
+      ),
+    line: zod
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe('Line number of the symbol (1-based). Use with file for precise location.'),
+    symbol: zod
+      .string()
+      .describe('Name of the symbol to trace (function, class, variable, etc.).'),
   },
 });
 

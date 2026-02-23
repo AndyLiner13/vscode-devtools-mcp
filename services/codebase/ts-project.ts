@@ -1,6 +1,6 @@
 // IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { Project, ts } from 'ts-morph';
 
 // ── In-Memory Project (for import extraction, exports scanning) ──
@@ -9,7 +9,7 @@ let tsProject: Project | undefined;
 
 export function getTsProject(): Project {
   if (!tsProject) {
-    tsProject = new Project({ useInMemoryFileSystem: true, compilerOptions: { allowJs: true } });
+    tsProject = new Project({ compilerOptions: { allowJs: true }, useInMemoryFileSystem: true });
   }
   return tsProject;
 }
@@ -17,8 +17,8 @@ export function getTsProject(): Project {
 // ── Workspace Project Cache (for traceSymbol — real filesystem + TypeChecker) ──
 
 interface WorkspaceProjectEntry {
-  project: Project;
   lastAccess: number;
+  project: Project;
 }
 
 const workspaceProjects = new Map<string, WorkspaceProjectEntry>();
@@ -70,21 +70,21 @@ export function getWorkspaceProject(rootDir: string): Project {
     // Check for solution-style tsconfig (monorepo with references but no direct source files)
     const solutionProject = tryCreateSolutionProject(rootDir, tsConfigPath);
     project = solutionProject ?? new Project({
-      tsConfigFilePath: tsConfigPath,
       skipAddingFilesFromTsConfig: false,
+      tsConfigFilePath: tsConfigPath,
     });
   } else {
     project = new Project({
       compilerOptions: {
         allowJs: true,
+        baseUrl: rootDir,
         checkJs: false,
         esModuleInterop: true,
-        skipLibCheck: true,
-        target: ts.ScriptTarget.ESNext,
         module: ts.ModuleKind.ESNext,
         moduleResolution: ts.ModuleResolutionKind.NodeJs,
         resolveJsonModule: true,
-        baseUrl: rootDir,
+        skipLibCheck: true,
+        target: ts.ScriptTarget.ESNext,
       },
     });
 
@@ -103,7 +103,7 @@ export function getWorkspaceProject(rootDir: string): Project {
     }
   }
 
-  workspaceProjects.set(rootDir, { project, lastAccess: now });
+  workspaceProjects.set(rootDir, { lastAccess: now, project });
   return project;
 }
 
@@ -126,7 +126,7 @@ function tryCreateSolutionProject(rootDir: string, tsConfigPath: string): Projec
   try {
     const raw = fs.readFileSync(tsConfigPath, 'utf-8');
     const config = JSON.parse(raw);
-    const references: Array<{ path: string }> = config.references;
+    const {references} = config;
 
     if (!Array.isArray(references) || references.length === 0) return undefined;
 
@@ -140,28 +140,28 @@ function tryCreateSolutionProject(rootDir: string, tsConfigPath: string): Projec
 
     if (baseTsConfigPath) {
       project = new Project({
-        tsConfigFilePath: baseTsConfigPath,
-        skipAddingFilesFromTsConfig: true,
         compilerOptions: {
           composite: false,
           declaration: false,
           declarationMap: false,
           incremental: false,
         },
+        skipAddingFilesFromTsConfig: true,
+        tsConfigFilePath: baseTsConfigPath,
       });
     } else {
       project = new Project({
         compilerOptions: {
           allowJs: true,
+          baseUrl: rootDir,
           checkJs: false,
           esModuleInterop: true,
-          skipLibCheck: true,
-          target: ts.ScriptTarget.ESNext,
           module: ts.ModuleKind.NodeNext,
           moduleResolution: ts.ModuleResolutionKind.NodeNext,
           resolveJsonModule: true,
-          baseUrl: rootDir,
           rootDir,
+          skipLibCheck: true,
+          target: ts.ScriptTarget.ESNext,
         },
       });
     }
@@ -228,7 +228,7 @@ function addReferencedProjectFiles(project: Project, rootDir: string, refPath: s
         if (!hasJsPatterns) {
           const jsPatterns = includePatterns
             .filter(p => p.includes('.ts'))
-            .map(p => p.replace(/\.ts$/g, '.js').replace(/\*\.ts/g, '*.js'));
+            .map(p => p.replaceAll(/\.ts$/g, '.js').replaceAll('*.ts', '*.js'));
           for (const jp of jsPatterns) {
             includePatterns.push(jp);
           }

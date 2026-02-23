@@ -15,11 +15,12 @@
  */
 
 import type * as vscode from 'vscode';
-import { ts } from 'ts-morph';
-import { createHash } from 'node:crypto';
-import { readFileSync, existsSync } from 'node:fs';
-import { relative, join } from 'node:path';
+
 import { exec } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { ts } from 'ts-morph';
 
 // ── Storage Keys ─────────────────────────────────────────────────────────────
 
@@ -29,21 +30,21 @@ const HASH_KEY_EXT = 'hotReload:hash:extension';
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface ChangeCheckResult {
+  extBuildError: null | string;
+  extChanged: boolean;
+  extClientReloaded: boolean;
+  extRebuilt: boolean;
+  mcpBuildError: null | string;
   mcpChanged: boolean;
   mcpRebuilt: boolean;
-  mcpBuildError: string | null;
-  extChanged: boolean;
-  extRebuilt: boolean;
-  extBuildError: string | null;
-  extClientReloaded: boolean;
-  newCdpPort: number | null;
-  newClientStartedAt: number | null;
+  newCdpPort: null | number;
+  newClientStartedAt: null | number;
 }
 
 interface PackageCheckResult {
+  buildError: null | string;
   changed: boolean;
   rebuilt: boolean;
-  buildError: string | null;
 }
 
 // ── Service ──────────────────────────────────────────────────────────────────
@@ -64,14 +65,14 @@ class HotReloadService {
     const configPath = existsSync(buildConfigPath) ? buildConfigPath : defaultConfigPath;
 
     if (!existsSync(configPath)) {
-      console.log('[hotReload] No tsconfig found in ' + packageRoot);
+      console.log(`[hotReload] No tsconfig found in ${  packageRoot}`);
       return [];
     }
 
     const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
     if (configFile.error) {
       const msg = ts.flattenDiagnosticMessageText(configFile.error.messageText, '\n');
-      console.log('[hotReload] Failed to read ' + configPath + ': ' + msg);
+      console.log(`[hotReload] Failed to read ${  configPath  }: ${  msg}`);
       return [];
     }
 
@@ -86,7 +87,7 @@ class HotReloadService {
     if (parsed.errors.length > 0) {
       for (const diag of parsed.errors) {
         const msg = ts.flattenDiagnosticMessageText(diag.messageText, '\n');
-        console.log('[hotReload] tsconfig warning: ' + msg);
+        console.log(`[hotReload] tsconfig warning: ${  msg}`);
       }
     }
 
@@ -106,7 +107,7 @@ class HotReloadService {
     const sorted = files
       .map(absPath => ({
         abs: absPath,
-        rel: relative(packageRoot, absPath).replace(/\\/g, '/'),
+        rel: relative(packageRoot, absPath).replaceAll('\\', '/'),
       }))
       .sort((a, b) => a.rel.localeCompare(b.rel));
 
@@ -133,7 +134,7 @@ class HotReloadService {
   /**
    * Detect the package manager by checking for lockfiles.
    */
-  detectPackageManager(packageRoot: string): 'pnpm' | 'npm' | 'yarn' {
+  detectPackageManager(packageRoot: string): 'npm' | 'pnpm' | 'yarn' {
     if (existsSync(join(packageRoot, 'pnpm-lock.yaml'))) {
       return 'pnpm';
     }
@@ -147,12 +148,12 @@ class HotReloadService {
    * Run a package.json script using the detected package manager.
    * Returns null on success, error output on failure.
    */
-  runBuild(packageRoot: string, scriptName: string): Promise<string | null> {
+  async runBuild(packageRoot: string, scriptName: string): Promise<null | string> {
     return new Promise(resolve => {
       const pm = this.detectPackageManager(packageRoot);
-      const cmd = pm + ' run ' + scriptName;
+      const cmd = `${pm  } run ${  scriptName}`;
 
-      console.log('[hotReload] Running build: ' + cmd + ' in ' + packageRoot);
+      console.log(`[hotReload] Running build: ${  cmd  } in ${  packageRoot}`);
 
       exec(cmd, { cwd: packageRoot, timeout: 300_000 }, (error, stdout, stderr) => {
         if (error) {
@@ -178,7 +179,7 @@ class HotReloadService {
    * Returns the current content hash and whether it differs from stored.
    * Use with runBuild() + commitHash() for progress-aware workflows.
    */
-  detectChange(packageRoot: string, hashKey: 'mcp' | 'ext'): { changed: boolean; currentHash: string } {
+  detectChange(packageRoot: string, hashKey: 'ext' | 'mcp'): { changed: boolean; currentHash: string } {
     const key = hashKey === 'mcp' ? HASH_KEY_MCP : HASH_KEY_EXT;
     const files = this.discoverSourceFiles(packageRoot);
     if (files.length === 0) {
@@ -192,9 +193,9 @@ class HotReloadService {
       return { changed: false, currentHash };
     }
 
-    const storedPrefix = storedHash ? storedHash.slice(0, 12) + '...' : 'none';
-    const currentPrefix = currentHash.slice(0, 12) + '...';
-    console.log('[hotReload] Content changed (' + key + '): ' + storedPrefix + ' -> ' + currentPrefix);
+    const storedPrefix = storedHash ? `${storedHash.slice(0, 12)  }...` : 'none';
+    const currentPrefix = `${currentHash.slice(0, 12)  }...`;
+    console.log(`[hotReload] Content changed (${  key  }): ${  storedPrefix  } -> ${  currentPrefix}`);
     return { changed: true, currentHash };
   }
 
@@ -202,10 +203,10 @@ class HotReloadService {
    * Store a content hash after a successful build.
    * Call after runBuild() succeeds to persist the hash for future comparisons.
    */
-  async commitHash(hashKey: 'mcp' | 'ext', hash: string): Promise<void> {
+  async commitHash(hashKey: 'ext' | 'mcp', hash: string): Promise<void> {
     const key = hashKey === 'mcp' ? HASH_KEY_MCP : HASH_KEY_EXT;
     await this.setStoredHash(key, hash);
-    console.log('[hotReload] Hash committed (' + key + '): ' + hash.slice(0, 12) + '...');
+    console.log(`[hotReload] Hash committed (${  key  }): ${  hash.slice(0, 12)  }...`);
   }
 
   /**
@@ -220,29 +221,29 @@ class HotReloadService {
   ): Promise<PackageCheckResult> {
     const files = this.discoverSourceFiles(packageRoot);
     if (files.length === 0) {
-      return { changed: false, rebuilt: false, buildError: null };
+      return { buildError: null, changed: false, rebuilt: false };
     }
 
     const currentHash = this.computeContentHash(packageRoot, files);
     const storedHash = this.getStoredHash(hashKey);
 
     if (storedHash === currentHash) {
-      return { changed: false, rebuilt: false, buildError: null };
+      return { buildError: null, changed: false, rebuilt: false };
     }
 
-    const storedPrefix = storedHash ? storedHash.slice(0, 12) + '...' : 'none';
-    const currentPrefix = currentHash.slice(0, 12) + '...';
-    console.log('[hotReload] Content changed (' + hashKey + '): ' + storedPrefix + ' -> ' + currentPrefix);
+    const storedPrefix = storedHash ? `${storedHash.slice(0, 12)  }...` : 'none';
+    const currentPrefix = `${currentHash.slice(0, 12)  }...`;
+    console.log(`[hotReload] Content changed (${  hashKey  }): ${  storedPrefix  } -> ${  currentPrefix}`);
 
     const buildError = await this.runBuild(packageRoot, buildScript);
     if (buildError) {
-      console.log('[hotReload] Build failed (' + hashKey + '): ' + buildError);
-      return { changed: true, rebuilt: false, buildError };
+      console.log(`[hotReload] Build failed (${  hashKey  }): ${  buildError}`);
+      return { buildError, changed: true, rebuilt: false };
     }
 
     await this.setStoredHash(hashKey, currentHash);
-    console.log('[hotReload] Build succeeded, hash stored: ' + currentPrefix);
-    return { changed: true, rebuilt: true, buildError: null };
+    console.log(`[hotReload] Build succeeded, hash stored: ${  currentPrefix}`);
+    return { buildError: null, changed: true, rebuilt: true };
   }
 
   /**
@@ -257,13 +258,13 @@ class HotReloadService {
     extensionRoot: string,
   ): Promise<ChangeCheckResult> {
     const result: ChangeCheckResult = {
+      extBuildError: null,
+      extChanged: false,
+      extClientReloaded: false,
+      extRebuilt: false,
+      mcpBuildError: null,
       mcpChanged: false,
       mcpRebuilt: false,
-      mcpBuildError: null,
-      extChanged: false,
-      extRebuilt: false,
-      extBuildError: null,
-      extClientReloaded: false,
       newCdpPort: null,
       newClientStartedAt: null,
     };

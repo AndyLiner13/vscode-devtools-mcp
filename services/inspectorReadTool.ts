@@ -17,25 +17,25 @@ const INSPECTOR_BASE_URL = 'http://localhost:6275';
 // ── Input Schema ─────────────────────────────────────────────────────────────
 
 interface IInspectorReadParams {
-  toolName: string;
   recordId?: string;
+  toolName: string;
 }
 
 // ── API Types ────────────────────────────────────────────────────────────────
 
 interface InspectorRecord {
-  id: string;
-  toolName: string;
-  input: string;
-  output: Array<{ type: string; text?: string }>;
-  isError: boolean;
-  createdAt: string;
-  lastRunAt: string | null;
-  rating: string | null;
   comment: string;
-  priority: number;
+  createdAt: string;
   durationMs: number;
+  id: string;
+  input: string;
+  isError: boolean;
   isStale: boolean;
+  lastRunAt: null | string;
+  output: Array<{ type: string; text?: string }>;
+  priority: number;
+  rating: null | string;
+  toolName: string;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -86,8 +86,8 @@ export class InspectorReadTool implements vscode.LanguageModelTool<IInspectorRea
   async prepareInvocation(
     options: vscode.LanguageModelToolInvocationPrepareOptions<IInspectorReadParams>,
     _token: vscode.CancellationToken,
-  ): Promise<vscode.PreparedToolInvocation | undefined> {
-    const { toolName, recordId } = options.input;
+  ): Promise<undefined | vscode.PreparedToolInvocation> {
+    const { recordId, toolName } = options.input;
 
     if (recordId) {
       return {
@@ -104,7 +104,7 @@ export class InspectorReadTool implements vscode.LanguageModelTool<IInspectorRea
     options: vscode.LanguageModelToolInvocationOptions<IInspectorReadParams>,
     _token: vscode.CancellationToken,
   ): Promise<vscode.LanguageModelToolResult> {
-    const { toolName, recordId } = options.input;
+    const { recordId, toolName } = options.input;
 
     try {
       if (recordId) {

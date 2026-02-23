@@ -9,11 +9,11 @@
  */
 
 export type TerminalStatus =
+  | 'completed'
   | 'idle'
   | 'running'
-  | 'completed'
-  | 'waiting_for_input'
-  | 'timeout';
+  | 'timeout'
+  | 'waiting_for_input';
 
 /**
  * Clean ANSI escape sequences and control characters from terminal output.
@@ -23,16 +23,16 @@ export type TerminalStatus =
  */
 export function cleanTerminalOutput(raw: string): string {
   // CSI sequences: ESC [ <params> <intermediate> <final byte>
-  let text = raw.replace(/\x1b\[[\x30-\x3f]*[\x20-\x2f]*[\x40-\x7e]/g, '');
+  let text = raw.replaceAll(/\x1b\[[\x30-\x3f]*[\x20-\x2f]*[\x40-\x7e]/g, '');
   // OSC sequences: ESC ] ... (BEL | ST)
-  text = text.replace(/\x1b][\s\S]*?(?:\x07|\x1b\\|\x9c)/g, '');
+  text = text.replaceAll(/\x1b][\s\S]*?(?:\x07|\x1b\\|\x9c)/g, '');
   // DCS/PM/APC/SOS sequences
-  text = text.replace(/\x1b[P^_X][\s\S]*?(?:\x1b\\|\x9c)/g, '');
+  text = text.replaceAll(/\x1b[P^_X][\s\S]*?(?:\x1b\\|\x9c)/g, '');
   // Two-character ESC sequences
-  text = text.replace(/\x1b[\x20-\x7e]/g, '');
+  text = text.replaceAll(/\x1b[\x20-\x7e]/g, '');
 
   // Normalise CRLF → LF
-  text = text.replace(/\r\n/g, '\n');
+  text = text.replaceAll('\r\n', '\n');
 
   // Simulate carriage-return overwriting
   const lines = text.split('\n');
@@ -52,10 +52,10 @@ export function cleanTerminalOutput(raw: string): string {
   text = lines.join('\n');
 
   // Strip remaining non-printable control characters (keep \n and \t)
-  text = text.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '');
+  text = text.replaceAll(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '');
 
   // Collapse runs of 3+ blank lines into 2
-  text = text.replace(/\n{3,}/g, '\n\n');
+  text = text.replaceAll(/\n{3,}/g, '\n\n');
 
   return text.trim();
 }

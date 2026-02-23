@@ -22,7 +22,10 @@
 
 import { DEFAULT_PATTERNS, defineStrategy } from 'logpare';
 
-export const VS_CODE_PATTERNS: Record<string, RegExp> = {
+export const /**
+ *
+ */
+VS_CODE_PATTERNS: Record<string, RegExp> = {
   ...DEFAULT_PATTERNS,
 
   // VS Code extension IDs: publisher.extensionName (e.g. ms-python.python)
@@ -45,6 +48,9 @@ export const VS_CODE_PATTERNS: Record<string, RegExp> = {
  * Custom parsing strategy for VS Code logs.
  * Pass to logpare's compress/createDrain via `drain.preprocessing`.
  */
-export const vsCodeStrategy = defineStrategy({
+export const /**
+ *
+ */
+vsCodeStrategy = defineStrategy({
   patterns: VS_CODE_PATTERNS,
 });

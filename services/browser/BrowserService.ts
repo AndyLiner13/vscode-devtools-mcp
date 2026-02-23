@@ -12,14 +12,14 @@ import type { CdpClient, CdpSendOptions } from './CdpClient';
 import type {
     AXNode,
     AXProperty,
+    CdpTarget,
     ConsoleMessage,
     ConsoleMessageArg,
     ConsoleStackFrame,
-    CdpTarget,
+    DiffResult,
     FrameInfo,
     NodeSignature,
     ScreenshotOptions,
-    DiffResult,
 } from './types';
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -33,100 +33,100 @@ const IGNORED_ROLES = new Set([
 ]);
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
-    'button': 'button',
-    'checkbox': 'checkbox',
-    'combobox': 'combobox',
-    'heading': 'heading',
-    'img': 'image',
-    'link': 'link',
-    'list': 'list',
-    'listitem': 'list item',
-    'menubar': 'menubar',
-    'menu': 'menu',
-    'menuitem': 'menu item',
-    'navigation': 'navigation',
-    'progressbar': 'progress bar',
-    'radio': 'radio button',
-    'region': 'region',
-    'scrollbar': 'scrollbar',
-    'search': 'search',
-    'separator': 'separator',
-    'slider': 'slider',
-    'spinbutton': 'spin button',
-    'status': 'status',
-    'switch': 'switch',
-    'tab': 'tab',
-    'tablist': 'tab list',
-    'tabpanel': 'tab panel',
-    'table': 'table',
-    'textbox': 'textbox',
-    'toolbar': 'toolbar',
-    'tree': 'tree',
-    'treegrid': 'tree grid',
-    'treeitem': 'tree item',
-    'row': 'row',
-    'cell': 'cell',
-    'columnheader': 'column header',
-    'rowheader': 'row header',
-    'grid': 'grid',
-    'gridcell': 'grid cell',
-    'dialog': 'dialog',
     'alert': 'alert',
     'alertdialog': 'alert dialog',
     'application': 'application',
     'article': 'article',
     'banner': 'banner',
+    'button': 'button',
+    'cell': 'cell',
+    'checkbox': 'checkbox',
+    'columnheader': 'column header',
+    'combobox': 'combobox',
     'complementary': 'complementary',
     'contentinfo': 'content info',
     'definition': 'definition',
+    'dialog': 'dialog',
     'directory': 'directory',
     'document': 'document',
     'figure': 'figure',
     'form': 'form',
+    'grid': 'grid',
+    'gridcell': 'grid cell',
     'group': 'group',
+    'heading': 'heading',
+    'img': 'image',
+    'link': 'link',
+    'list': 'list',
+    'listitem': 'list item',
     'log': 'log',
     'main': 'main',
     'marquee': 'marquee',
     'math': 'math',
+    'menu': 'menu',
+    'menubar': 'menubar',
+    'menuitem': 'menu item',
+    'navigation': 'navigation',
     'note': 'note',
-    'timer': 'timer',
-    'tooltip': 'tooltip',
-    'WebArea': 'web area',
+    'progressbar': 'progress bar',
+    'radio': 'radio button',
+    'region': 'region',
     'RootWebArea': 'web area',
+    'row': 'row',
+    'rowheader': 'row header',
+    'scrollbar': 'scrollbar',
+    'search': 'search',
+    'separator': 'separator',
+    'slider': 'slider',
+    'spinbutton': 'spin button',
     'StaticText': 'text',
+    'status': 'status',
+    'switch': 'switch',
+    'tab': 'tab',
+    'table': 'table',
+    'tablist': 'tab list',
+    'tabpanel': 'tab panel',
+    'textbox': 'textbox',
+    'timer': 'timer',
+    'toolbar': 'toolbar',
+    'tooltip': 'tooltip',
+    'tree': 'tree',
+    'treegrid': 'tree grid',
+    'treeitem': 'tree item',
+    'WebArea': 'web area',
 };
 
 // Key name mapping for CDP Input.dispatchKeyEvent
 const KEY_DEFINITIONS: Record<string, { key: string; code: string; keyCode: number; text?: string }> = {
-    'enter': { key: 'Enter', code: 'Enter', keyCode: 13, text: '\r' },
-    'return': { key: 'Enter', code: 'Enter', keyCode: 13, text: '\r' },
-    'tab': { key: 'Tab', code: 'Tab', keyCode: 9 },
-    'escape': { key: 'Escape', code: 'Escape', keyCode: 27 },
-    'esc': { key: 'Escape', code: 'Escape', keyCode: 27 },
-    'backspace': { key: 'Backspace', code: 'Backspace', keyCode: 8 },
-    'delete': { key: 'Delete', code: 'Delete', keyCode: 46 },
-    'space': { key: ' ', code: 'Space', keyCode: 32, text: ' ' },
-    'arrowup': { key: 'ArrowUp', code: 'ArrowUp', keyCode: 38 },
-    'arrowdown': { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40 },
-    'arrowleft': { key: 'ArrowLeft', code: 'ArrowLeft', keyCode: 37 },
-    'arrowright': { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39 },
-    'home': { key: 'Home', code: 'Home', keyCode: 36 },
-    'end': { key: 'End', code: 'End', keyCode: 35 },
-    'pageup': { key: 'PageUp', code: 'PageUp', keyCode: 33 },
-    'pagedown': { key: 'PageDown', code: 'PageDown', keyCode: 34 },
-    'insert': { key: 'Insert', code: 'Insert', keyCode: 45 },
-    'f1': { key: 'F1', code: 'F1', keyCode: 112 },
-    'f2': { key: 'F2', code: 'F2', keyCode: 113 },
-    'f3': { key: 'F3', code: 'F3', keyCode: 114 },
-    'f4': { key: 'F4', code: 'F4', keyCode: 115 },
-    'f5': { key: 'F5', code: 'F5', keyCode: 116 },
-    'f6': { key: 'F6', code: 'F6', keyCode: 117 },
-    'f7': { key: 'F7', code: 'F7', keyCode: 118 },
-    'f8': { key: 'F8', code: 'F8', keyCode: 119 },
-    'f9': { key: 'F9', code: 'F9', keyCode: 120 },
-    'f10': { key: 'F10', code: 'F10', keyCode: 121 },
-    'f11': { key: 'F11', code: 'F11', keyCode: 122 },
-    'f12': { key: 'F12', code: 'F12', keyCode: 123 },
+    'arrowdown': { code: 'ArrowDown', key: 'ArrowDown', keyCode: 40 },
+    'arrowleft': { code: 'ArrowLeft', key: 'ArrowLeft', keyCode: 37 },
+    'arrowright': { code: 'ArrowRight', key: 'ArrowRight', keyCode: 39 },
+    'arrowup': { code: 'ArrowUp', key: 'ArrowUp', keyCode: 38 },
+    'backspace': { code: 'Backspace', key: 'Backspace', keyCode: 8 },
+    'delete': { code: 'Delete', key: 'Delete', keyCode: 46 },
+    'end': { code: 'End', key: 'End', keyCode: 35 },
+    'enter': { code: 'Enter', key: 'Enter', keyCode: 13, text: '\r' },
+    'esc': { code: 'Escape', key: 'Escape', keyCode: 27 },
+    'escape': { code: 'Escape', key: 'Escape', keyCode: 27 },
+    'f1': { code: 'F1', key: 'F1', keyCode: 112 },
+    'f2': { code: 'F2', key: 'F2', keyCode: 113 },
+    'f3': { code: 'F3', key: 'F3', keyCode: 114 },
+    'f4': { code: 'F4', key: 'F4', keyCode: 115 },
+    'f5': { code: 'F5', key: 'F5', keyCode: 116 },
+    'f6': { code: 'F6', key: 'F6', keyCode: 117 },
+    'f7': { code: 'F7', key: 'F7', keyCode: 118 },
+    'f8': { code: 'F8', key: 'F8', keyCode: 119 },
+    'f9': { code: 'F9', key: 'F9', keyCode: 120 },
+    'f10': { code: 'F10', key: 'F10', keyCode: 121 },
+    'f11': { code: 'F11', key: 'F11', keyCode: 122 },
+    'f12': { code: 'F12', key: 'F12', keyCode: 123 },
+    'home': { code: 'Home', key: 'Home', keyCode: 36 },
+    'insert': { code: 'Insert', key: 'Insert', keyCode: 45 },
+    'pagedown': { code: 'PageDown', key: 'PageDown', keyCode: 34 },
+    'pageup': { code: 'PageUp', key: 'PageUp', keyCode: 33 },
+    'return': { code: 'Enter', key: 'Enter', keyCode: 13, text: '\r' },
+    'space': { code: 'Space', key: ' ', keyCode: 32, text: ' ' },
+    'tab': { code: 'Tab', key: 'Tab', keyCode: 9 },
 };
 
 const MODIFIER_KEYS: Record<string, number> = {
@@ -140,16 +140,16 @@ const MODIFIER_KEYS: Record<string, number> = {
 // ── BrowserService ───────────────────────────────────────────────────────────
 
 export class BrowserService {
-    private cdp: CdpClient;
+    private readonly cdp: CdpClient;
 
     // AX tree state
-    private uidToAXNode = new Map<string, AXNode>();
-    private cdpNodeMap = new Map<number, AXNode>();
-    private uidToFrameId = new Map<string, string>();
+    private readonly uidToAXNode = new Map<string, AXNode>();
+    private readonly cdpNodeMap = new Map<number, AXNode>();
+    private readonly uidToFrameId = new Map<string, string>();
     private uidCounter = 0;
 
     // Console state
-    private consoleMessages: ConsoleMessage[] = [];
+    private readonly consoleMessages: ConsoleMessage[] = [];
     private nextMessageId = 1;
     private consoleListenerAttached = false;
 
@@ -190,29 +190,29 @@ export class BrowserService {
                 }
 
                 processedArgs.push({
-                    type: arg.type,
-                    value: arg.value,
+                    className: arg.className,
                     description: arg.description,
                     subtype: arg.subtype,
-                    className: arg.className,
+                    type: arg.type,
+                    value: arg.value,
                 });
             }
 
-            const rawStackTrace = params.stackTrace as { callFrames?: ConsoleStackFrame[] } | undefined;
+            const rawStackTrace = params.stackTrace as undefined | { callFrames?: ConsoleStackFrame[] };
             const stackTrace = rawStackTrace?.callFrames?.map((f) => ({
-                functionName: f.functionName ?? '',
-                url: f.url ?? '',
-                lineNumber: f.lineNumber ?? 0,
                 columnNumber: f.columnNumber ?? 0,
+                functionName: f.functionName ?? '',
+                lineNumber: f.lineNumber ?? 0,
+                url: f.url ?? '',
             }));
 
             this.consoleMessages.push({
-                id: this.nextMessageId++,
-                type,
-                text: textParts.join(' '),
                 args: processedArgs,
-                timestamp: Date.now(),
+                id: this.nextMessageId++,
                 stackTrace,
+                text: textParts.join(' '),
+                timestamp: Date.now(),
+                type,
             });
         });
     }
@@ -479,7 +479,7 @@ export class BrowserService {
 
         // Resolve node to get its objectId
         const resolveResult = await this.cdp.send('DOM.resolveNode', { backendNodeId }, opts);
-        const obj = resolveResult.object as { objectId?: string } | undefined;
+        const obj = resolveResult.object as undefined | { objectId?: string };
         if (!obj?.objectId) {
             throw new Error(`Could not resolve DOM node for element "${uid}"`);
         }
@@ -487,12 +487,12 @@ export class BrowserService {
         // Get box model
         try {
             const boxResult = await this.cdp.send('DOM.getBoxModel', { backendNodeId }, opts);
-            const model = boxResult.model as { content: number[] } | undefined;
+            const model = boxResult.model as undefined | { content: number[] };
             if (model?.content) {
                 const [x1, y1, x2, y2, x3, y3, x4, y4] = model.content;
                 const x = (x1 + x2 + x3 + x4) / 4;
                 const y = (y1 + y2 + y3 + y4) / 4;
-                return { x, y, sessionId };
+                return { sessionId, x, y };
             }
         } catch {
             // Fall back to bounding rect
@@ -500,15 +500,15 @@ export class BrowserService {
 
         // Fallback: use JS getBoundingClientRect
         const evalResult = await this.cdp.send('Runtime.callFunctionOn', {
-            objectId: obj.objectId,
             functionDeclaration: `function() {
                 const rect = this.getBoundingClientRect();
                 return JSON.stringify({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
             }`,
+            objectId: obj.objectId,
             returnByValue: true,
         }, opts);
 
-        const evalValue = evalResult.result as { value?: string } | undefined;
+        const evalValue = evalResult.result as undefined | { value?: string };
         if (evalValue?.value) {
             const coords = JSON.parse(evalValue.value) as { x: number; y: number };
             return { ...coords, sessionId };
@@ -537,24 +537,24 @@ export class BrowserService {
         }
     }
 
-    async clickAtCoords(x: number, y: number, clickCount: number = 1): Promise<void> {
+    async clickAtCoords(x: number, y: number, clickCount = 1): Promise<void> {
         await this.cdp.send('Input.dispatchMouseEvent', {
+            button: 'left',
+            clickCount,
             type: 'mousePressed',
             x,
             y,
-            button: 'left',
-            clickCount,
         });
         await this.cdp.send('Input.dispatchMouseEvent', {
+            button: 'left',
+            clickCount,
             type: 'mouseReleased',
             x,
             y,
-            button: 'left',
-            clickCount,
         });
     }
 
-    async clickElement(uid: string, clickCount: number = 1): Promise<void> {
+    async clickElement(uid: string, clickCount = 1): Promise<void> {
         await this.scrollIntoView(uid);
         const { x, y } = await this.getElementCenter(uid);
         await this.clickAtCoords(x, y, clickCount);
@@ -586,11 +586,11 @@ export class BrowserService {
 
         // Check if it's a <select> element
         const resolveResult = await this.cdp.send('DOM.resolveNode', { backendNodeId }, opts);
-        const obj = resolveResult.object as { objectId?: string } | undefined;
+        const obj = resolveResult.object as undefined | { objectId?: string };
         if (obj?.objectId) {
             const tagResult = await this.cdp.send('Runtime.callFunctionOn', {
-                objectId: obj.objectId,
                 functionDeclaration: 'function() { return this.tagName; }',
+                objectId: obj.objectId,
                 returnByValue: true,
             }, opts);
             const tag = (tagResult.result as { value?: string })?.value;
@@ -598,13 +598,13 @@ export class BrowserService {
             if (tag?.toUpperCase() === 'SELECT') {
                 // For <select>, set value directly via JS
                 await this.cdp.send('Runtime.callFunctionOn', {
-                    objectId: obj.objectId,
+                    arguments: [{ value }],
                     functionDeclaration: `function(val) {
                         this.value = val;
                         this.dispatchEvent(new Event('input', { bubbles: true }));
                         this.dispatchEvent(new Event('change', { bubbles: true }));
                     }`,
-                    arguments: [{ value }],
+                    objectId: obj.objectId,
                     returnByValue: true,
                 }, opts);
                 return;
@@ -629,11 +629,11 @@ export class BrowserService {
 
         // Mouse down on source
         await this.cdp.send('Input.dispatchMouseEvent', {
+            button: 'left',
+            clickCount: 1,
             type: 'mousePressed',
             x: from.x,
             y: from.y,
-            button: 'left',
-            clickCount: 1,
         });
 
         // Move to target (with intermediate steps for smooth drag)
@@ -641,20 +641,20 @@ export class BrowserService {
         for (let i = 1; i <= steps; i++) {
             const ratio = i / steps;
             await this.cdp.send('Input.dispatchMouseEvent', {
+                button: 'left',
                 type: 'mouseMoved',
                 x: from.x + (to.x - from.x) * ratio,
                 y: from.y + (to.y - from.y) * ratio,
-                button: 'left',
             });
         }
 
         // Mouse up on target
         await this.cdp.send('Input.dispatchMouseEvent', {
+            button: 'left',
+            clickCount: 1,
             type: 'mouseReleased',
             x: to.x,
             y: to.y,
-            button: 'left',
-            clickCount: 1,
         });
     }
 
@@ -679,11 +679,11 @@ export class BrowserService {
         }
 
         await this.cdp.send('Input.dispatchMouseEvent', {
+            deltaX,
+            deltaY,
             type: 'mouseWheel',
             x,
             y,
-            deltaX,
-            deltaY,
         });
     }
 
@@ -691,64 +691,64 @@ export class BrowserService {
     // Key Input
     // ========================================================================
 
-    async dispatchRawKey(keyName: string, modifiers: number = 0): Promise<void> {
+    async dispatchRawKey(keyName: string, modifiers = 0): Promise<void> {
         const def = KEY_DEFINITIONS[keyName.toLowerCase()];
         if (!def) {
             // Single character key
             const charCode = keyName.charCodeAt(0);
             await this.cdp.send('Input.dispatchKeyEvent', {
-                type: 'keyDown',
-                key: keyName,
                 code: `Key${keyName.toUpperCase()}`,
-                windowsVirtualKeyCode: charCode,
-                nativeVirtualKeyCode: charCode,
+                key: keyName,
                 modifiers,
+                nativeVirtualKeyCode: charCode,
+                type: 'keyDown',
+                windowsVirtualKeyCode: charCode,
             });
             if (keyName.length === 1) {
                 await this.cdp.send('Input.dispatchKeyEvent', {
-                    type: 'char',
-                    text: keyName,
                     key: keyName,
                     modifiers,
+                    text: keyName,
+                    type: 'char',
                 });
             }
             await this.cdp.send('Input.dispatchKeyEvent', {
-                type: 'keyUp',
-                key: keyName,
                 code: `Key${keyName.toUpperCase()}`,
-                windowsVirtualKeyCode: charCode,
-                nativeVirtualKeyCode: charCode,
+                key: keyName,
                 modifiers,
+                nativeVirtualKeyCode: charCode,
+                type: 'keyUp',
+                windowsVirtualKeyCode: charCode,
             });
             return;
         }
 
         await this.cdp.send('Input.dispatchKeyEvent', {
-            type: 'keyDown',
-            key: def.key,
             code: def.code,
-            windowsVirtualKeyCode: def.keyCode,
-            nativeVirtualKeyCode: def.keyCode,
+            key: def.key,
             modifiers,
+            nativeVirtualKeyCode: def.keyCode,
+            type: 'keyDown',
+            windowsVirtualKeyCode: def.keyCode,
             ...(def.text ? { text: def.text } : {}),
         });
 
         if (def.text) {
             await this.cdp.send('Input.dispatchKeyEvent', {
-                type: 'char',
-                text: def.text,
                 key: def.key,
                 modifiers,
+                text: def.text,
+                type: 'char',
             });
         }
 
         await this.cdp.send('Input.dispatchKeyEvent', {
-            type: 'keyUp',
-            key: def.key,
             code: def.code,
-            windowsVirtualKeyCode: def.keyCode,
-            nativeVirtualKeyCode: def.keyCode,
+            key: def.key,
             modifiers,
+            nativeVirtualKeyCode: def.keyCode,
+            type: 'keyUp',
+            windowsVirtualKeyCode: def.keyCode,
         });
     }
 
@@ -778,13 +778,13 @@ export class BrowserService {
     // ========================================================================
 
     async captureScreenshot(options: ScreenshotOptions = {}): Promise<Buffer> {
-        const { format = 'png', quality, uid, fullPage } = options;
+        const { format = 'png', fullPage, quality, uid } = options;
 
         if (uid && fullPage) {
             throw new Error('Cannot specify both uid and fullPage');
         }
 
-        let clip: { x: number; y: number; width: number; height: number; scale: number } | undefined;
+        let clip: undefined | { x: number; y: number; width: number; height: number; scale: number };
 
         if (uid) {
             // Screenshot a specific element
@@ -793,15 +793,15 @@ export class BrowserService {
             const opts: CdpSendOptions = sessionId ? { sessionId } : {};
 
             const boxResult = await this.cdp.send('DOM.getBoxModel', { backendNodeId }, opts);
-            const model = boxResult.model as { content: number[] } | undefined;
+            const model = boxResult.model as undefined | { content: number[] };
             if (model?.content) {
                 const [x1, y1, x2, , , , x4, y4] = model.content;
                 clip = {
-                    x: Math.min(x1, x4),
-                    y: Math.min(y1, y4),
-                    width: Math.abs(x2 - x1),
                     height: Math.abs(y4 - y1),
                     scale: 1,
+                    width: Math.abs(x2 - x1),
+                    x: Math.min(x1, x4),
+                    y: Math.min(y1, y4),
                 };
             }
         }
@@ -809,14 +809,14 @@ export class BrowserService {
         if (fullPage) {
             // Get full page dimensions
             const layoutResult = await this.cdp.send('Page.getLayoutMetrics');
-            const contentSize = layoutResult.contentSize as { width: number; height: number } | undefined;
+            const contentSize = layoutResult.contentSize as undefined | { width: number; height: number };
             if (contentSize) {
                 clip = {
-                    x: 0,
-                    y: 0,
-                    width: contentSize.width,
                     height: contentSize.height,
                     scale: 1,
+                    width: contentSize.width,
+                    x: 0,
+                    y: 0,
                 };
             }
         }
@@ -861,9 +861,9 @@ export class BrowserService {
                 continue;
             }
             signatureMap.set(node.nodeId, {
-                role,
-                name: node.name?.value ?? '',
                 childCount: childCountMap.get(node.nodeId) ?? 0,
+                name: node.name?.value ?? '',
+                role,
             });
         }
 
@@ -878,7 +878,7 @@ export class BrowserService {
         }
 
         const signatureMap = await this.fetchAXTreeForDiff();
-        return { uidMap, signatureMap };
+        return { signatureMap, uidMap };
     }
 
     diffSnapshots(
@@ -941,7 +941,7 @@ export class BrowserService {
             let hasChange = false;
             for (const [nodeId, sig] of after) {
                 const beforeSig = beforeMap.get(nodeId);
-                if (!beforeSig || beforeSig.name !== sig.name || beforeSig.role !== sig.role || beforeSig.childCount !== sig.childCount) {
+                if (beforeSig?.name !== sig.name || beforeSig.role !== sig.role || beforeSig.childCount !== sig.childCount) {
                     hasChange = true;
                     break;
                 }
@@ -958,7 +958,7 @@ export class BrowserService {
 
     async executeWithDiff<T>(
         action: () => Promise<T>,
-        timeout: number = 1500,
+        timeout = 1500,
     ): Promise<{ result: T; summary: string }> {
         const before = await this.fetchAXTreeForDiff();
         const result = await action();

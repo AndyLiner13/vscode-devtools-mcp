@@ -16,9 +16,9 @@
 
 import type { FilterOptions, Severity } from '@packages/log-consolidation';
 
+import { compressLogs, consolidateText } from '@packages/log-consolidation';
 import * as vscode from 'vscode';
 
-import { compressLogs, consolidateText } from '@packages/log-consolidation';
 import { SingleTerminalController, type TerminalRunResult } from './singleTerminalController';
 import { getUserActionTracker } from './userActionTracker';
 
@@ -26,7 +26,7 @@ import { getUserActionTracker } from './userActionTracker';
 // Local Controller (lazy initialization)
 // ============================================================================
 
-let localController: SingleTerminalController | null = null;
+let localController: null | SingleTerminalController = null;
 
 function getController(): SingleTerminalController {
     if (!localController) {
@@ -41,33 +41,33 @@ function getController(): SingleTerminalController {
 // ============================================================================
 
 export interface IReadTerminalParams {
-    name?: string;
-    limit?: number;
-    pattern?: string;
-    templateId?: string;
-    severity?: string;
-    timeRange?: string;
-    minDuration?: string;
     correlationId?: string;
     includeStackFrames?: boolean;
+    limit?: number;
+    minDuration?: string;
+    name?: string;
+    pattern?: string;
+    severity?: string;
+    templateId?: string;
+    timeRange?: string;
 }
 
 export interface ITerminalRunParams {
+    addNewline?: boolean;
     command?: string;
+    correlationId?: string;
     cwd?: string;
     ephemeral: boolean;
-    name?: string;
-    waitMode?: 'completion' | 'background';
-    timeout?: number;
     force?: boolean;
-    addNewline?: boolean;
-    keys?: string[];
-    templateId?: string;
-    severity?: string;
-    timeRange?: string;
-    minDuration?: string;
-    correlationId?: string;
     includeStackFrames?: boolean;
+    keys?: string[];
+    minDuration?: string;
+    name?: string;
+    severity?: string;
+    templateId?: string;
+    timeout?: number;
+    timeRange?: string;
+    waitMode?: 'background' | 'completion';
 }
 
 // ============================================================================
@@ -87,7 +87,7 @@ function extractDrillDownFilters(params: IReadTerminalParams | ITerminalRunParam
 
 function compressOutput(text: string, filters: FilterOptions, label?: string): string {
     const lines = text.split('\n');
-    const result = compressLogs({ lines, label: label ?? 'Terminal Output' }, filters);
+    const result = compressLogs({ label: label ?? 'Terminal Output', lines }, filters);
     return result.formatted;
 }
 
@@ -170,18 +170,18 @@ export class TerminalReadTool implements vscode.LanguageModelTool<IReadTerminalP
     async prepareInvocation(
         options: vscode.LanguageModelToolInvocationPrepareOptions<IReadTerminalParams>,
         _token: vscode.CancellationToken
-    ): Promise<vscode.PreparedToolInvocation | undefined> {
+    ): Promise<undefined | vscode.PreparedToolInvocation> {
         const params = options.input;
         const terminalName = params.name ?? 'default';
 
         return {
-            invocationMessage: `Reading terminal "${terminalName}" state`,
             confirmationMessages: {
-                title: 'Read Terminal',
                 message: new vscode.MarkdownString(
                     `Read current output and state from terminal "${terminalName}"?`
                 ),
+                title: 'Read Terminal',
             },
+            invocationMessage: `Reading terminal "${terminalName}" state`,
         };
     }
 
@@ -210,21 +210,21 @@ export class TerminalExecuteTool implements vscode.LanguageModelTool<ITerminalRu
     async prepareInvocation(
         options: vscode.LanguageModelToolInvocationPrepareOptions<ITerminalRunParams>,
         _token: vscode.CancellationToken
-    ): Promise<vscode.PreparedToolInvocation | undefined> {
+    ): Promise<undefined | vscode.PreparedToolInvocation> {
         const params = options.input;
         const terminalName = params.name ?? 'default';
 
         // Keys mode: interactive TUI navigation
         if (params.keys && params.keys.length > 0) {
             return {
-                invocationMessage: `Sending keys [${params.keys.join(', ')}] to terminal "${terminalName}"`,
                 confirmationMessages: {
-                    title: 'Send Keys',
                     message: new vscode.MarkdownString(
                         `Send key sequences to terminal "${terminalName}"?\n\n` +
                         `**Keys:** ${params.keys.map(k => `\`${k}\``).join(' → ')}`
                     ),
+                    title: 'Send Keys',
                 },
+                invocationMessage: `Sending keys [${params.keys.join(', ')}] to terminal "${terminalName}"`,
             };
         }
 
@@ -232,33 +232,33 @@ export class TerminalExecuteTool implements vscode.LanguageModelTool<ITerminalRu
 
         if (isInputMode) {
             const cmd = params.command ?? '';
-            const displayText = cmd.length > 50 ? cmd.slice(0, 50) + '...' : cmd;
+            const displayText = cmd.length > 50 ? `${cmd.slice(0, 50)  }...` : cmd;
             return {
-                invocationMessage: `Sending input to terminal "${terminalName}"`,
                 confirmationMessages: {
-                    title: 'Terminal Input',
                     message: new vscode.MarkdownString(
                         `Send input to terminal "${terminalName}"?\n\n` +
                         `**Input:** \`${displayText}\`\n\n` +
                         `**Add newline:** ${params.addNewline !== false ? 'yes' : 'no'}`
                     ),
+                    title: 'Terminal Input',
                 },
+                invocationMessage: `Sending input to terminal "${terminalName}"`,
             };
         }
 
         const waitMode = params.waitMode ?? 'completion';
         return {
-            invocationMessage: `Running command in terminal "${terminalName}"`,
             confirmationMessages: {
-                title: 'Run Command',
                 message: new vscode.MarkdownString(
                     `Execute PowerShell command in terminal "${terminalName}"?\n\n` +
                     `**Command:**\n\`\`\`powershell\n${params.command}\n\`\`\`\n\n` +
                     `**Working Directory:** \`${params.cwd}\`\n\n` +
-                    `**Wait Mode:** ${waitMode}` +
-                    (params.force ? '\n\n⚠️ **Force:** Will kill any running process first' : '')
+                    `**Wait Mode:** ${waitMode}${ 
+                    params.force ? '\n\n⚠️ **Force:** Will kill any running process first' : ''}`
                 ),
+                title: 'Run Command',
             },
+            invocationMessage: `Running command in terminal "${terminalName}"`,
         };
     }
 
@@ -300,7 +300,7 @@ export class TerminalExecuteTool implements vscode.LanguageModelTool<ITerminalRu
             ]);
         }
 
-        const command: string = params.command;
+        const {command} = params;
         const isInputMode = !params.cwd;
 
         try {

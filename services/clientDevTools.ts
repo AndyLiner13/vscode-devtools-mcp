@@ -13,12 +13,12 @@
  */
 
 import type { BrowserService } from './browser';
+import type { FilterOptions, Severity } from '@packages/log-consolidation';
 
-import * as vscode from 'vscode';
+import { compressLogs } from '@packages/log-consolidation';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { compressLogs } from '@packages/log-consolidation';
-import type { FilterOptions, Severity } from '@packages/log-consolidation';
+import * as vscode from 'vscode';
 
 // ── Shared State ─────────────────────────────────────────────────────────────
 
@@ -61,23 +61,15 @@ async function requireBrowserService(): Promise<BrowserService> {
 // ── Factory ──────────────────────────────────────────────────────────────────
 
 interface ClientToolConfig<TInput> {
-    name: string;
-    invocationMessage: (input: TInput) => string;
     handler: (service: BrowserService, input: TInput) => Promise<vscode.LanguageModelToolResult>;
+    invocationMessage: (input: TInput) => string;
+    name: string;
 }
 
 function createClientTool<TInput>(
     config: ClientToolConfig<TInput>,
 ): vscode.LanguageModelTool<TInput> {
     return {
-        async prepareInvocation(
-            options: vscode.LanguageModelToolInvocationPrepareOptions<TInput>,
-        ): Promise<vscode.PreparedToolInvocation | undefined> {
-            return {
-                invocationMessage: config.invocationMessage(options.input),
-            };
-        },
-
         async invoke(
             options: vscode.LanguageModelToolInvocationOptions<TInput>,
             _token: vscode.CancellationToken,
@@ -92,6 +84,14 @@ function createClientTool<TInput>(
                 ]);
             }
         },
+
+        async prepareInvocation(
+            options: vscode.LanguageModelToolInvocationPrepareOptions<TInput>,
+        ): Promise<undefined | vscode.PreparedToolInvocation> {
+            return {
+                invocationMessage: config.invocationMessage(options.input),
+            };
+        },
     };
 }
 
@@ -104,17 +104,14 @@ function textResult(text: string): vscode.LanguageModelToolResult {
 // ── Tool: take_snapshot ──────────────────────────────────────────────────────
 
 interface SnapshotInput {
-    verbose?: boolean;
     filePath?: string;
-    response_format?: 'markdown' | 'json';
+    response_format?: 'json' | 'markdown';
+    verbose?: boolean;
 }
 
 const takeSnapshotTool = createClientTool<SnapshotInput>({
-    name: 'take_snapshot',
-    invocationMessage: (input) =>
-        input.verbose ? 'Taking verbose page snapshot...' : 'Taking page snapshot...',
     handler: async (service, input) => {
-        const { verbose = false, filePath, response_format: format } = input;
+        const { filePath, response_format: format, verbose = false } = input;
         const { formatted } = await service.fetchAXTree(verbose);
 
         const targetsSummary = await service.getTargetsSummary();
@@ -130,42 +127,39 @@ const takeSnapshotTool = createClientTool<SnapshotInput>({
 
         if (format === 'json') {
             const output = JSON.stringify({
-                success: true,
-                snapshot: formatted,
                 elementCount: formatted.split('\n').length,
+                snapshot: formatted,
+                success: true,
             }, null, 2);
             return textResult(output);
         }
 
-        let content = '## Latest page snapshot\n\n' + formatted;
+        let content = `## Latest page snapshot\n\n${  formatted}`;
         if (targetsSummary) {
-            content += '\n\n' + targetsSummary;
+            content += `\n\n${  targetsSummary}`;
         }
         return textResult(content);
     },
+    invocationMessage: (input) =>
+        input.verbose ? 'Taking verbose page snapshot...' : 'Taking page snapshot...',
+    name: 'take_snapshot',
 });
 
 // ── Tool: take_screenshot ────────────────────────────────────────────────────
 
 interface ScreenshotInput {
-    format?: 'png' | 'jpeg' | 'webp';
-    quality?: number;
-    uid?: string;
-    fullPage?: boolean;
     filePath?: string;
-    response_format?: 'markdown' | 'json';
+    format?: 'jpeg' | 'png' | 'webp';
+    fullPage?: boolean;
+    quality?: number;
+    response_format?: 'json' | 'markdown';
+    uid?: string;
 }
 
 const takeScreenshotTool = createClientTool<ScreenshotInput>({
-    name: 'take_screenshot',
-    invocationMessage: (input) => {
-        if (input.uid) return `Taking screenshot of element ${input.uid}...`;
-        if (input.fullPage) return 'Taking full page screenshot...';
-        return 'Taking viewport screenshot...';
-    },
     handler: async (service, input) => {
-        const { format = 'png', quality, uid, fullPage, filePath, response_format: responseFormat } = input;
-        const buffer = await service.captureScreenshot({ format, quality, uid, fullPage });
+        const { filePath, format = 'png', fullPage, quality, response_format: responseFormat, uid } = input;
+        const buffer = await service.captureScreenshot({ format, fullPage, quality, uid });
 
         const AUTO_SAVE_THRESHOLD = 2 * 1024 * 1024; // 2MB
 
@@ -179,11 +173,11 @@ const takeScreenshotTool = createClientTool<ScreenshotInput>({
 
             if (responseFormat === 'json') {
                 return textResult(JSON.stringify({
-                    success: true,
-                    type: 'file',
                     format,
                     savedTo: savePath,
                     sizeBytes: buffer.length,
+                    success: true,
+                    type: 'file',
                 }, null, 2));
             }
             return textResult(`Screenshot saved to ${savePath} (${buffer.length} bytes)`);
@@ -195,11 +189,11 @@ const takeScreenshotTool = createClientTool<ScreenshotInput>({
 
         if (responseFormat === 'json') {
             return textResult(JSON.stringify({
-                success: true,
-                type: 'inline',
+                attached: true,
                 format,
                 sizeBytes: buffer.length,
-                attached: true,
+                success: true,
+                type: 'inline',
             }, null, 2));
         }
 
@@ -208,6 +202,12 @@ const takeScreenshotTool = createClientTool<ScreenshotInput>({
             new vscode.LanguageModelTextPart(`![screenshot](data:${mimeType};base64,${base64})`),
         ]);
     },
+    invocationMessage: (input) => {
+        if (input.uid) return `Taking screenshot of element ${input.uid}...`;
+        if (input.fullPage) return 'Taking full page screenshot...';
+        return 'Taking viewport screenshot...';
+    },
+    name: 'take_screenshot',
 });
 
 // ── Helper: executeWithChanges ───────────────────────────────────────────────
@@ -244,7 +244,7 @@ function formatInputResult(
 
     const parts: string[] = [];
     if (changes && changes !== 'No visible changes detected.') {
-        parts.push('## Changes detected\n' + changes);
+        parts.push(`## Changes detected\n${  changes}`);
     }
     parts.push(actionText);
     return textResult(parts.join('\n\n'));
@@ -253,22 +253,19 @@ function formatInputResult(
 // ── Tool: mouse_click ────────────────────────────────────────────────────────
 
 interface ClickInput {
-    uid: string;
     dblClick?: boolean;
     includeSnapshot?: boolean;
     response_format?: string;
+    uid: string;
 }
 
 const mouseClickTool = createClientTool<ClickInput>({
-    name: 'mouse_click',
-    invocationMessage: (input) =>
-        input.dblClick ? `Double clicking element ${input.uid}` : `Clicking element ${input.uid}`,
     handler: async (service, input) => {
-        const { uid, dblClick, includeSnapshot, response_format: format } = input;
+        const { dblClick, includeSnapshot, response_format: format, uid } = input;
         const clickCount = dblClick ? 2 : 1;
         const { changes } = await executeWithChanges(
             service,
-            () => service.clickElement(uid, clickCount),
+            async () => service.clickElement(uid, clickCount),
             includeSnapshot,
             format,
         );
@@ -279,50 +276,50 @@ const mouseClickTool = createClientTool<ClickInput>({
             { action: dblClick ? 'double_click' : 'click' },
         );
     },
+    invocationMessage: (input) =>
+        input.dblClick ? `Double clicking element ${input.uid}` : `Clicking element ${input.uid}`,
+    name: 'mouse_click',
 });
 
 // ── Tool: mouse_hover ────────────────────────────────────────────────────────
 
 interface HoverInput {
-    uid: string;
     includeSnapshot?: boolean;
     response_format?: string;
+    uid: string;
 }
 
 const mouseHoverTool = createClientTool<HoverInput>({
-    name: 'mouse_hover',
-    invocationMessage: (input) => `Hovering over element ${input.uid}`,
     handler: async (service, input) => {
-        const { uid, includeSnapshot, response_format: format } = input;
+        const { includeSnapshot, response_format: format, uid } = input;
         const { changes } = await executeWithChanges(
             service,
-            () => service.hoverElement(uid),
+            async () => service.hoverElement(uid),
             includeSnapshot,
             format,
         );
         return formatInputResult('Hovered over the element', changes, format, { action: 'hover' });
     },
+    invocationMessage: (input) => `Hovering over element ${input.uid}`,
+    name: 'mouse_hover',
 });
 
 // ── Tool: keyboard_type ──────────────────────────────────────────────────────
 
 interface TypeInput {
-    uid: string;
-    value: string;
     clear?: boolean;
     includeSnapshot?: boolean;
     response_format?: string;
+    uid: string;
+    value: string;
 }
 
 const keyboardTypeTool = createClientTool<TypeInput>({
-    name: 'keyboard_type',
-    invocationMessage: (input) =>
-        input.clear ? `Replacing content in element ${input.uid}` : `Typing into element ${input.uid}`,
     handler: async (service, input) => {
-        const { uid, value, clear, includeSnapshot, response_format: format } = input;
+        const { clear, includeSnapshot, response_format: format, uid, value } = input;
         const action = clear
-            ? () => service.fillElement(uid, value)
-            : () => service.typeIntoElement(uid, value);
+            ? async () => service.fillElement(uid, value)
+            : async () => service.typeIntoElement(uid, value);
         const { changes } = await executeWithChanges(service, action, includeSnapshot, format);
         return formatInputResult(
             clear ? 'Replaced content in element' : 'Typed into element',
@@ -331,48 +328,49 @@ const keyboardTypeTool = createClientTool<TypeInput>({
             { action: 'type' },
         );
     },
+    invocationMessage: (input) =>
+        input.clear ? `Replacing content in element ${input.uid}` : `Typing into element ${input.uid}`,
+    name: 'keyboard_type',
 });
 
 // ── Tool: mouse_drag ─────────────────────────────────────────────────────────
 
 interface DragInput {
     from_uid: string;
-    to_uid: string;
     includeSnapshot?: boolean;
     response_format?: string;
+    to_uid: string;
 }
 
 const mouseDragTool = createClientTool<DragInput>({
-    name: 'mouse_drag',
-    invocationMessage: (input) => `Dragging element ${input.from_uid} to ${input.to_uid}`,
     handler: async (service, input) => {
-        const { from_uid, to_uid, includeSnapshot, response_format: format } = input;
+        const { from_uid, includeSnapshot, response_format: format, to_uid } = input;
         const { changes } = await executeWithChanges(
             service,
-            () => service.dragElement(from_uid, to_uid),
+            async () => service.dragElement(from_uid, to_uid),
             includeSnapshot,
             format,
         );
         return formatInputResult('Dragged the element', changes, format, { action: 'drag' });
     },
+    invocationMessage: (input) => `Dragging element ${input.from_uid} to ${input.to_uid}`,
+    name: 'mouse_drag',
 });
 
 // ── Tool: keyboard_hotkey ────────────────────────────────────────────────────
 
 interface HotkeyInput {
-    key: string;
     includeSnapshot?: boolean;
+    key: string;
     response_format?: string;
 }
 
 const keyboardHotkeyTool = createClientTool<HotkeyInput>({
-    name: 'keyboard_hotkey',
-    invocationMessage: (input) => `Pressing key: ${input.key}`,
     handler: async (service, input) => {
-        const { key, includeSnapshot, response_format: format } = input;
+        const { includeSnapshot, key, response_format: format } = input;
         const { changes } = await executeWithChanges(
             service,
-            () => service.pressKey(key),
+            async () => service.pressKey(key),
             includeSnapshot,
             format,
         );
@@ -383,29 +381,26 @@ const keyboardHotkeyTool = createClientTool<HotkeyInput>({
             { action: 'hotkey', key },
         );
     },
+    invocationMessage: (input) => `Pressing key: ${input.key}`,
+    name: 'keyboard_hotkey',
 });
 
 // ── Tool: mouse_scroll ───────────────────────────────────────────────────────
 
 interface ScrollInput {
-    uid: string;
-    direction?: 'up' | 'down' | 'left' | 'right';
     amount?: number;
+    direction?: 'down' | 'left' | 'right' | 'up';
     includeSnapshot?: boolean;
     response_format?: string;
+    uid: string;
 }
 
 const mouseScrollTool = createClientTool<ScrollInput>({
-    name: 'mouse_scroll',
-    invocationMessage: (input) =>
-        input.direction
-            ? `Scrolling ${input.direction} by ${input.amount ?? 300}px`
-            : `Scrolling element ${input.uid} into view`,
     handler: async (service, input) => {
-        const { uid, direction, amount, includeSnapshot, response_format: format } = input;
+        const { amount, direction, includeSnapshot, response_format: format, uid } = input;
         const { changes } = await executeWithChanges(
             service,
-            () => service.scrollElement(uid, direction, amount),
+            async () => service.scrollElement(uid, direction, amount),
             includeSnapshot,
             format,
         );
@@ -420,56 +415,55 @@ const mouseScrollTool = createClientTool<ScrollInput>({
             ...(amount ? { amount } : {}),
         });
     },
+    invocationMessage: (input) =>
+        input.direction
+            ? `Scrolling ${input.direction} by ${input.amount ?? 300}px`
+            : `Scrolling element ${input.uid} into view`,
+    name: 'mouse_scroll',
 });
 
 // ── Tool: console_read ───────────────────────────────────────────────────────
 
 interface ReadConsoleInput {
-    limit?: number;
-    types?: string[];
-    pattern?: string;
-    sourcePattern?: string;
     afterId?: number;
     beforeId?: number;
-    fields?: string[];
-    textLimit?: number;
-    stackDepth?: number;
-    msgid?: number;
-    response_format?: string;
-    templateId?: string;
-    severity?: Severity;
-    timeRange?: string;
-    minDuration?: string;
     correlationId?: string;
+    fields?: string[];
     includeStackFrames?: boolean;
+    limit?: number;
+    minDuration?: string;
+    msgid?: number;
+    pattern?: string;
+    response_format?: string;
+    severity?: Severity;
+    sourcePattern?: string;
+    stackDepth?: number;
+    templateId?: string;
+    textLimit?: number;
+    timeRange?: string;
+    types?: string[];
 }
 
 const readConsoleTool = createClientTool<ReadConsoleInput>({
-    name: 'console_read',
-    invocationMessage: (input) => {
-        if (input.msgid !== undefined) return `Reading console message #${input.msgid}`;
-        if (input.types?.length) return `Reading ${input.types.join(', ')} console messages`;
-        return 'Reading console messages';
-    },
     handler: async (service, input) => {
         const {
-            limit,
-            types,
-            pattern,
-            sourcePattern,
             afterId,
             beforeId,
-            fields = ['id', 'type', 'text'],
-            textLimit,
-            stackDepth = 1,
-            msgid,
-            response_format: format,
-            templateId,
-            severity,
-            timeRange,
-            minDuration,
             correlationId,
+            fields = ['id', 'type', 'text'],
             includeStackFrames,
+            limit,
+            minDuration,
+            msgid,
+            pattern,
+            response_format: format,
+            severity,
+            sourcePattern,
+            stackDepth = 1,
+            templateId,
+            textLimit,
+            timeRange,
+            types,
         } = input;
 
         // Single message by ID
@@ -480,16 +474,16 @@ const readConsoleTool = createClientTool<ReadConsoleInput>({
             }
             return textResult(JSON.stringify({
                 id: msg.id,
-                type: msg.type,
                 text: msg.text,
                 timestamp: new Date(msg.timestamp).toISOString(),
+                type: msg.type,
                 ...(msg.args.length > 0 ? { args: msg.args } : {}),
                 ...(msg.stackTrace?.length ? { stackTrace: msg.stackTrace } : {}),
             }, null, 2));
         }
 
         // Build filters
-        let textRegex: RegExp | null = null;
+        let textRegex: null | RegExp = null;
         if (pattern) {
             try {
                 textRegex = new RegExp(pattern, 'i');
@@ -498,7 +492,7 @@ const readConsoleTool = createClientTool<ReadConsoleInput>({
             }
         }
 
-        let sourceRegex: RegExp | null = null;
+        let sourceRegex: null | RegExp = null;
         if (sourcePattern) {
             try {
                 sourceRegex = new RegExp(sourcePattern, 'i');
@@ -512,7 +506,7 @@ const readConsoleTool = createClientTool<ReadConsoleInput>({
             if (types?.length && !types.includes(m.type)) return false;
             if (textRegex && !textRegex.test(m.text)) return false;
             if (sourceRegex) {
-                const hasMatch = m.stackTrace?.some((frame) => sourceRegex!.test(frame.url));
+                const hasMatch = m.stackTrace?.some((frame) => sourceRegex.test(frame.url));
                 if (!hasMatch) return false;
             }
             if (afterId !== undefined && m.id <= afterId) return false;
@@ -530,7 +524,7 @@ const readConsoleTool = createClientTool<ReadConsoleInput>({
 
         if (filtered.length === 0) {
             return textResult(format === 'json'
-                ? JSON.stringify({ total: 0, returned: 0, hasMore: false, messages: [] }, null, 2)
+                ? JSON.stringify({ hasMore: false, messages: [], returned: 0, total: 0 }, null, 2)
                 : 'No console messages found matching the specified filters.',
             );
         }
@@ -547,9 +541,9 @@ const readConsoleTool = createClientTool<ReadConsoleInput>({
             if (fieldSet.has('id')) out.id = msg.id;
             if (fieldSet.has('type')) out.type = msg.type;
             if (fieldSet.has('text')) {
-                let text = msg.text;
+                let {text} = msg;
                 if (textLimit !== undefined && text.length > textLimit) {
-                    text = text.slice(0, textLimit) + '...';
+                    text = `${text.slice(0, textLimit)  }...`;
                 }
                 out.text = text;
             }
@@ -562,9 +556,9 @@ const readConsoleTool = createClientTool<ReadConsoleInput>({
         });
 
         const structuredOutput = {
-            total,
-            returned,
             hasMore,
+            returned,
+            total,
             ...(oldestId !== undefined ? { oldestId } : {}),
             ...(newestId !== undefined ? { newestId } : {}),
             messages: outputMessages,
@@ -584,7 +578,7 @@ const readConsoleTool = createClientTool<ReadConsoleInput>({
             const raw = JSON.stringify(structuredOutput, null, 2);
             const hasFilters = Object.keys(filters).length > 0;
             const result = compressLogs(
-                { text: raw, label: 'Console Messages (JSON)' },
+                { label: 'Console Messages (JSON)', text: raw },
                 hasFilters ? filters : undefined,
             );
             return textResult(result.formatted);
@@ -592,7 +586,7 @@ const readConsoleTool = createClientTool<ReadConsoleInput>({
 
         // Markdown
         let header = `## Console Messages\n\n**Returned:** ${returned} of ${total} total`;
-        if (hasMore) header += ` (use \`afterId: ${oldestId! - 1}\` or increase \`limit\` to see more)`;
+        if (hasMore) header += ` (use \`afterId: ${oldestId - 1}\` or increase \`limit\` to see more)`;
         if (newestId !== undefined) header += `\n**ID range:** ${oldestId} - ${newestId}`;
 
         const lines: string[] = [];
@@ -606,11 +600,17 @@ const readConsoleTool = createClientTool<ReadConsoleInput>({
 
         const hasFilters = Object.keys(filters).length > 0;
         const compressed = compressLogs(
-            { lines, label: 'Console Messages' },
+            { label: 'Console Messages', lines },
             hasFilters ? filters : undefined,
         );
-        return textResult(header + '\n\n' + compressed.formatted);
+        return textResult(`${header  }\n\n${  compressed.formatted}`);
     },
+    invocationMessage: (input) => {
+        if (input.msgid !== undefined) return `Reading console message #${input.msgid}`;
+        if (input.types?.length) return `Reading ${input.types.join(', ')} console messages`;
+        return 'Reading console messages';
+    },
+    name: 'console_read',
 });
 
 // ── Registry ─────────────────────────────────────────────────────────────────

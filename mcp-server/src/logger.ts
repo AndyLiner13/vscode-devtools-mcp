@@ -22,7 +22,7 @@ function formatLogChunks(chunks: unknown[]): string {
   const raw = chunks
     .map(c => (typeof c === 'string' ? c : JSON.stringify(c)))
     .join(' ')
-    .replace(ANSI_RE, '');
+    .replaceAll(ANSI_RE, '');
   return raw.replace(DEBUG_PREFIX_RE, '').replace(DEBUG_SUFFIX_RE, '');
 }
 
@@ -35,4 +35,7 @@ debug.log = function (...chunks: unknown[]) {
   process.stderr.write(`[${ts}] ${formatLogChunks(chunks)}\n`);
 };
 
-export const logger = debug(mcpDebugNamespace);
+export const /**
+ *
+ */
+logger = debug(mcpDebugNamespace);

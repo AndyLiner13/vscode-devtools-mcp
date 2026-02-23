@@ -6,13 +6,13 @@
 
 import eslint from '@eslint/js';
 import stylisticPlugin from '@stylistic/eslint-plugin';
-import {defineConfig, globalIgnores} from 'eslint/config';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import jsdoc from 'eslint-plugin-jsdoc';
 import noSecrets from 'eslint-plugin-no-secrets';
 import perfectionist from 'eslint-plugin-perfectionist';
 import promise from 'eslint-plugin-promise';
 import unicorn from 'eslint-plugin-unicorn';
+import {defineConfig, globalIgnores} from 'eslint/config';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
@@ -31,12 +31,9 @@ export default defineConfig([
     'mcp-server/build/**',
   ]),
   {
-    linterOptions: {
-      reportUnusedDisableDirectives: 'warn',
-    },
+    extends: ['js/recommended'],
     languageOptions: {
       ecmaVersion: 'latest',
-      sourceType: 'module',
       parser: tseslint.parser,
       parserOptions: {
         projectService: {
@@ -48,18 +45,21 @@ export default defineConfig([
           ],
         },
       },
+      sourceType: 'module',
+    },
+    linterOptions: {
+      reportUnusedDisableDirectives: 'warn',
     },
     plugins: {
-      js: eslint,
-      '@typescript-eslint': tseslint.plugin,
       '@stylistic': stylisticPlugin,
-      perfectionist,
-      unicorn,
-      promise,
+      '@typescript-eslint': tseslint.plugin,
+      js: eslint,
       jsdoc,
       'no-secrets': noSecrets,
+      perfectionist,
+      promise,
+      unicorn,
     },
-    extends: ['js/recommended'],
   },
   tseslint.configs.recommended,
   tseslint.configs.stylistic,
@@ -67,9 +67,24 @@ export default defineConfig([
     name: 'Shared TypeScript rules',
     rules: {
       // ===== Existing Rules =====
-      curly: ['error', 'all'],
-      'no-undef': 'off',
-      'no-unused-vars': 'off',
+      '@stylistic/function-call-spacing': 'error',
+      '@stylistic/semi': 'error',
+      '@typescript-eslint/array-type': [
+        'error',
+        {
+          default: 'array-simple',
+        },
+      ],
+      '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
+      '@typescript-eslint/consistent-type-exports': 'error',
+      '@typescript-eslint/consistent-type-imports': 'error',
+      '@typescript-eslint/no-explicit-any': [
+        'error',
+        {
+          ignoreRestArgs: true,
+        },
+      ],
+      '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -77,29 +92,26 @@ export default defineConfig([
           varsIgnorePattern: '^_',
         },
       ],
-      '@typescript-eslint/no-explicit-any': [
+      curly: ['error', 'all'],
+      'no-undef': 'off',
+      'no-unused-vars': 'off',
+      'perfectionist/sort-enums': [
         'error',
         {
-          ignoreRestArgs: true,
+          order: 'asc',
+          type: 'natural',
         },
       ],
-      '@typescript-eslint/consistent-type-imports': 'error',
-      '@typescript-eslint/consistent-type-exports': 'error',
-      '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
-      '@typescript-eslint/array-type': [
+      'perfectionist/sort-exports': [
         'error',
         {
-          default: 'array-simple',
+          order: 'asc',
+          type: 'natural',
         },
       ],
-      '@typescript-eslint/no-floating-promises': 'error',
       'perfectionist/sort-imports': [
         'error',
         {
-          type: 'natural',
-          order: 'asc',
-          ignoreCase: true,
-          newlinesBetween: 'always',
           groups: [
             'type',
             ['builtin', 'external'],
@@ -107,175 +119,159 @@ export default defineConfig([
             ['parent', 'sibling', 'index'],
             'unknown',
           ],
-        },
-      ],
-      'perfectionist/sort-named-imports': [
-        'error',
-        {
-          type: 'natural',
+          ignoreCase: true,
+          newlinesBetween: 'always',
           order: 'asc',
-        },
-      ],
-      'perfectionist/sort-objects': [
-        'error',
-        {
           type: 'natural',
-          order: 'asc',
-          partitionByComment: true,
         },
       ],
       'perfectionist/sort-interfaces': [
         'error',
         {
-          type: 'natural',
           order: 'asc',
+          type: 'natural',
+        },
+      ],
+      'perfectionist/sort-named-imports': [
+        'error',
+        {
+          order: 'asc',
+          type: 'natural',
+        },
+      ],
+      'perfectionist/sort-objects': [
+        'error',
+        {
+          order: 'asc',
+          partitionByComment: true,
+          type: 'natural',
         },
       ],
       'perfectionist/sort-union-types': [
         'error',
         {
-          type: 'natural',
           order: 'asc',
+          type: 'natural',
         },
       ],
-      'perfectionist/sort-enums': [
-        'error',
-        {
-          type: 'natural',
-          order: 'asc',
-        },
-      ],
-      'perfectionist/sort-exports': [
-        'error',
-        {
-          type: 'natural',
-          order: 'asc',
-        },
-      ],
-      '@stylistic/function-call-spacing': 'error',
-      '@stylistic/semi': 'error',
 
       // ===== Core JS Best Practices =====
-      eqeqeq: ['error', 'always'],
-      'no-var': 'error',
-      'prefer-const': 'error',
-      'prefer-template': 'error',
-      'object-shorthand': 'error',
-      'prefer-arrow-callback': 'error',
-      'no-eval': 'error',
-      'no-throw-literal': 'error',
-      'no-nested-ternary': 'error',
-      'prefer-object-spread': 'error',
-      'prefer-rest-params': 'error',
-      'prefer-spread': 'error',
-      'no-else-return': 'error',
-      'no-param-reassign': ['error', {props: false}],
       complexity: ['warn', 20],
+      eqeqeq: ['error', 'always'],
       'max-depth': ['warn', 4],
-      'prefer-destructuring': [
-        'error',
-        {
-          VariableDeclarator: {array: false, object: true},
-          AssignmentExpression: {array: false, object: false},
-        },
-      ],
+      'no-else-return': 'error',
+      'no-eval': 'error',
+      'no-nested-ternary': 'error',
+      'no-param-reassign': ['error', {props: false}],
       'no-restricted-syntax': [
         'error',
         {
-          selector: 'CallExpression[callee.object.name="console"]',
           message:
             'Use process.stdout.write() or process.stderr.write() for standard I/O logging instead of console methods.',
+          selector: 'CallExpression[callee.object.name="console"]',
         },
         {
-          selector: 'ForInStatement',
           message:
             'for-in loops are banned. Use for-of with Object.keys() or Object.entries() instead.',
+          selector: 'ForInStatement',
         },
       ],
+      'no-throw-literal': 'error',
+      'no-var': 'error',
+      'object-shorthand': 'error',
+      'prefer-arrow-callback': 'error',
+      'prefer-const': 'error',
+      'prefer-destructuring': [
+        'error',
+        {
+          AssignmentExpression: {array: false, object: false},
+          VariableDeclarator: {array: false, object: true},
+        },
+      ],
+      'prefer-object-spread': 'error',
+      'prefer-rest-params': 'error',
+      'prefer-spread': 'error',
+      'prefer-template': 'error',
 
       // ===== TypeScript Type-Checked Rules =====
-      '@typescript-eslint/no-shadow': 'error',
-      '@typescript-eslint/no-misused-promises': 'error',
       '@typescript-eslint/await-thenable': 'error',
-      '@typescript-eslint/no-unnecessary-type-assertion': 'error',
+      '@typescript-eslint/no-deprecated': 'warn',
+      '@typescript-eslint/no-for-in-array': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
+      '@typescript-eslint/no-shadow': 'error',
       '@typescript-eslint/no-unnecessary-condition': 'error',
-      '@typescript-eslint/return-await': 'error',
-      '@typescript-eslint/require-await': 'error',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'error',
       '@typescript-eslint/prefer-nullish-coalescing': 'error',
       '@typescript-eslint/prefer-optional-chain': 'error',
-      '@typescript-eslint/switch-exhaustiveness-check': 'error',
-      '@typescript-eslint/no-for-in-array': 'error',
+      '@typescript-eslint/require-await': 'error',
       '@typescript-eslint/restrict-template-expressions': 'error',
-      '@typescript-eslint/no-deprecated': 'warn',
+      '@typescript-eslint/return-await': 'error',
+      '@typescript-eslint/switch-exhaustiveness-check': 'error',
 
       // ===== TypeScript Strict & Style Rules =====
-      '@typescript-eslint/prefer-readonly': 'error',
-      '@typescript-eslint/no-non-null-assertion': 'error',
-      '@typescript-eslint/method-signature-style': ['error', 'property'],
-      '@typescript-eslint/promise-function-async': 'error',
-      '@typescript-eslint/no-confusing-void-expression': 'error',
-      '@typescript-eslint/prefer-as-const': 'error',
-      '@typescript-eslint/no-import-type-side-effects': 'error',
       '@typescript-eslint/default-param-last': 'error',
       '@typescript-eslint/explicit-function-return-type': [
         'error',
         {
           allowExpressions: true,
-          allowTypedFunctionExpressions: true,
           allowHigherOrderFunctions: true,
+          allowTypedFunctionExpressions: true,
         },
       ],
+      '@typescript-eslint/method-signature-style': ['error', 'property'],
       '@typescript-eslint/naming-convention': [
         'error',
         {
-          selector: 'default',
           format: ['camelCase'],
           leadingUnderscore: 'allow',
+          selector: 'default',
           trailingUnderscore: 'allow',
         },
         {
-          selector: 'import',
           format: ['camelCase', 'PascalCase'],
+          selector: 'import',
         },
         {
-          selector: 'variable',
           format: ['camelCase', 'UPPER_CASE'],
           leadingUnderscore: 'allow',
+          selector: 'variable',
           trailingUnderscore: 'allow',
         },
         {
-          selector: 'variable',
-          modifiers: ['const', 'exported'],
           format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
+          modifiers: ['const', 'exported'],
+          selector: 'variable',
         },
         {
-          selector: 'function',
           format: ['camelCase', 'PascalCase'],
+          selector: 'function',
         },
         {
+          format: ['PascalCase'],
           selector: 'typeLike',
-          format: ['PascalCase'],
         },
         {
+          format: ['PascalCase'],
           selector: 'enumMember',
-          format: ['PascalCase'],
         },
         {
-          selector: 'property',
           format: null,
+          selector: 'property',
         },
         {
-          selector: 'parameter',
           format: ['camelCase'],
           leadingUnderscore: 'allow',
+          selector: 'parameter',
         },
       ],
+      '@typescript-eslint/no-confusing-void-expression': 'error',
+      '@typescript-eslint/no-import-type-side-effects': 'error',
+      '@typescript-eslint/no-non-null-assertion': 'error',
+      '@typescript-eslint/prefer-as-const': 'error',
+      '@typescript-eslint/prefer-readonly': 'error',
+      '@typescript-eslint/promise-function-async': 'error',
 
       // ===== Unicorn Plugin Rules =====
-      'unicorn/prefer-node-protocol': 'error',
-      'unicorn/no-array-for-each': 'error',
-      'unicorn/no-useless-undefined': 'error',
-      'unicorn/prefer-string-replace-all': 'error',
       'unicorn/filename-case': [
         'error',
         {
@@ -283,11 +279,15 @@ export default defineConfig([
           ignore: ['^index\\.ts$', '^index\\.js$'],
         },
       ],
+      'unicorn/no-array-for-each': 'error',
+      'unicorn/no-useless-undefined': 'error',
+      'unicorn/prefer-node-protocol': 'error',
+      'unicorn/prefer-string-replace-all': 'error',
 
       // ===== Promise Plugin Rules =====
-      'promise/prefer-await-to-then': 'error',
-      'promise/no-nesting': 'error',
       'promise/no-multiple-resolved': 'error',
+      'promise/no-nesting': 'error',
+      'promise/prefer-await-to-then': 'error',
 
       // ===== Secret Detection =====
       'no-secrets/no-secrets': 'error',
@@ -296,30 +296,30 @@ export default defineConfig([
       'jsdoc/require-jsdoc': [
         'error',
         {
-          require: {
-            FunctionDeclaration: false,
-            MethodDefinition: false,
-            ClassDeclaration: false,
-            ArrowFunctionExpression: false,
-            FunctionExpression: false,
-          },
           contexts: [
             'ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[init.type!="ArrowFunctionExpression"][init.type!="FunctionExpression"]',
           ],
+          require: {
+            ArrowFunctionExpression: false,
+            ClassDeclaration: false,
+            FunctionDeclaration: false,
+            FunctionExpression: false,
+            MethodDefinition: false,
+          },
         },
       ],
     },
   },
   {
-    name: 'MCP server rules',
     files: ['mcp-server/**/*.ts', 'mcp-server/**/*.js', 'mcp-server/**/*.mjs'],
-    plugins: {
-      '@local': localPlugin,
-    },
     languageOptions: {
       globals: {
         ...globals.node,
       },
+    },
+    name: 'MCP server rules',
+    plugins: {
+      '@local': localPlugin,
     },
     rules: {
       '@local/check-license': 'error',
@@ -328,9 +328,9 @@ export default defineConfig([
         {
           patterns: [
             {
-              regex: '.*chrome-devtools-frontend/(?!mcp/mcp.js$).*',
               message:
                 'Import only the devtools-frontend code exported via node_modules/chrome-devtools-frontend/mcp/mcp.js',
+              regex: '.*chrome-devtools-frontend/(?!mcp/mcp.js$).*',
             },
           ],
         },
@@ -338,19 +338,19 @@ export default defineConfig([
     },
   },
   {
-    name: 'Tests',
     files: ['**/*.test.ts'],
+    name: 'Tests',
     rules: {
       '@typescript-eslint/no-floating-promises': 'off',
     },
   },
   {
-    name: 'JavaScript files',
     files: ['**/*.js', '**/*.mjs'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
     },
+    name: 'JavaScript files',
   },
   // Disable ESLint rules that conflict with Prettier
   eslintConfigPrettier,

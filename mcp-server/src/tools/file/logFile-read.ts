@@ -40,8 +40,19 @@ export function isStrictLogFile(filePath: string): boolean {
   return LOG_FILE_EXTENSIONS.has(ext);
 }
 
-export const logFileRead = defineTool({
-  name: 'logFile_read',
+export const /**
+ *
+ */
+logFileRead = defineTool({
+  annotations: {
+    category: ToolCategory.CODEBASE_ANALYSIS,
+    conditions: ['client-pipe'],
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+    readOnlyHint: true,
+    title: 'Log File Read',
+  },
   description:
     'Read and analyze log files with automatic pattern compression and drill-down filtering.\n\n' +
     'Detects repeating patterns in log output and compresses them into a structured overview ' +
@@ -67,39 +78,6 @@ export const logFileRead = defineTool({
     '- Search: `{ file: "app.log", pattern: "timeout|connection refused" }`\n' +
     '- Slow ops: `{ file: "perf.log", minDuration: "1s" }`\n' +
     '- Trace request: `{ file: "api.log", correlationId: "abc-123" }`',
-  annotations: {
-    title: 'Log File Read',
-    category: ToolCategory.CODEBASE_ANALYSIS,
-    readOnlyHint: true,
-    destructiveHint: false,
-    idempotentHint: true,
-    openWorldHint: false,
-    conditions: ['client-pipe'],
-  },
-  schema: {
-    file: zod.string().describe('Path to log file (relative to workspace root or absolute).'),
-    templateId: zod.string().optional().describe(
-      'Show raw lines matching this template ID from the compressed log overview.',
-    ),
-    severity: zod.enum(['error', 'warning', 'info']).optional().describe(
-      'Filter compressed logs by severity level.',
-    ),
-    timeRange: zod.string().optional().describe(
-      'Time window filter for compressed logs: \'HH:MM-HH:MM\' or \'HH:MM:SS-HH:MM:SS\'.',
-    ),
-    pattern: zod.string().optional().describe(
-      'Regex pattern to filter log content (case-insensitive).',
-    ),
-    minDuration: zod.string().optional().describe(
-      'Show log templates with durations >= threshold: \'1s\', \'500ms\', \'100ms\'.',
-    ),
-    correlationId: zod.string().optional().describe(
-      'Trace a specific request by UUID/correlation ID.',
-    ),
-    includeStackFrames: zod.boolean().optional().describe(
-      'Show/hide stack frame templates in compressed logs. Default: true.',
-    ),
-  },
   handler: async (request, response) => {
     const {params} = request;
     const filePath = resolveFilePath(params.file);
@@ -157,10 +135,35 @@ export const logFileRead = defineTool({
     const fileName = path.basename(filePath);
 
     const result = compressLogs(
-      {lines, label: fileName},
+      {label: fileName, lines},
       hasFilters ? filters : undefined,
     );
 
     response.appendResponseLine(result.formatted);
+  },
+  name: 'logFile_read',
+  schema: {
+    correlationId: zod.string().optional().describe(
+      'Trace a specific request by UUID/correlation ID.',
+    ),
+    file: zod.string().describe('Path to log file (relative to workspace root or absolute).'),
+    includeStackFrames: zod.boolean().optional().describe(
+      'Show/hide stack frame templates in compressed logs. Default: true.',
+    ),
+    minDuration: zod.string().optional().describe(
+      'Show log templates with durations >= threshold: \'1s\', \'500ms\', \'100ms\'.',
+    ),
+    pattern: zod.string().optional().describe(
+      'Regex pattern to filter log content (case-insensitive).',
+    ),
+    severity: zod.enum(['error', 'warning', 'info']).optional().describe(
+      'Filter compressed logs by severity level.',
+    ),
+    templateId: zod.string().optional().describe(
+      'Show raw lines matching this template ID from the compressed log overview.',
+    ),
+    timeRange: zod.string().optional().describe(
+      'Time window filter for compressed logs: \'HH:MM-HH:MM\' or \'HH:MM:SS-HH:MM:SS\'.',
+    ),
   },
 });

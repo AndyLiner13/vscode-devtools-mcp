@@ -13,9 +13,10 @@
  * even if handler code fails to compile, the pipe server responds to ping.
  */
 
-import * as path from 'path';
 import net from 'node:net';
+import * as path from 'node:path';
 import * as vscode from 'vscode';
+
 import pkg from './package.json';
 import { startWorker, stopWorker } from './services/codebase/codebase-worker-proxy';
 import { registerInspectorCommands, shutdownInspector } from './services/inspectorManager';
@@ -27,13 +28,13 @@ const MCP_PROVIDER_ID = 'devtools.mcp-server';
 
 // ── Bootstrap (Plain JS, always loads) ───────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const bootstrap: {
-  registerHandler: (method: string, fn: (params: Record<string, unknown>) => unknown | Promise<unknown>) => void;
+  registerHandler: (method: string, fn: (params: Record<string, unknown>) => Promise<unknown> | unknown) => void;
   unregisterHandler: (method: string) => void;
   startServer: (socketPath: string) => Promise<{ socketPath: string }>;
   stopServer: () => void;
-  getSocketPath: () => string | null;
+  getSocketPath: () => null | string;
 } = require('./bootstrap');
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -49,17 +50,17 @@ const CLIENT_PIPE_PATH = IS_WINDOWS
 // ── Module State ─────────────────────────────────────────────────────────────
 
 interface RuntimeModule {
-  activate(context: vscode.ExtensionContext): Promise<void>;
-  deactivate(): Promise<void>;
-  wireReconnectCdpCallback(callback: () => Promise<boolean>): void;
-  wireBrowserService(service: unknown | null): void;
+  activate: (context: vscode.ExtensionContext) => Promise<void>;
+  deactivate: () => Promise<void>;
+  wireBrowserService: (service: null | unknown) => void;
+  wireReconnectCdpCallback: (callback: () => Promise<boolean>) => void;
 }
 
 let runtimeModule: RuntimeModule | undefined;
 let outputChannel: vscode.OutputChannel;
-let currentRole: 'host' | 'client' | undefined;
+let currentRole: 'client' | 'host' | undefined;
 let hostHandlersCleanup: (() => void) | undefined;
-let clientHandlersCleanup: vscode.Disposable | undefined;
+let clientHandlersCleanup: undefined | vscode.Disposable;
 let reconnectCdpCallbackForRuntime: (() => Promise<boolean>) | undefined;
 
 function log(message: string): void {
@@ -96,12 +97,12 @@ async function notifyHostOfShutdown(reason: string): Promise<void> {
         jsonrpc: '2.0',
         method: 'clientShuttingDown',
         params: {
-          reason,
           at: Date.now(),
+          reason,
         },
       };
       try {
-        socket.write(JSON.stringify(payload) + '\n', () => {
+        socket.write(`${JSON.stringify(payload)  }\n`, () => {
           clearTimeout(timer);
           socket.end();
           finish();
@@ -230,7 +231,7 @@ export async function activate(context: vscode.ExtensionContext) {
       // Dynamic import to ensure esbuild doesn't bundle host-handlers into client builds
       log('Loading host-handlers module...');
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { registerHostHandlers, cleanup, startClientWindow, stopClientWindow, onClientStateChanged, createReconnectCdpCallback, onBrowserServiceChanged } = require('./services/host-handlers');
+      const { cleanup, createReconnectCdpCallback, onBrowserServiceChanged, onClientStateChanged, registerHostHandlers, startClientWindow, stopClientWindow } = require('./services/host-handlers');
       log('host-handlers module loaded, registering handlers...');
       registerHostHandlers(bootstrap.registerHandler, context, log);
       hostHandlersCleanup = cleanup;
@@ -312,7 +313,7 @@ export async function activate(context: vscode.ExtensionContext) {
               },
               (err: unknown) => {
                 const msg = err instanceof Error ? err.message : String(err);
-                log('Tethered lifecycle: MCP startServer failed: ' + msg);
+                log(`Tethered lifecycle: MCP startServer failed: ${  msg}`);
                 tetheredAction = false;
               },
             );
@@ -352,10 +353,10 @@ export async function activate(context: vscode.ExtensionContext) {
                 }
               }),
               vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID).then(
-                () => log('MCP server started after toggle on'),
+                () => { log('MCP server started after toggle on'); },
                 (err: unknown) => {
                   const msg = err instanceof Error ? err.message : String(err);
-                  log('MCP server start after toggle on failed: ' + msg);
+                  log(`MCP server start after toggle on failed: ${  msg}`);
                 },
               ),
             ]);

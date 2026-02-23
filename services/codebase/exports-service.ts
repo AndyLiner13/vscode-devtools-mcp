@@ -1,22 +1,24 @@
+import type { ExportInfo, ExportsParams, ExportsResult } from './types';
+import type { SymbolNode } from './types';
+
 // IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
 // Pure Node.js — no VS Code API dependency.
-import * as path from 'path';
+import * as path from 'node:path';
 import {
-  SyntaxKind,
-  type SourceFile,
   type ExportedDeclarations,
+  type SourceFile,
+  SyntaxKind,
 } from 'ts-morph';
-import type { ExportsParams, ExportsResult, ExportInfo } from './types';
-import { TS_PARSEABLE_EXTS } from './types';
-import { getTsProject } from './ts-project';
+
+import { discoverFiles, getPathType, readFileText } from './file-utils';
 import { getCustomParser } from './parsers';
-import { discoverFiles, readFileText, getPathType } from './file-utils';
-import type { SymbolNode } from './types';
+import { getTsProject } from './ts-project';
+import { TS_PARSEABLE_EXTS } from './types';
 
 // ── Public API ─────────────────────────────────────────
 
 export function getExports(params: ExportsParams): ExportsResult {
-  const rootDir = params.rootDir;
+  const {rootDir} = params;
 
   const targetPath = path.isAbsolute(params.path)
     ? params.path
@@ -39,7 +41,7 @@ function getFileExports(
   params: ExportsParams,
 ): ExportsResult {
   const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
-  const relativePath = path.relative(rootDir, filePath).replace(/\\/g, '/');
+  const relativePath = path.relative(rootDir, filePath).replaceAll('\\', '/');
 
   if (!TS_PARSEABLE_EXTS.has(ext)) {
     return getNonTsExports(filePath, relativePath, ext, params);
@@ -53,7 +55,7 @@ function getFileExports(
   try {
     sourceFile = project.createSourceFile(tempName, text, { overwrite: true });
   } catch {
-    return { module: relativePath, exports: [], reExports: [], summary: '0 exports (parse error)' };
+    return { exports: [], module: relativePath, reExports: [], summary: '0 exports (parse error)' };
   }
 
   try {
@@ -74,17 +76,17 @@ function getFileExports(
         const isReExport = declSourceFile.getFilePath() !== sourceFile.getFilePath();
 
         const info: ExportInfo = {
-          name,
-          kind,
-          line: decl.getStartLineNumber(),
           isDefault: name === 'default',
           isReExport,
+          kind,
+          line: decl.getStartLineNumber(),
+          name,
         };
 
         if (isReExport) {
-          const reExportRelative = path.relative(rootDir, declSourceFile.getFilePath()).replace(/\\/g, '/');
+          const reExportRelative = path.relative(rootDir, declSourceFile.getFilePath()).replaceAll('\\', '/');
           info.reExportSource = reExportRelative;
-          reExports.push({ name, from: reExportRelative });
+          reExports.push({ from: reExportRelative, name });
         }
 
         if (params.includeTypes !== false) {
@@ -109,7 +111,7 @@ function getFileExports(
     for (const exportDecl of sourceFile.getExportDeclarations()) {
       const moduleSpecifier = exportDecl.getModuleSpecifierValue();
       if (moduleSpecifier && exportDecl.isNamespaceExport()) {
-        reExports.push({ name: '*', from: moduleSpecifier });
+        reExports.push({ from: moduleSpecifier, name: '*' });
       }
     }
 
@@ -117,7 +119,7 @@ function getFileExports(
 
     const summary = buildExportsSummary(exports);
 
-    return { module: relativePath, exports, reExports, summary };
+    return { exports, module: relativePath, reExports, summary };
   } finally {
     project.removeSourceFile(sourceFile);
   }
@@ -133,11 +135,11 @@ function getDirectoryExports(
   const tsExtGlob = '**/*.{ts,tsx,js,jsx,mts,mjs,cts,cjs}';
 
   const fileMap = discoverFiles({
-    rootDir: dirPath,
+    excludePatterns: params.excludePatterns,
     includeGlob: tsExtGlob,
     includePatterns: params.includePatterns,
-    excludePatterns: params.excludePatterns,
     maxResults: 500,
+    rootDir: dirPath,
   });
 
   const allExports: ExportInfo[] = [];
@@ -153,10 +155,10 @@ function getDirectoryExports(
 
   allExports.sort((a, b) => a.name.localeCompare(b.name));
 
-  const relativePath = path.relative(rootDir, dirPath).replace(/\\/g, '/');
+  const relativePath = path.relative(rootDir, dirPath).replaceAll('\\', '/');
   const summary = buildExportsSummary(allExports);
 
-  return { module: relativePath || '.', exports: allExports, reExports: allReExports, summary };
+  return { exports: allExports, module: relativePath || '.', reExports: allReExports, summary };
 }
 
 // ── Non-TS/JS Fallback (Custom AST Parsers) ─────────
@@ -169,7 +171,7 @@ function getNonTsExports(
 ): ExportsResult {
   const parser = getCustomParser(ext);
   if (!parser) {
-    return { module: relativePath, exports: [], reExports: [], summary: '0 exports (unsupported file type)' };
+    return { exports: [], module: relativePath, reExports: [], summary: '0 exports (unsupported file type)' };
   }
 
   try {
@@ -177,29 +179,29 @@ function getNonTsExports(
     const symbols: SymbolNode[] = parser(text, 2);
 
     if (symbols.length === 0) {
-      return { module: relativePath, exports: [], reExports: [], summary: '0 exports (no symbols)' };
+      return { exports: [], module: relativePath, reExports: [], summary: '0 exports (no symbols)' };
     }
 
     const exports: ExportInfo[] = [];
     for (const sym of symbols) {
-      const kind = sym.kind;
+      const {kind} = sym;
       if (params.kind && params.kind !== 'all' && !matchesKindFilter(kind, params.kind)) {
         continue;
       }
       exports.push({
-        name: sym.name,
-        kind,
-        line: sym.range.start,
         isDefault: false,
         isReExport: false,
+        kind,
+        line: sym.range.start,
+        name: sym.name,
         signature: sym.detail,
       });
     }
 
     exports.sort((a, b) => a.name.localeCompare(b.name));
-    return { module: relativePath, exports, reExports: [], summary: buildExportsSummary(exports) };
+    return { exports, module: relativePath, reExports: [], summary: buildExportsSummary(exports) };
   } catch {
-    return { module: relativePath, exports: [], reExports: [], summary: '0 exports (parse error)' };
+    return { exports: [], module: relativePath, reExports: [], summary: '0 exports (parse error)' };
   }
 }
 
@@ -239,7 +241,7 @@ function getExportSignature(decl: ExportedDeclarations, kind: string): string | 
   switch (kind) {
     case 'function': {
       if ('getReturnType' in decl && 'getParameters' in decl) {
-        const fn = decl as unknown as { getParameters(): Array<{ getName(): string; getType(): { getText(): string } }>; getReturnType(): { getText(): string } };
+        const fn = decl as unknown as { getParameters: () => Array<{ getName: () => string; getType: () => { getText: () => string } }>; getReturnType: () => { getText: () => string } };
         const paramTexts: string[] = [];
         for (const p of fn.getParameters()) {
           paramTexts.push(`${p.getName()}: ${p.getType().getText()}`);
@@ -250,7 +252,7 @@ function getExportSignature(decl: ExportedDeclarations, kind: string): string | 
     }
     case 'class': {
       if ('getHeritageClauses' in decl) {
-        const cls = decl as unknown as { getHeritageClauses(): Array<{ getText(): string }> };
+        const cls = decl as unknown as { getHeritageClauses: () => Array<{ getText: () => string }> };
         const heritage = cls.getHeritageClauses();
         if (heritage.length > 0) {
           return heritage.map(h => h.getText()).join(' ');
@@ -260,7 +262,7 @@ function getExportSignature(decl: ExportedDeclarations, kind: string): string | 
     }
     case 'interface': {
       if ('getExtends' in decl) {
-        const iface = decl as unknown as { getExtends(): Array<{ getText(): string }> };
+        const iface = decl as unknown as { getExtends: () => Array<{ getText: () => string }> };
         const ext = iface.getExtends();
         if (ext.length > 0) {
           return `extends ${ext.map(e => e.getText()).join(', ')}`;
@@ -270,7 +272,7 @@ function getExportSignature(decl: ExportedDeclarations, kind: string): string | 
     }
     case 'type': {
       if ('getType' in decl) {
-        const alias = decl as unknown as { getType(): { getText(): string } };
+        const alias = decl as unknown as { getType: () => { getText: () => string } };
         return alias.getType().getText();
       }
       return undefined;
@@ -278,14 +280,14 @@ function getExportSignature(decl: ExportedDeclarations, kind: string): string | 
     case 'constant':
     case 'variable': {
       if ('getType' in decl) {
-        const v = decl as unknown as { getType(): { getText(): string } };
+        const v = decl as unknown as { getType: () => { getText: () => string } };
         return v.getType().getText();
       }
       return undefined;
     }
     case 'enum': {
       if ('getMembers' in decl) {
-        const en = decl as unknown as { getMembers(): Array<{ getName(): string }> };
+        const en = decl as unknown as { getMembers: () => Array<{ getName: () => string }> };
         const members = en.getMembers();
         if (members.length <= 6) {
           return members.map(m => m.getName()).join(' | ');
@@ -301,7 +303,7 @@ function getExportSignature(decl: ExportedDeclarations, kind: string): string | 
 
 function getJSDocText(decl: ExportedDeclarations): string | undefined {
   if (!('getJsDocs' in decl)) return undefined;
-  const jsDocs = (decl as unknown as { getJsDocs(): Array<{ getDescription(): string }> }).getJsDocs();
+  const jsDocs = (decl as unknown as { getJsDocs: () => Array<{ getDescription: () => string }> }).getJsDocs();
   if (jsDocs.length === 0) return undefined;
   const description = jsDocs[0].getDescription().trim();
   return description || undefined;

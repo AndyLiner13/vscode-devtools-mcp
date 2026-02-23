@@ -3,6 +3,7 @@
 
 import type { LanguageService } from '../language-service-registry';
 import type { FileStructure } from '../types';
+
 import { extractMarkdownStructure } from '../markdown';
 import { MD_EXTENSIONS } from '../markdown';
 

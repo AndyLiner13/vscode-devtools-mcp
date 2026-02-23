@@ -15,23 +15,27 @@
  * - takeover: Another VS Code instance wants to become Host
  */
 
-import * as vscode from 'vscode';
-import { exec, spawn, execSync, type ChildProcess } from 'node:child_process';
-import fs from 'node:fs';
-import path from 'node:path';
-import net from 'node:net';
-import http from 'node:http';
+import { type ChildProcess, exec, execSync, spawn } from 'node:child_process';
 import crypto from 'node:crypto';
-import { createHotReloadService, getHotReloadService, type ChangeCheckResult } from './hotReloadService';
-import { CdpClient, BrowserService } from './browser';
+import fs from 'node:fs';
+import http from 'node:http';
+import net from 'node:net';
+import path from 'node:path';
+import * as vscode from 'vscode';
+
+import { BrowserService, CdpClient } from './browser';
 import { setBrowserService, setReconnectCdpCallback } from './clientDevTools';
+import { type ChangeCheckResult, createHotReloadService, getHotReloadService } from './hotReloadService';
 
 // ── Client State Events ────────────────────────────────────────────────────
 
 const _onClientStateChanged = new vscode.EventEmitter<boolean>();
 
 /** Fires when the client window connects or disconnects. Payload = connected state. */
-export const onClientStateChanged = _onClientStateChanged.event;
+export const /**
+ *
+ */
+onClientStateChanged = _onClientStateChanged.event;
 
 let lastKnownClientState = false;
 
@@ -45,22 +49,22 @@ const CLIENT_PIPE_PATH = IS_WINDOWS
 // ── Module State ─────────────────────────────────────────────────────────────
 
 /** Launcher PID of the spawned Client (may exit immediately on Windows) */
-let launcherPid: number | null = null;
+let launcherPid: null | number = null;
 
 /** Real Electron PID — discovered from CDP port after launch (the actual process to kill) */
-let electronPid: number | null = null;
+let electronPid: null | number = null;
 
 /** Allocated CDP port for the Client browser */
-let cdpPort: number | null = null;
+let cdpPort: null | number = null;
 
 /** Inspector port for the Client Extension Host debugger */
-let inspectorPort: number | null = null;
+let inspectorPort: null | number = null;
 
 /** The Extension Development Host process reference */
 let clientProcess: ChildProcess | null = null;
 
 /** Debug session for the Client (simple variable, not Map) */
-let currentDebugSession: vscode.DebugSession | null = null;
+let currentDebugSession: null | vscode.DebugSession = null;
 
 // ── MCP Server ID Resolution ─────────────────────────────────────────────
 
@@ -86,22 +90,22 @@ function markInspectorRecordsStale(): void {
 }
 
 /** Workspace storage path for persisting user-data, set during registerHostHandlers */
-let hostStoragePath: string | null = null;
+let hostStoragePath: null | string = null;
 
 /** Timestamp when Client was started */
-let clientStartedAt: number | null = null;
+let clientStartedAt: null | number = null;
 
 /** Last extension path used for Client launch */
-let currentExtensionPath: string | null = null;
+let currentExtensionPath: null | string = null;
 
 /** Last client workspace used for Client launch */
-let currentClientWorkspace: string | null = null;
+let currentClientWorkspace: null | string = null;
 
 /** True while reconnecting after a Client window reload */
 let clientReconnecting = false;
 
 /** Shared reconnect promise to coalesce concurrent calls */
-let reconnectPromise: Promise<boolean> | null = null;
+let reconnectPromise: null | Promise<boolean> = null;
 
 /** Active CDP client for browser automation LM tools */
 let activeCdpClient: CdpClient | null = null;
@@ -127,7 +131,7 @@ export function onBrowserServiceChanged(callback: (service: BrowserService | nul
  * MCP source changes (before readyToRestart is called). Resolved when the
  * new MCP server process calls mcpReady. Used by the mcpStatus LM tool.
  */
-let mcpReadyDeferred: { promise: Promise<void>; resolve: () => void } | null = null;
+let mcpReadyDeferred: null | { promise: Promise<void>; resolve: () => void } = null;
 
 function expectMcpRestart(): void {
   let resolver: () => void;
@@ -150,27 +154,27 @@ function signalMcpReady(): void {
  * Returns true if ready, false if timed out.
  * If no restart is pending, resolves immediately (server is already running).
  */
-export function waitForMcpReady(timeoutMs: number): Promise<boolean> {
+export async function waitForMcpReady(timeoutMs: number): Promise<boolean> {
   if (!mcpReadyDeferred) {
     return Promise.resolve(true);
   }
   return Promise.race([
     mcpReadyDeferred.promise.then(() => true),
-    new Promise<boolean>(r => setTimeout(() => r(false), timeoutMs)),
+    new Promise<boolean>(r => setTimeout(() => { r(false); }, timeoutMs)),
   ]);
 }
 
 // ── Export Types ─────────────────────────────────────────────────────────────
 
-export type RegisterHandler = (method: string, handler: (params: Record<string, unknown>) => unknown | Promise<unknown>) => void;
+export type RegisterHandler = (method: string, handler: (params: Record<string, unknown>) => Promise<unknown> | unknown) => void;
 
 // ── Session Persistence ──────────────────────────────────────────────────────
 
 interface PersistedSession {
-  clientPid: number;
   cdpPort: number;
-  inspectorPort: number;
+  clientPid: number;
   extensionPath: string;
+  inspectorPort: number;
   startedAt: number;
 }
 
@@ -195,10 +199,10 @@ function isPersistedSession(value: unknown): value is PersistedSession {
 }
 
 // Captured during registerHostHandlers — used by session persistence helpers
-let hostWorkspaceState: vscode.Memento | null = null;
+let hostWorkspaceState: null | vscode.Memento = null;
 const HOST_SESSION_KEY = 'devtools.hostSession';
 
-function getWorkspacePath(): string | null {
+function getWorkspacePath(): null | string {
   return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
 }
 
@@ -216,7 +220,7 @@ function computeMcpSocketPath(workspacePath: string): string {
 }
 
 async function notifyMcpClientReconnected(params: {
-  electronPid: number | null;
+  electronPid: null | number;
   cdpPort: number;
   inspectorPort: number;
   at: number;
@@ -254,7 +258,7 @@ async function notifyMcpClientReconnected(params: {
         method: 'client-reconnected',
         params,
       };
-      socket.write(JSON.stringify(payload) + '\n', () => {
+      socket.write(`${JSON.stringify(payload)  }\n`, () => {
         clearTimeout(timer);
         socket.end();
         done();
@@ -273,7 +277,7 @@ async function notifyMcpClientReconnected(params: {
   });
 }
 
-function loadPersistedSession(): PersistedSession | null {
+function loadPersistedSession(): null | PersistedSession {
   if (!hostWorkspaceState) return null;
   try {
     const data: unknown = hostWorkspaceState.get(HOST_SESSION_KEY);
@@ -301,7 +305,7 @@ function persistSession(session: PersistedSession): void {
 function clearPersistedSession(): void {
   if (!hostWorkspaceState) return;
   try {
-    hostWorkspaceState.update(HOST_SESSION_KEY, undefined);
+    hostWorkspaceState.update(HOST_SESSION_KEY);
   } catch {
     // Ignore cleanup errors
   }
@@ -331,7 +335,7 @@ function isProcessAlive(pid: number): boolean {
  * forks the real Electron binary and exits. The launcher PID is useless
  * for cleanup — we need the real Electron PID.
  */
-function discoverElectronPid(port: number): number | null {
+function discoverElectronPid(port: number): null | number {
   try {
     if (IS_WINDOWS) {
       const out = execSync(
@@ -390,7 +394,7 @@ async function isPortResponding(port: number, timeout = 1000): Promise<boolean> 
  */
 async function isCdpPortReady(port: number, timeout = 2000): Promise<boolean> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeout);
+  const timer = setTimeout(() => { controller.abort(); }, timeout);
   
   try {
     const response = await fetch(`http://127.0.0.1:${port}/json/version`, {
@@ -449,12 +453,12 @@ async function pingClientPipe(timeout = 3000): Promise<boolean> {
 
     const socket = net.createConnection(CLIENT_PIPE_PATH, () => {
       const reqId = `health-ping-${Date.now()}`;
-      const request = JSON.stringify({
-        jsonrpc: '2.0',
+      const request = `${JSON.stringify({
         id: reqId,
+        jsonrpc: '2.0',
         method: 'system.ping',
         params: {},
-      }) + '\n';
+      })  }\n`;
       socket.write(request);
     });
 
@@ -468,10 +472,10 @@ async function pingClientPipe(timeout = 3000): Promise<boolean> {
       }
     });
 
-    socket.on('error', () => finish(false));
-    socket.on('close', () => finish(false));
+    socket.on('error', () => { finish(false); });
+    socket.on('close', () => { finish(false); });
 
-    const timer = setTimeout(() => finish(false), timeout);
+    const timer = setTimeout(() => { finish(false); }, timeout);
   });
 }
 
@@ -545,8 +549,8 @@ async function allocatePort(): Promise<number> {
     server.listen(0, '127.0.0.1', () => {
       const address = server.address();
       if (address && typeof address === 'object') {
-        const port = address.port;
-        server.close(() => resolve(port));
+        const {port} = address;
+        server.close(() => { resolve(port); });
       } else {
         reject(new Error('Failed to get port from server'));
       }
@@ -586,10 +590,10 @@ async function spawnClient(clientWorkspace: string, extensionPath: string, launc
   
   // Build launch arguments — core flags first
   const args = [
-    '--extensionDevelopmentPath=' + extensionPath,
-    '--remote-debugging-port=' + allocatedCdpPort,
-    '--inspect-extensions=' + allocatedInspectorPort,
-    '--user-data-dir=' + userDataDir,
+    `--extensionDevelopmentPath=${  extensionPath}`,
+    `--remote-debugging-port=${  allocatedCdpPort}`,
+    `--inspect-extensions=${  allocatedInspectorPort}`,
+    `--user-data-dir=${  userDataDir}`,
     '--new-window',
     '--no-sandbox',
     '--disable-gpu-sandbox',
@@ -614,7 +618,7 @@ async function spawnClient(clientWorkspace: string, extensionPath: string, launc
       args.push('--verbose');
     }
     // Extra raw args
-    const extraArgs = launchFlags.extraArgs;
+    const {extraArgs} = launchFlags;
     if (Array.isArray(extraArgs)) {
       for (const arg of extraArgs) {
         if (typeof arg === 'string') {
@@ -648,8 +652,8 @@ async function spawnClient(clientWorkspace: string, extensionPath: string, launc
   // Capture stderr for diagnostics — Code.exe may log startup failures.
   const child = spawn(electronPath, args, {
     detached: true,
-    stdio: ['ignore', 'ignore', 'pipe'],
     env: childEnv,
+    stdio: ['ignore', 'ignore', 'pipe'],
   });
   
   if (!child.pid) {
@@ -723,14 +727,14 @@ async function spawnClient(clientWorkspace: string, extensionPath: string, launc
 
   // Persist session with REAL Electron PID (not launcher PID)
   persistSession({
-    clientPid: electronPid ?? child.pid,
     cdpPort: allocatedCdpPort,
-    inspectorPort: allocatedInspectorPort,
+    clientPid: electronPid ?? child.pid,
     extensionPath,
+    inspectorPort: allocatedInspectorPort,
     startedAt: clientStartedAt,
   });
   
-  return { cdpPort: allocatedCdpPort, userDataDir, clientStartedAt: spawnTimestamp };
+  return { cdpPort: allocatedCdpPort, clientStartedAt: spawnTimestamp, userDataDir };
 }
 
 /**
@@ -793,7 +797,7 @@ async function waitForClientReady(port: number, maxWaitMs = 90_000, adaptiveMaxM
   );
 }
 
-function sleep(ms: number): Promise<void> {
+async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
@@ -815,12 +819,12 @@ async function waitForPort(port: number, timeout = 30000): Promise<void> {
 async function attachDebuggerToInspector(port: number): Promise<void> {
   await waitForPort(port);
   await vscode.debug.startDebugging(undefined, {
-    type: 'node',
-    request: 'attach',
+    autoAttachChildProcesses: false,
     name: `Extension Host (port ${port})`,
     port,
-    autoAttachChildProcesses: false,
+    request: 'attach',
     skipFiles: ['<node_internals>/**'],
+    type: 'node',
   });
 }
 
@@ -880,19 +884,19 @@ async function reconnectToClient(maxWaitMs = 60_000): Promise<boolean> {
       const pidToPersist = electronPid ?? launcherPid;
       if (pidToPersist && currentExtensionPath && clientStartedAt) {
         persistSession({
-          clientPid: pidToPersist,
           cdpPort,
-          inspectorPort,
+          clientPid: pidToPersist,
           extensionPath: currentExtensionPath,
+          inspectorPort,
           startedAt: clientStartedAt,
         });
       }
 
       void notifyMcpClientReconnected({
-        electronPid,
-        cdpPort,
-        inspectorPort,
         at: Date.now(),
+        cdpPort,
+        electronPid,
+        inspectorPort,
       }).catch(() => {
         // best-effort notification
       });
@@ -1088,7 +1092,7 @@ export function registerHostHandlers(
     // Check if extension source changed (content hash, not mtime)
     const extCheck = await hotReloadService.checkExtensionOnly(extensionPath);
     if (extCheck.changed && !extCheck.rebuilt) {
-      console.log('[host] Extension build failed: ' + (extCheck.buildError ?? 'unknown'));
+      console.log(`[host] Extension build failed: ${  extCheck.buildError ?? 'unknown'}`);
     }
 
     // Check for existing healthy Client
@@ -1122,7 +1126,7 @@ export function registerHostHandlers(
             await connectCdpClient(session.cdpPort);
           }
 
-          return { cdpPort: session.cdpPort, userDataDir: dataDir, clientStartedAt: session.startedAt };
+          return { cdpPort: session.cdpPort, clientStartedAt: session.startedAt, userDataDir: dataDir };
         }
 
         // Client exists but source changed — restart with fresh code
@@ -1148,7 +1152,7 @@ export function registerHostHandlers(
     // Connect CDP client for browser automation LM tools
     await connectCdpClient(result.cdpPort);
 
-    return { cdpPort: result.cdpPort, userDataDir: result.userDataDir, clientStartedAt: result.clientStartedAt };
+    return { cdpPort: result.cdpPort, clientStartedAt: result.clientStartedAt, userDataDir: result.userDataDir };
   });
   
   /**
@@ -1186,7 +1190,7 @@ export function registerHostHandlers(
       // Reconnect CDP for browser automation LM tools
       await connectCdpClient(result.cdpPort);
 
-      return { cdpPort: result.cdpPort, userDataDir: result.userDataDir, clientStartedAt: result.clientStartedAt };
+      return { cdpPort: result.cdpPort, clientStartedAt: result.clientStartedAt, userDataDir: result.userDataDir };
     } finally {
       hotReloadInProgress = false;
     }
@@ -1201,17 +1205,17 @@ export function registerHostHandlers(
     console.log(`[host] clientShuttingDown received: reason=${reason}`);
 
     if (hotReloadInProgress) {
-      return { acknowledged: true, reconnecting: false, ignored: 'hot-reload' };
+      return { acknowledged: true, ignored: 'hot-reload', reconnecting: false };
     }
 
     if (!cdpPort) {
-      return { acknowledged: true, reconnecting: false, ignored: 'no-cdp-port' };
+      return { acknowledged: true, ignored: 'no-cdp-port', reconnecting: false };
     }
 
     const cdpStillAlive = await isCdpPortReady(cdpPort, 2000);
     if (!cdpStillAlive) {
       console.log('[host] CDP is down after shutdown notification; treating as close');
-      return { acknowledged: true, reconnecting: false, ignored: 'cdp-down' };
+      return { acknowledged: true, ignored: 'cdp-down', reconnecting: false };
     }
 
     void reconnectToClient().then((ok) => {
@@ -1228,13 +1232,13 @@ export function registerHostHandlers(
     const healthy = cdpPort ? await isClientHealthy() : false;
     
     return {
-      clientConnected: healthy,
-      launcherPid,
-      electronPid,
       cdpPort,
-      inspectorPort,
+      clientConnected: healthy,
       clientReconnecting,
+      electronPid,
       hotReloadInProgress,
+      inspectorPort,
+      launcherPid,
     };
   });
   
@@ -1308,9 +1312,9 @@ export function registerHostHandlers(
   }
   let mcpProgressBridge: McpProgressBridge | null = null;
 
-  let restartInProgress: Promise<Record<string, unknown>> | null = null;
+  let restartInProgress: null | Promise<Record<string, unknown>> = null;
 
-  const delay = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
+  const delay = async (ms: number) => new Promise<void>(r => setTimeout(r, ms));
 
   const handleMcpRestart = async (): Promise<Record<string, unknown>> => {
     if (restartInProgress) {
@@ -1335,7 +1339,7 @@ export function registerHostHandlers(
           console.log('[host] MCP server stopped');
         } catch (stopErr) {
           const msg = stopErr instanceof Error ? stopErr.message : String(stopErr);
-          console.log('[host] MCP stopServer failed: ' + msg + ' — continuing');
+          console.log(`[host] MCP stopServer failed: ${  msg  } — continuing`);
         }
 
         bridge.report('Clearing tool cache…');
@@ -1344,7 +1348,7 @@ export function registerHostHandlers(
           console.log('[host] Tool cache cleared');
         } catch (cacheErr) {
           const msg = cacheErr instanceof Error ? cacheErr.message : String(cacheErr);
-          console.log('[host] resetCachedTools failed: ' + msg);
+          console.log(`[host] resetCachedTools failed: ${  msg}`);
         }
 
         bridge.report('Starting…');
@@ -1353,10 +1357,10 @@ export function registerHostHandlers(
           console.log('[host] MCP server started');
         } catch (startErr) {
           const msg = startErr instanceof Error ? startErr.message : String(startErr);
-          console.log('[host] MCP startServer failed: ' + msg);
-          vscode.window.showWarningMessage('❌ MCP Server failed to start: ' + msg);
+          console.log(`[host] MCP startServer failed: ${  msg}`);
+          vscode.window.showWarningMessage(`❌ MCP Server failed to start: ${  msg}`);
           bridge.resolve();
-          return { restarted: false, error: msg };
+          return { error: msg, restarted: false };
         }
 
         bridge.resolve();
@@ -1366,41 +1370,41 @@ export function registerHostHandlers(
       // Fallback: no bridge (e.g., manual restart via command palette)
       return vscode.window.withProgress(
         {
+          cancellable: false,
           location: vscode.ProgressLocation.Notification,
           title: 'MCP Server',
-          cancellable: false,
         },
         async (progress) => {
-          progress.report({ message: 'Stopping…', increment: 0 });
+          progress.report({ increment: 0, message: 'Stopping…' });
           try {
             await vscode.commands.executeCommand('workbench.mcp.stopServer', serverId);
             console.log('[host] MCP server stopped');
           } catch (stopErr) {
             const msg = stopErr instanceof Error ? stopErr.message : String(stopErr);
-            console.log('[host] MCP stopServer failed: ' + msg + ' — continuing');
+            console.log(`[host] MCP stopServer failed: ${  msg  } — continuing`);
           }
 
-          progress.report({ message: 'Clearing tool cache…', increment: 33 });
+          progress.report({ increment: 33, message: 'Clearing tool cache…' });
           try {
             await vscode.commands.executeCommand('workbench.mcp.resetCachedTools');
             console.log('[host] Tool cache cleared');
           } catch (cacheErr) {
             const msg = cacheErr instanceof Error ? cacheErr.message : String(cacheErr);
-            console.log('[host] resetCachedTools failed: ' + msg);
+            console.log(`[host] resetCachedTools failed: ${  msg}`);
           }
 
-          progress.report({ message: 'Starting…', increment: 33 });
+          progress.report({ increment: 33, message: 'Starting…' });
           try {
             await vscode.commands.executeCommand('workbench.mcp.startServer', serverId);
             console.log('[host] MCP server started');
           } catch (startErr) {
             const msg = startErr instanceof Error ? startErr.message : String(startErr);
-            console.log('[host] MCP startServer failed: ' + msg);
-            vscode.window.showWarningMessage('❌ MCP Server failed to start: ' + msg);
-            return { restarted: false, error: msg };
+            console.log(`[host] MCP startServer failed: ${  msg}`);
+            vscode.window.showWarningMessage(`❌ MCP Server failed to start: ${  msg}`);
+            return { error: msg, restarted: false };
           }
 
-          progress.report({ message: '✅ Restarted', increment: 34 });
+          progress.report({ increment: 34, message: '✅ Restarted' });
           await delay(3000);
           return { restarted: true, toolCacheCleared: true };
         },
@@ -1437,13 +1441,13 @@ export function registerHostHandlers(
     }
 
     const result: ChangeCheckResult = {
+      extBuildError: null,
+      extChanged: false,
+      extClientReloaded: false,
+      extRebuilt: false,
+      mcpBuildError: null,
       mcpChanged: false,
       mcpRebuilt: false,
-      mcpBuildError: null,
-      extChanged: false,
-      extRebuilt: false,
-      extBuildError: null,
-      extClientReloaded: false,
       newCdpPort: null,
       newClientStartedAt: null,
     };
@@ -1471,9 +1475,9 @@ export function registerHostHandlers(
     if (extChange.changed) {
       await vscode.window.withProgress(
         {
+          cancellable: false,
           location: vscode.ProgressLocation.Notification,
           title: 'Extension',
-          cancellable: false,
         },
         async (progress) => {
           progress.report({ message: 'Rebuilding…' });
@@ -1502,7 +1506,7 @@ export function registerHostHandlers(
             result.extClientReloaded = true;
             result.newCdpPort = spawnResult.cdpPort;
             result.newClientStartedAt = spawnResult.clientStartedAt;
-            console.log('[host] Client restarted with fresh extension code (cdpPort: ' + spawnResult.cdpPort + ')');
+            console.log(`[host] Client restarted with fresh extension code (cdpPort: ${  spawnResult.cdpPort  })`);
 
             progress.report({ message: '✅ Client reconnected' });
             await delay(3000);
@@ -1513,8 +1517,8 @@ export function registerHostHandlers(
 
     // Phase 3: MCP progress notification — rebuild → bridge to readyToRestart
     if (mcpChange.changed) {
-      let buildDoneResolve!: (error: string | null) => void;
-      const buildDone = new Promise<string | null>(r => { buildDoneResolve = r; });
+      let buildDoneResolve!: (error: null | string) => void;
+      const buildDone = new Promise<null | string>(r => { buildDoneResolve = r; });
 
       let bridgeResolve!: () => void;
       const bridgePromise = new Promise<void>(r => { bridgeResolve = r; });
@@ -1522,9 +1526,9 @@ export function registerHostHandlers(
       // Fire-and-forget: the notification stays open until readyToRestart completes
       void vscode.window.withProgress(
         {
+          cancellable: false,
           location: vscode.ProgressLocation.Notification,
           title: 'MCP Server',
-          cancellable: false,
         },
         async (progress) => {
           progress.report({ message: 'Rebuilding…' });
@@ -1539,7 +1543,7 @@ export function registerHostHandlers(
 
           // Store bridge so readyToRestart can continue this notification
           mcpProgressBridge = {
-            report: (msg: string) => progress.report({ message: msg }),
+            report: (msg: string) => { progress.report({ message: msg }); },
             resolve: bridgeResolve,
           };
 
@@ -1614,7 +1618,7 @@ export function isHotReloadInProgress(): boolean {
  * Resolve clientWorkspace and extensionPath from VS Code settings.
  * Mirrors the config resolution in mcpServerProvider's buildConfigEnv.
  */
-function resolveClientConfig(): { clientWorkspace: string; extensionPath: string; launchFlags: Record<string, unknown> } | null {
+function resolveClientConfig(): null | { clientWorkspace: string; extensionPath: string; launchFlags: Record<string, unknown> } {
   const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   if (!workspacePath) {
     return null;
@@ -1633,12 +1637,12 @@ function resolveClientConfig(): { clientWorkspace: string; extensionPath: string
     : path.resolve(workspacePath, extensionPathRaw);
 
   const launchFlags: Record<string, unknown> = {
-    skipReleaseNotes: config.get<boolean>('launch.skipReleaseNotes', true),
-    skipWelcome: config.get<boolean>('launch.skipWelcome', true),
     disableGpu: config.get<boolean>('launch.disableGpu', false),
     disableWorkspaceTrust: config.get<boolean>('launch.disableWorkspaceTrust', false),
-    verbose: config.get<boolean>('launch.verbose', false),
     extraArgs: config.get<string[]>('launch.extraArgs', []),
+    skipReleaseNotes: config.get<boolean>('launch.skipReleaseNotes', true),
+    skipWelcome: config.get<boolean>('launch.skipWelcome', true),
+    verbose: config.get<boolean>('launch.verbose', false),
   };
 
   return { clientWorkspace, extensionPath, launchFlags };
@@ -1717,13 +1721,13 @@ export async function startClientWindow(): Promise<boolean> {
     hostLog?.(`startClientWindow: Client spawned, connecting CDP on port ${result.cdpPort}...`);
     await connectCdpClient(result.cdpPort);
     hostLog?.(`startClientWindow: CDP connection attempt complete, activeCdpClient.connected=${activeCdpClient?.connected}`);
-    console.log('[host] Client window auto-started successfully (cdpPort: ' + result.cdpPort + ')');
+    console.log(`[host] Client window auto-started successfully (cdpPort: ${  result.cdpPort  })`);
     lastKnownClientState = true;
     _onClientStateChanged.fire(true);
     return true;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.log('[host] Failed to auto-start client window: ' + msg);
+    console.log(`[host] Failed to auto-start client window: ${  msg}`);
     hostLog?.(`startClientWindow: FAILED — ${msg}`);
     return false;
   }

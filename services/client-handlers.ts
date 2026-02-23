@@ -20,14 +20,15 @@
  */
 
 import * as vscode from 'vscode';
+
+import { extractFileStructure, extractOrphanedContent, extractStructure, findDeadCode, findDuplicates, getExports, getImportGraph, getOverview, traceSymbol } from './codebase/codebase-worker-proxy';
+import { disposeProcessLedger, getProcessLedger, initProcessLedger, type ProcessLedgerSummary } from './processLedger';
 import { SingleTerminalController } from './singleTerminalController';
-import { getProcessLedger, initProcessLedger, disposeProcessLedger, type ProcessLedgerSummary } from './processLedger';
 import { getUserActionTracker } from './userActionTracker';
-import { getOverview, getExports, traceSymbol, findDeadCode, getImportGraph, findDuplicates, extractOrphanedContent, extractFileStructure, extractStructure } from './codebase/codebase-worker-proxy';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type RegisterHandler = (method: string, handler: (params: Record<string, unknown>) => unknown | Promise<unknown>) => void;
+export type RegisterHandler = (method: string, handler: (params: Record<string, unknown>) => Promise<unknown> | unknown) => void;
 
 // ── Type-safe param extraction ───────────────────────────────────────────────
 
@@ -58,16 +59,16 @@ function errorMessage(err: unknown): string {
 
 // ── Module State ─────────────────────────────────────────────────────────────
 
-let terminalController: SingleTerminalController | null = null;
+let terminalController: null | SingleTerminalController = null;
 
 // ── Read Highlight Decoration ────────────────────────────────────────────────
 
 const readHighlightDecoration = vscode.window.createTextEditorDecorationType({
   backgroundColor: 'rgba(255, 213, 79, 0.25)',
+  border: '1px solid rgba(255, 213, 79, 0.4)',
   isWholeLine: false,
   overviewRulerColor: 'rgba(255, 213, 79, 0.7)',
   overviewRulerLane: vscode.OverviewRulerLane.Center,
-  border: '1px solid rgba(255, 213, 79, 0.4)',
 });
 
 const collapsedRangeDecoration = vscode.window.createTextEditorDecorationType({
@@ -81,11 +82,11 @@ const collapsedRangeDecoration = vscode.window.createTextEditorDecorationType({
 
 const EDIT_DIFF_SCHEME = 'devtools-edit-before';
 const editDiffContentStore = new Map<string, string>();
-let editDiffProviderDisposable: vscode.Disposable | undefined;
+let editDiffProviderDisposable: undefined | vscode.Disposable;
 
 // Windows drive letters can differ in case between URI.from() and VS Code's internal normalization
 function diffStoreKey(rawPath: string): string {
-  return rawPath.replace(/\\/g, '/').toLowerCase();
+  return rawPath.replaceAll('\\', '/').toLowerCase();
 }
 
 function ensureEditDiffProvider(): void {
@@ -101,7 +102,7 @@ function ensureEditDiffProvider(): void {
 }
 
 // Per-document folding range provider so we can fold on our own boundaries
-let activeFoldingProvider: vscode.Disposable | undefined;
+let activeFoldingProvider: undefined | vscode.Disposable;
 let activeFoldingRanges: vscode.FoldingRange[] = [];
 
 function registerFoldingRanges(
@@ -132,7 +133,7 @@ function parseRangeArray(value: unknown): Array<{startLine: number; endLine: num
       const s = item.startLine;
       const e = item.endLine;
       if (typeof s === 'number' && typeof e === 'number') {
-        ranges.push({startLine: s, endLine: e});
+        ranges.push({endLine: e, startLine: s});
       }
     }
   }
@@ -143,7 +144,7 @@ function parseRangeArray(value: unknown): Array<{startLine: number; endLine: num
 /**
  * Get the shared terminal controller (for LM tools or other consumers).
  */
-export function getTerminalControllerFromClient(): SingleTerminalController | null {
+export function getTerminalControllerFromClient(): null | SingleTerminalController {
   return terminalController;
 }
 
@@ -170,7 +171,7 @@ async function handleTerminalRun(params: Record<string, unknown>) {
   const timeout = paramNum(params, 'timeout');
   const name = paramStr(params, 'name');
   const waitModeRaw = paramStr(params, 'waitMode');
-  const waitMode: 'completion' | 'background' = waitModeRaw === 'background' ? 'background' : 'completion';
+  const waitMode: 'background' | 'completion' = waitModeRaw === 'background' ? 'background' : 'completion';
 
   console.log(`[client] terminal.run — cwd: ${cwd}, command: ${command}, name: ${name ?? 'default'}, waitMode: ${waitMode}`);
   return terminalController.run(command, cwd, timeout, name, waitMode);
@@ -267,15 +268,12 @@ async function handleKillOrphans(_params: Record<string, unknown>): Promise<{ ki
  * Uses the VS Code API's vscode.window.terminals.
  */
 function handleTerminalListAll(_params: Record<string, unknown>): unknown {
-  const terminals = vscode.window.terminals;
-  const activeTerminal = vscode.window.activeTerminal;
+  const {terminals} = vscode.window;
+  const {activeTerminal} = vscode.window;
   
   const terminalInfos = terminals.map((terminal, index) => {
     const opts = terminal.creationOptions;
     return {
-      index,
-      name: terminal.name,
-      processId: undefined,
       creationOptions: {
         name: opts?.name,
         shellPath: opts && 'shellPath' in opts ? opts.shellPath : undefined,
@@ -283,19 +281,22 @@ function handleTerminalListAll(_params: Record<string, unknown>): unknown {
       exitStatus: terminal.exitStatus
         ? { code: terminal.exitStatus.code, reason: terminal.exitStatus.reason }
         : undefined,
+      index,
+      isActive: terminal === activeTerminal,
+      name: terminal.name,
+      processId: undefined,
       state: {
         isInteractedWith: terminal.state?.isInteractedWith ?? false,
       },
-      isActive: terminal === activeTerminal,
     };
   });
   
   const activeIndex = terminalInfos.findIndex(t => t.isActive);
   
   return {
-    total: terminalInfos.length,
     activeIndex: activeIndex >= 0 ? activeIndex : undefined,
     terminals: terminalInfos,
+    total: terminalInfos.length,
   };
 }
 
@@ -332,11 +333,11 @@ function resolveRootDir(params: Record<string, unknown>): string {
 async function handleCodebaseGetOverview(params: Record<string, unknown>) {
   const rootDir = resolveRootDir(params);
   return getOverview({
-    rootDir,
     dir: paramStr(params, 'dir') ?? rootDir,
-    recursive: paramBool(params, 'recursive') ?? false,
-    symbols: paramBool(params, 'symbols') ?? false,
     metadata: paramBool(params, 'metadata') ?? false,
+    recursive: paramBool(params, 'recursive') ?? false,
+    rootDir,
+    symbols: paramBool(params, 'symbols') ?? false,
     toolScope: paramStr(params, 'toolScope') ?? undefined,
   });
 }
@@ -348,13 +349,13 @@ async function handleCodebaseGetExports(params: Record<string, unknown>) {
   }
 
   return getExports({
+    excludePatterns: paramStrArray(params, 'excludePatterns'),
+    includeJSDoc: paramBool(params, 'includeJSDoc') ?? true,
+    includePatterns: paramStrArray(params, 'includePatterns'),
+    includeTypes: paramBool(params, 'includeTypes') ?? true,
+    kind: paramStr(params, 'kind') ?? 'all',
     path: pathParam,
     rootDir: resolveRootDir(params),
-    includeTypes: paramBool(params, 'includeTypes') ?? true,
-    includeJSDoc: paramBool(params, 'includeJSDoc') ?? true,
-    kind: paramStr(params, 'kind') ?? 'all',
-    includePatterns: paramStrArray(params, 'includePatterns'),
-    excludePatterns: paramStrArray(params, 'excludePatterns'),
   });
 }
 
@@ -366,30 +367,30 @@ async function handleCodebaseTraceSymbol(params: Record<string, unknown>) {
 
   try {
     return await traceSymbol({
-      symbol,
-      rootDir: resolveRootDir(params),
-      file: paramStr(params, 'file'),
-      line: paramNum(params, 'line'),
       column: paramNum(params, 'column'),
       depth: paramNum(params, 'depth') ?? 3,
+      excludePatterns: paramStrArray(params, 'excludePatterns'),
+      file: paramStr(params, 'file'),
+      forceRefresh: paramBool(params, 'forceRefresh') ?? false,
       include: paramStrArray(params, 'include') ?? ['all'],
       includeImpact: paramBool(params, 'includeImpact') ?? false,
-      maxReferences: undefined,
-      timeout: paramNum(params, 'timeout'),
-      forceRefresh: paramBool(params, 'forceRefresh') ?? false,
       includePatterns: paramStrArray(params, 'includePatterns'),
-      excludePatterns: paramStrArray(params, 'excludePatterns'),
+      line: paramNum(params, 'line'),
+      maxReferences: undefined,
+      rootDir: resolveRootDir(params),
+      symbol,
+      timeout: paramNum(params, 'timeout'),
     });
   } catch (err: unknown) {
     console.warn('[client] traceSymbol error:', errorMessage(err));
     return {
-      symbol,
-      references: [],
-      reExports: [],
       callChain: { incomingCalls: [], outgoingCalls: [] },
-      typeFlows: [],
-      summary: { totalReferences: 0, totalFiles: 0, maxCallDepth: 0 },
       partial: true,
+      reExports: [],
+      references: [],
+      summary: { maxCallDepth: 0, totalFiles: 0, totalReferences: 0 },
+      symbol,
+      typeFlows: [],
     };
   }
 }
@@ -397,21 +398,21 @@ async function handleCodebaseTraceSymbol(params: Record<string, unknown>) {
 async function handleCodebaseFindDeadCode(params: Record<string, unknown>) {
   try {
     return await findDeadCode({
-      rootDir: resolveRootDir(params),
-      pattern: paramStr(params, 'pattern'),
-      exportedOnly: paramBool(params, 'exportedOnly') ?? true,
+      excludePatterns: paramStrArray(params, 'excludePatterns'),
       excludeTests: paramBool(params, 'excludeTests') ?? true,
+      exportedOnly: paramBool(params, 'exportedOnly') ?? true,
+      includePatterns: paramStrArray(params, 'includePatterns'),
       kinds: paramStrArray(params, 'kinds'),
       limit: paramNum(params, 'limit') ?? 100,
-      includePatterns: paramStrArray(params, 'includePatterns'),
-      excludePatterns: paramStrArray(params, 'excludePatterns'),
+      pattern: paramStr(params, 'pattern'),
+      rootDir: resolveRootDir(params),
     });
   } catch (err: unknown) {
     console.warn('[client] findDeadCode error:', errorMessage(err));
     return {
       deadCode: [],
-      summary: { totalScanned: 0, totalDead: 0, scanDurationMs: 0 },
       errorMessage: errorMessage(err),
+      summary: { scanDurationMs: 0, totalDead: 0, totalScanned: 0 },
     };
   }
 }
@@ -419,18 +420,18 @@ async function handleCodebaseFindDeadCode(params: Record<string, unknown>) {
 async function handleCodebaseGetImportGraph(params: Record<string, unknown>) {
   try {
     return await getImportGraph({
-      rootDir: resolveRootDir(params),
-      includePatterns: paramStrArray(params, 'includePatterns'),
       excludePatterns: paramStrArray(params, 'excludePatterns'),
+      includePatterns: paramStrArray(params, 'includePatterns'),
+      rootDir: resolveRootDir(params),
     });
   } catch (err: unknown) {
     console.warn('[client] getImportGraph error:', errorMessage(err));
     return {
-      modules: {},
       circular: [],
-      orphans: [],
-      stats: { totalModules: 0, totalEdges: 0, circularCount: 0, orphanCount: 0 },
       errorMessage: errorMessage(err),
+      modules: {},
+      orphans: [],
+      stats: { circularCount: 0, orphanCount: 0, totalEdges: 0, totalModules: 0 },
     };
   }
 }
@@ -438,18 +439,18 @@ async function handleCodebaseGetImportGraph(params: Record<string, unknown>) {
 async function handleCodebaseFindDuplicates(params: Record<string, unknown>) {
   try {
     return await findDuplicates({
-      rootDir: resolveRootDir(params),
+      excludePatterns: paramStrArray(params, 'excludePatterns'),
+      includePatterns: paramStrArray(params, 'includePatterns'),
       kinds: paramStrArray(params, 'kinds'),
       limit: paramNum(params, 'limit') ?? 50,
-      includePatterns: paramStrArray(params, 'includePatterns'),
-      excludePatterns: paramStrArray(params, 'excludePatterns'),
+      rootDir: resolveRootDir(params),
     });
   } catch (err: unknown) {
     console.warn('[client] findDuplicates error:', errorMessage(err));
     return {
-      groups: [],
-      summary: { totalGroups: 0, totalDuplicateInstances: 0, filesWithDuplicates: 0, scanDurationMs: 0 },
       errorMessage: errorMessage(err),
+      groups: [],
+      summary: { filesWithDuplicates: 0, scanDurationMs: 0, totalDuplicateInstances: 0, totalGroups: 0 },
     };
   }
 }
@@ -506,16 +507,16 @@ async function handleCodebaseGetDiagnostics(params: Record<string, unknown>) {
         if (items.length >= limit) break;
 
         const codeStr = typeof diag.code === 'object' && diag.code !== null
-          ? String((diag.code as { value: string | number }).value)
+          ? String((diag.code as { value: number | string }).value)
           : String(diag.code ?? '');
 
         items.push({
+          code: codeStr,
+          column: diag.range.start.character + 1,
           file: vscode.workspace.asRelativePath(uri),
           line: diag.range.start.line + 1,
-          column: diag.range.start.character + 1,
-          severity,
-          code: codeStr,
           message: diag.message,
+          severity,
           source: diag.source ?? 'unknown',
         });
       }
@@ -529,16 +530,16 @@ async function handleCodebaseGetDiagnostics(params: Record<string, unknown>) {
       diagnostics: items,
       summary: {
         totalErrors: errorCount,
-        totalWarnings: warningCount,
         totalFiles: new Set(items.map(i => i.file)).size,
+        totalWarnings: warningCount,
       },
     };
   } catch (err: unknown) {
     console.warn('[client] getDiagnostics error:', errorMessage(err));
     return {
       diagnostics: [],
-      summary: { totalErrors: 0, totalWarnings: 0, totalFiles: 0 },
       errorMessage: errorMessage(err),
+      summary: { totalErrors: 0, totalFiles: 0, totalWarnings: 0 },
     };
   }
 }
@@ -555,11 +556,11 @@ function diagSeverityToString(severity: vscode.DiagnosticSeverity): string {
 
 function globToRegex(pattern: string): RegExp {
   const escaped = pattern
-    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    .replace(/\*\*/g, '<<<GLOBSTAR>>>')
-    .replace(/\*/g, '[^/\\\\]*')
-    .replace(/<<<GLOBSTAR>>>/g, '.*')
-    .replace(/\?/g, '[^/\\\\]');
+    .replaceAll(/[.+^${}()|[\]\\]/g, '\\$&')
+    .replaceAll('**', '<<<GLOBSTAR>>>')
+    .replaceAll('*', '[^/\\\\]*')
+    .replaceAll('<<<GLOBSTAR>>>', '.*')
+    .replaceAll('?', '[^/\\\\]');
   return new RegExp(escaped, 'i');
 }
 
@@ -568,47 +569,47 @@ function globToRegex(pattern: string): RegExp {
 /** Map VS Code SymbolKind enum to human-readable strings */
 function symbolKindName(kind: vscode.SymbolKind): string {
   const names: Record<number, string> = {
-    [vscode.SymbolKind.File]: 'file',
-    [vscode.SymbolKind.Module]: 'module',
-    [vscode.SymbolKind.Namespace]: 'namespace',
-    [vscode.SymbolKind.Package]: 'package',
+    [vscode.SymbolKind.Array]: 'array',
+    [vscode.SymbolKind.Boolean]: 'boolean',
     [vscode.SymbolKind.Class]: 'class',
-    [vscode.SymbolKind.Method]: 'method',
-    [vscode.SymbolKind.Property]: 'property',
-    [vscode.SymbolKind.Field]: 'field',
+    [vscode.SymbolKind.Constant]: 'constant',
     [vscode.SymbolKind.Constructor]: 'constructor',
     [vscode.SymbolKind.Enum]: 'enum',
-    [vscode.SymbolKind.Interface]: 'interface',
-    [vscode.SymbolKind.Function]: 'function',
-    [vscode.SymbolKind.Variable]: 'variable',
-    [vscode.SymbolKind.Constant]: 'constant',
-    [vscode.SymbolKind.String]: 'string',
-    [vscode.SymbolKind.Number]: 'number',
-    [vscode.SymbolKind.Boolean]: 'boolean',
-    [vscode.SymbolKind.Array]: 'array',
-    [vscode.SymbolKind.Object]: 'object',
-    [vscode.SymbolKind.Key]: 'key',
-    [vscode.SymbolKind.Null]: 'null',
     [vscode.SymbolKind.EnumMember]: 'enumMember',
-    [vscode.SymbolKind.Struct]: 'struct',
     [vscode.SymbolKind.Event]: 'event',
+    [vscode.SymbolKind.Field]: 'field',
+    [vscode.SymbolKind.File]: 'file',
+    [vscode.SymbolKind.Function]: 'function',
+    [vscode.SymbolKind.Interface]: 'interface',
+    [vscode.SymbolKind.Key]: 'key',
+    [vscode.SymbolKind.Method]: 'method',
+    [vscode.SymbolKind.Module]: 'module',
+    [vscode.SymbolKind.Namespace]: 'namespace',
+    [vscode.SymbolKind.Null]: 'null',
+    [vscode.SymbolKind.Number]: 'number',
+    [vscode.SymbolKind.Object]: 'object',
     [vscode.SymbolKind.Operator]: 'operator',
+    [vscode.SymbolKind.Package]: 'package',
+    [vscode.SymbolKind.Property]: 'property',
+    [vscode.SymbolKind.String]: 'string',
+    [vscode.SymbolKind.Struct]: 'struct',
     [vscode.SymbolKind.TypeParameter]: 'typeParameter',
+    [vscode.SymbolKind.Variable]: 'variable',
   };
   return names[kind] ?? 'unknown';
 }
 
 interface SerializedFileSymbol {
-  name: string;
-  kind: string;
+  children: SerializedFileSymbol[];
   detail?: string;
+  kind: string;
+  name: string;
   range: { startLine: number; startChar: number; endLine: number; endChar: number };
   selectionRange: { startLine: number; startChar: number; endLine: number; endChar: number };
-  children: SerializedFileSymbol[];
 }
 
 function serializeDocSymbol(sym: vscode.DocumentSymbol): SerializedFileSymbol {
-  let name = sym.name;
+  let {name} = sym;
 
   // Fix "<unknown>" name for module.exports patterns (VS Code limitation)
   if (name === '<unknown>' && sym.kind === vscode.SymbolKind.Variable) {
@@ -616,22 +617,22 @@ function serializeDocSymbol(sym: vscode.DocumentSymbol): SerializedFileSymbol {
   }
 
   return {
-    name,
-    kind: symbolKindName(sym.kind),
+    children: sym.children.map(serializeDocSymbol),
     detail: sym.detail || undefined,
+    kind: symbolKindName(sym.kind),
+    name,
     range: {
-      startLine: sym.range.start.line,
-      startChar: sym.range.start.character,
-      endLine: sym.range.end.line,
       endChar: sym.range.end.character,
+      endLine: sym.range.end.line,
+      startChar: sym.range.start.character,
+      startLine: sym.range.start.line,
     },
     selectionRange: {
-      startLine: sym.selectionRange.start.line,
-      startChar: sym.selectionRange.start.character,
-      endLine: sym.selectionRange.end.line,
       endChar: sym.selectionRange.end.character,
+      endLine: sym.selectionRange.end.line,
+      startChar: sym.selectionRange.start.character,
+      startLine: sym.selectionRange.start.line,
     },
-    children: sym.children.map(serializeDocSymbol),
   };
 }
 
@@ -646,7 +647,7 @@ async function handleFileGetSymbols(params: Record<string, unknown>) {
   try { await vscode.workspace.openTextDocument(uri); } catch { /* best-effort open */ }
 
   const symbols = await vscode.commands.executeCommand<
-    vscode.DocumentSymbol[] | vscode.SymbolInformation[] | undefined
+    undefined | vscode.DocumentSymbol[] | vscode.SymbolInformation[]
   >('vscode.executeDocumentSymbolProvider', uri);
 
   if (!symbols || symbols.length === 0) return { symbols: [] };
@@ -681,7 +682,7 @@ async function handleFileReadContent(params: Record<string, unknown>) {
   const range = new vscode.Range(clampedStart, 0, clampedEnd, doc.lineAt(clampedEnd).text.length);
   const content = doc.getText(range);
 
-  return { content, startLine: clampedStart, endLine: clampedEnd, totalLines };
+  return { content, endLine: clampedEnd, startLine: clampedStart, totalLines };
 }
 
 /**
@@ -709,8 +710,8 @@ async function handleFileHighlightReadRange(params: Record<string, unknown>) {
   }
 
   const editor = await vscode.window.showTextDocument(doc, {
-    preview: true,
     preserveFocus: false,
+    preview: true,
   });
 
   if (collapsedRanges.length > 0 || sourceRanges.length > 0) {
@@ -744,7 +745,7 @@ async function handleFileHighlightReadRange(params: Record<string, unknown>) {
       registerFoldingRanges(doc, collapsedRanges);
       // Small delay so VS Code picks up the new folding provider before we fold
       await new Promise(resolve => setTimeout(resolve, 100));
-      await vscode.commands.executeCommand('editor.fold', {selectionLines: foldLines, levels: 1});
+      await vscode.commands.executeCommand('editor.fold', {levels: 1, selectionLines: foldLines});
     }
 
     // Center viewport on the first non-collapsed (source) content
@@ -782,13 +783,13 @@ async function handleFileShowEditDiff(params: Record<string, unknown>) {
   const editStartLine = paramNum(params, 'editStartLine') ?? 0;
 
   // The "before" content was captured by handleFileApplyEdit
-  const beforeUri = vscode.Uri.from({ scheme: EDIT_DIFF_SCHEME, path: filePath });
+  const beforeUri = vscode.Uri.from({ path: filePath, scheme: EDIT_DIFF_SCHEME });
   if (!editDiffContentStore.has(diffStoreKey(filePath))) {
-    return { success: false, reason: 'No pre-edit content snapshot available' };
+    return { reason: 'No pre-edit content snapshot available', success: false };
   }
 
   const afterUri = vscode.Uri.file(filePath);
-  const fileName = filePath.replace(/\\/g, '/').split('/').pop() ?? 'file';
+  const fileName = filePath.replaceAll('\\', '/').split('/').pop() ?? 'file';
 
   await vscode.commands.executeCommand(
     'vscode.diff',
@@ -852,7 +853,7 @@ async function handleFileApplyEdit(params: Record<string, unknown>) {
 
   await doc.save();
 
-  return { success: true, file: filePath };
+  return { file: filePath, success: true };
 }
 
 /**
@@ -871,15 +872,15 @@ async function handleFileGetDiagnostics(params: Record<string, unknown>) {
       d.severity === vscode.DiagnosticSeverity.Warning
     )
     .map(d => ({
-      line: d.range.start.line + 1,
-      column: d.range.start.character + 1,
-      endLine: d.range.end.line + 1,
-      endColumn: d.range.end.character + 1,
-      severity: diagSeverityToString(d.severity),
-      message: d.message,
       code: typeof d.code === 'object' && d.code !== null
-        ? String((d.code as { value: string | number }).value)
+        ? String((d.code as { value: number | string }).value)
         : String(d.code ?? ''),
+      column: d.range.start.character + 1,
+      endColumn: d.range.end.character + 1,
+      endLine: d.range.end.line + 1,
+      line: d.range.start.line + 1,
+      message: d.message,
+      severity: diagSeverityToString(d.severity),
       source: d.source ?? 'unknown',
     }));
 
@@ -903,17 +904,17 @@ async function handleFileExecuteRename(params: Record<string, unknown>) {
   await vscode.workspace.openTextDocument(uri);
   const position = new vscode.Position(line, character);
 
-  const workspaceEdit = await vscode.commands.executeCommand<vscode.WorkspaceEdit | undefined>(
+  const workspaceEdit = await vscode.commands.executeCommand<undefined | vscode.WorkspaceEdit>(
     'vscode.executeDocumentRenameProvider', uri, position, newName,
   );
 
   if (!workspaceEdit) {
-    return { success: false, filesAffected: [], totalEdits: 0, error: 'Rename provider returned no edits' };
+    return { error: 'Rename provider returned no edits', filesAffected: [], success: false, totalEdits: 0 };
   }
 
   const applied = await vscode.workspace.applyEdit(workspaceEdit);
   if (!applied) {
-    return { success: false, filesAffected: [], totalEdits: 0, error: 'VS Code rejected the rename edits' };
+    return { error: 'VS Code rejected the rename edits', filesAffected: [], success: false, totalEdits: 0 };
   }
 
   // Clean up redundant self-aliases (e.g. `foo as foo`) left by rename provider
@@ -947,7 +948,7 @@ async function handleFileExecuteRename(params: Record<string, unknown>) {
     } catch { /* best-effort save */ }
   }
 
-  return { success: true, filesAffected, totalEdits };
+  return { filesAffected, success: true, totalEdits };
 }
 
 /**
@@ -966,7 +967,7 @@ async function handleFileFindReferences(params: Record<string, unknown>) {
   await vscode.workspace.openTextDocument(uri);
   const position = new vscode.Position(line, character);
 
-  const locations = await vscode.commands.executeCommand<vscode.Location[] | undefined>(
+  const locations = await vscode.commands.executeCommand<undefined | vscode.Location[]>(
     'vscode.executeReferenceProvider', uri, position,
   );
 
@@ -974,9 +975,9 @@ async function handleFileFindReferences(params: Record<string, unknown>) {
 
   return {
     references: locations.map(loc => ({
+      character: loc.range.start.character,
       file: vscode.workspace.asRelativePath(loc.uri),
       line: loc.range.start.line + 1,
-      character: loc.range.start.character,
     })),
   };
 }
@@ -997,7 +998,7 @@ async function handleFileGetCodeActions(params: Record<string, unknown>) {
   const doc = await vscode.workspace.openTextDocument(uri);
   const range = new vscode.Range(startLine, 0, endLine, doc.lineAt(endLine).text.length);
 
-  const actions = await vscode.commands.executeCommand<vscode.CodeAction[] | undefined>(
+  const actions = await vscode.commands.executeCommand<undefined | vscode.CodeAction[]>(
     'vscode.executeCodeActionProvider', uri, range,
   );
 
@@ -1007,12 +1008,12 @@ async function handleFileGetCodeActions(params: Record<string, unknown>) {
     actions: actions
       .filter(a => a.edit || a.command)
       .map((a, i) => ({
-        index: i,
-        title: a.title,
-        kind: a.kind?.value ?? 'unknown',
-        isPreferred: a.isPreferred ?? false,
-        hasEdit: !!a.edit,
         hasCommand: !!a.command,
+        hasEdit: !!a.edit,
+        index: i,
+        isPreferred: a.isPreferred ?? false,
+        kind: a.kind?.value ?? 'unknown',
+        title: a.title,
       })),
   };
 }
@@ -1034,19 +1035,19 @@ async function handleFileApplyCodeAction(params: Record<string, unknown>) {
   const doc = await vscode.workspace.openTextDocument(uri);
   const range = new vscode.Range(startLine, 0, endLine, doc.lineAt(endLine).text.length);
 
-  const actions = await vscode.commands.executeCommand<vscode.CodeAction[] | undefined>(
+  const actions = await vscode.commands.executeCommand<undefined | vscode.CodeAction[]>(
     'vscode.executeCodeActionProvider', uri, range,
   );
 
   if (!actions || actionIndex >= actions.length) {
-    return { success: false, error: `Code action at index ${actionIndex} not found` };
+    return { error: `Code action at index ${actionIndex} not found`, success: false };
   }
 
   const action = actions[actionIndex];
 
   if (action.edit) {
     const applied = await vscode.workspace.applyEdit(action.edit);
-    if (!applied) return { success: false, error: 'VS Code rejected the code action edit' };
+    if (!applied) return { error: 'VS Code rejected the code action edit', success: false };
   }
 
   if (action.command) {
@@ -1072,22 +1073,22 @@ async function handleExtractOrphanedContent(params: Record<string, unknown>) {
 
   // Optionally get symbol ranges from VS Code first (for gap calculation)
   const includeSymbols = paramBool(params, 'includeSymbols') ?? true;
-  let symbolRanges: Array<{ start: number; end: number }> = [];
+  const symbolRanges: Array<{ start: number; end: number }> = [];
 
   if (includeSymbols) {
     try {
       const uri = vscode.Uri.file(filePath);
       await vscode.workspace.openTextDocument(uri);
       const symbols = await vscode.commands.executeCommand<
-        vscode.DocumentSymbol[] | vscode.SymbolInformation[] | undefined
+        undefined | vscode.DocumentSymbol[] | vscode.SymbolInformation[]
       >('vscode.executeDocumentSymbolProvider', uri);
 
       if (symbols) {
         const collectRanges = (syms: vscode.DocumentSymbol[]): void => {
           for (const s of syms) {
             symbolRanges.push({
-              start: s.range.start.line + 1, // Convert to 1-indexed
               end: s.range.end.line + 1,
+              start: s.range.start.line + 1, // Convert to 1-indexed
             });
             if (s.children) collectRanges(s.children);
           }

@@ -108,17 +108,17 @@ export function stopMcpSocketServer(): void {
 // ── JSON-RPC 2.0 Types ─────────────────────────────────
 
 interface JsonRpcRequest {
+  id?: null | number | string;
   jsonrpc: '2.0';
-  id?: string | number | null;
   method: string;
   params?: Record<string, unknown>;
 }
 
 interface JsonRpcResponse {
-  jsonrpc: '2.0';
-  id: string | number | null;
-  result?: unknown;
   error?: {code: number; message: string; data?: unknown};
+  id: null | number | string;
+  jsonrpc: '2.0';
+  result?: unknown;
 }
 
 // Standard JSON-RPC 2.0 error codes
@@ -144,16 +144,16 @@ function handleConnection(conn: net.Socket): void {
         req = JSON.parse(line) as JsonRpcRequest;
       } catch {
         const errResp: JsonRpcResponse = {
-          jsonrpc: '2.0',
-          id: null,
           error: {code: PARSE_ERROR, message: 'Parse error'},
+          id: null,
+          jsonrpc: '2.0',
         };
-        conn.write(JSON.stringify(errResp) + '\n');
+        conn.write(`${JSON.stringify(errResp)  }\n`);
         continue;
       }
 
       const response = dispatch(req);
-      conn.write(JSON.stringify(response) + '\n');
+      conn.write(`${JSON.stringify(response)  }\n`);
     }
   });
 
@@ -171,24 +171,24 @@ function dispatch(req: JsonRpcRequest): JsonRpcResponse {
     case 'detach-gracefully':
       watchRestartPending = true;
       logger('MCP socket: detach-gracefully received — next shutdown will detach');
-      return {jsonrpc: '2.0', id, result: {ok: true}};
+      return {id, jsonrpc: '2.0', result: {ok: true}};
 
     case 'client-reconnected': {
       const params = req.params ?? {};
-      const electronPid = params.electronPid;
-      const cdpPort = params.cdpPort;
-      const inspectorPort = params.inspectorPort;
+      const {electronPid} = params;
+      const {cdpPort} = params;
+      const {inspectorPort} = params;
       logger(
         `MCP socket: client-reconnected received — pid=${String(electronPid)}, cdp=${String(cdpPort)}, inspector=${String(inspectorPort)}`,
       );
-      return {jsonrpc: '2.0', id, result: {ok: true}};
+      return {id, jsonrpc: '2.0', result: {ok: true}};
     }
 
     default:
       return {
-        jsonrpc: '2.0',
-        id,
         error: {code: METHOD_NOT_FOUND, message: `Unknown method: ${req.method}`},
+        id,
+        jsonrpc: '2.0',
       };
   }
 }

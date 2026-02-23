@@ -13,9 +13,9 @@
  * receives a fully-configured context — identical to how VS Code spawns it.
  */
 
-import {existsSync, readFileSync} from 'node:fs';
-import {isAbsolute, resolve, dirname} from 'node:path';
 import {spawn} from 'node:child_process';
+import {existsSync, readFileSync} from 'node:fs';
+import {dirname, isAbsolute, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -71,17 +71,17 @@ const extensionPath = isAbsolute(extensionPathRaw)
 const devtoolsConfig = {
 	clientWorkspace,
 	extensionPath,
-	launch: {
-		skipReleaseNotes: get('devtools.launch.skipReleaseNotes', true),
-		skipWelcome:      get('devtools.launch.skipWelcome', true),
-		disableGpu:       get('devtools.launch.disableGpu', false),
-		disableWorkspaceTrust: get('devtools.launch.disableWorkspaceTrust', false),
-		verbose:          get('devtools.launch.verbose', false),
-		extraArgs:        get('devtools.launch.extraArgs', []),
-	},
 	hotReload: {
 		enabled:          get('devtools.hotReload.enabled', true),
 		mcpStatusTimeout: get('devtools.hotReload.mcpStatusTimeout', 60_000),
+	},
+	launch: {
+		disableGpu:       get('devtools.launch.disableGpu', false),
+		disableWorkspaceTrust: get('devtools.launch.disableWorkspaceTrust', false),
+		extraArgs:        get('devtools.launch.extraArgs', []),
+		skipReleaseNotes: get('devtools.launch.skipReleaseNotes', true),
+		skipWelcome:      get('devtools.launch.skipWelcome', true),
+		verbose:          get('devtools.launch.verbose', false),
 	},
 };
 
@@ -98,12 +98,12 @@ const inspectorCommand = 'npx @modelcontextprotocol/inspector node mcp-server/bu
 
 const inspector = spawn(inspectorCommand, [], {
 	cwd: hostWorkspace,
-	stdio: 'inherit',
-	shell: true,
 	env: {
 		...process.env,
 		DEVTOOLS_CONFIG: JSON.stringify(devtoolsConfig),
 	},
+	shell: true,
+	stdio: 'inherit',
 });
 
 inspector.on('error', (/** @type {Error} */ err) => {

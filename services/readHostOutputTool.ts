@@ -10,19 +10,18 @@
 
 import type { FilterOptions, Severity } from '@packages/log-consolidation';
 
-import * as vscode from 'vscode';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import * as os from 'node:os';
-
 import { compressLogs } from '@packages/log-consolidation';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import * as vscode from 'vscode';
 
 // ============================================================================
 // Module State
 // ============================================================================
 
-let clientLogsStoragePath: string | null = null;
-let hostLogUri: string | null = null;
+let clientLogsStoragePath: null | string = null;
+let hostLogUri: null | string = null;
 
 export function setClientLogsStoragePath(storagePath: string): void {
     clientLogsStoragePath = storagePath;
@@ -32,7 +31,7 @@ export function setHostLogUri(logUri: string): void {
     hostLogUri = logUri;
 }
 
-function getClientLogsStoragePath(): string | null {
+function getClientLogsStoragePath(): null | string {
     return clientLogsStoragePath;
 }
 
@@ -41,49 +40,49 @@ function getClientLogsStoragePath(): string | null {
 // ============================================================================
 
 export interface IReadOutputChannelsParams {
-    channel?: string;
-    session?: 'host' | 'client';
-    limit?: number;
-    pattern?: string;
     afterLine?: number;
     beforeLine?: number;
-    lineLimit?: number;
-    templateId?: string;
-    severity?: string;
-    timeRange?: string;
-    minDuration?: string;
+    channel?: string;
     correlationId?: string;
     includeStackFrames?: boolean;
+    limit?: number;
+    lineLimit?: number;
+    minDuration?: string;
+    pattern?: string;
+    session?: 'client' | 'host';
+    severity?: string;
+    templateId?: string;
+    timeRange?: string;
 }
 
 // ============================================================================
 // Log File Discovery Types
 // ============================================================================
 
-type SessionType = 'host' | 'client';
+type SessionType = 'client' | 'host';
 
 interface LogFileInfo {
+    category: string;
     name: string;
     path: string;
-    size: number;
-    category: string;
     session: SessionType;
+    size: number;
 }
 
 const categoryLabels: Record<string, string> = {
+    extension: 'Extension Logs',
+    exthost: 'Extension Host',
+    output: 'Output Channels',
     root: 'Main Logs',
     window: 'Window Logs',
-    exthost: 'Extension Host',
-    extension: 'Extension Logs',
-    output: 'Output Channels',
 };
 
 // ============================================================================
 // Utility Functions
 // ============================================================================
 
-function getUserDataDir(): string | null {
-    const platform = process.platform;
+function getUserDataDir(): null | string {
+    const {platform} = process;
     const homeDir = os.homedir();
 
     switch (platform) {
@@ -136,11 +135,11 @@ function findLogFiles(dir: string, session: SessionType, category = 'root'): Log
             try {
                 const stats = fs.statSync(fullPath);
                 results.push({
+                    category,
                     name: entry.name.replace('.log', ''),
                     path: fullPath,
-                    size: stats.size,
-                    category,
                     session,
+                    size: stats.size,
                 });
             } catch {
                 // Skip files we can't stat
@@ -159,7 +158,7 @@ const MAX_DIRS_TO_CHECK = 50;
  * context.logUri = <session>/window1/exthost/<extensionId>/
  * Session root = the directory whose parent is named 'logs'.
  */
-function findSessionRootFromLogUri(logUri: string): string | null {
+function findSessionRootFromLogUri(logUri: string): null | string {
     let current = logUri;
     for (let i = 0; i < 6; i++) {
         const parent = path.dirname(current);
@@ -233,7 +232,7 @@ function getHostLogsDirs(): string[] {
 }
 
 function getClientLogsDirs(): string[] {
-    const workspaceFolders = vscode.workspace.workspaceFolders;
+    const {workspaceFolders} = vscode.workspace;
     if (!workspaceFolders || workspaceFolders.length === 0) {
         return [];
     }
@@ -262,7 +261,7 @@ function getClientLogsDirs(): string[] {
     }
 
     // Find the candidate root with the most recent session
-    let bestRoot: string | null = null;
+    let bestRoot: null | string = null;
     let bestTimestamp = '';
 
     for (const candidate of candidates) {
@@ -336,7 +335,7 @@ export class OutputReadTool implements vscode.LanguageModelTool<IReadOutputChann
     async prepareInvocation(
         options: vscode.LanguageModelToolInvocationPrepareOptions<IReadOutputChannelsParams>,
         _token: vscode.CancellationToken
-    ): Promise<vscode.PreparedToolInvocation | undefined> {
+    ): Promise<undefined | vscode.PreparedToolInvocation> {
         const params = options.input;
         
         let messageText: string;
@@ -356,13 +355,13 @@ export class OutputReadTool implements vscode.LanguageModelTool<IReadOutputChann
         }
 
         return {
+            confirmationMessages: {
+                message: new vscode.MarkdownString(messageText),
+                title: 'Read Output Channels',
+            },
             invocationMessage: params.channel 
                 ? `Reading output channel: ${params.channel}` 
                 : 'Listing output channels',
-            confirmationMessages: {
-                title: 'Read Output Channels',
-                message: new vscode.MarkdownString(messageText),
-            },
         };
     }
 
@@ -439,8 +438,8 @@ export class OutputReadTool implements vscode.LanguageModelTool<IReadOutputChann
         }
 
         const sessionLabels: Record<SessionType, string> = {
-            host: 'Host Session',
             client: 'Client Session (Extension Development Host)',
+            host: 'Host Session',
         };
 
         const lines: string[] = ['## Available Output Channels\n'];
@@ -481,7 +480,7 @@ export class OutputReadTool implements vscode.LanguageModelTool<IReadOutputChann
             ]);
         }
 
-        const { limit, pattern, afterLine, beforeLine, lineLimit } = params;
+        const { afterLine, beforeLine, limit, lineLimit, pattern } = params;
 
         interface LineEntry {
             line: number;
@@ -529,7 +528,7 @@ export class OutputReadTool implements vscode.LanguageModelTool<IReadOutputChann
         if (lineLimit !== undefined) {
             indexedLines = indexedLines.map(l => ({
                 line: l.line,
-                text: l.text.length > lineLimit ? l.text.slice(0, lineLimit) + '...' : l.text,
+                text: l.text.length > lineLimit ? `${l.text.slice(0, lineLimit)  }...` : l.text,
             }));
         }
 
@@ -575,8 +574,8 @@ export class OutputReadTool implements vscode.LanguageModelTool<IReadOutputChann
             if (params.correlationId) drillDown.correlationId = params.correlationId;
             if (params.includeStackFrames !== undefined) drillDown.includeStackFrames = params.includeStackFrames;
 
-            const compressed = compressLogs({ lines: rawText, label: `${targetFile.name} [${sessionLabel}]` }, drillDown);
-            outputLines.push('\n' + compressed.formatted);
+            const compressed = compressLogs({ label: `${targetFile.name} [${sessionLabel}]`, lines: rawText }, drillDown);
+            outputLines.push(`\n${  compressed.formatted}`);
         }
 
         return new vscode.LanguageModelToolResult([

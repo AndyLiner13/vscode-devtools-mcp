@@ -4,26 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type {
+  AutoFix,
+  DetectedIntent,
+  FileEditResult,
+  PropagatedChange,
+  RemainingError,
+} from './types.js';
+
 import {
-  fileGetSymbols,
+  fileApplyCodeAction,
   fileApplyEdit,
-  fileReadContent,
-  fileGetDiagnostics,
   fileExecuteRename,
   fileFindReferences,
   fileGetCodeActions,
-  fileApplyCodeAction,
+  fileGetDiagnostics,
+  fileGetSymbols,
+  fileReadContent,
   fileShowEditDiff,
   type NativeDocumentSymbol,
 } from '../../client-pipe.js';
 import {diffSymbols, type EditInfo} from './symbol-diff.js';
-import type {
-  DetectedIntent,
-  PropagatedChange,
-  AutoFix,
-  RemainingError,
-  FileEditResult,
-} from './types.js';
 
 const DIAGNOSTIC_SETTLE_DELAY_MS = 800;
 const MAX_AUTO_FIX_ATTEMPTS = 5;
@@ -71,7 +72,7 @@ function findSymbolByQualifiedName(
  * Normalize file paths for comparison (forward slashes, lowercase on Windows).
  */
 function normalizePath(p: string): string {
-  return p.replace(/\\/g, '/').toLowerCase();
+  return p.replaceAll('\\', '/').toLowerCase();
 }
 
 /**
@@ -121,12 +122,12 @@ export async function executeEditWithSafetyLayer(
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return {
-      success: false,
-      file: filePath,
-      detectedIntents: [],
-      propagated: [],
       autoFixed: [],
+      detectedIntents: [],
+      file: filePath,
+      propagated: [],
       remainingErrors: [],
+      success: false,
       summary: `Edit failed: ${msg}`,
     };
   }
@@ -141,8 +142,8 @@ export async function executeEditWithSafetyLayer(
       const newLineCount = newContent.split('\n').length;
       const oldLineCount = endLine - startLine + 1;
       const editInfoForDiff: EditInfo = {
-        newContentEndLine: startLine + newLineCount - 1,
         linesDelta: newLineCount - oldLineCount,
+        newContentEndLine: startLine + newLineCount - 1,
       };
 
       allIntents = diffSymbols(oldSymbols, afterResult.symbols, editInfoForDiff);
@@ -190,12 +191,12 @@ export async function executeEditWithSafetyLayer(
         if (externalRefs.length > 0) {
           const refFiles = [...new Set(externalRefs.map(r => r.file))];
           return {
-            success: false,
-            file: filePath,
-            detectedIntents: [{type: 'delete', symbol: del.symbol}],
-            propagated: [],
             autoFixed: [],
+            detectedIntents: [{symbol: del.symbol, type: 'delete'}],
+            file: filePath,
+            propagated: [],
             remainingErrors: [],
+            success: false,
             summary:
               `Blocked: Cannot delete '${del.symbol}' — it has ${externalRefs.length} ` +
               `reference(s) in ${refFiles.length} other file(s): ` +
@@ -228,9 +229,9 @@ export async function executeEditWithSafetyLayer(
         );
         if (renameResult.success) {
           propagated.push({
-            type: 'rename',
             filesAffected: renameResult.filesAffected,
             totalEdits: renameResult.totalEdits,
+            type: 'rename',
           });
         }
       } catch {
@@ -268,12 +269,12 @@ export async function executeEditWithSafetyLayer(
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return {
-        success: false,
-        file: filePath,
-        detectedIntents,
-        propagated,
         autoFixed: [],
+        detectedIntents,
+        file: filePath,
+        propagated,
         remainingErrors: [],
+        success: false,
         summary: `Edit failed on re-apply after rename: ${msg}`,
       };
     }
@@ -362,12 +363,12 @@ async function finalize(
   const summary = buildSummary(detectedIntents, propagated, autoFixed, remainingErrors);
 
   return {
-    success: true,
-    file: filePath,
-    detectedIntents,
-    propagated,
     autoFixed,
+    detectedIntents,
+    file: filePath,
+    propagated,
     remainingErrors,
+    success: true,
     summary,
   };
 }
@@ -414,9 +415,9 @@ function buildSummary(
     return 'Edit applied successfully, no issues detected';
   }
 
-  return parts.join('. ') + '.';
+  return `${parts.join('. ')  }.`;
 }
 
-function delay(ms: number): Promise<void> {
+async function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }

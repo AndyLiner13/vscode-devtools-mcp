@@ -1,35 +1,35 @@
 export interface ToolDefinition {
-  name: string;
+  annotations?: ToolAnnotations;
   description?: string;
   inputSchema: JsonSchema;
-  annotations?: ToolAnnotations;
+  name: string;
 }
 
 export interface ToolAnnotations {
-  title?: string;
-  readOnlyHint?: boolean;
+  conditions?: string[];
   destructiveHint?: boolean;
   idempotentHint?: boolean;
   openWorldHint?: boolean;
-  conditions?: string[];
+  readOnlyHint?: boolean;
+  title?: string;
 }
 
 export interface JsonSchema {
-  type?: string;
+  [key: string]: unknown;
+  default?: unknown;
+  description?: string;
+  enum?: unknown[];
+  items?: JsonSchema;
   properties?: Record<string, JsonSchema>;
   required?: string[];
-  description?: string;
-  items?: JsonSchema;
-  enum?: unknown[];
-  default?: unknown;
-  [key: string]: unknown;
+  type?: string;
 }
 
 export interface ContentBlock {
-  type: 'text' | 'image';
-  text?: string;
   data?: string;
   mimeType?: string;
+  text?: string;
+  type: 'image' | 'text';
 }
 
 export interface CallToolResult {
@@ -39,43 +39,43 @@ export interface CallToolResult {
 
 export interface ServerInfo {
   name: string;
-  version: string;
   title?: string;
+  version: string;
 }
 
 export interface ServerCapabilities {
-  tools?: Record<string, unknown>;
   logging?: Record<string, unknown>;
   prompts?: Record<string, unknown>;
   resources?: Record<string, unknown>;
+  tools?: Record<string, unknown>;
 }
 
-export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
+export type ConnectionState = 'connected' | 'connecting' | 'disconnected' | 'error';
 
 export interface ConnectionStatus {
-  state: ConnectionState;
-  serverInfo?: ServerInfo;
-  toolCount: number;
   error?: string;
+  serverInfo?: ServerInfo;
+  state: ConnectionState;
+  toolCount: number;
 }
 
 // ── Inspector Test Manager ──
 
-export type RecordRating = 'good' | 'bad' | null;
+export type RecordRating = 'bad' | 'good' | null;
 
 export interface ExecutionRecord {
-  id: string;
-  toolName: string;
-  input: string;
-  output: ContentBlock[];
-  isError: boolean;
-  createdAt: string;
-  lastRunAt: string | null;
-  rating: RecordRating;
   comment: string;
-  priority: number;
+  createdAt: string;
   durationMs: number;
+  id: string;
+  input: string;
+  isError: boolean;
   isStale: boolean;
+  lastRunAt: null | string;
+  output: ContentBlock[];
+  priority: number;
+  rating: RecordRating;
+  toolName: string;
 }
 
 export interface InspectorStorage {

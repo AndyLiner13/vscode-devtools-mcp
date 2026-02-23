@@ -5,7 +5,8 @@
  */
 
 import type {RequestHandlerExtra} from '@modelcontextprotocol/sdk/shared/protocol.js';
-import type {ServerRequest, ServerNotification} from '@modelcontextprotocol/sdk/types.js';
+import type {ServerNotification, ServerRequest} from '@modelcontextprotocol/sdk/types.js';
+
 import {z as zod} from 'zod';
 
 export type ToolExtra = RequestHandlerExtra<ServerRequest, ServerNotification>;
@@ -15,38 +16,34 @@ import type {ToolCategory} from './categories.js';
 /**
  * Maximum response size in characters to prevent overwhelming context windows.
  */
-export const CHARACTER_LIMIT = 25000;
+export const /**
+ *
+ */
+CHARACTER_LIMIT = 25000;
 
 /**
  * Standard response format options.
  */
 export enum ResponseFormat {
-  MARKDOWN = 'markdown',
   JSON = 'json',
+  MARKDOWN = 'markdown',
 }
 
 /**
  * Standard pagination metadata for list responses.
  */
 export interface PaginationMetadata {
-  total: number;
   count: number;
-  offset: number;
   has_more: boolean;
   next_offset?: number;
+  offset: number;
+  total: number;
 }
 
 export interface ToolDefinition<
   Schema extends zod.ZodRawShape = zod.ZodRawShape,
   OutputSchema extends zod.ZodTypeAny = zod.ZodTypeAny,
 > {
-  name: string;
-  description: string;
-  /**
-   * Maximum time in milliseconds for this tool to complete.
-   * If not specified, defaults to 30000 (30 seconds).
-   */
-  timeoutMs?: number;
   annotations: {
     title?: string;
     category: ToolCategory;
@@ -70,13 +67,20 @@ export interface ToolDefinition<
     openWorldHint?: boolean;
     conditions?: string[];
   };
-  schema: Schema;
-  outputSchema?: OutputSchema;
+  description: string;
   handler: (
     request: Request<Schema>,
     response: Response,
     extra: ToolExtra,
   ) => Promise<void>;
+  name: string;
+  outputSchema?: OutputSchema;
+  schema: Schema;
+  /**
+   * Maximum time in milliseconds for this tool to complete.
+   * If not specified, defaults to 30000 (30 seconds).
+   */
+  timeoutMs?: number;
 }
 
 export interface Request<Schema extends zod.ZodRawShape> {
@@ -89,23 +93,23 @@ export interface ImageContentData {
 }
 
 interface SnapshotParams {
-  verbose?: boolean;
   filePath?: string;
+  verbose?: boolean;
 }
 
 interface DevToolsData {
-  cdpRequestId?: string;
   cdpBackendNodeId?: number;
+  cdpRequestId?: string;
 }
 
 export interface Response {
-  appendResponseLine(value: string): void;
-  attachImage(value: ImageContentData): void;
+  appendResponseLine: (value: string) => void;
+  attachImage: (value: ImageContentData) => void;
   /**
    * Call to skip appending the process ledger to this response.
    * Use for JSON-format responses to avoid corrupting output.
    */
-  setSkipLedger(): void;
+  setSkipLedger: () => void;
 }
 
 export function defineTool<Schema extends zod.ZodRawShape>(
@@ -114,7 +118,10 @@ export function defineTool<Schema extends zod.ZodRawShape>(
   return definition;
 }
 
-export const responseFormatSchema = zod.nativeEnum(ResponseFormat)
+export const /**
+ *
+ */
+responseFormatSchema = zod.nativeEnum(ResponseFormat)
   .optional()
   .default(ResponseFormat.MARKDOWN)
   .describe(
@@ -163,10 +170,10 @@ function createPaginationMetadata(
 ): PaginationMetadata {
   const has_more = total > offset + count;
   return {
-    total,
     count,
-    offset,
     has_more,
+    offset,
+    total,
     ...(has_more ? { next_offset: offset + count } : {}),
   };
 }

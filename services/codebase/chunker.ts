@@ -1,13 +1,15 @@
 // IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
 // Pure Node.js — no VS Code API dependency.
 
+import type { Chunk, ChunkFileParams, ChunkFileResult, FileSymbol, SymbolNode } from './types';
+
 import * as crypto from 'node:crypto';
 import * as path from 'node:path';
-import type { SymbolNode, Chunk, ChunkFileParams, ChunkFileResult, FileSymbol } from './types';
-import { TS_PARSEABLE_EXTS } from './types';
+
+import { readFileText } from './file-utils';
 import { getTypeScriptSymbols } from './overview-service';
 import { getCustomParser } from './parsers';
-import { readFileText } from './file-utils';
+import { TS_PARSEABLE_EXTS } from './types';
 
 const DEFAULT_TOKEN_BUDGET = 512;
 const DEFAULT_MAX_DEPTH = Infinity;
@@ -17,11 +19,11 @@ const CHARS_PER_TOKEN = 4;
 // ── Public API ───────────────────────────────────────────
 
 export function chunkFile(params: ChunkFileParams): ChunkFileResult {
-  const { filePath, rootDir, maxDepth = DEFAULT_MAX_DEPTH, tokenBudget = DEFAULT_TOKEN_BUDGET } = params;
+  const { filePath, maxDepth = DEFAULT_MAX_DEPTH, rootDir, tokenBudget = DEFAULT_TOKEN_BUDGET } = params;
 
   const { text } = readFileText(filePath);
   const lines = text.split('\n');
-  const relativePath = path.relative(rootDir, filePath).replace(/\\/g, '/');
+  const relativePath = path.relative(rootDir, filePath).replaceAll('\\', '/');
 
   const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
   const symbols = parseFileSymbols(text, filePath, ext);
@@ -31,11 +33,11 @@ export function chunkFile(params: ChunkFileParams): ChunkFileResult {
   let observedMaxDepth = 0;
 
   const ctx: ChunkContext = {
+    chunks,
     lines,
+    maxDepth,
     relativePath,
     tokenBudget,
-    maxDepth,
-    chunks,
   };
 
   for (const symbol of symbols) {
@@ -46,12 +48,12 @@ export function chunkFile(params: ChunkFileParams): ChunkFileResult {
 
   return {
     chunks,
-    symbols,
     stats: {
-      totalChunks: chunks.length,
       maxDepth: observedMaxDepth,
       oversizedSplits,
+      totalChunks: chunks.length,
     },
+    symbols,
   };
 }
 
@@ -67,16 +69,16 @@ export function chunkSymbols(params: {
   maxDepth?: number;
   tokenBudget?: number;
 }): ChunkFileResult {
-  const { symbols, content, filePath, rootDir, maxDepth = DEFAULT_MAX_DEPTH, tokenBudget = DEFAULT_TOKEN_BUDGET } = params;
+  const { content, filePath, maxDepth = DEFAULT_MAX_DEPTH, rootDir, symbols, tokenBudget = DEFAULT_TOKEN_BUDGET } = params;
   const lines = content.split('\n');
-  const relativePath = path.relative(rootDir, filePath).replace(/\\/g, '/');
+  const relativePath = path.relative(rootDir, filePath).replaceAll('\\', '/');
 
   const converted = symbols.map(convertFileSymbol);
   const chunks: Chunk[] = [];
   let oversizedSplits = 0;
   let observedMaxDepth = 0;
 
-  const ctx: ChunkContext = { lines, relativePath, tokenBudget, maxDepth, chunks };
+  const ctx: ChunkContext = { chunks, lines, maxDepth, relativePath, tokenBudget };
 
   for (const symbol of converted) {
     const result = processSymbolNode(symbol, ctx, null, [], 1);
@@ -86,35 +88,35 @@ export function chunkSymbols(params: {
 
   return {
     chunks,
+    stats: { maxDepth: observedMaxDepth, oversizedSplits, totalChunks: chunks.length },
     symbols: converted,
-    stats: { totalChunks: chunks.length, maxDepth: observedMaxDepth, oversizedSplits },
   };
 }
 
 function convertFileSymbol(sym: FileSymbol): SymbolNode {
   return {
-    name: sym.name,
-    kind: sym.kind,
-    detail: sym.detail,
-    range: { start: sym.range.startLine, end: sym.range.endLine },
     children: sym.children.map(convertFileSymbol),
+    detail: sym.detail,
+    kind: sym.kind,
+    name: sym.name,
+    range: { end: sym.range.endLine, start: sym.range.startLine },
   };
 }
 
 // ── Internal Types ───────────────────────────────────────
 
 interface ChunkContext {
+  chunks: Chunk[];
   lines: string[];
+  maxDepth: number;
   relativePath: string;
   tokenBudget: number;
-  maxDepth: number;
-  chunks: Chunk[];
 }
 
 interface ProcessResult {
   chunkId: string;
-  oversizedSplits: number;
   maxDepth: number;
+  oversizedSplits: number;
 }
 
 // ── Symbol Parsing (delegates to canonical parsers) ──────
@@ -137,7 +139,7 @@ function parseFileSymbols(text: string, filePath: string, ext: string): SymbolNo
 function processSymbolNode(
   symbol: SymbolNode,
   ctx: ChunkContext,
-  parentChunkId: string | null,
+  parentChunkId: null | string,
   breadcrumbParts: string[],
   depth: number,
 ): ProcessResult {
@@ -179,40 +181,40 @@ function processSymbolNode(
 
     // Still create the parent chunk with references to sub-chunks
     const parentChunk: Chunk = {
-      id: chunkId,
-      filePath: ctx.relativePath,
-      content,
-      symbolName,
-      symbolKind: symbol.kind,
       breadcrumb: breadcrumbStr,
-      depth,
-      range: { start: symbol.range.start, end: symbol.range.end },
-      parentChunkId,
       childChunkIds: subIds,
+      content,
+      depth,
+      filePath: ctx.relativePath,
+      id: chunkId,
+      parentChunkId,
+      range: { end: symbol.range.end, start: symbol.range.start },
+      symbolKind: symbol.kind,
+      symbolName,
       tokenCount,
     };
     ctx.chunks.push(parentChunk);
 
-    return { chunkId, oversizedSplits: totalOversizedSplits, maxDepth: maxObservedDepth };
+    return { chunkId, maxDepth: maxObservedDepth, oversizedSplits: totalOversizedSplits };
   }
 
   // Normal chunk creation
   const chunk: Chunk = {
-    id: chunkId,
-    filePath: ctx.relativePath,
-    content,
-    symbolName,
-    symbolKind: symbol.kind,
     breadcrumb: breadcrumbStr,
-    depth,
-    range: { start: symbol.range.start, end: symbol.range.end },
-    parentChunkId,
     childChunkIds,
+    content,
+    depth,
+    filePath: ctx.relativePath,
+    id: chunkId,
+    parentChunkId,
+    range: { end: symbol.range.end, start: symbol.range.start },
+    symbolKind: symbol.kind,
+    symbolName,
     tokenCount,
   };
   ctx.chunks.push(chunk);
 
-  return { chunkId, oversizedSplits: totalOversizedSplits, maxDepth: maxObservedDepth };
+  return { chunkId, maxDepth: maxObservedDepth, oversizedSplits: totalOversizedSplits };
 }
 
 // ── Helpers ──────────────────────────────────────────────
@@ -266,22 +268,22 @@ function splitOversizedChunk(
   while (currentStart < endIdx) {
     const currentEnd = Math.min(currentStart + linesPerChunk, endIdx);
     const subContent = lines.slice(currentStart, currentEnd).join('\n');
-    const subRange = { start: currentStart + 1, end: currentEnd };
+    const subRange = { end: currentEnd, start: currentStart + 1 };
 
     const subName = `${symbolName}[part${partIndex}]`;
     const subId = generateChunkId(filePath, subName, subRange);
 
     subChunks.push({
-      id: subId,
-      filePath,
-      content: subContent,
-      symbolName: subName,
-      symbolKind: `${symbol.kind}-part`,
       breadcrumb: `${breadcrumb} [part ${partIndex}]`,
-      depth: depth + 1,
-      range: subRange,
-      parentChunkId: parentId,
       childChunkIds: [],
+      content: subContent,
+      depth: depth + 1,
+      filePath,
+      id: subId,
+      parentChunkId: parentId,
+      range: subRange,
+      symbolKind: `${symbol.kind}-part`,
+      symbolName: subName,
       tokenCount: estimateTokens(subContent),
     });
 

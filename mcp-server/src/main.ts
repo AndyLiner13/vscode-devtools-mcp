@@ -4,25 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {randomUUID} from 'node:crypto';
-import {createServer} from 'node:http';
-import process from 'node:process';
+import type {ToolDefinition} from './tools/ToolDefinition.js';
 
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {StreamableHTTPServerTransport} from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import {type CallToolResult, SetLevelRequestSchema} from '@modelcontextprotocol/sdk/types.js';
+import {randomUUID} from 'node:crypto';
+import {createServer} from 'node:http';
+import process from 'node:process';
 
-import {loadConfig, getMcpServerRoot, type ResolvedConfig} from './config.js';
+import {ensureClientAvailable, getProcessLedger, type ProcessEntry, type ProcessLedgerSummary, registerClientRecoveryHandler} from './client-pipe.js';
+import {getMcpServerRoot, loadConfig, type ResolvedConfig} from './config.js';
 import {checkForChanges, readyToRestart} from './host-pipe.js';
 import {logger} from './logger.js';
-import {McpResponse} from './McpResponse.js';
 import {startMcpSocketServer} from './mcp-socket-server.js';
+import {McpResponse} from './McpResponse.js';
 import {lifecycleService} from './services/index.js';
 import {RequestPipeline} from './services/requestPipeline.js';
-import type {ToolDefinition} from './tools/ToolDefinition.js';
 import {tools} from './tools/tools.js';
-import {getProcessLedger, registerClientRecoveryHandler, ensureClientAvailable, type ProcessLedgerSummary, type ProcessEntry} from './client-pipe.js';
 
 // Default timeout for tools (30 seconds)
 const DEFAULT_TOOL_TIMEOUT_MS = 30_000;
@@ -39,7 +39,7 @@ function formatChildProcesses(entry: ProcessEntry, indent: string): string[] {
   const lines: string[] = [];
   for (const child of entry.children) {
     const cmdLine = child.commandLine
-      ? (child.commandLine.length > 60 ? child.commandLine.slice(0, 57) + '...' : child.commandLine)
+      ? (child.commandLine.length > 60 ? `${child.commandLine.slice(0, 57)  }...` : child.commandLine)
       : child.name;
     lines.push(`\n${indent}↳ PID ${child.pid} — ${child.name} — \`${cmdLine}\``);
   }
@@ -60,7 +60,7 @@ function formatProcessLedger(ledger: ProcessLedgerSummary): string {
     parts.push('\n---');
     parts.push(`\n⚠️ **Orphaned Processes (${ledger.orphaned.length}):**`);
     for (const p of ledger.orphaned) {
-      const cmd = p.command.length > 50 ? p.command.slice(0, 47) + '...' : p.command;
+      const cmd = p.command.length > 50 ? `${p.command.slice(0, 47)  }...` : p.command;
       parts.push(`\n• **PID ${p.pid}** (${p.terminalName}) — \`${cmd}\` — from previous session`);
       parts.push(...formatChildProcesses(p, '  '));
     }
@@ -89,14 +89,14 @@ function formatProcessLedger(ledger: ProcessLedgerSummary): string {
 
       if (matchedProcess) {
         shownPids.add(matchedProcess.pid);
-        const cmd = matchedProcess.command.length > 45 ? matchedProcess.command.slice(0, 42) + '...' : matchedProcess.command;
+        const cmd = matchedProcess.command.length > 45 ? `${matchedProcess.command.slice(0, 42)  }...` : matchedProcess.command;
         const childCount = matchedProcess.children?.length ?? 0;
         const childLabel = childCount > 0 ? ` [${childCount} child${childCount > 1 ? 'ren' : ''}]` : '';
         parts.push(`\n${activeIcon} **${session.name}**${shellLabel}${pidLabel}`);
         parts.push(`\n  └─ ${matchedProcess.status}: \`${cmd}\`${childLabel}`);
         parts.push(...formatChildProcesses(matchedProcess, '     '));
       } else if (session.command) {
-        const cmd = session.command.length > 40 ? session.command.slice(0, 37) + '...' : session.command;
+        const cmd = session.command.length > 40 ? `${session.command.slice(0, 37)  }...` : session.command;
         parts.push(`\n${activeIcon} **${session.name}**${shellLabel}${pidLabel}`);
         parts.push(`\n  └─ ${session.status}: \`${cmd}\``);
       } else {
@@ -109,7 +109,7 @@ function formatProcessLedger(ledger: ProcessLedgerSummary): string {
     if (unmatched.length > 0) {
       parts.push(`\n\n🟢 **Unmatched Active Processes (${unmatched.length}):**`);
       for (const p of unmatched) {
-        const cmd = p.command.length > 50 ? p.command.slice(0, 47) + '...' : p.command;
+        const cmd = p.command.length > 50 ? `${p.command.slice(0, 47)  }...` : p.command;
         const childCount = p.children?.length ?? 0;
         const childLabel = childCount > 0 ? ` [${childCount} child${childCount > 1 ? 'ren' : ''}]` : '';
         parts.push(`\n• **${p.terminalName}** (PID ${p.pid ?? 'pending'}) — \`${cmd}\` — ${p.status}${childLabel}`);
@@ -121,7 +121,7 @@ function formatProcessLedger(ledger: ProcessLedgerSummary): string {
     parts.push('\n---');
     parts.push(`\n🟢 **Active Copilot Processes (${ledger.active.length}):**`);
     for (const p of ledger.active) {
-      const cmd = p.command.length > 50 ? p.command.slice(0, 47) + '...' : p.command;
+      const cmd = p.command.length > 50 ? `${p.command.slice(0, 47)  }...` : p.command;
       const childCount = p.children?.length ?? 0;
       const childLabel = childCount > 0 ? ` [${childCount} child${childCount > 1 ? 'ren' : ''}]` : '';
       parts.push(`\n• **${p.terminalName}** (PID ${p.pid ?? 'pending'}) — \`${cmd}\` — ${p.status}${childLabel}`);
@@ -136,7 +136,7 @@ function formatProcessLedger(ledger: ProcessLedgerSummary): string {
     parts.push('\n---');
     parts.push(`\n✅ **Recently Completed (${shown.length}/${completed.length}):**`);
     for (const p of shown) {
-      const cmd = p.command.length > 40 ? p.command.slice(0, 37) + '...' : p.command;
+      const cmd = p.command.length > 40 ? `${p.command.slice(0, 37)  }...` : p.command;
       const exitInfo = p.exitCode !== undefined ? `exit ${p.exitCode}` : p.status;
       parts.push(`\n• **${p.terminalName}** — \`${cmd}\` — ${exitInfo}`);
     }
@@ -159,7 +159,7 @@ class ToolTimeoutError extends Error {
   }
 }
 
-function withTimeout<T>(
+async function withTimeout<T>(
   promise: Promise<T>,
   timeoutMs: number,
   toolName: string,
@@ -180,7 +180,10 @@ const VERSION = '0.16.0';
 // x-release-please-end
 
 // Load config from .devtools/ config files (no CLI args — config files are the source of truth)
-export const config: ResolvedConfig = loadConfig();
+export const /**
+ *
+ */
+config: ResolvedConfig = loadConfig();
 
 // Initialize lifecycle service with MCP config (target workspace + extension path + launch flags)
 lifecycleService.init({
@@ -243,25 +246,25 @@ Avoid sharing sensitive or personal information that you do not want to share wi
 let inspectorShutdownFn: (() => Promise<void>) | null = null;
 
 const pipeline = new RequestPipeline({
-  checkForChanges: (mcpRoot, extPath) => checkForChanges(mcpRoot, extPath),
-  readyToRestart: () => readyToRestart(),
+  checkForChanges: async (mcpRoot, extPath) => checkForChanges(mcpRoot, extPath),
+  extensionPath: config.extensionBridgePath,
+  hotReloadEnabled: config.hotReload.enabled && config.explicitExtensionDevelopmentPath,
+  mcpServerRoot: mcpServerDir,
   onShutdown: async () => {
     if (inspectorShutdownFn) {
       await inspectorShutdownFn();
     }
   },
-  mcpServerRoot: mcpServerDir,
-  extensionPath: config.extensionBridgePath,
-  hotReloadEnabled: config.hotReload.enabled && config.explicitExtensionDevelopmentPath,
+  readyToRestart: async () => readyToRestart(),
 });
 
 function registerTool(targetServer: McpServer, tool: ToolDefinition): void {
   targetServer.registerTool(
     tool.name,
     {
+      annotations: tool.annotations,
       description: tool.description,
       inputSchema: tool.schema,
-      annotations: tool.annotations,
     },
     async (params, extra): Promise<CallToolResult> => {
       const timeoutMs = tool.timeoutMs ?? DEFAULT_TOOL_TIMEOUT_MS;
@@ -289,13 +292,13 @@ function registerTool(targetServer: McpServer, tool: ToolDefinition): void {
 
             const content: CallToolResult['content'] = [];
             for (const line of response.responseLines) {
-              content.push({type: 'text', text: line});
+              content.push({text: line, type: 'text'});
             }
             for (const img of response.images) {
-              content.push({type: 'image', data: img.data, mimeType: img.mimeType});
+              content.push({data: img.data, mimeType: img.mimeType, type: 'image'});
             }
             if (content.length === 0) {
-              content.push({type: 'text', text: '(no output)'});
+              content.push({text: '(no output)', type: 'text'});
             }
 
             // Append process ledger summary unless tool opted out
@@ -303,7 +306,7 @@ function registerTool(targetServer: McpServer, tool: ToolDefinition): void {
               const ledger = await getProcessLedger();
               const ledgerText = formatProcessLedger(ledger);
               if (ledgerText) {
-                content.push({type: 'text', text: ledgerText});
+                content.push({text: ledgerText, type: 'text'});
               }
             }
 
@@ -333,12 +336,12 @@ function registerTool(targetServer: McpServer, tool: ToolDefinition): void {
           if (buildFailureMatch) {
             const buildLogs = buildFailureMatch[1].trim();
             return {
-              content: [{type: 'text', text: `❌ **Extension build failed.** Full build output:\n\n\`\`\`\n${buildLogs}\n\`\`\``}],
+              content: [{text: `❌ **Extension build failed.** Full build output:\n\n\`\`\`\n${buildLogs}\n\`\`\``, type: 'text'}],
               isError: true,
             };
           }
 
-          return {content: [{type: 'text', text: errorText}], isError: true};
+          return {content: [{text: errorText, type: 'text'}], isError: true};
         }
       });
     },
@@ -415,8 +418,8 @@ function startInspectorServer(): void {
         // Unknown session — per spec, 404
         res.writeHead(404, {'Content-Type': 'application/json'});
         res.end(JSON.stringify({
-          jsonrpc: '2.0',
           error: {code: -32000, message: 'Session not found'},
+          jsonrpc: '2.0',
         }));
         return;
       }
@@ -428,23 +431,23 @@ function startInspectorServer(): void {
       if (hotReloadStatus === 'restarting') {
         res.writeHead(503, {'Content-Type': 'application/json'});
         res.end(JSON.stringify({
-          jsonrpc: '2.0',
           error: {code: -32000, message: 'Server restarting after rebuild'},
+          jsonrpc: '2.0',
         }));
         return;
       }
 
       // New session: create a dedicated McpServer + transport pair
       const inspectorTransport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => randomUUID(),
-        onsessioninitialized: (sid: string) => {
-          sessions.set(sid, {transport: inspectorTransport, mcpServer: inspectorMcp});
-          logger(`[inspector] New session: ${sid.substring(0, 8)}…`);
-        },
         onsessionclosed: (sid: string) => {
           sessions.delete(sid);
           logger(`[inspector] Session ${sid.substring(0, 8)}… closed`);
         },
+        onsessioninitialized: (sid: string) => {
+          sessions.set(sid, {mcpServer: inspectorMcp, transport: inspectorTransport});
+          logger(`[inspector] New session: ${sid.substring(0, 8)}…`);
+        },
+        sessionIdGenerator: () => randomUUID(),
       });
       const inspectorMcp = new McpServer(
         {name: 'vscode_devtools', title: 'VS Code DevTools MCP server', version: VERSION},
@@ -463,8 +466,8 @@ function startInspectorServer(): void {
       if (!res.headersSent) {
         res.writeHead(500, {'Content-Type': 'application/json'});
         res.end(JSON.stringify({
-          jsonrpc: '2.0',
           error: {code: -32603, message: 'Internal error'},
+          jsonrpc: '2.0',
         }));
       }
     }
@@ -475,7 +478,7 @@ function startInspectorServer(): void {
   });
 
   // Wire HTTP server shutdown so the pipeline can close it before process.exit()
-  inspectorShutdownFn = () =>
+  inspectorShutdownFn = async () =>
     new Promise<void>((resolve) => {
       for (const [sid, entry] of sessions) {
         entry.transport.close?.();

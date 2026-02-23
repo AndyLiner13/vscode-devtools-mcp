@@ -1,15 +1,17 @@
-// IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
-// Pure Node.js — no VS Code API dependency.
-import * as path from 'path';
-import type { SourceFile } from 'ts-morph';
 import type {
+  CircularChain,
+  ImportGraphModule,
   ImportGraphParams,
   ImportGraphResult,
-  ImportGraphModule,
-  CircularChain,
 } from './types';
+import type { SourceFile } from 'ts-morph';
+
+// IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
+// Pure Node.js — no VS Code API dependency.
+import * as path from 'node:path';
+
+import { applyIgnoreRules, globToRegex, parseIgnoreRules } from './ignore-rules';
 import { getWorkspaceProject } from './ts-project';
-import { parseIgnoreRules, applyIgnoreRules, globToRegex } from './ignore-rules';
 
 type FileFilter = (absoluteFilePath: string) => boolean;
 
@@ -24,7 +26,7 @@ function buildFileFilter(
   const excludeRegexps = excludePatterns?.map(p => globToRegex(p));
 
   return (absoluteFilePath: string) => {
-    const relativePath = path.relative(rootDir, absoluteFilePath).replace(/\\/g, '/');
+    const relativePath = path.relative(rootDir, absoluteFilePath).replaceAll('\\', '/');
 
     if (includeRegexps && includeRegexps.length > 0) {
       const matches = includeRegexps.some(r => r.test(relativePath));
@@ -47,13 +49,13 @@ function buildFileFilter(
  * Uses ts-morph to extract import declarations and resolve module paths.
  */
 export async function getImportGraph(params: ImportGraphParams): Promise<ImportGraphResult> {
-  const rootDir = params.rootDir;
+  const {rootDir} = params;
   if (!rootDir) {
     return {
-      modules: {},
       circular: [],
+      modules: {},
       orphans: [],
-      stats: { totalModules: 0, totalEdges: 0, circularCount: 0, orphanCount: 0 },
+      stats: { circularCount: 0, orphanCount: 0, totalEdges: 0, totalModules: 0 },
     };
   }
 
@@ -68,7 +70,7 @@ export async function getImportGraph(params: ImportGraphParams): Promise<ImportG
     const absPath = sf.getFilePath();
     if (!fileFilter(absPath)) continue;
 
-    const relPath = path.relative(rootDir, absPath).replace(/\\/g, '/');
+    const relPath = path.relative(rootDir, absPath).replaceAll('\\', '/');
     if (!importMap.has(relPath)) {
       importMap.set(relPath, new Set());
     }
@@ -104,9 +106,9 @@ export async function getImportGraph(params: ImportGraphParams): Promise<ImportG
     const importsArr = [...imports];
     const importedByArr = [...(importedByMap.get(mod) ?? [])];
     modules[mod] = {
-      path: mod,
-      imports: importsArr,
       importedBy: importedByArr,
+      imports: importsArr,
+      path: mod,
     };
     totalEdges += importsArr.length;
   }
@@ -127,14 +129,14 @@ export async function getImportGraph(params: ImportGraphParams): Promise<ImportG
   }
 
   return {
-    modules,
     circular,
+    modules,
     orphans: orphans.sort(),
     stats: {
-      totalModules: importMap.size,
-      totalEdges,
       circularCount: circular.length,
       orphanCount: orphans.length,
+      totalEdges,
+      totalModules: importMap.size,
     },
   };
 }
@@ -213,7 +215,7 @@ function tryResolveFile(
     const candidate = absoluteBase + ext;
     const sf = project.getSourceFile(candidate);
     if (sf) {
-      return path.relative(rootDir, candidate).replace(/\\/g, '/');
+      return path.relative(rootDir, candidate).replaceAll('\\', '/');
     }
   }
 
@@ -222,7 +224,7 @@ function tryResolveFile(
     const candidate = absoluteBase + indexFile;
     const sf = project.getSourceFile(candidate);
     if (sf) {
-      return path.relative(rootDir, candidate).replace(/\\/g, '/');
+      return path.relative(rootDir, candidate).replaceAll('\\', '/');
     }
   }
 
@@ -249,9 +251,9 @@ function detectCircularDependencies(
     if (!imports) continue;
 
     stack.push({
+      importIterator: imports[Symbol.iterator](),
       node: startNode,
       path: [startNode],
-      importIterator: imports[Symbol.iterator](),
     });
     inStack.add(startNode);
 
@@ -285,9 +287,9 @@ function detectCircularDependencies(
         const neighborImports = importMap.get(neighbor);
         if (neighborImports) {
           stack.push({
+            importIterator: neighborImports[Symbol.iterator](),
             node: neighbor,
             path: [...frame.path, neighbor],
-            importIterator: neighborImports[Symbol.iterator](),
           });
           inStack.add(neighbor);
         }

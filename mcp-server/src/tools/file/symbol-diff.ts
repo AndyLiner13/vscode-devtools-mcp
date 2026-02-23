@@ -13,10 +13,10 @@ import type {DetectedIntent} from './types.js';
  * `linesDelta` lines — this is a position shift, not a content change.
  */
 export interface EditInfo {
+  linesDelta: number;
   /** Last line of new content in the post-edit document (0-based).
    *  Symbols starting after this line are in the "shifted zone". */
   newContentEndLine: number;
-  linesDelta: number;
 }
 
 /**
@@ -41,7 +41,7 @@ export function diffSymbols(
   // Guard: all old symbols gone with no replacements → bulk deletion
   if (oldSymbols.length > 0 && newSymbols.length === 0) {
     for (const s of oldSymbols) {
-      intents.push({type: 'delete', symbol: s.name});
+      intents.push({symbol: s.name, type: 'delete'});
     }
     return intents;
   }
@@ -64,7 +64,7 @@ export function diffSymbols(
           ? shiftRange(newSym.range, -editInfo.linesDelta)
           : newSym.range;
         if (!rangesEqual(oldSym.range, adjustedNewRange)) {
-          intents.push({type: 'body_change', symbol: name});
+          intents.push({symbol: name, type: 'body_change'});
         }
 
         // Recurse into children to detect child renames (e.g. method renames)
@@ -93,10 +93,10 @@ export function diffSymbols(
       if (renamedNew.has(newSym.name)) continue;
       if (oldSym.kind === newSym.kind && rangesOverlap(oldSym.range, newSym.range)) {
         intents.push({
-          type: 'rename',
-          symbol: oldSym.name,
-          newName: newSym.name,
           details: `renamed to ${newSym.name}`,
+          newName: newSym.name,
+          symbol: oldSym.name,
+          type: 'rename',
         });
         renamedOld.add(oldSym.name);
         renamedNew.add(newSym.name);
@@ -108,12 +108,12 @@ export function diffSymbols(
   // Pass 3: Unmatched → DELETE / ADD
   for (const oldSym of unmatchedOld) {
     if (!renamedOld.has(oldSym.name)) {
-      intents.push({type: 'delete', symbol: oldSym.name});
+      intents.push({symbol: oldSym.name, type: 'delete'});
     }
   }
   for (const newSym of unmatchedNew) {
     if (!renamedNew.has(newSym.name)) {
-      intents.push({type: 'add', symbol: newSym.name});
+      intents.push({symbol: newSym.name, type: 'add'});
     }
   }
 
@@ -175,10 +175,10 @@ function diffChildren(
       if (renamedNewC.has(newChild.name)) continue;
       if (oldChild.kind === newChild.kind && rangesOverlap(oldChild.range, newChild.range)) {
         childIntents.push({
-          type: 'rename',
-          symbol: `${parentName}.${oldChild.name}`,
-          newName: newChild.name,
           details: `renamed to ${parentName}.${newChild.name}`,
+          newName: newChild.name,
+          symbol: `${parentName}.${oldChild.name}`,
+          type: 'rename',
         });
         renamedOldC.add(oldChild.name);
         renamedNewC.add(newChild.name);
@@ -191,10 +191,10 @@ function diffChildren(
 }
 
 interface Range {
-  startLine: number;
-  startChar: number;
-  endLine: number;
   endChar: number;
+  endLine: number;
+  startChar: number;
+  startLine: number;
 }
 
 function rangesEqual(a: Range, b: Range): boolean {
@@ -208,10 +208,10 @@ function rangesEqual(a: Range, b: Range): boolean {
 
 function shiftRange(range: Range, linesDelta: number): Range {
   return {
-    startLine: range.startLine + linesDelta,
-    startChar: range.startChar,
-    endLine: range.endLine + linesDelta,
     endChar: range.endChar,
+    endLine: range.endLine + linesDelta,
+    startChar: range.startChar,
+    startLine: range.startLine + linesDelta,
   };
 }
 

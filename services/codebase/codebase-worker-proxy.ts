@@ -3,9 +3,8 @@
 // Provides the same API surface as the direct service imports.
 // Auto-restarts the worker on crash and applies per-request timeouts.
 
-import { Worker } from 'node:worker_threads';
-import * as path from 'path';
-
+import type { UnifiedFileResult } from './file-structure-extractor';
+import type { OrphanedContentResult } from './orphaned-content';
 import type { OverviewParams, OverviewResult } from './types';
 import type { ExportsParams, ExportsResult } from './types';
 import type { TraceSymbolParams, TraceSymbolResult } from './types';
@@ -13,9 +12,10 @@ import type { DeadCodeParams, DeadCodeResult } from './types';
 import type { ImportGraphParams, ImportGraphResult } from './types';
 import type { DuplicateDetectionParams, DuplicateDetectionResult } from './types';
 import type { ChunkFileParams, ChunkFileResult } from './types';
-import type { OrphanedContentResult } from './orphaned-content';
-import type { UnifiedFileResult } from './file-structure-extractor';
 import type { FileStructure } from './types';
+
+import * as path from 'node:path';
+import { Worker } from 'node:worker_threads';
 
 // ── Configuration ────────────────────────────────────────
 
@@ -26,15 +26,15 @@ const RESTART_WINDOW_MS = 60_000;
 
 // Per-operation timeout overrides (ms)
 const OPERATION_TIMEOUTS: Record<string, number> = {
-  getOverview: 90_000,
-  getExports: 60_000,
-  traceSymbol: 120_000,
-  findDeadCode: 120_000,
-  getImportGraph: 60_000,
-  findDuplicates: 120_000,
   chunkFile: 60_000,
-  invalidateProject: 10_000,
   extractOrphanedContent: 30_000,
+  findDeadCode: 120_000,
+  findDuplicates: 120_000,
+  getExports: 60_000,
+  getImportGraph: 60_000,
+  getOverview: 90_000,
+  invalidateProject: 10_000,
+  traceSymbol: 120_000,
 };
 
 // ── Message Protocol ─────────────────────────────────────
@@ -46,18 +46,18 @@ interface WorkerRequest {
 }
 
 interface WorkerResponse {
-  type: 'response';
+  error?: string;
   id: number;
   result?: unknown;
-  error?: string;
   stack?: string;
+  type: 'response';
 }
 
 interface ReadyMessage {
   type: 'ready';
 }
 
-type WorkerMessage = WorkerResponse | ReadyMessage;
+type WorkerMessage = ReadyMessage | WorkerResponse;
 
 function isReadyMessage(msg: WorkerMessage): msg is ReadyMessage {
   return msg.type === 'ready';
@@ -66,19 +66,19 @@ function isReadyMessage(msg: WorkerMessage): msg is ReadyMessage {
 // ── Pending Request Tracking ─────────────────────────────
 
 interface PendingRequest {
-  resolve: (value: unknown) => void;
   reject: (reason: Error) => void;
+  resolve: (value: unknown) => void;
   timer: ReturnType<typeof setTimeout>;
 }
 
 // ── Worker Proxy ─────────────────────────────────────────
 
-let worker: Worker | null = null;
+let worker: null | Worker = null;
 let nextRequestId = 1;
 const pendingRequests = new Map<number, PendingRequest>();
-let workerReady: Promise<void> | null = null;
+let workerReady: null | Promise<void> = null;
 let workerReadyResolve: (() => void) | null = null;
-let workerReadyTimer: ReturnType<typeof setTimeout> | null = null;
+let workerReadyTimer: null | ReturnType<typeof setTimeout> = null;
 let intentionallyStopped = false;
 
 // Crash tracking for restart backoff
@@ -199,7 +199,7 @@ function rejectAllPending(err: Error): void {
   pendingRequests.clear();
 }
 
-function ensureWorker(): Promise<void> {
+async function ensureWorker(): Promise<void> {
   if (worker && workerReady) return workerReady;
 
   if (!shouldAllowRestart()) {
@@ -230,8 +230,8 @@ async function sendRequest<T>(operation: string, params: unknown): Promise<T> {
     }, timeoutMs);
 
     pendingRequests.set(id, {
-      resolve: resolve as (value: unknown) => void,
       reject,
+      resolve: resolve as (value: unknown) => void,
       timer,
     });
     const w = worker;
@@ -247,35 +247,35 @@ async function sendRequest<T>(operation: string, params: unknown): Promise<T> {
 
 // ── Public API (matches direct service imports) ──────────
 
-export function getOverview(params: OverviewParams): Promise<OverviewResult> {
+export async function getOverview(params: OverviewParams): Promise<OverviewResult> {
   return sendRequest<OverviewResult>('getOverview', params);
 }
 
-export function getExports(params: ExportsParams): Promise<ExportsResult> {
+export async function getExports(params: ExportsParams): Promise<ExportsResult> {
   return sendRequest<ExportsResult>('getExports', params);
 }
 
-export function traceSymbol(params: TraceSymbolParams): Promise<TraceSymbolResult> {
+export async function traceSymbol(params: TraceSymbolParams): Promise<TraceSymbolResult> {
   return sendRequest<TraceSymbolResult>('traceSymbol', params);
 }
 
-export function findDeadCode(params: DeadCodeParams): Promise<DeadCodeResult> {
+export async function findDeadCode(params: DeadCodeParams): Promise<DeadCodeResult> {
   return sendRequest<DeadCodeResult>('findDeadCode', params);
 }
 
-export function getImportGraph(params: ImportGraphParams): Promise<ImportGraphResult> {
+export async function getImportGraph(params: ImportGraphParams): Promise<ImportGraphResult> {
   return sendRequest<ImportGraphResult>('getImportGraph', params);
 }
 
-export function findDuplicates(params: DuplicateDetectionParams): Promise<DuplicateDetectionResult> {
+export async function findDuplicates(params: DuplicateDetectionParams): Promise<DuplicateDetectionResult> {
   return sendRequest<DuplicateDetectionResult>('findDuplicates', params);
 }
 
-export function chunkFile(params: ChunkFileParams): Promise<ChunkFileResult> {
+export async function chunkFile(params: ChunkFileParams): Promise<ChunkFileResult> {
   return sendRequest<ChunkFileResult>('chunkFile', params);
 }
 
-export function invalidateProject(rootDir?: string): Promise<void> {
+export async function invalidateProject(rootDir?: string): Promise<void> {
   return sendRequest<void>('invalidateProject', { rootDir });
 }
 
@@ -284,14 +284,14 @@ export interface ExtractOrphanedContentParams {
   symbolRanges?: Array<{ start: number; end: number }>;
 }
 
-export function extractOrphanedContent(params: ExtractOrphanedContentParams): Promise<OrphanedContentResult> {
+export async function extractOrphanedContent(params: ExtractOrphanedContentParams): Promise<OrphanedContentResult> {
   return sendRequest<OrphanedContentResult>('extractOrphanedContent', params);
 }
 
-export function extractFileStructure(filePath: string): Promise<UnifiedFileResult> {
+export async function extractFileStructure(filePath: string): Promise<UnifiedFileResult> {
   return sendRequest<UnifiedFileResult>('extractFileStructure', { filePath });
 }
 
-export function extractStructure(filePath: string): Promise<FileStructure | undefined> {
+export async function extractStructure(filePath: string): Promise<FileStructure | undefined> {
   return sendRequest<FileStructure | undefined>('extractStructure', { filePath });
 }

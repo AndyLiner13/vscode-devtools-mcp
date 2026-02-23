@@ -4,24 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type {SymbolLike} from './symbol-resolver.js';
+
 import fs from 'node:fs';
 import path from 'node:path';
+import {z as zod} from 'zod';
 
 import {
   fileExtractStructure,
-  fileReadContent,
   fileHighlightReadRange,
-  type OrphanedItem,
-  type FileSymbol,
+  fileReadContent,
   type FileStructure,
+  type FileSymbol,
+  type OrphanedItem,
 } from '../../client-pipe.js';
 import {getClientWorkspace} from '../../config.js';
-import {z as zod} from 'zod';
 import {ToolCategory} from '../categories.js';
 import {defineTool} from '../ToolDefinition.js';
-import {resolveSymbolTarget, findQualifiedPaths} from './symbol-resolver.js';
-import type {SymbolLike} from './symbol-resolver.js';
 import {isStrictLogFile} from './logFile-read.js';
+import {findQualifiedPaths, resolveSymbolTarget} from './symbol-resolver.js';
 
 // ── Output Compression Constants ─────────────────────────
 // Same 3,000 token budget used by codebase_map and codebase_trace
@@ -59,7 +60,7 @@ function addLineNumbers(content: string, startLine1: number): string {
 }
 
 function formatSkeletonEntry(
-  symbol: SymbolLike | OrphanedItem,
+  symbol: OrphanedItem | SymbolLike,
   indent = '',
   maxNesting = 0,
   currentDepth = 0,
@@ -74,7 +75,7 @@ function formatSkeletonEntry(
 
   if (currentDepth < maxNesting && symbol.children && symbol.children.length > 0) {
     for (const child of symbol.children) {
-      lines.push(...formatSkeletonEntry(child, indent + '  ', maxNesting, currentDepth + 1));
+      lines.push(...formatSkeletonEntry(child, `${indent  }  `, maxNesting, currentDepth + 1));
     }
   }
 
@@ -84,7 +85,7 @@ function formatSkeletonEntry(
 // ── Auto-Context-Optimization Infrastructure ─────────────
 
 /** Compute the maximum nesting depth in a symbol tree. */
-function getMaxSymbolNesting(symbols: ReadonlyArray<SymbolLike>, current = 0): number {
+function getMaxSymbolNesting(symbols: readonly SymbolLike[], current = 0): number {
   let max = current;
   for (const s of symbols) {
     if (s.children && s.children.length > 0) {
@@ -103,9 +104,9 @@ function getSymbolTreeDepth(symbol: SymbolLike): number {
 }
 
 interface SkeletonPiece {
-  startLine: number;
+  category: 'comments' | 'directives' | 'exports' | 'imports' | 'raw' | 'symbol';
   endLine: number;
-  category: 'imports' | 'exports' | 'comments' | 'directives' | 'symbol' | 'raw';
+  startLine: number;
   symbol?: FileSymbol;
 }
 
@@ -123,14 +124,14 @@ function buildSkeletonPieces(structure: FileStructure): SkeletonPiece[] {
       item.category === 'comment' ? 'comments' :
       item.category === 'directive' ? 'directives' :
       'comments';
-    pieces.push({ startLine: item.range.start, endLine: item.range.end, category: cat });
+    pieces.push({ category: cat, endLine: item.range.end, startLine: item.range.start });
   }
   for (const sym of structure.symbols) {
-    pieces.push({ startLine: sym.range.startLine, endLine: sym.range.endLine, category: 'symbol', symbol: sym });
+    pieces.push({ category: 'symbol', endLine: sym.range.endLine, startLine: sym.range.startLine, symbol: sym });
   }
   for (const gap of structure.gaps) {
     if (gap.type === 'unknown') {
-      pieces.push({ startLine: gap.start, endLine: gap.end, category: 'raw' });
+      pieces.push({ category: 'raw', endLine: gap.end, startLine: gap.start });
     }
   }
 
@@ -201,9 +202,9 @@ function renderTargetSkeletonAtLevel(
 }
 
 interface CompressionResult {
-  output: string;
   compressed: boolean;
-  label: string | null;
+  label: null | string;
+  output: string;
 }
 
 /**
@@ -232,7 +233,7 @@ function compressSkeletonOutput(
   // Quick check: does the full output fit?
   const fullOutput = renderSkeletonAtLevel(pieces, allLines, maxNesting, 'full');
   if (fullOutput.length <= OUTPUT_CHAR_LIMIT) {
-    return { output: fullOutput, compressed: false, label: null };
+    return { compressed: false, label: null, output: fullOutput };
   }
 
   // Compression needed — incrementally build up from nesting=0, orphans=stubs
@@ -247,9 +248,9 @@ function compressSkeletonOutput(
       if (nesting === 0) {
         // Guaranteed minimum: return nesting=0 even if it exceeds
         return {
-          output: candidate,
           compressed: true,
           label: `top-level skeleton only (${structure.symbols.length} symbols)`,
+          output: candidate,
         };
       }
       break;
@@ -263,7 +264,7 @@ function compressSkeletonOutput(
     // Nesting is already at max; try adding full orphan content
     const withOrphans = renderSkeletonAtLevel(pieces, allLines, maxNesting, 'full');
     if (withOrphans.length <= OUTPUT_CHAR_LIMIT) {
-      return { output: withOrphans, compressed: false, label: null };
+      return { compressed: false, label: null, output: withOrphans };
     }
     // Orphans don't fit — keep collapsed
   } else {
@@ -285,9 +286,9 @@ function compressSkeletonOutput(
   }
 
   return {
-    output: bestOutput,
     compressed: true,
     label: parts.length > 0 ? parts.join(', ') : null,
+    output: bestOutput,
   };
 }
 
@@ -302,7 +303,7 @@ function compressTargetSkeleton(
 
   const fullOutput = renderTargetSkeletonAtLevel(symbol, maxNesting);
   if (fullOutput.length <= OUTPUT_CHAR_LIMIT) {
-    return { output: fullOutput, compressed: false, label: null };
+    return { compressed: false, label: null, output: fullOutput };
   }
 
   let bestOutput = '';
@@ -313,9 +314,9 @@ function compressTargetSkeleton(
     if (candidate.length > OUTPUT_CHAR_LIMIT) {
       if (nesting === 0) {
         return {
-          output: candidate,
           compressed: true,
           label: `top-level only (${symbol.children?.length ?? 0} children)`,
+          output: candidate,
         };
       }
       break;
@@ -325,9 +326,9 @@ function compressTargetSkeleton(
   }
 
   return {
-    output: bestOutput,
     compressed: true,
     label: `symbol depth ${bestNesting} of ${maxNesting}`,
+    output: bestOutput,
   };
 }
 
@@ -347,8 +348,8 @@ function compressTargetContent(
   structure: FileStructure,
   recursive: boolean,
 ): CompressionResult {
-  const startLine = symbol.range.startLine;
-  const endLine = symbol.range.endLine;
+  const {startLine} = symbol.range;
+  const {endLine} = symbol.range;
   const hasChildren = symbol.children && symbol.children.length > 0;
   const maxNesting = getSymbolTreeDepth(symbol);
   const contentMaxNesting = recursive ? maxNesting : 0;
@@ -360,7 +361,7 @@ function compressTargetContent(
     : addLineNumbers(getContentSlice(allLines, startLine, endLine), startLine);
   const maxOutput = header + maxContent;
   if (maxOutput.length <= OUTPUT_CHAR_LIMIT) {
-    return { output: maxOutput, compressed: false, label: null };
+    return { compressed: false, label: null, output: maxOutput };
   }
 
   // Compression needed — bottom-up incremental expansion
@@ -373,9 +374,9 @@ function compressTargetContent(
     if (candidate.length > OUTPUT_CHAR_LIMIT) {
       if (n === 0) {
         return {
-          output: candidate,
           compressed: true,
           label: `top-level only (${symbol.children?.length ?? 0} children)`,
+          output: candidate,
         };
       }
       compressionLabel = `symbol depth ${n - 1} of ${maxNesting}`;
@@ -403,13 +404,13 @@ function compressTargetContent(
 
   // No children and nothing collapsible — return full content (a stub is useless here)
   if (!compressionLabel && !hasChildren) {
-    return { output: maxOutput, compressed: false, label: null };
+    return { compressed: false, label: null, output: maxOutput };
   }
 
   return {
-    output: bestOutput,
     compressed: !!compressionLabel,
     label: compressionLabel || null,
+    output: bestOutput,
   };
 }
 
@@ -425,7 +426,7 @@ function compressFullFileOutput(
   // Try raw content first
   const numbered = addLineNumbers(rawContent, startLine1);
   if (numbered.length <= OUTPUT_CHAR_LIMIT) {
-    return { output: numbered, compressed: false, label: null };
+    return { compressed: false, label: null, output: numbered };
   }
 
   // Auto-switch to skeleton if structure is available
@@ -433,18 +434,18 @@ function compressFullFileOutput(
     const maxNesting = getMaxSymbolNesting(structure.symbols);
     const result = compressSkeletonOutput(structure, allLines, maxNesting);
     return {
-      output: result.output,
       compressed: true,
       label: `auto-skeleton${result.label ? `, ${result.label}` : ''}`,
+      output: result.output,
     };
   }
 
   // No structure available — return raw with guidance
   // Still return the full content but with a compression notice
   return {
-    output: numbered,
     compressed: true,
     label: 'file too large for token budget. Use startLine/endLine to read specific ranges',
+    output: numbered,
   };
 }
 
@@ -541,17 +542,17 @@ function formatContentAtNesting(
 
 // ── Structured Line-Range Infrastructure ──────────────────
 
-type NonSymbolType = 'import' | 'export' | 'comment' | 'directive' | 'gap';
+type NonSymbolType = 'comment' | 'directive' | 'export' | 'gap' | 'import';
 
 interface NonSymbolBlock {
-  type: NonSymbolType;
-  startLine: number;  // 1-indexed
   endLine: number;    // 1-indexed
+  startLine: number;  // 1-indexed
+  type: NonSymbolType;
 }
 
 type LineOwner =
-  | { type: 'symbol'; symbol: FileSymbol }
-  | { type: 'block'; block: NonSymbolBlock };
+  | { type: 'block'; block: NonSymbolBlock }
+  | { type: 'symbol'; symbol: FileSymbol };
 
 /**
  * Group consecutive non-symbol items of the same type into atomic blocks.
@@ -594,11 +595,11 @@ function buildNonSymbolBlocks(structure: FileStructure): NonSymbolBlock[] {
   let current: NonSymbolBlock | undefined;
 
   for (const entry of tagged) {
-    if (current && current.type === entry.type && entry.line === current.endLine + 1) {
+    if (current?.type === entry.type && entry.line === current.endLine + 1) {
       current.endLine = entry.line;
     } else {
       if (current) blocks.push(current);
-      current = { type: entry.type, startLine: entry.line, endLine: entry.line };
+      current = { endLine: entry.line, startLine: entry.line, type: entry.type };
     }
   }
   if (current) blocks.push(current);
@@ -636,7 +637,7 @@ function classifyLines(
       // Only claim lines not already claimed by a deeper child
       const from = Math.max(symStart, startLine);
       const to = Math.min(symEnd, endLine);
-      const owner: LineOwner = { type: 'symbol', symbol: sym };
+      const owner: LineOwner = { symbol: sym, type: 'symbol' };
       for (let line = from; line <= to; line++) {
         if (!owners.has(line)) {
           owners.set(line, owner);
@@ -650,7 +651,7 @@ function classifyLines(
     if (block.endLine < startLine || block.startLine > endLine) continue;
     const from = Math.max(block.startLine, startLine);
     const to = Math.min(block.endLine, endLine);
-    const owner: LineOwner = { type: 'block', block };
+    const owner: LineOwner = { block, type: 'block' };
     for (let line = from; line <= to; line++) {
       if (!owners.has(line)) owners.set(line, owner);
     }
@@ -680,7 +681,7 @@ function expandToBlockBoundaries(
     }
   }
 
-  return { expandedStart, expandedEnd };
+  return { expandedEnd, expandedStart };
 }
 
 /**
@@ -702,7 +703,7 @@ function renderStructuredRange(
   sourceRanges: Array<{startLine: number; endLine: number}>;
 } {
   const blocks = buildNonSymbolBlocks(structure);
-  const { expandedStart, expandedEnd } = expandToBlockBoundaries(
+  const { expandedEnd, expandedStart } = expandToBlockBoundaries(
     requestedStart,
     requestedEnd,
     blocks,
@@ -724,7 +725,7 @@ function renderStructuredRange(
 
   const flushSourceRange = () => {
     if (srcRangeStart !== undefined && srcRangeEnd !== undefined) {
-      sourceRanges.push({startLine: srcRangeStart, endLine: srcRangeEnd});
+      sourceRanges.push({endLine: srcRangeEnd, startLine: srcRangeStart});
       srcRangeStart = undefined;
       srcRangeEnd = undefined;
     }
@@ -768,13 +769,13 @@ function renderStructuredRange(
       actualStart = Math.min(actualStart, symStartInRange);
       actualEnd = Math.max(actualEnd, symEndInRange);
       flushSourceRange();
-      collapsedRanges.push({startLine: sym.range.startLine, endLine: sym.range.endLine});
+      collapsedRanges.push({endLine: sym.range.endLine, startLine: sym.range.startLine});
       line = symEndInRange + 1;
       continue;
     }
 
     // Non-symbol block
-    const block = owner.block;
+    const {block} = owner;
     if (!emittedBlocks.has(block)) {
       emittedBlocks.add(block);
 
@@ -791,7 +792,7 @@ function renderStructuredRange(
           result.push(`[${block.startLine}] ${allLines[block.startLine - 1] ?? ''}`);
         } else {
           flushSourceRange();
-          collapsedRanges.push({startLine: block.startLine, endLine: block.endLine});
+          collapsedRanges.push({endLine: block.endLine, startLine: block.startLine});
           result.push(`[${block.startLine}-${block.endLine}] ${block.type}s`);
         }
       } else {
@@ -810,16 +811,27 @@ function renderStructuredRange(
   flushSourceRange();
 
   return {
-    output: result.join('\n'),
-    actualStart,
     actualEnd,
+    actualStart,
     collapsedRanges,
+    output: result.join('\n'),
     sourceRanges,
   };
 }
 
-export const read = defineTool({
-  name: 'file_read',
+export const /**
+ *
+ */
+read = defineTool({
+  annotations: {
+    category: ToolCategory.CODEBASE_ANALYSIS,
+    conditions: ['client-pipe'],
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+    readOnlyHint: true,
+    title: 'File Read',
+  },
   description:
     'Read file content with flexible targeting and output modes.\n\n' +
     '**Two Simple Questions:**\n' +
@@ -854,38 +866,6 @@ export const read = defineTool({
     '**Log Files:**\n' +
     'Log file extensions (.log, .out, .err, .trace, .jsonl, etc.) must be read with `logFile_read` instead. ' +
     'This tool will show a redirect notice for those file types.',
-  annotations: {
-    title: 'File Read',
-    category: ToolCategory.CODEBASE_ANALYSIS,
-    readOnlyHint: true,
-    destructiveHint: false,
-    idempotentHint: true,
-    openWorldHint: false,
-    conditions: ['client-pipe'],
-  },
-  schema: {
-    file: zod.string().describe('Path to file (relative to workspace root or absolute).'),
-    target: zod.string().optional().describe(
-      'What to read. Can be symbol names ("UserService.findById"), special keywords ' +
-      '("#imports", "#exports", "#comments"), or a JSON array of multiple targets ' +
-      '(e.g. \'["#imports", "UserService"]\').',
-    ),
-    skeleton: zod.boolean().optional().describe(
-      'true = structure only (names + ranges), false = content (default).',
-    ),
-    recursive: zod.boolean().optional().describe(
-      'true = expand children, false = show placeholders (default).',
-    ),
-    // Structured range parameters (mutually exclusive with target)
-    startLine: zod.number().int().optional().describe(
-      'Start line (1-indexed) for structured range reading. Shows raw source for non-symbols, ' +
-      'collapsed stubs for symbols. Cannot be used with target.',
-    ),
-    endLine: zod.number().int().optional().describe(
-      'End line (1-indexed) for structured range reading. If omitted with startLine, reads to end of file.',
-    ),
-
-  },
   handler: async (request, response) => {
     const {params} = request;
     const filePath = resolveFilePath(params.file);
@@ -943,7 +923,7 @@ export const read = defineTool({
       }
     }
 
-    const relativePath = path.relative(getClientWorkspace(), filePath).replace(/\\/g, '/');
+    const relativePath = path.relative(getClientWorkspace(), filePath).replaceAll('\\', '/');
 
     // ── Mutual exclusivity: target + startLine/endLine ─────
     const hasLineRange = params.startLine !== undefined || params.endLine !== undefined;
@@ -1141,9 +1121,9 @@ export const read = defineTool({
           continue;
         }
 
-        const symbol = match.symbol;
-        const startLine = symbol.range.startLine;
-        const endLine = symbol.range.endLine;
+        const {symbol} = match;
+        const {startLine} = symbol.range;
+        const {endLine} = symbol.range;
 
         if (skeleton) {
           // Focus the symbol range in the client editor (convert 1-indexed to 0-indexed)
@@ -1167,5 +1147,29 @@ export const read = defineTool({
         }
       }
     }
+  },
+  name: 'file_read',
+  schema: {
+    file: zod.string().describe('Path to file (relative to workspace root or absolute).'),
+    recursive: zod.boolean().optional().describe(
+      'true = expand children, false = show placeholders (default).',
+    ),
+    skeleton: zod.boolean().optional().describe(
+      'true = structure only (names + ranges), false = content (default).',
+    ),
+    target: zod.string().optional().describe(
+      'What to read. Can be symbol names ("UserService.findById"), special keywords ' +
+      '("#imports", "#exports", "#comments"), or a JSON array of multiple targets ' +
+      '(e.g. \'["#imports", "UserService"]\').',
+    ),
+    // Structured range parameters (mutually exclusive with target)
+    endLine: zod.number().int().optional().describe(
+      'End line (1-indexed) for structured range reading. If omitted with startLine, reads to end of file.',
+    ),
+    startLine: zod.number().int().optional().describe(
+      'Start line (1-indexed) for structured range reading. Shows raw source for non-symbols, ' +
+      'collapsed stubs for symbols. Cannot be used with target.',
+    ),
+
   },
 });

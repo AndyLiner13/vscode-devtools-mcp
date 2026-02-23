@@ -16,6 +16,7 @@
  */
 
 import net from 'node:net';
+
 import {logger} from './logger.js';
 
 // ── Constants ────────────────────────────────────────────
@@ -33,38 +34,38 @@ const HOT_RELOAD_TIMEOUT_MS = 120_000;
 // ── Types ────────────────────────────────────────────────
 
 interface JsonRpcResponse {
-  jsonrpc: '2.0';
-  id: string | number | null;
-  result?: unknown;
   error?: {code: number; message: string; data?: unknown};
+  id: null | number | string;
+  jsonrpc: '2.0';
+  result?: unknown;
 }
 
 export interface McpReadyParams {
   clientWorkspace: string;
   extensionPath: string;
-  launch?: Record<string, unknown>;
   forceRestart?: boolean;
+  launch?: Record<string, unknown>;
 }
 
 export interface McpReadyResult {
   cdpPort: number;
-  userDataDir?: string;
   clientStartedAt?: number;
+  userDataDir?: string;
 }
 
 export interface HotReloadResult {
   cdpPort: number;
-  userDataDir?: string;
   clientStartedAt?: number;
+  userDataDir?: string;
 }
 
 export interface HostStatus {
-  role: 'host';
-  clientPid: number | null;
-  cdpPort: number | null;
-  clientStartedAt: string | null;
+  cdpPort: null | number;
   clientHealthy: boolean;
+  clientPid: null | number;
+  clientStartedAt: null | string;
   hotReloadInProgress: boolean;
+  role: 'host';
 }
 
 export interface TeardownResult {
@@ -83,7 +84,7 @@ export interface TakeoverResult {
  * Each call creates a fresh connection, sends the request, reads one
  * newline-delimited response, and disconnects.
  */
-function sendHostRequest(
+async function sendHostRequest(
   method: string,
   params: Record<string, unknown>,
   timeoutMs: number = DEFAULT_TIMEOUT_MS,
@@ -97,7 +98,7 @@ function sendHostRequest(
     let settled = false;
     client.setEncoding('utf8');
 
-    const settle = (fn: typeof resolve | typeof reject, value: unknown) => {
+    const settle = (fn: typeof reject | typeof resolve, value: unknown) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -112,7 +113,7 @@ function sendHostRequest(
     client.on('connect', () => {
       logger(`[host-pipe] ${method} connected — sending request (id=${reqId})`);
       const request =
-        JSON.stringify({jsonrpc: '2.0', id: reqId, method, params}) + '\n';
+        `${JSON.stringify({id: reqId, jsonrpc: '2.0', method, params})  }\n`;
       client.write(request);
     });
 
@@ -242,20 +243,20 @@ export async function checkForChanges(
 ): Promise<CheckForChangesResult> {
   const result = await sendHostRequest(
     'checkForChanges',
-    {mcpServerRoot, extensionPath},
+    {extensionPath, mcpServerRoot},
     HOT_RELOAD_TIMEOUT_MS,
   );
   return result as CheckForChangesResult;
 }
 
 export interface CheckForChangesResult {
+  extBuildError: null | string;
+  extChanged: boolean;
+  extClientReloaded: boolean;
+  extRebuilt: boolean;
+  mcpBuildError: null | string;
   mcpChanged: boolean;
   mcpRebuilt: boolean;
-  mcpBuildError: string | null;
-  extChanged: boolean;
-  extRebuilt: boolean;
-  extBuildError: string | null;
-  extClientReloaded: boolean;
   newCdpPort?: number;
   newClientStartedAt?: number;
 }

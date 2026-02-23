@@ -7,17 +7,17 @@
  * - Emits events for connection state changes
  */
 
-import WebSocket from 'ws';
-import http from 'node:http';
-
 import type { CdpTarget } from './types';
+
+import http from 'node:http';
+import WebSocket from 'ws';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface CdpResponse {
+    error?: { code: number; message: string; data?: string };
     id: number;
     result?: Record<string, unknown>;
-    error?: { code: number; message: string; data?: string };
 }
 
 interface CdpEvent {
@@ -27,9 +27,9 @@ interface CdpEvent {
 }
 
 interface PendingRequest {
-    resolve: (value: Record<string, unknown>) => void;
-    reject: (reason: Error) => void;
     method: string;
+    reject: (reason: Error) => void;
+    resolve: (value: Record<string, unknown>) => void;
 }
 
 export interface CdpSendOptions {
@@ -42,14 +42,14 @@ type CdpMessageListener = (method: string, params: Record<string, unknown>, sess
 // ── CdpClient ────────────────────────────────────────────────────────────────
 
 export class CdpClient {
-    private ws: WebSocket | null = null;
+    private ws: null | WebSocket = null;
     private messageId = 0;
-    private pendingRequests = new Map<number, PendingRequest>();
-    private attachedTargets = new Map<string, { targetId: string; sessionId: string; type: string }>();
+    private readonly pendingRequests = new Map<number, PendingRequest>();
+    private readonly attachedTargets = new Map<string, { targetId: string; sessionId: string; type: string }>();
     private allTargets: CdpTarget[] = [];
-    private _port: number | null = null;
+    private _port: null | number = null;
     private disposed = false;
-    private eventListeners: CdpMessageListener[] = [];
+    private readonly eventListeners: CdpMessageListener[] = [];
     private disconnectCallback: (() => void) | null = null;
 
     /**
@@ -61,7 +61,7 @@ export class CdpClient {
         this.disconnectCallback = callback;
     }
 
-    get port(): number | null {
+    get port(): null | number {
         return this._port;
     }
 
@@ -69,7 +69,7 @@ export class CdpClient {
         return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
     }
 
-    get webSocket(): WebSocket | null {
+    get webSocket(): null | WebSocket {
         return this.ws;
     }
 
@@ -95,8 +95,8 @@ export class CdpClient {
         // Auto-attach to all targets (needed for OOPIF/webview frames)
         await this.send('Target.setAutoAttach', {
             autoAttach: true,
-            waitForDebuggerOnStart: false,
             flatten: true,
+            waitForDebuggerOnStart: false,
         });
         await this.send('Target.setDiscoverTargets', { discover: true });
     }
@@ -106,7 +106,7 @@ export class CdpClient {
         params?: Record<string, unknown>,
         options?: CdpSendOptions,
     ): Promise<Record<string, unknown>> {
-        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+        if (this.ws?.readyState !== WebSocket.OPEN) {
             throw new Error('CDP WebSocket is not connected');
         }
 
@@ -128,15 +128,15 @@ export class CdpClient {
             }, timeout);
 
             this.pendingRequests.set(id, {
-                resolve: (result) => {
-                    clearTimeout(timer);
-                    resolve(result);
-                },
+                method,
                 reject: (err) => {
                     clearTimeout(timer);
                     reject(err);
                 },
-                method,
+                resolve: (result) => {
+                    clearTimeout(timer);
+                    resolve(result);
+                },
             });
 
             this.ws!.send(JSON.stringify(message));
@@ -224,7 +224,7 @@ export class CdpClient {
         return undefined;
     }
 
-    private fetchTargets(port: number): Promise<CdpTarget[]> {
+    private async fetchTargets(port: number): Promise<CdpTarget[]> {
         return new Promise((resolve, reject) => {
             const req = http.get(`http://127.0.0.1:${port}/json/list`, (res) => {
                 let data = '';
@@ -245,7 +245,7 @@ export class CdpClient {
         });
     }
 
-    private connectWebSocket(wsUrl: string): Promise<void> {
+    private async connectWebSocket(wsUrl: string): Promise<void> {
         return new Promise((resolve, reject) => {
             const ws = new WebSocket(wsUrl, { perMessageDeflate: false });
 
@@ -277,7 +277,7 @@ export class CdpClient {
 
     private setupMessageHandler(ws: WebSocket): void {
         ws.on('message', (data: WebSocket.Data) => {
-            let parsed: CdpResponse | CdpEvent;
+            let parsed: CdpEvent | CdpResponse;
             try {
                 parsed = JSON.parse(data.toString());
             } catch {
@@ -289,7 +289,7 @@ export class CdpClient {
                 const pending = this.pendingRequests.get(parsed.id);
                 if (pending) {
                     this.pendingRequests.delete(parsed.id);
-                    const response = parsed as CdpResponse;
+                    const response = parsed;
                     if (response.error) {
                         pending.reject(
                             new Error(`CDP error in ${pending.method}: ${response.error.message}`),
@@ -314,12 +314,12 @@ export class CdpClient {
 
         // OOPIF auto-attach: track newly attached targets
         if (method === 'Target.attachedToTarget') {
-            const targetInfo = params.targetInfo as { targetId: string; type: string } | undefined;
+            const targetInfo = params.targetInfo as undefined | { targetId: string; type: string };
             const newSessionId = params.sessionId as string | undefined;
             if (targetInfo && newSessionId) {
                 this.attachedTargets.set(targetInfo.targetId, {
-                    targetId: targetInfo.targetId,
                     sessionId: newSessionId,
+                    targetId: targetInfo.targetId,
                     type: targetInfo.type,
                 });
 

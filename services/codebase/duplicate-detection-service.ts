@@ -1,19 +1,21 @@
-// IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
-// Pure Node.js — no VS Code API dependency.
-import * as path from 'path';
-import * as crypto from 'crypto';
-import {
-  SyntaxKind,
-  Node,
-} from 'ts-morph';
 import type {
   DuplicateDetectionParams,
   DuplicateDetectionResult,
   DuplicateGroup,
   DuplicateInstance,
 } from './types';
+
+import * as crypto from 'node:crypto';
+// IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
+// Pure Node.js — no VS Code API dependency.
+import * as path from 'node:path';
+import {
+  Node,
+  SyntaxKind,
+} from 'ts-morph';
+
+import { applyIgnoreRules, globToRegex, parseIgnoreRules } from './ignore-rules';
 import { getWorkspaceProject } from './ts-project';
-import { parseIgnoreRules, applyIgnoreRules, globToRegex } from './ignore-rules';
 
 type FileFilter = (absoluteFilePath: string) => boolean;
 
@@ -29,7 +31,7 @@ function buildFileFilter(
   const excludeRegexps = excludePatterns?.map(p => globToRegex(p));
 
   return (absoluteFilePath: string) => {
-    const relativePath = path.relative(rootDir, absoluteFilePath).replace(/\\/g, '/');
+    const relativePath = path.relative(rootDir, absoluteFilePath).replaceAll('\\', '/');
 
     if (includeRegexps && includeRegexps.length > 0) {
       if (!includeRegexps.some(r => r.test(relativePath))) return false;
@@ -63,7 +65,7 @@ const MIN_LINES_FOR_DUPLICATE = 3;
  */
 export async function findDuplicates(params: DuplicateDetectionParams): Promise<DuplicateDetectionResult> {
   const startTime = Date.now();
-  const rootDir = params.rootDir;
+  const {rootDir} = params;
   const limit = params.limit ?? 50;
   const requestedKinds = new Set(params.kinds ?? [...DETECTABLE_KINDS.keys()]);
   const timeoutMs = 55_000;
@@ -71,9 +73,9 @@ export async function findDuplicates(params: DuplicateDetectionParams): Promise<
 
   if (!rootDir) {
     return {
-      groups: [],
-      summary: { totalGroups: 0, totalDuplicateInstances: 0, filesWithDuplicates: 0, scanDurationMs: 0 },
       errorMessage: 'No workspace folder found. Open a folder or specify rootDir.',
+      groups: [],
+      summary: { filesWithDuplicates: 0, scanDurationMs: 0, totalDuplicateInstances: 0, totalGroups: 0 },
     };
   }
 
@@ -90,7 +92,7 @@ export async function findDuplicates(params: DuplicateDetectionParams): Promise<
       const absPath = sourceFile.getFilePath();
       if (!fileFilter(absPath)) continue;
 
-      const relativePath = path.relative(rootDir, absPath).replace(/\\/g, '/');
+      const relativePath = path.relative(rootDir, absPath).replaceAll('\\', '/');
       if (TEST_FILE_PATTERN.test(relativePath)) continue;
 
       for (const [kindName, syntaxKinds] of DETECTABLE_KINDS) {
@@ -109,10 +111,10 @@ export async function findDuplicates(params: DuplicateDetectionParams): Promise<
 
           const name = getDeclarationName(decl) ?? '<anonymous>';
           const instance: DuplicateInstance = {
-            file: relativePath,
-            name,
-            line: decl.getStartLineNumber(),
             endLine: decl.getEndLineNumber(),
+            file: relativePath,
+            line: decl.getStartLineNumber(),
+            name,
           };
 
           const existing = hashMap.get(structuralHash);
@@ -120,9 +122,9 @@ export async function findDuplicates(params: DuplicateDetectionParams): Promise<
             existing.instances.push(instance);
           } else {
             hashMap.set(structuralHash, {
+              instances: [instance],
               kind: kindName,
               lineCount,
-              instances: [instance],
             });
           }
         }
@@ -139,9 +141,9 @@ export async function findDuplicates(params: DuplicateDetectionParams): Promise<
 
       groups.push({
         hash,
+        instances: entry.instances,
         kind: entry.kind,
         lineCount: entry.lineCount,
-        instances: entry.instances,
       });
 
       for (const inst of entry.instances) {
@@ -163,21 +165,21 @@ export async function findDuplicates(params: DuplicateDetectionParams): Promise<
 
     return {
       groups,
+      resolvedRootDir: rootDir,
       summary: {
-        totalGroups: groups.length,
-        totalDuplicateInstances: totalInstances,
         filesWithDuplicates: filesWithDuplicates.size,
         scanDurationMs: Date.now() - startTime,
+        totalDuplicateInstances: totalInstances,
+        totalGroups: groups.length,
       },
-      resolvedRootDir: rootDir,
     };
   } catch (err: unknown) {
     console.warn('[findDuplicates] Error:', err);
     return {
-      groups: [],
-      summary: { totalGroups: 0, totalDuplicateInstances: 0, filesWithDuplicates: 0, scanDurationMs: Date.now() - startTime },
       errorMessage: err instanceof Error ? err.message : String(err),
+      groups: [],
       resolvedRootDir: rootDir,
+      summary: { filesWithDuplicates: 0, scanDurationMs: Date.now() - startTime, totalDuplicateInstances: 0, totalGroups: 0 },
     };
   }
 }

@@ -1,21 +1,21 @@
 // IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 export interface IgnoreRule {
-  pattern: string;
   negated: boolean;
-  scope: string | null;
+  pattern: string;
+  scope: null | string;
 }
 
 const DEVTOOLS_IGNORE_FILENAME = '.devtoolsignore';
 
 function normalizeRelativePath(input: string): string {
-  return input.replace(/\\/g, '/');
+  return input.replaceAll('\\', '/');
 }
 
 function escapeRegex(text: string): string {
-  return text.replace(/[|\\{}()[\]^$+?.]/g, '\\$&');
+  return text.replaceAll(/[|\\{}()[\]^$+?.]/g, '\\$&');
 }
 
 export function globToRegex(pattern: string): RegExp {
@@ -60,9 +60,9 @@ export function parseIgnoreRules(rootDir: string): IgnoreRule[] {
   //   # global        — all following patterns apply to ALL tools
   //   # tool:name     — all following patterns apply only to that tool
   // Lines before any section header are treated as file description (ignored).
-  type Section = 'preamble' | 'global' | 'tool';
+  type Section = 'global' | 'preamble' | 'tool';
   let section: Section = 'preamble';
-  let currentScope: string | null = null;
+  let currentScope: null | string = null;
 
   for (const line of raw.split(/\r?\n/u)) {
     const trimmed = line.trim();
@@ -98,7 +98,7 @@ export function parseIgnoreRules(rootDir: string): IgnoreRule[] {
     const negated = trimmed.startsWith('!');
     const pattern = negated ? trimmed.slice(1).trim() : trimmed;
     if (!pattern) continue;
-    rules.push({ pattern, negated, scope: currentScope });
+    rules.push({ negated, pattern, scope: currentScope });
   }
 
   return rules;

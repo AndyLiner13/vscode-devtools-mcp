@@ -23,11 +23,11 @@ const MAX_ACTIONS = 25;
 // ============================================================================
 
 interface UserAction {
-  id: number;
-  type: 'file-saved' | 'terminal-closed';
-  timestamp: number;
-  summary: string;
   details?: string;
+  id: number;
+  summary: string;
+  timestamp: number;
+  type: 'file-saved' | 'terminal-closed';
 }
 
 interface WatchedFile {
@@ -39,7 +39,7 @@ interface WatchedFile {
 // Singleton
 // ============================================================================
 
-let instance: UserActionTracker | undefined;
+let instance: undefined | UserActionTracker;
 
 export function getUserActionTracker(): UserActionTracker {
   if (!instance) {
@@ -60,11 +60,11 @@ export function disposeUserActionTracker(): void {
 // ============================================================================
 
 export class UserActionTracker {
-  private watchedFiles = new Map<string, WatchedFile>();
+  private readonly watchedFiles = new Map<string, WatchedFile>();
   private actions: UserAction[] = [];
   private nextId = 1;
   private lastReportedId = 0;
-  private disposables: vscode.Disposable[] = [];
+  private readonly disposables: vscode.Disposable[] = [];
 
   constructor() {
     this.disposables.push(
@@ -95,9 +95,9 @@ export class UserActionTracker {
    */
   onManagedTerminalClosed(terminalName: string): void {
     this.addAction({
-      type: 'terminal-closed',
-      summary: `User closed terminal "${terminalName}"`,
       details: 'Any running processes have been terminated. This terminal is no longer available.',
+      summary: `User closed terminal "${terminalName}"`,
+      type: 'terminal-closed',
     });
   }
 
@@ -168,9 +168,9 @@ export class UserActionTracker {
     }
 
     this.addAction({
-      type: 'file-saved',
-      summary: `User saved changes to: ${doc.uri.fsPath}`,
       details: 'This file was recently accessed by a tool. The user may have made manual changes. Consider re-reading the file to get the latest content.',
+      summary: `User saved changes to: ${doc.uri.fsPath}`,
+      type: 'file-saved',
     });
 
     // Refresh the watch timer so subsequent saves are also caught
@@ -192,7 +192,7 @@ export class UserActionTracker {
   }
 
   private normalizePath(p: string): string {
-    return p.toLowerCase().replace(/\\/g, '/');
+    return p.toLowerCase().replaceAll('\\', '/');
   }
 
   private timeAgo(timestamp: number): string {

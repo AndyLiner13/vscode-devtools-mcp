@@ -1,5 +1,5 @@
-export { CdpClient } from './CdpClient';
 export { BrowserService } from './BrowserService';
+export { CdpClient } from './CdpClient';
 export type { CdpSendOptions } from './CdpClient';
 export type {
     AXNode,

@@ -19,6 +19,7 @@
  */
 
 import net from 'node:net';
+
 import {logger} from './logger.js';
 
 // ── Constants ────────────────────────────────────────────
@@ -33,10 +34,10 @@ const DEFAULT_TIMEOUT_MS = 10_000;
 // ── Types ────────────────────────────────────────────────
 
 interface JsonRpcResponse {
-  jsonrpc: '2.0';
-  id: string | number | null;
-  result?: unknown;
   error?: {code: number; message: string; data?: unknown};
+  id: null | number | string;
+  jsonrpc: '2.0';
+  result?: unknown;
 }
 
 // ── Type-safe result assertion ───────────────────────────
@@ -58,42 +59,42 @@ function isJsonRpcResponse(value: unknown): value is JsonRpcResponse {
   );
 }
 
-export type ProcessStatus = 'running' | 'completed' | 'killed' | 'orphaned';
+export type ProcessStatus = 'completed' | 'killed' | 'orphaned' | 'running';
 
 export interface ChildProcessInfo {
-  pid: number;
-  name: string;
   commandLine: string;
+  name: string;
   parentPid: number;
+  pid: number;
 }
 
 export interface ProcessEntry {
-  pid: number;
+  children?: ChildProcessInfo[];
   command: string;
-  terminalName: string;
-  status: ProcessStatus;
-  startedAt: string;
   endedAt?: string;
   exitCode?: number;
+  pid: number;
   sessionId: string;
-  children?: ChildProcessInfo[];
+  startedAt: string;
+  status: ProcessStatus;
+  terminalName: string;
 }
 
 export interface ProcessLedgerSummary {
   active: ProcessEntry[];
   orphaned: ProcessEntry[];
   recentlyCompleted: ProcessEntry[];
-  terminalSessions: TerminalSessionInfo[];
   sessionId: string;
+  terminalSessions: TerminalSessionInfo[];
 }
 
 export interface TerminalSessionInfo {
-  name: string;
-  shell?: string;
-  pid?: number;
-  isActive: boolean;
-  status: string;
   command?: string;
+  isActive: boolean;
+  name: string;
+  pid?: number;
+  shell?: string;
+  status: string;
 }
 
 export interface CommandExecuteResult {
@@ -105,7 +106,7 @@ export interface CommandExecuteResult {
 /**
  * Send a JSON-RPC 2.0 request to the Client pipe and await the response.
  */
-function sendClientRequest(
+async function sendClientRequest(
   method: string,
   params: Record<string, unknown>,
   timeoutMs: number = DEFAULT_TIMEOUT_MS,
@@ -119,7 +120,7 @@ function sendClientRequest(
     let settled = false;
     client.setEncoding('utf8');
 
-    const settle = (fn: typeof resolve | typeof reject, value: unknown) => {
+    const settle = (fn: typeof reject | typeof resolve, value: unknown) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -134,7 +135,7 @@ function sendClientRequest(
     client.on('connect', () => {
       logger(`[client-pipe] ${method} connected — sending request (id=${reqId})`);
       const request =
-        JSON.stringify({jsonrpc: '2.0', id: reqId, method, params}) + '\n';
+        `${JSON.stringify({id: reqId, jsonrpc: '2.0', method, params})  }\n`;
       client.write(request);
     });
 
@@ -212,7 +213,7 @@ async function commandExecute(
   command: string,
   args?: unknown[],
 ): Promise<CommandExecuteResult> {
-  const result = await sendClientRequest('command.execute', {command, args});
+  const result = await sendClientRequest('command.execute', {args, command});
   assertResult<CommandExecuteResult>(result, 'command.execute');
   return result;
 }
@@ -220,53 +221,53 @@ async function commandExecute(
 // ── Codebase Types ───────────────────────────────────────
 
 export interface CodebaseSymbolNode {
-  name: string;
-  kind: string;
-  detail?: string;
-  range: {start: number; end: number};
   children?: CodebaseSymbolNode[];
-  referenceCount?: number;
+  detail?: string;
   implementationCount?: number;
+  kind: string;
+  name: string;
+  range: {start: number; end: number};
+  referenceCount?: number;
 }
 
 export interface CodebaseTreeNode {
-  name: string;
-  type: 'directory' | 'file';
   children?: CodebaseTreeNode[];
-  symbols?: CodebaseSymbolNode[];
-  lineCount?: number;
-  ignored?: boolean;
-  fileCount?: number;
   dirCount?: number;
+  fileCount?: number;
+  ignored?: boolean;
+  lineCount?: number;
+  name: string;
   symbolCount?: number;
+  symbols?: CodebaseSymbolNode[];
   totalReferences?: number;
+  type: 'directory' | 'file';
 }
 
 export interface CodebaseOverviewResult {
   projectRoot: string;
-  tree: CodebaseTreeNode[];
   summary: {
     totalFiles: number;
     totalDirectories: number;
     totalSymbols: number;
     diagnosticCounts?: {errors: number; warnings: number};
   };
+  tree: CodebaseTreeNode[];
 }
 
 export interface CodebaseExportInfo {
-  name: string;
-  kind: string;
-  signature?: string;
-  jsdoc?: string;
-  line: number;
   isDefault: boolean;
   isReExport: boolean;
+  jsdoc?: string;
+  kind: string;
+  line: number;
+  name: string;
   reExportSource?: string;
+  signature?: string;
 }
 
 export interface CodebaseExportsResult {
-  module: string;
   exports: CodebaseExportInfo[];
+  module: string;
   reExports: Array<{name: string; from: string}>;
   summary: string;
 }
@@ -274,118 +275,118 @@ export interface CodebaseExportsResult {
 // ── Codebase Trace Symbol Types ──────────────────────────
 
 export interface SymbolLocationInfo {
-  file: string;
-  line: number;
   column: number;
+  file: string;
   kind?: string;
+  line: number;
   signature?: string;
   unresolved?: boolean;
 }
 
 export interface ReferenceInfo {
-  file: string;
-  line: number;
   column: number;
   context: string;
-  kind: 'read' | 'write' | 'call' | 'import' | 'type-ref' | 'unknown';
+  file: string;
+  kind: 'call' | 'import' | 'read' | 'type-ref' | 'unknown' | 'write';
+  line: number;
 }
 
 export interface ReExportInfo {
+  exportedAs: string;
   file: string;
+  from: string;
   line: number;
   originalName: string;
-  exportedAs: string;
-  from: string;
 }
 
 export interface CallChainNode {
-  symbol: string;
+  column: number;
   file: string;
   line: number;
-  column: number;
+  symbol: string;
 }
 
 export interface CallChainInfo {
   incomingCalls: CallChainNode[];
-  outgoingCalls: CallChainNode[];
   incomingTruncated?: boolean;
+  outgoingCalls: CallChainNode[];
   outgoingTruncated?: boolean;
 }
 
 export interface TypeFlowInfo {
-  direction: 'parameter' | 'return' | 'extends' | 'implements' | 'property';
-  type: string;
+  direction: 'extends' | 'implements' | 'parameter' | 'property' | 'return';
   traceTo?: {symbol: string; file: string; line: number};
+  type: string;
 }
 
 export interface ImpactDependentInfo {
-  symbol: string;
   file: string;
-  line: number;
   kind: string;
+  line: number;
+  symbol: string;
 }
 
 export interface ImpactInfo {
   directDependents: ImpactDependentInfo[];
-  transitiveDependents: ImpactDependentInfo[];
   impactSummary: {
     directFiles: number;
     transitiveFiles: number;
     totalSymbolsAffected: number;
-    riskLevel: 'low' | 'medium' | 'high';
+    riskLevel: 'high' | 'low' | 'medium';
   };
+  transitiveDependents: ImpactDependentInfo[];
 }
 
 export interface TypeHierarchyNode {
-  name: string;
-  kind: 'class' | 'interface' | 'type-alias';
-  file: string;
-  line: number;
   column: number;
+  file: string;
+  kind: 'class' | 'interface' | 'type-alias';
+  line: number;
+  name: string;
 }
 
 export interface TypeHierarchyInfo {
-  supertypes: TypeHierarchyNode[];
-  subtypes: TypeHierarchyNode[];
   stats: {
     totalSupertypes: number;
     totalSubtypes: number;
     maxDepth: number;
   };
+  subtypes: TypeHierarchyNode[];
+  supertypes: TypeHierarchyNode[];
 }
 
 export interface CodebaseTraceSymbolResult {
-  symbol: string;
-  definition?: SymbolLocationInfo;
-  references: ReferenceInfo[];
-  reExports: ReExportInfo[];
   callChain: CallChainInfo;
-  typeFlows: TypeFlowInfo[];
+  definition?: SymbolLocationInfo;
+  /** Diagnostic messages (e.g., excessive node_modules references). */
+  diagnostics?: string[];
+  /** Calculated effective timeout in milliseconds. */
+  effectiveTimeout?: number;
+  /** Elapsed time in milliseconds. */
+  elapsedMs?: number;
+  /** Error message if an error occurred during tracing. */
+  errorMessage?: string;
   hierarchy?: TypeHierarchyInfo;
+  impact?: ImpactInfo;
+  /** Reason why symbol was not found. */
+  notFoundReason?: 'file-not-in-project' | 'no-matching-files' | 'no-project' | 'parse-error' | 'symbol-not-found';
+  /** True if results were truncated due to timeout or maxReferences limit. */
+  partial?: boolean;
+  /** Reason for partial results. */
+  partialReason?: 'max-references' | 'timeout';
+  reExports: ReExportInfo[];
+  references: ReferenceInfo[];
+  /** Resolved absolute path used as the project root. */
+  resolvedRootDir?: string;
+  /** Number of source files in the project. */
+  sourceFileCount?: number;
   summary: {
     totalReferences: number;
     totalFiles: number;
     maxCallDepth: number;
   };
-  impact?: ImpactInfo;
-  /** True if results were truncated due to timeout or maxReferences limit. */
-  partial?: boolean;
-  /** Reason for partial results. */
-  partialReason?: 'timeout' | 'max-references';
-  /** Elapsed time in milliseconds. */
-  elapsedMs?: number;
-  /** Number of source files in the project. */
-  sourceFileCount?: number;
-  /** Calculated effective timeout in milliseconds. */
-  effectiveTimeout?: number;
-  /** Error message if an error occurred during tracing. */
-  errorMessage?: string;
-  /** Reason why symbol was not found. */
-  notFoundReason?: 'no-project' | 'no-matching-files' | 'symbol-not-found' | 'file-not-in-project' | 'parse-error';
-  /** Resolved absolute path used as the project root. */
-  resolvedRootDir?: string;
-  /** Diagnostic messages (e.g., excessive node_modules references). */
-  diagnostics?: string[];
+  symbol: string;
+  typeFlows: TypeFlowInfo[];
 }
 
 // ── Codebase Methods ─────────────────────────────────────
@@ -404,7 +405,7 @@ export async function codebaseGetOverview(
 ): Promise<CodebaseOverviewResult> {
   const result = await sendClientRequest(
     'codebase.getOverview',
-    {rootDir, dir, recursive, symbols, metadata, toolScope},
+    {dir, metadata, recursive, rootDir, symbols, toolScope},
     timeout ?? 30_000,
   );
   assertResult<CodebaseOverviewResult>(result, 'codebase.getOverview');
@@ -425,7 +426,7 @@ async function codebaseGetExports(
 ): Promise<CodebaseExportsResult> {
   const result = await sendClientRequest(
     'codebase.getExports',
-    {path, rootDir, includeTypes, includeJSDoc, kind, includePatterns, excludePatterns},
+    {excludePatterns, includeJSDoc, includePatterns, includeTypes, kind, path, rootDir},
     30_000,
   );
   assertResult<CodebaseExportsResult>(result, 'codebase.getExports');
@@ -453,7 +454,7 @@ export async function codebaseTraceSymbol(
 ): Promise<CodebaseTraceSymbolResult> {
   const result = await sendClientRequest(
     'codebase.traceSymbol',
-    {symbol, rootDir, file, line, column, depth, include, includeImpact, maxReferences, timeout, forceRefresh, includePatterns, excludePatterns},
+    {column, depth, excludePatterns, file, forceRefresh, include, includeImpact, includePatterns, line, maxReferences, rootDir, symbol, timeout},
     Math.max(60_000, (timeout ?? 30_000) + 5_000),
   );
   assertResult<CodebaseTraceSymbolResult>(result, 'codebase.traceSymbol');
@@ -463,26 +464,26 @@ export async function codebaseTraceSymbol(
 // ── Dead Code Detection Types ────────────────────────────
 
 export interface DeadCodeItem {
-  name: string;
-  kind: string;
-  file: string;
-  line: number;
+  confidence: 'high' | 'low' | 'medium';
   exported: boolean;
+  file: string;
+  kind: string;
+  line: number;
+  name: string;
   reason: string;
-  confidence: 'high' | 'medium' | 'low';
 }
 
 export interface DeadCodeResult {
   deadCode: DeadCodeItem[];
+  diagnostics?: string[];
+  errorMessage?: string;
+  resolvedRootDir?: string;
   summary: {
     totalScanned: number;
     totalDead: number;
     scanDurationMs: number;
     byKind?: Record<string, number>;
   };
-  errorMessage?: string;
-  resolvedRootDir?: string;
-  diagnostics?: string[];
 }
 
 /**
@@ -501,7 +502,7 @@ export async function codebaseFindDeadCode(
 ): Promise<DeadCodeResult> {
   const result = await sendClientRequest(
     'codebase.findDeadCode',
-    {rootDir, pattern, exportedOnly, excludeTests, kinds, limit, includePatterns, excludePatterns},
+    {excludePatterns, excludeTests, exportedOnly, includePatterns, kinds, limit, pattern, rootDir},
     timeout ?? 60_000,
   );
   assertResult<DeadCodeResult>(result, 'codebase.findDeadCode');
@@ -511,9 +512,9 @@ export async function codebaseFindDeadCode(
 // ── Import Graph Types ───────────────────────────────────
 
 export interface ImportGraphModule {
-  path: string;
-  imports: string[];
   importedBy: string[];
+  imports: string[];
+  path: string;
 }
 
 export interface CircularChain {
@@ -521,8 +522,9 @@ export interface CircularChain {
 }
 
 export interface ImportGraphResult {
-  modules: Record<string, ImportGraphModule>;
   circular: CircularChain[];
+  errorMessage?: string;
+  modules: Record<string, ImportGraphModule>;
   orphans: string[];
   stats: {
     totalModules: number;
@@ -530,7 +532,6 @@ export interface ImportGraphResult {
     circularCount: number;
     orphanCount: number;
   };
-  errorMessage?: string;
 }
 
 /**
@@ -544,7 +545,7 @@ export async function codebaseGetImportGraph(
 ): Promise<ImportGraphResult> {
   const result = await sendClientRequest(
     'codebase.getImportGraph',
-    {rootDir, includePatterns, excludePatterns},
+    {excludePatterns, includePatterns, rootDir},
     timeout ?? 60_000,
   );
   assertResult<ImportGraphResult>(result, 'codebase.getImportGraph');
@@ -554,30 +555,30 @@ export async function codebaseGetImportGraph(
 // ── Duplicate Detection Types ────────────────────────────
 
 export interface DuplicateInstance {
-  file: string;
-  name: string;
-  line: number;
   endLine: number;
+  file: string;
+  line: number;
+  name: string;
 }
 
 export interface DuplicateGroup {
   hash: string;
+  instances: DuplicateInstance[];
   kind: string;
   lineCount: number;
-  instances: DuplicateInstance[];
 }
 
 export interface DuplicateDetectionResult {
+  diagnostics?: string[];
+  errorMessage?: string;
   groups: DuplicateGroup[];
+  resolvedRootDir?: string;
   summary: {
     totalGroups: number;
     totalDuplicateInstances: number;
     filesWithDuplicates: number;
     scanDurationMs: number;
   };
-  resolvedRootDir?: string;
-  diagnostics?: string[];
-  errorMessage?: string;
 }
 
 /**
@@ -593,7 +594,7 @@ export async function codebaseFindDuplicates(
 ): Promise<DuplicateDetectionResult> {
   const result = await sendClientRequest(
     'codebase.findDuplicates',
-    {rootDir, kinds, limit, includePatterns, excludePatterns},
+    {excludePatterns, includePatterns, kinds, limit, rootDir},
     timeout ?? 60_000,
   );
   assertResult<DuplicateDetectionResult>(result, 'codebase.findDuplicates');
@@ -603,23 +604,23 @@ export async function codebaseFindDuplicates(
 // ── Diagnostics Types ────────────────────────────────────
 
 export interface DiagnosticItem {
+  code: string;
+  column: number;
   file: string;
   line: number;
-  column: number;
-  severity: string;
-  code: string;
   message: string;
+  severity: string;
   source: string;
 }
 
 export interface DiagnosticsResult {
   diagnostics: DiagnosticItem[];
+  errorMessage?: string;
   summary: {
     totalErrors: number;
     totalWarnings: number;
     totalFiles: number;
   };
-  errorMessage?: string;
 }
 
 /**
@@ -634,7 +635,7 @@ export async function codebaseGetDiagnostics(
 ): Promise<DiagnosticsResult> {
   const result = await sendClientRequest(
     'codebase.getDiagnostics',
-    {severityFilter, includePatterns, excludePatterns, limit},
+    {excludePatterns, includePatterns, limit, severityFilter},
     timeout ?? 30_000,
   );
   assertResult<DiagnosticsResult>(result, 'codebase.getDiagnostics');
@@ -644,19 +645,19 @@ export async function codebaseGetDiagnostics(
 // ── File Service Types ───────────────────────────────────
 
 export interface NativeDocumentSymbolRange {
-  startLine: number;
-  startChar: number;
-  endLine: number;
   endChar: number;
+  endLine: number;
+  startChar: number;
+  startLine: number;
 }
 
 export interface NativeDocumentSymbol {
-  name: string;
-  kind: string;
+  children: NativeDocumentSymbol[];
   detail?: string;
+  kind: string;
+  name: string;
   range: NativeDocumentSymbolRange;
   selectionRange: NativeDocumentSymbolRange;
-  children: NativeDocumentSymbol[];
 }
 
 export interface FileGetSymbolsResult {
@@ -665,24 +666,24 @@ export interface FileGetSymbolsResult {
 
 export interface FileReadContentResult {
   content: string;
-  startLine: number;
   endLine: number;
+  startLine: number;
   totalLines: number;
 }
 
 export interface FileApplyEditResult {
-  success: boolean;
   file: string;
+  success: boolean;
 }
 
 export interface FileDiagnosticItem {
-  line: number;
-  column: number;
-  endLine: number;
-  endColumn: number;
-  severity: string;
-  message: string;
   code: string;
+  column: number;
+  endColumn: number;
+  endLine: number;
+  line: number;
+  message: string;
+  severity: string;
   source: string;
 }
 
@@ -691,28 +692,28 @@ export interface FileGetDiagnosticsResult {
 }
 
 export interface FileExecuteRenameResult {
-  success: boolean;
-  filesAffected: string[];
-  totalEdits: number;
   error?: string;
+  filesAffected: string[];
+  success: boolean;
+  totalEdits: number;
 }
 
 // ── Orphaned Content Types ─────────────────────────────────
 
 export interface OrphanedSymbolNode {
-  name: string;
-  kind: string;
-  detail?: string;
-  range: {start: number; end: number};
   children?: OrphanedSymbolNode[];
+  detail?: string;
+  kind: string;
+  name: string;
+  range: {start: number; end: number};
 }
 
 export interface OrphanedContentResult {
-  imports: OrphanedSymbolNode[];
-  exports: OrphanedSymbolNode[];
-  orphanComments: OrphanedSymbolNode[];
   directives: OrphanedSymbolNode[];
+  exports: OrphanedSymbolNode[];
   gaps: Array<{start: number; end: number; type: 'blank' | 'unknown'}>;
+  imports: OrphanedSymbolNode[];
+  orphanComments: OrphanedSymbolNode[];
   stats: {
     totalImports: number;
     totalExports: number;
@@ -726,31 +727,29 @@ export interface OrphanedContentResult {
 // ── Unified File Structure Types ─────────────────────────
 
 export interface UnifiedFileSymbolRange {
-  startLine: number;   // 1-indexed
-  startChar: number;   // 0-indexed (column)
-  endLine: number;     // 1-indexed
   endChar: number;     // 0-indexed (column)
+  endLine: number;     // 1-indexed
+  startChar: number;   // 0-indexed (column)
+  startLine: number;   // 1-indexed
 }
 
 export interface UnifiedFileSymbol {
-  name: string;
-  kind: string;
-  detail?: string;
-  range: UnifiedFileSymbolRange;
   children: UnifiedFileSymbol[];
+  detail?: string;
   exported?: boolean;
+  kind: string;
   modifiers?: string[];
+  name: string;
+  range: UnifiedFileSymbolRange;
 }
 
 interface UnifiedFileResult {
-  symbols: UnifiedFileSymbol[];
   content: string;
-  totalLines: number;
-  imports: OrphanedSymbolNode[];
-  exports: OrphanedSymbolNode[];
-  orphanComments: OrphanedSymbolNode[];
   directives: OrphanedSymbolNode[];
+  exports: OrphanedSymbolNode[];
   gaps: Array<{start: number; end: number; type: 'blank' | 'unknown'}>;
+  imports: OrphanedSymbolNode[];
+  orphanComments: OrphanedSymbolNode[];
   stats: {
     totalImports: number;
     totalExports: number;
@@ -759,6 +758,8 @@ interface UnifiedFileResult {
     totalBlankLines: number;
     coveragePercent: number;
   };
+  symbols: UnifiedFileSymbol[];
+  totalLines: number;
 }
 
 export interface FileFindReferencesResult {
@@ -768,63 +769,63 @@ export interface FileFindReferencesResult {
 // ── Shared File Structure Types (Multi-Language) ─────────
 
 export interface FileSymbolRange {
-  startLine: number;
+  endChar?: number;
   endLine: number;
   startChar?: number;
-  endChar?: number;
+  startLine: number;
 }
 
 export interface FileSymbol {
-  name: string;
-  kind: string;
-  detail?: string;
-  range: FileSymbolRange;
   children: FileSymbol[];
+  detail?: string;
   exported?: boolean;
+  kind: string;
   modifiers?: string[];
+  name: string;
+  range: FileSymbolRange;
 }
 
 export type OrphanedCategory =
-  | 'import'
-  | 'export'
   | 'comment'
   | 'directive'
+  | 'export'
   | 'footnote'
+  | 'import'
   | 'linkdef';
 
 export interface OrphanedItem {
-  name: string;
-  kind: string;
-  detail?: string;
-  range: {start: number; end: number};
-  children?: OrphanedItem[];
   category: OrphanedCategory;
+  children?: OrphanedItem[];
+  detail?: string;
+  kind: string;
+  name: string;
+  range: {start: number; end: number};
 }
 
 export interface FileStructureStats {
-  totalSymbols: number;
-  totalOrphaned: number;
-  totalBlankLines: number;
   coveragePercent: number;
+  totalBlankLines: number;
+  totalOrphaned: number;
+  totalSymbols: number;
 }
 
 export interface FileStructure {
-  symbols: FileSymbol[];
   content: string;
-  totalLines: number;
-  fileType: 'typescript' | 'markdown' | 'json' | 'unknown';
-  orphaned: {items: OrphanedItem[]};
+  fileType: 'json' | 'markdown' | 'typescript' | 'unknown';
   gaps: Array<{start: number; end: number; type: 'blank' | 'unknown'}>;
+  orphaned: {items: OrphanedItem[]};
   stats: FileStructureStats;
+  symbols: FileSymbol[];
+  totalLines: number;
 }
 
 export interface FileCodeActionItem {
-  index: number;
-  title: string;
-  kind: string;
-  isPreferred: boolean;
-  hasEdit: boolean;
   hasCommand: boolean;
+  hasEdit: boolean;
+  index: number;
+  isPreferred: boolean;
+  kind: string;
+  title: string;
 }
 
 export interface FileGetCodeActionsResult {
@@ -832,9 +833,9 @@ export interface FileGetCodeActionsResult {
 }
 
 export interface FileApplyCodeActionResult {
+  error?: string;
   success: boolean;
   title?: string;
-  error?: string;
 }
 
 // ── File Service Methods ─────────────────────────────────
@@ -858,7 +859,7 @@ export async function fileReadContent(
 ): Promise<FileReadContentResult> {
   const result = await sendClientRequest(
     'file.readContent',
-    {filePath, startLine, endLine},
+    {endLine, filePath, startLine},
     10_000,
   );
   assertResult<FileReadContentResult>(result, 'file.readContent');
@@ -878,7 +879,7 @@ export function fileHighlightReadRange(
 ): void {
   sendClientRequest(
     'file.highlightReadRange',
-    {filePath, startLine, endLine, collapsedRanges, sourceRanges},
+    {collapsedRanges, endLine, filePath, sourceRanges, startLine},
     5_000,
   ).catch(() => {
     // Best-effort — don't let highlight failures affect tool responses
@@ -896,7 +897,7 @@ export function fileShowEditDiff(
 ): void {
   sendClientRequest(
     'file.showEditDiff',
-    {filePath, editStartLine},
+    {editStartLine, filePath},
     10_000,
   ).catch(() => {
     // Best-effort — don't let diff viewer failures affect tool responses
@@ -916,7 +917,7 @@ export async function fileApplyEdit(
 ): Promise<FileApplyEditResult> {
   const result = await sendClientRequest(
     'file.applyEdit',
-    {filePath, startLine, startChar, endLine, endChar, newContent},
+    {endChar, endLine, filePath, newContent, startChar, startLine},
     15_000,
   );
   assertResult<FileApplyEditResult>(result, 'file.applyEdit');
@@ -943,7 +944,7 @@ export async function fileExecuteRename(
 ): Promise<FileExecuteRenameResult> {
   const result = await sendClientRequest(
     'file.executeRename',
-    {filePath, line, character, newName},
+    {character, filePath, line, newName},
     15_000,
   );
   assertResult<FileExecuteRenameResult>(result, 'file.executeRename');
@@ -960,7 +961,7 @@ export async function fileFindReferences(
 ): Promise<FileFindReferencesResult> {
   const result = await sendClientRequest(
     'file.findReferences',
-    {filePath, line, character},
+    {character, filePath, line},
     10_000,
   );
   assertResult<FileFindReferencesResult>(result, 'file.findReferences');
@@ -977,7 +978,7 @@ export async function fileGetCodeActions(
 ): Promise<FileGetCodeActionsResult> {
   const result = await sendClientRequest(
     'file.getCodeActions',
-    {filePath, startLine, endLine},
+    {endLine, filePath, startLine},
     10_000,
   );
   assertResult<FileGetCodeActionsResult>(result, 'file.getCodeActions');
@@ -995,7 +996,7 @@ export async function fileApplyCodeAction(
 ): Promise<FileApplyCodeActionResult> {
   const result = await sendClientRequest(
     'file.applyCodeAction',
-    {filePath, startLine, endLine, actionIndex},
+    {actionIndex, endLine, filePath, startLine},
     10_000,
   );
   assertResult<FileApplyCodeActionResult>(result, 'file.applyCodeAction');
@@ -1106,7 +1107,7 @@ export async function ensureClientAvailable(): Promise<void> {
 
   clientRecoveryInProgress = (async () => {
     try {
-      await clientRecoveryHandler!();
+      await clientRecoveryHandler();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       logger(`[client-pipe] Recovery handler threw: ${msg}`);
@@ -1160,8 +1161,8 @@ export async function getProcessLedger(): Promise<ProcessLedgerSummary> {
       active: [],
       orphaned: [],
       recentlyCompleted: [],
-      terminalSessions: [],
       sessionId: 'unknown',
+      terminalSessions: [],
     };
   }
 }

@@ -10,11 +10,11 @@ import {join} from 'node:path';
 const DEVTOOLS_IGNORE_FILENAME = '.devtoolsignore';
 
 export interface IgnoreContext {
-  rootDir: string;
-  ignoreFilePath: string;
-  ignoreFileExists: boolean;
   /** Active glob patterns (non-comment, non-blank lines). */
   activePatterns: string[];
+  ignoreFileExists: boolean;
+  ignoreFilePath: string;
+  rootDir: string;
 }
 
 /**
@@ -30,8 +30,8 @@ export function readIgnoreContext(rootDir: string): IgnoreContext {
   if (ignoreFileExists) {
     try {
       const contents = readFileSync(ignoreFilePath, 'utf8');
-      let section: 'preamble' | 'global' | 'tool' = 'preamble';
-      let currentTool: string | null = null;
+      let section: 'global' | 'preamble' | 'tool' = 'preamble';
+      let currentTool: null | string = null;
 
       for (const rawLine of contents.split(/\r?\n/)) {
         const line = rawLine.trim();
@@ -65,7 +65,7 @@ export function readIgnoreContext(rootDir: string): IgnoreContext {
     }
   }
 
-  return {rootDir, ignoreFilePath, ignoreFileExists, activePatterns};
+  return {activePatterns, ignoreFileExists, ignoreFilePath, rootDir};
 }
 
 /**

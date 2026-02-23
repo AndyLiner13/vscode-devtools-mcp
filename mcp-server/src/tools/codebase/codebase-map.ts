@@ -6,14 +6,14 @@
 
 import {existsSync, statSync} from 'node:fs';
 import path from 'node:path';
+import {z as zod} from 'zod';
 
 import {
   codebaseGetOverview,
-  type CodebaseTreeNode,
   type CodebaseSymbolNode,
+  type CodebaseTreeNode,
 } from '../../client-pipe.js';
 import {getClientWorkspace} from '../../config.js';
-import {z as zod} from 'zod';
 import {ToolCategory} from '../categories.js';
 import {defineTool} from '../ToolDefinition.js';
 import {readIgnoreContext} from './ignore-context.js';
@@ -27,7 +27,7 @@ const TIMEOUT_SYMBOLS_MS = 30_000;
 const OUTPUT_CHAR_LIMIT = 12_000;
 const INDENT = '  ';
 
-type MetadataMode = boolean | 'auto';
+type MetadataMode = 'auto' | boolean;
 
 // ── Formatting ───────────────────────────────────────────
 
@@ -87,23 +87,23 @@ function formatSymbol(symbol: CodebaseSymbolNode, depth: number, maxSymbolDepth?
 }
 
 interface TreeFormatOptions {
-  showFiles: boolean;
-  showSymbols: boolean;
-  metadata: MetadataMode;
-  maxFolderDepth?: number;
-  maxFileFolderDepth?: number;
-  maxSymbolFolderDepth?: number;
-  maxSymbolNesting?: number;
   /** Fallback nesting for folder depths beyond deepNestingUpTo. */
   baseSymbolNesting?: number;
   /** Folder depths 0..this get maxSymbolNesting; deeper depths get baseSymbolNesting. */
   deepNestingUpTo?: number;
+  maxFileFolderDepth?: number;
+  maxFolderDepth?: number;
+  maxSymbolFolderDepth?: number;
+  maxSymbolNesting?: number;
+  metadata: MetadataMode;
+  showFiles: boolean;
+  showSymbols: boolean;
 }
 
 function formatTree(
   nodes: CodebaseTreeNode[],
   opts: TreeFormatOptions,
-  depth: number = 0,
+  depth = 0,
 ): string {
   let output = '';
   const indent = INDENT.repeat(depth);
@@ -206,8 +206,19 @@ function maxFolderTreeDepth(nodes: CodebaseTreeNode[], current = 0): number {
 
 // ── Tool Definition ──────────────────────────────────────
 
-export const map = defineTool({
-  name: 'codebase_map',
+export const /**
+ *
+ */
+map = defineTool({
+  annotations: {
+    category: ToolCategory.CODEBASE_ANALYSIS,
+    conditions: ['client-pipe', 'codebase-sequential'],
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+    readOnlyHint: true,
+    title: 'Codebase Map',
+  },
   description: 'Get a structural map of the codebase at any granularity — folders, files, or symbols.\n\n' +
     'Returns a tree with folders ending in `/`, files with extensions, and symbols as `kind name`.\n\n' +
     '**Parameters:**\n' +
@@ -221,28 +232,6 @@ export const map = defineTool({
     '- Specific folder with symbols: `{ dir: "src", recursive: true, symbols: true }`\n' +
     '- Tree with metadata: `{ recursive: true, metadata: true }`\n' +
     '- Only a subfolder: `{ dir: "src/styles", recursive: true }`',
-  annotations: {
-    title: 'Codebase Map',
-    category: ToolCategory.CODEBASE_ANALYSIS,
-    readOnlyHint: true,
-    destructiveHint: false,
-    idempotentHint: true,
-    openWorldHint: false,
-    conditions: ['client-pipe', 'codebase-sequential'],
-  },
-  schema: {
-    dir: zod.string().optional()
-      .describe('Folder to map. Relative to workspace root or absolute. Defaults to workspace root.'),
-
-    recursive: zod.boolean().optional()
-      .describe('Include subdirectories recursively. Default: false (immediate children only).'),
-
-    symbols: zod.boolean().optional()
-      .describe('Include symbol skeleton (name + kind, hierarchically nested). Default: false.'),
-
-    metadata: zod.boolean().optional()
-      .describe('Show counts. Key: F=files, D=directories, L=lines, S=symbols, R=references, I=implementations. E.g. [5F|3D] [61L|25S|42R] [3R|1I]. Default: false.'),
-  },
   handler: async (request, response) => {
     const {params} = request;
     response.setSkipLedger();
@@ -296,15 +285,15 @@ export const map = defineTool({
     // Build output from shallowest to deepest, checking the character count at
     // each level. Stop at the first level that would exceed the limit.
     // Order: folders (by depth) → files (by folder depth) → symbols (by folder depth × nesting depth)
-    const tree = overviewResult.tree;
+    const {tree} = overviewResult;
     const maxFD = maxFolderTreeDepth(tree);
     const maxSN = symbols ? maxTreeSymbolDepth(tree) : 0;
 
     // Quick check: does the full output fit without any compression?
     const fullOutput = formatTree(tree, {
+      metadata,
       showFiles: true,
       showSymbols: symbols,
-      metadata: metadata,
     });
 
     if (fullOutput.length <= OUTPUT_CHAR_LIMIT) {
@@ -322,8 +311,8 @@ export const map = defineTool({
     let folderLimit = 0;
     for (let fd = 0; fd <= maxFD; fd++) {
       const candidate = formatTree(tree, {
-        showFiles: false, showSymbols: false, metadata: metaMode,
-        maxFolderDepth: fd,
+        maxFolderDepth: fd, metadata: metaMode, showFiles: false,
+        showSymbols: false,
       });
       if (candidate.length > OUTPUT_CHAR_LIMIT) {
         if (fd === 0) {
@@ -346,9 +335,9 @@ export const map = defineTool({
     if (!compressionLabel) {
       for (let fd = 0; fd <= folderLimit; fd++) {
         const candidate = formatTree(tree, {
-          showFiles: true, showSymbols: false, metadata: metaMode,
-          maxFolderDepth: folderLimit,
-          maxFileFolderDepth: fd,
+          maxFileFolderDepth: fd, maxFolderDepth: folderLimit, metadata: metaMode,
+          showFiles: true,
+          showSymbols: false,
         });
         if (candidate.length > OUTPUT_CHAR_LIMIT) {
           if (fd === 0) {
@@ -356,8 +345,8 @@ export const map = defineTool({
           } else {
             fileLimit = fd - 1;
             bestOutput = formatTree(tree, {
-              showFiles: true, showSymbols: false, metadata: metaMode,
-              maxFolderDepth: folderLimit, maxFileFolderDepth: fileLimit,
+              maxFileFolderDepth: fileLimit, maxFolderDepth: folderLimit, metadata: metaMode,
+              showFiles: true, showSymbols: false,
             });
             compressionLabel = `files depth ${fileLimit} of ${folderLimit}`;
           }
@@ -374,9 +363,9 @@ export const map = defineTool({
       // Phase 3a: Top-level symbols (nesting 0) per folder depth
       for (let fd = 0; fd <= fileLimit; fd++) {
         const candidate = formatTree(tree, {
-          showFiles: true, showSymbols: true, metadata: metaMode,
-          maxFolderDepth: folderLimit, maxFileFolderDepth: fileLimit,
-          maxSymbolFolderDepth: fd, maxSymbolNesting: 0,
+          maxFileFolderDepth: fileLimit, maxFolderDepth: folderLimit, maxSymbolFolderDepth: fd,
+          maxSymbolNesting: 0, metadata: metaMode,
+          showFiles: true, showSymbols: true,
         });
         if (candidate.length > OUTPUT_CHAR_LIMIT) {
           if (fd === 0) {
@@ -384,9 +373,9 @@ export const map = defineTool({
           } else {
             symbolFolderLimit = fd - 1;
             bestOutput = formatTree(tree, {
-              showFiles: true, showSymbols: true, metadata: metaMode,
-              maxFolderDepth: folderLimit, maxFileFolderDepth: fileLimit,
-              maxSymbolFolderDepth: symbolFolderLimit, maxSymbolNesting: 0,
+              maxFileFolderDepth: fileLimit, maxFolderDepth: folderLimit, maxSymbolFolderDepth: symbolFolderLimit,
+              maxSymbolNesting: 0, metadata: metaMode,
+              showFiles: true, showSymbols: true,
             });
             compressionLabel = `symbols folder depth ${symbolFolderLimit} of ${fileLimit}`;
           }
@@ -404,10 +393,10 @@ export const map = defineTool({
           for (let fd = 0; fd <= symbolFolderLimit; fd++) {
             const isFullCoverage = fd >= symbolFolderLimit;
             const candidate = formatTree(tree, {
-              showFiles: true, showSymbols: true, metadata: metaMode,
-              maxFolderDepth: folderLimit, maxFileFolderDepth: fileLimit,
-              maxSymbolFolderDepth: symbolFolderLimit,
-              maxSymbolNesting: nesting,
+              maxFileFolderDepth: fileLimit, maxFolderDepth: folderLimit, maxSymbolFolderDepth: symbolFolderLimit,
+              maxSymbolNesting: nesting, metadata: metaMode,
+              showFiles: true,
+              showSymbols: true,
               ...(isFullCoverage ? {} : {
                 baseSymbolNesting: nesting - 1,
                 deepNestingUpTo: fd,
@@ -420,12 +409,12 @@ export const map = defineTool({
                 compressionLabel = `symbol depth ${nesting - 1} of ${maxSN}`;
               } else {
                 bestOutput = formatTree(tree, {
-                  showFiles: true, showSymbols: true, metadata: metaMode,
-                  maxFolderDepth: folderLimit, maxFileFolderDepth: fileLimit,
-                  maxSymbolFolderDepth: symbolFolderLimit,
+                  baseSymbolNesting: nesting - 1, deepNestingUpTo: fd - 1, maxFileFolderDepth: fileLimit,
+                  maxFolderDepth: folderLimit, maxSymbolFolderDepth: symbolFolderLimit,
                   maxSymbolNesting: nesting,
-                  baseSymbolNesting: nesting - 1,
-                  deepNestingUpTo: fd - 1,
+                  metadata: metaMode,
+                  showFiles: true,
+                  showSymbols: true,
                 });
                 compressionLabel = `symbol depth ${nesting} of ${maxSN} (deep up to folder depth ${fd - 1} of ${symbolFolderLimit})`;
               }
@@ -448,5 +437,19 @@ export const map = defineTool({
     }
 
     response.appendResponseLine(bestOutput.trimEnd());
+  },
+  name: 'codebase_map',
+  schema: {
+    dir: zod.string().optional()
+      .describe('Folder to map. Relative to workspace root or absolute. Defaults to workspace root.'),
+
+    metadata: zod.boolean().optional()
+      .describe('Show counts. Key: F=files, D=directories, L=lines, S=symbols, R=references, I=implementations. E.g. [5F|3D] [61L|25S|42R] [3R|1I]. Default: false.'),
+
+    recursive: zod.boolean().optional()
+      .describe('Include subdirectories recursively. Default: false (immediate children only).'),
+
+    symbols: zod.boolean().optional()
+      .describe('Include symbol skeleton (name + kind, hierarchically nested). Default: false.'),
   },
 });

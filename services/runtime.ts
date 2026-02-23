@@ -9,18 +9,20 @@
  * If this module fails to load, the extension enters Safe Mode.
  */
 
+import type { BrowserService } from './browser';
+
 import * as vscode from 'vscode';
+
+import { setBrowserService as _setBrowserService, setReconnectCdpCallback as _setReconnectCdpCallback, getClientDevTools } from './clientDevTools';
+import { InspectorReadTool } from './inspectorReadTool';
+import { McpStatusTool } from './mcpStatusTool';
 import { OutputReadTool, setClientLogsStoragePath, setHostLogUri } from './readHostOutputTool';
 import {
-    TerminalReadTool,
     TerminalExecuteTool,
+    TerminalReadTool,
 } from './terminalLmTools';
+import { disposeUserActionTracker, getUserActionTracker } from './userActionTracker';
 import { WaitTool } from './waitLmTool';
-import { McpStatusTool } from './mcpStatusTool';
-import { InspectorReadTool } from './inspectorReadTool';
-import { getUserActionTracker, disposeUserActionTracker } from './userActionTracker';
-import { getClientDevTools, setReconnectCdpCallback as _setReconnectCdpCallback, setBrowserService as _setBrowserService } from './clientDevTools';
-import type { BrowserService } from './browser';
 
 // ============================================================================
 // Runtime Activation
@@ -70,13 +72,13 @@ export async function activate(context: vscode.ExtensionContext) {
     // ========================================================================
 
     const emptyTreeProvider: vscode.TreeDataProvider<never> = {
-        getTreeItem: () => { throw new Error('No items'); },
         getChildren: () => [],
+        getTreeItem: () => { throw new Error('No items'); },
     };
 
     const settingsView = vscode.window.createTreeView('devtools.settings', {
-        treeDataProvider: emptyTreeProvider,
         canSelectMany: false,
+        treeDataProvider: emptyTreeProvider,
     });
     track(settingsView);
 
@@ -112,7 +114,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // ========================================================================
 
     getUserActionTracker();
-    track({ dispose: () => disposeUserActionTracker() });
+    track({ dispose: () => { disposeUserActionTracker(); } });
     console.log('[devtools:runtime] User action tracker initialized');
 
     console.log('[devtools:runtime] Runtime activation complete');

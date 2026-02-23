@@ -15,12 +15,12 @@ const esbuildProblemMatcherPlugin = {
 			console.log('[watch] build started');
 		});
 		build.onEnd((result) => {
-			result.errors.forEach(({ text, location }) => {
+			for (const { location, text } of result.errors) {
 				console.error(`✘ [ERROR] ${text}`);
 				if (location) {
 					console.error(`    ${location.file}:${location.line}:${location.column}:`);
 				}
-			});
+			}
 			console.log('[watch] build finished');
 		});
 	},
@@ -46,14 +46,14 @@ const packageAliasPlugin = {
 
 
 const loaderConfig = {
-	entryPoints: ['extension.ts'],
 	bundle: true,
+	entryPoints: ['extension.ts'],
 	format: 'cjs',
 	minify: production,
+	outfile: 'dist/extension.js',
+	platform: 'node',
 	sourcemap: !production,
 	sourcesContent: false,
-	platform: 'node',
-	outfile: 'dist/extension.js',
 	// Packages that must load from node_modules at runtime:
 	// - jsonc-parser: UMD entry has dynamic require('./impl/...') that esbuild can't resolve
 	// - ts-morph: large dependency tree with dynamic requires (typescript compiler)
@@ -67,14 +67,14 @@ const loaderConfig = {
 // Contains the core GUI features (tree views, webview).
 // If this fails to compile, the loader still works (Safe Mode).
 const runtimeConfig = {
-	entryPoints: ['services/runtime.ts'],
 	bundle: true,
+	entryPoints: ['services/runtime.ts'],
 	format: 'cjs',
 	minify: production,
+	outfile: 'dist/runtime.js',
+	platform: 'node',
 	sourcemap: !production,
 	sourcesContent: false,
-	platform: 'node',
-	outfile: 'dist/runtime.js',
 	// Packages that must load from node_modules at runtime:
 	// - jsonc-parser: UMD entry has dynamic require('./impl/...') that esbuild can't resolve
 	// - ts-morph: large dependency tree with dynamic requires (typescript compiler)
@@ -88,23 +88,23 @@ const runtimeConfig = {
 // Runs ts-morph and all codebase analysis on a background thread.
 // Does NOT depend on the VS Code API — pure Node.js.
 const workerConfig = {
-	entryPoints: ['services/codebase/codebase-worker.ts'],
 	bundle: true,
+	entryPoints: ['services/codebase/codebase-worker.ts'],
+	external: ['jsonc-parser', 'ts-morph'],
 	format: 'cjs',
+	logLevel: 'silent',
 	minify: production,
+	outfile: 'dist/codebase-worker.js',
+	platform: 'node',
+	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin],
 	sourcemap: !production,
 	sourcesContent: false,
-	platform: 'node',
-	outfile: 'dist/codebase-worker.js',
-	external: ['jsonc-parser', 'ts-morph'],
-	logLevel: 'silent',
-	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin],
 };
 
 async function main() {
 	// Clean dist folder before starting (ensures no stale files from previous builds)
 	if (fs.existsSync('dist')) {
-		fs.rmSync('dist', { recursive: true, force: true });
+		fs.rmSync('dist', { force: true, recursive: true });
 	}
 	fs.mkdirSync('dist', { recursive: true });
 

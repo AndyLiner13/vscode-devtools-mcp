@@ -19,10 +19,11 @@
  */
 
 import * as vscode from 'vscode';
+
 import { cleanTerminalOutput, type TerminalStatus } from './processDetection';
 import { getProcessLedger, type TerminalSessionInfo } from './processLedger';
-import { getUserActionTracker } from './userActionTracker';
 import { getProcessTree, isStdinDetectionAvailable, isTreeWaitingForStdin, type ProcessTreeResult, type StdinDetectionResult } from './stdinDetection';
+import { getUserActionTracker } from './userActionTracker';
 
 // ── Configuration ────────────────────────────────────────────────────────────
 
@@ -35,8 +36,8 @@ const DEFAULT_TERMINAL_NAME = 'default';
 // Native detection state
 let nativeDetectionAvailable: boolean | null = null;  // null = not checked yet
 let lastNativeCheckTime = 0;
-let lastNativeStdinResult: StdinDetectionResult | null = null;
-let lastNativeTreeResult: ProcessTreeResult | null = null;
+let lastNativeStdinResult: null | StdinDetectionResult = null;
+let lastNativeTreeResult: null | ProcessTreeResult = null;
 
 /**
  * Ensure native detection is initialized. Only checks once.
@@ -62,9 +63,9 @@ async function isWaitingForInputDetection(
   executionCount: number,
   msSinceLastOutput: number,
   hasOutput: boolean
-): Promise<{ waiting: boolean; method: 'native' | 'heuristic' }> {
+): Promise<{ waiting: boolean; method: 'heuristic' | 'native' }> {
   if (executionCount <= 0 || !hasOutput) {
-    return { waiting: false, method: 'heuristic' };
+    return { method: 'heuristic', waiting: false };
   }
 
   const available = await ensureNativeDetection();
@@ -80,21 +81,21 @@ async function isWaitingForInputDetection(
         if (!lastNativeStdinResult.error) {
           if (lastNativeStdinResult.isWaitingForStdin) {
             console.log(`[NativeDetection] Tree under PID ${pid} waiting for stdin (reasons: ${lastNativeStdinResult.detectedWaitReasons.join(', ')})`);
-            return { waiting: true, method: 'native' };
+            return { method: 'native', waiting: true };
           } else if (msSinceLastOutput >= NATIVE_STDIN_SETTLE_MS) {
-            return { waiting: false, method: 'native' };
+            return { method: 'native', waiting: false };
           }
         }
       } catch (err) {
         console.log(`[NativeDetection] stdin check threw: ${err}`);
       }
     } else if (lastNativeStdinResult && !lastNativeStdinResult.error && lastNativeStdinResult.isWaitingForStdin) {
-      return { waiting: true, method: 'native' };
+      return { method: 'native', waiting: true };
     }
   }
 
   const waiting = msSinceLastOutput >= OUTPUT_SETTLE_MS;
-  return { waiting, method: 'heuristic' };
+  return { method: 'heuristic', waiting };
 }
 
 /**
@@ -108,7 +109,7 @@ async function isWaitingForInputDetection(
  */
 async function isCommandComplete(
   pid: number | undefined,
-): Promise<{ done: boolean | undefined; method: 'native' | 'heuristic'; commandPid?: number }> {
+): Promise<{ done: boolean | undefined; method: 'heuristic' | 'native'; commandPid?: number }> {
   const available = await ensureNativeDetection();
 
   if (!pid || !available) {
@@ -123,9 +124,9 @@ async function isCommandComplete(
     }
 
     return {
+      commandPid: lastNativeTreeResult.commandPid,
       done: !lastNativeTreeResult.hasLiveChildren,
       method: 'native',
-      commandPid: lastNativeTreeResult.commandPid,
     };
   } catch {
     return { done: undefined, method: 'heuristic' };
@@ -141,28 +142,28 @@ const KEY_SETTLE_MS = 100;
 // Map of friendly key names → raw terminal escape sequences
 const KEY_SEQUENCES: Record<string, string> = {
   // Arrow keys
-  'ArrowUp':    '\x1b[A',
   'ArrowDown':  '\x1b[B',
-  'ArrowRight': '\x1b[C',
   'ArrowLeft':  '\x1b[D',
-  'Up':         '\x1b[A',
+  'ArrowRight': '\x1b[C',
+  'ArrowUp':    '\x1b[A',
   'Down':       '\x1b[B',
-  'Right':      '\x1b[C',
   'Left':       '\x1b[D',
+  'Right':      '\x1b[C',
+  'Up':         '\x1b[A',
 
   // Common keys
-  'Enter':      '\r',
-  'Tab':        '\t',
-  'Escape':     '\x1b',
   'Backspace':  '\x7f',
   'Delete':     '\x1b[3~',
+  'Enter':      '\r',
+  'Escape':     '\x1b',
   'Space':      ' ',
+  'Tab':        '\t',
 
   // Navigation
-  'Home':       '\x1b[H',
   'End':        '\x1b[F',
-  'PageUp':     '\x1b[5~',
+  'Home':       '\x1b[H',
   'PageDown':   '\x1b[6~',
+  'PageUp':     '\x1b[5~',
 
   // Ctrl combos
   'Ctrl+A':     '\x01',
@@ -181,59 +182,59 @@ const KEY_SEQUENCES: Record<string, string> = {
   'Ctrl+Z':     '\x1a',
 
   // Common aliases
-  'y':          'y',
   'n':          'n',
-  'Y':          'Y',
   'N':          'N',
+  'y':          'y',
+  'Y':          'Y',
 };
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type WaitMode = 'completion' | 'background';
+export type WaitMode = 'background' | 'completion';
 
 export interface ActiveProcess {
-  terminalName: string;
-  pid?: number;
   command: string;
-  status: TerminalStatus | 'timeout';
-  startedAt: string;
   durationMs: number;
   exitCode?: number;
+  pid?: number;
+  startedAt: string;
+  status: 'timeout' | TerminalStatus;
+  terminalName: string;
 }
 
 // PowerShell-only: All terminals use PowerShell
 export type ShellType = 'powershell';
 
 export interface TerminalRunResult {
-  status: TerminalStatus | 'timeout';
-  output: string;
-  shell?: string;
-  cwd?: string;
-  exitCode?: number;
-  prompt?: string;
-  pid?: number;
-  name?: string;
-  durationMs?: number;
   activeProcesses?: ActiveProcess[];
+  cwd?: string;
+  durationMs?: number;
+  exitCode?: number;
+  name?: string;
+  output: string;
+  pid?: number;
+  prompt?: string;
+  shell?: string;
+  status: 'timeout' | TerminalStatus;
   terminalSessions?: TerminalSessionInfo[];
 }
 
 interface InternalState {
-  name: string;
-  terminal: vscode.Terminal;
-  shell: ShellType;
-  status: TerminalStatus;
-  output: string;
-  cwd?: string;
-  exitCode?: number;
-  pid?: number;
-  lastOutputTime: number;
-  shellIntegration: vscode.TerminalShellIntegration | undefined;
-  outputSnapshotIndex: number;
   command: string;
-  executionCount: number;
-  lastExitTime: number;
   commandStartTime: number;
+  cwd?: string;
+  executionCount: number;
+  exitCode?: number;
+  lastExitTime: number;
+  lastOutputTime: number;
+  name: string;
+  output: string;
+  outputSnapshotIndex: number;
+  pid?: number;
+  shell: ShellType;
+  shellIntegration: undefined | vscode.TerminalShellIntegration;
+  status: TerminalStatus;
+  terminal: vscode.Terminal;
 }
 
 // ── Controller ───────────────────────────────────────────────────────────────
@@ -352,7 +353,7 @@ export class SingleTerminalController {
     let state = this.terminals.get(terminalName);
 
     // Busy guard: reject if this terminal is already running (unless force=true)
-    if (state && state.status === 'running') {
+    if (state?.status === 'running') {
       if (force) {
         console.log(`[MultiTerminalController] Force-killing terminal "${terminalName}"`);
         await this.kill(terminalName);
@@ -401,18 +402,18 @@ export class SingleTerminalController {
     // Background mode: return immediately without waiting
     if (waitMode === 'background') {
       return this.withProcessSummary({
-        status: 'running',
-        output: '',
-        shell: shellType,
         cwd,
-        pid: state.pid,
         name: terminalName,
+        output: '',
+        pid: state.pid,
+        shell: shellType,
+        status: 'running',
       });
     }
 
     // Completion mode: wait for one of: completion, prompt, or timeout
     const result = await this.waitForResult(state, timeout);
-    return this.withProcessSummary({...result, shell: shellType, cwd});
+    return this.withProcessSummary({...result, cwd, shell: shellType});
   }
 
   /**
@@ -528,9 +529,9 @@ export class SingleTerminalController {
 
     if (!state) {
       return this.withProcessSummary({
-        status: 'idle',
-        output: '',
         name: terminalName,
+        output: '',
+        status: 'idle',
       });
     }
 
@@ -562,12 +563,12 @@ export class SingleTerminalController {
     }
 
     return this.withProcessSummary({
-      status: detectedStatus,
-      output: cleaned,
       exitCode: state.exitCode,
-      prompt,
-      pid: state.pid,
       name: terminalName,
+      output: cleaned,
+      pid: state.pid,
+      prompt,
+      status: detectedStatus,
     });
   }
 
@@ -579,7 +580,7 @@ export class SingleTerminalController {
     const state = this.terminals.get(terminalName);
 
     if (!state) {
-      return this.withProcessSummary({ status: 'idle', output: '', name: terminalName });
+      return this.withProcessSummary({ name: terminalName, output: '', status: 'idle' });
     }
 
     // Send Ctrl+C (ETX character)
@@ -593,10 +594,10 @@ export class SingleTerminalController {
 
     const cleaned = cleanTerminalOutput(state.output);
     return this.withProcessSummary({
-      status: 'completed',
+      name: terminalName,
       output: cleaned,
       pid: state.pid,
-      name: terminalName,
+      status: 'completed',
     });
   }
 
@@ -608,8 +609,8 @@ export class SingleTerminalController {
     for (const [name, state] of this.terminals) {
       result.push({
         name,
-        status: state.status,
         pid: state.pid,
+        status: state.status,
       });
     }
     return result;
@@ -636,13 +637,13 @@ export class SingleTerminalController {
       const now = Date.now();
       const startTime = state.commandStartTime || now;
       processes.push({
-        terminalName: state.name,
-        pid: state.pid,
         command: state.command,
-        status: state.status,
-        startedAt: new Date(startTime).toISOString(),
         durationMs: now - startTime,
         exitCode: state.exitCode,
+        pid: state.pid,
+        startedAt: new Date(startTime).toISOString(),
+        status: state.status,
+        terminalName: state.name,
       });
     }
     return processes;
@@ -654,7 +655,7 @@ export class SingleTerminalController {
    */
   getTerminalSessions(): TerminalSessionInfo[] {
     const sessions: TerminalSessionInfo[] = [];
-    const activeTerminal = vscode.window.activeTerminal;
+    const {activeTerminal} = vscode.window;
 
     // Only show terminals that we're actively tracking (created in this session)
     for (const [, state] of this.terminals) {
@@ -663,12 +664,12 @@ export class SingleTerminalController {
       if (!stillExists) continue;
 
       sessions.push({
-        name: state.name,
-        shell: state.shell,
-        pid: state.pid,
-        isActive: state.terminal === activeTerminal,
-        status: state.status,
         command: state.command || undefined,
+        isActive: state.terminal === activeTerminal,
+        name: state.name,
+        pid: state.pid,
+        shell: state.shell,
+        status: state.status,
       });
     }
 
@@ -726,7 +727,7 @@ export class SingleTerminalController {
    * Uses PowerShell syntax.
    */
   private buildCwdCommand(cwd: string, command: string): string {
-    const escapedPath = cwd.replace(/'/g, "''");
+    const escapedPath = cwd.replaceAll('\'', "''");
     return `Set-Location '${escapedPath}'; ${command}`;
   }
 
@@ -748,27 +749,27 @@ export class SingleTerminalController {
     const displayName = name === DEFAULT_TERMINAL_NAME ? 'MCP Terminal' : name;
     const shellPath = this.getShellPath();
     const terminal = vscode.window.createTerminal({
-      name: displayName,
       cwd,
+      name: displayName,
       shellPath,
     });
     terminal.show(true);
 
     const state: InternalState = {
-      name,
-      terminal,
-      shell: 'powershell',
-      status: 'idle',
-      output: '',
-      exitCode: undefined,
-      pid: undefined,
-      lastOutputTime: Date.now(),
-      shellIntegration: terminal.shellIntegration,
-      outputSnapshotIndex: 0,
       command: '',
-      executionCount: 0,
-      lastExitTime: 0,
       commandStartTime: 0,
+      executionCount: 0,
+      exitCode: undefined,
+      lastExitTime: 0,
+      lastOutputTime: Date.now(),
+      name,
+      output: '',
+      outputSnapshotIndex: 0,
+      pid: undefined,
+      shell: 'powershell',
+      shellIntegration: terminal.shellIntegration,
+      status: 'idle',
+      terminal,
     };
 
     this.terminals.set(name, state);
@@ -818,12 +819,12 @@ export class SingleTerminalController {
       `**Current Output (last ${outputExcerpt.length} chars):**\n\'\'\'\n${outputExcerpt}\n\'\'\'`;
 
     return this.withProcessSummary({
-      status: 'running',
-      output: errorMessage,
-      shell: state.shell,
       cwd: state.cwd,
-      pid: state.pid,
       name: terminalName,
+      output: errorMessage,
+      pid: state.pid,
+      shell: state.shell,
+      status: 'running',
     });
   }
 
@@ -857,10 +858,10 @@ export class SingleTerminalController {
    *    - Then resolve as completed
    * 4. Timeout fallback
    */
-  private waitForResult(state: InternalState, timeoutMs: number): Promise<TerminalRunResult> {
+  private async waitForResult(state: InternalState, timeoutMs: number): Promise<TerminalRunResult> {
     return new Promise((resolve) => {
       let resolved = false;
-      let completedAt: number | null = null;
+      let completedAt: null | number = null;
 
       const resolveOnce = (result: TerminalRunResult) => {
         if (resolved) return;
@@ -895,11 +896,11 @@ export class SingleTerminalController {
               state.status = 'waiting_for_input';
               console.log(`[MultiTerminalController] Detected waiting_for_input via ${detection.method} for "${state.name}"`);
               resolveOnce({
-                status: 'waiting_for_input',
-                output: cleaned,
-                prompt: lastLine,
-                pid: state.pid,
                 name: state.name,
+                output: cleaned,
+                pid: state.pid,
+                prompt: lastLine,
+                status: 'waiting_for_input',
               });
               return;
             }
@@ -914,11 +915,11 @@ export class SingleTerminalController {
             if (completion.method === 'native' && completion.done) {
               console.log(`[MultiTerminalController] Native: no children alive for "${state.name}" — resolving as completed`);
               resolveOnce({
-                status: 'completed',
-                output: cleaned,
                 exitCode: state.exitCode,
-                pid: state.pid,
                 name: state.name,
+                output: cleaned,
+                pid: state.pid,
+                status: 'completed',
               });
               return;
             }
@@ -938,11 +939,11 @@ export class SingleTerminalController {
             if (msSinceLastOutput >= OUTPUT_SETTLE_MS) {
               console.log(`[MultiTerminalController] Output settled for "${state.name}" — resolving`);
               resolveOnce({
-                status: 'completed',
-                output: cleaned,
                 exitCode: state.exitCode,
-                pid: state.pid,
                 name: state.name,
+                output: cleaned,
+                pid: state.pid,
+                status: 'completed',
               });
               return;
             }
@@ -960,11 +961,11 @@ export class SingleTerminalController {
               if (Date.now() - completedAt >= NATIVE_STDIN_SETTLE_MS) {
                 console.log(`[MultiTerminalController] Native: tree empty for "${state.name}" (shell integration lagging) — resolving`);
                 resolveOnce({
-                  status: 'completed',
-                  output: cleaned,
                   exitCode: state.exitCode,
-                  pid: state.pid,
                   name: state.name,
+                  output: cleaned,
+                  pid: state.pid,
+                  status: 'completed',
                 });
                 return;
               }
@@ -994,21 +995,21 @@ export class SingleTerminalController {
           console.log(`[MultiTerminalController] Timeout for "${state.name}" after ${timeoutMs}ms (waitingForInput: ${detection.waiting} via ${detection.method})`);
 
           resolveOnce({
-            status: 'timeout',
-            output: cleaned,
             exitCode: state.exitCode,
+            name: state.name,
+            output: cleaned,
+            pid: state.pid,
             prompt: detection.waiting
               ? cleaned.split('\n').filter(l => l.trim()).pop()
               : undefined,
-            pid: state.pid,
-            name: state.name,
+            status: 'timeout',
           });
         })();
       }, timeoutMs);
     });
   }
 
-  private waitForShellIntegration(state: InternalState, timeoutMs: number): Promise<void> {
+  private async waitForShellIntegration(state: InternalState, timeoutMs: number): Promise<void> {
     return new Promise((resolve) => {
       if (state.shellIntegration) {
         resolve();

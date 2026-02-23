@@ -18,9 +18,9 @@
 
 import process from 'node:process';
 
-import {mcpReady, hotReloadRequired, teardown as hostTeardown} from '../host-pipe.js';
-import {stopMcpSocketServer} from '../mcp-socket-server.js';
+import {teardown as hostTeardown, hotReloadRequired, mcpReady} from '../host-pipe.js';
 import {logger} from '../logger.js';
+import {stopMcpSocketServer} from '../mcp-socket-server.js';
 
 // ── Service Implementation ───────────────────────────────
 
@@ -184,7 +184,7 @@ class LifecycleService {
       process.exit(0);
     };
 
-    process.stdin.on('end', () => handleShutdown('stdin ended'));
+    process.stdin.on('end', () => { handleShutdown('stdin ended'); });
 
     process.on('exit', () => {
       if (this.exitCleanupDone) return;
@@ -193,8 +193,8 @@ class LifecycleService {
       stopMcpSocketServer();
     });
 
-    process.on('SIGINT', () => handleShutdown('SIGINT'));
-    process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+    process.on('SIGINT', () => { handleShutdown('SIGINT'); });
+    process.on('SIGTERM', () => { handleShutdown('SIGTERM'); });
 
     process.on('uncaughtException', (err) => {
       logger('Uncaught exception:', err);
@@ -257,8 +257,8 @@ class LifecycleService {
     const result = await mcpReady({
       clientWorkspace: this._clientWorkspace,
       extensionPath: this._extensionPath,
-      launch: this._launchFlags,
       forceRestart: options?.forceRestart,
+      launch: this._launchFlags,
     });
 
     // If this MCP process was hot-reloaded (wasHotReloaded flag set in init()),
@@ -304,4 +304,7 @@ class LifecycleService {
 
 // ── Singleton Export ──────────────────────────────────────
 
-export const lifecycleService = new LifecycleService();
+export const /**
+ *
+ */
+lifecycleService = new LifecycleService();

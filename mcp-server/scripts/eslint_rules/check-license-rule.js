@@ -14,22 +14,8 @@ const licenseHeader = `
 `;
 
 export default {
-  name: 'check-license',
-  meta: {
-    type: 'layout',
-    docs: {
-      description: 'Validate existence of license header',
-    },
-    fixable: 'code',
-    schema: [],
-    messages: {
-      licenseRule: 'Add license header.',
-      emptyLine: 'Add empty line after license header.',
-    },
-  },
-  defaultOptions: [],
   create(context) {
-    const sourceCode = context.sourceCode;
+    const {sourceCode} = context;
     const comments = sourceCode.getAllComments();
     let insertAfter = [0, 0];
     let header = null;
@@ -73,28 +59,42 @@ export default {
             nextToken.loc.start.line === header.loc.end.line + 1
           ) {
             context.report({
-              node: node,
-              loc: header.loc,
-              messageId: 'emptyLine',
               fix(fixer) {
                 return fixer.insertTextAfter(header, '\n');
               },
+              loc: header.loc,
+              messageId: 'emptyLine',
+              node,
             });
           }
           return;
         }
 
         // Add header license
-        if (!header || !header.value.includes('@license')) {
+        if (!header?.value.includes('@license')) {
           context.report({
-            node: node,
-            messageId: 'licenseRule',
             fix(fixer) {
               return fixer.insertTextAfterRange(insertAfter, licenseHeader);
             },
+            messageId: 'licenseRule',
+            node,
           });
         }
       },
     };
   },
+  defaultOptions: [],
+  meta: {
+    docs: {
+      description: 'Validate existence of license header',
+    },
+    fixable: 'code',
+    messages: {
+      emptyLine: 'Add empty line after license header.',
+      licenseRule: 'Add license header.',
+    },
+    schema: [],
+    type: 'layout',
+  },
+  name: 'check-license',
 };

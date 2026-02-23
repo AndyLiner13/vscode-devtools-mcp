@@ -1,7 +1,7 @@
 import type { CallToolResult, ContentBlock, JsonSchema, ToolDefinition } from '../types';
-import { createInputEditor, createOutputEditor, setModelLanguage } from '../monaco-setup';
 import type * as monaco from 'monaco-editor';
 
+import { createInputEditor, createOutputEditor, setModelLanguage } from '../monaco-setup';
 import { addExecution, createHistoryContainer, setCurrentTool, updateExecution } from './history-list';
 
 
@@ -34,7 +34,7 @@ function disposeEditors(): void {
   activeOutputSection = null;
 }
 
-let pendingRerunRecordId: string | null = null;
+let pendingRerunRecordId: null | string = null;
 
 async function executeCurrentInput(): Promise<void> {
   if (!executeHandler || !activeInputEditor || !activeExecuteBtn || !activeExecutionTime) {
@@ -73,7 +73,7 @@ async function executeCurrentInput(): Promise<void> {
     const elapsed = performance.now() - startTime;
     activeExecutionTime.textContent = `${elapsed.toFixed(0)}ms`;
     const message = err instanceof Error ? err.message : String(err);
-    const errorResult = { content: [{ type: 'text' as const, text: `Error: ${message}` }], isError: true };
+    const errorResult = { content: [{ text: `Error: ${message}`, type: 'text' as const }], isError: true };
     renderLiveOutput(errorResult.content, true);
     if (rerunId) {
       await updateExecution(activeToolName, rerunId, errorResult, Math.round(elapsed));

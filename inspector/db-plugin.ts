@@ -7,52 +7,52 @@ import { join } from 'node:path';
 const nodeRequire = createRequire(import.meta.url);
 
 interface DbRow {
-  id: string;
-  tool_name: string;
-  input: string;
-  output_json: string;
-  is_error: number;
-  created_at: string;
-  last_run_at: string | null;
-  rating: string | null;
   comment: string;
-  priority: number;
+  created_at: string;
   duration_ms: number;
+  id: string;
+  input: string;
+  is_error: number;
   is_stale: number;
+  last_run_at: null | string;
+  output_json: string;
+  priority: number;
+  rating: null | string;
+  tool_name: string;
 }
 
 interface SqliteStatement {
-  all(...params: unknown[]): DbRow[];
-  get(...params: unknown[]): DbRow | undefined;
-  run(...params: unknown[]): { changes: number };
+  all: (...params: unknown[]) => DbRow[];
+  get: (...params: unknown[]) => DbRow | undefined;
+  run: (...params: unknown[]) => { changes: number };
 }
 
 interface SqliteDatabase {
-  pragma(statement: string): unknown;
-  exec(sql: string): void;
-  prepare(sql: string): SqliteStatement;
-  transaction<F extends (...args: never[]) => void>(fn: F): F;
-  close(): void;
+  close: () => void;
+  exec: (sql: string) => void;
+  pragma: (statement: string) => unknown;
+  prepare: (sql: string) => SqliteStatement;
+  transaction: <F extends (...args: never[]) => void>(fn: F) => F;
 }
 
 function rowToApi(row: DbRow): Record<string, unknown> {
   return {
-    id: row.id,
-    toolName: row.tool_name,
-    input: row.input,
-    output: JSON.parse(row.output_json),
-    isError: row.is_error === 1,
-    createdAt: row.created_at,
-    lastRunAt: row.last_run_at,
-    rating: row.rating,
     comment: row.comment,
-    priority: row.priority,
+    createdAt: row.created_at,
     durationMs: row.duration_ms,
+    id: row.id,
+    input: row.input,
+    isError: row.is_error === 1,
     isStale: row.is_stale === 1,
+    lastRunAt: row.last_run_at,
+    output: JSON.parse(row.output_json),
+    priority: row.priority,
+    rating: row.rating,
+    toolName: row.tool_name,
   };
 }
 
-function parseBody(req: IncomingMessage): Promise<Record<string, unknown>> {
+async function parseBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   return new Promise((resolve, reject) => {
     let body = '';
     req.on('data', (chunk: Buffer) => {
@@ -71,7 +71,6 @@ function parseBody(req: IncomingMessage): Promise<Record<string, unknown>> {
 
 export function inspectorDbPlugin(): Plugin {
   return {
-    name: 'inspector-db',
     configureServer(server) {
       // Native module loaded via createRequire to avoid esbuild bundling issues
       const Database = nodeRequire('better-sqlite3') as new (path: string) => SqliteDatabase;
@@ -121,15 +120,15 @@ export function inspectorDbPlugin(): Plugin {
 
       async function handleApi(req: IncomingMessage, res: ServerResponse): Promise<void> {
         const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
-        const pathname = url.pathname;
+        const {pathname} = url;
         const method = req.method ?? 'GET';
 
         // SSE live-sync endpoint
         if (pathname === '/api/events' && method === 'GET') {
           res.writeHead(200, {
-            'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
             Connection: 'keep-alive',
+            'Content-Type': 'text/event-stream',
           });
           res.write('data: connected\n\n');
           sseClients.add(res);
@@ -171,7 +170,7 @@ export function inspectorDbPlugin(): Plugin {
 
           const maxRow = db
             .prepare('SELECT COALESCE(MAX(priority), -1) as priority FROM records WHERE tool_name = ?')
-            .get(toolName) as DbRow | undefined;
+            .get(toolName);
           const maxPriority = maxRow?.priority ?? -1;
 
           db.prepare(
@@ -200,7 +199,7 @@ export function inspectorDbPlugin(): Plugin {
           const body = await parseBody(req);
           const recordId = decodeURIComponent(ratingMatch[1]);
           db.prepare('UPDATE records SET rating = ? WHERE id = ?').run(
-            (body.rating as string | null) ?? null,
+            (body.rating as null | string) ?? null,
             recordId,
           );
           broadcast(body.toolName as string);
@@ -315,5 +314,6 @@ export function inspectorDbPlugin(): Plugin {
         });
       });
     },
+    name: 'inspector-db',
   };
 }

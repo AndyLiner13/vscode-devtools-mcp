@@ -8,7 +8,7 @@ import type {ImageContentData, Response} from './tools/ToolDefinition.js';
 
 export class McpResponse implements Response {
   #textResponseLines: string[] = [];
-  #images: ImageContentData[] = [];
+  readonly #images: ImageContentData[] = [];
   #skipLedger = false;
 
   appendResponseLine(value: string): void {

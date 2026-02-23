@@ -18,18 +18,18 @@ export class WaitTool implements vscode.LanguageModelTool<IWaitParams> {
     async prepareInvocation(
         options: vscode.LanguageModelToolInvocationPrepareOptions<IWaitParams>,
         _token: vscode.CancellationToken
-    ): Promise<vscode.PreparedToolInvocation | undefined> {
+    ): Promise<undefined | vscode.PreparedToolInvocation> {
         const { durationMs, reason } = options.input;
 
         const reasonDesc = reason ? ` (${reason})` : '';
         return {
-            invocationMessage: `Waiting ${durationMs}ms${reasonDesc}`,
             confirmationMessages: {
-                title: 'Wait',
                 message: new vscode.MarkdownString(
                     `Wait for **${durationMs}ms**${reasonDesc}?`
                 ),
+                title: 'Wait',
             },
+            invocationMessage: `Waiting ${durationMs}ms${reasonDesc}`,
         };
     }
 

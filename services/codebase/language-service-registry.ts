@@ -5,17 +5,17 @@ import type { FileStructure } from './types';
 
 /** Contract that every language parser must implement. */
 export interface LanguageService {
+  /** File extensions this service handles (e.g., ['md', 'markdown']) */
+  readonly extensions: readonly string[];
+
+  /** Extract structured file representation. */
+  extractStructure: (filePath: string) => Promise<FileStructure>;
+
   /** Unique identifier (e.g., 'typescript', 'markdown', 'json') */
   readonly id: string;
 
   /** Human-readable name (e.g., 'TypeScript / JavaScript') */
   readonly name: string;
-
-  /** File extensions this service handles (e.g., ['md', 'markdown']) */
-  readonly extensions: readonly string[];
-
-  /** Extract structured file representation. */
-  extractStructure(filePath: string): Promise<FileStructure>;
 }
 
 /**

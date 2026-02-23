@@ -2,45 +2,47 @@
 // This module extracts symbols from TypeScript/JavaScript files using ts-morph.
 // It has ZERO VS Code API dependencies and is fully testable with Vitest.
 
-import { SourceFile, Node, Scope } from 'ts-morph';
-import * as path from 'path';
-import type {
-  FunctionDeclaration,
-  ClassDeclaration,
-  InterfaceDeclaration,
-  TypeAliasDeclaration,
-  EnumDeclaration,
-  VariableStatement,
-  ModuleDeclaration,
-  MethodDeclaration,
-  PropertyDeclaration,
-  ConstructorDeclaration,
-  GetAccessorDeclaration,
-  SetAccessorDeclaration,
-  PropertySignature,
-} from 'ts-morph';
 import type { SymbolNode } from './types';
-import { TS_PARSEABLE_EXTS } from './types';
+import type {
+  ClassDeclaration,
+  ConstructorDeclaration,
+  EnumDeclaration,
+  FunctionDeclaration,
+  GetAccessorDeclaration,
+  InterfaceDeclaration,
+  MethodDeclaration,
+  ModuleDeclaration,
+  PropertyDeclaration,
+  PropertySignature,
+  SetAccessorDeclaration,
+  SourceFile,
+  TypeAliasDeclaration,
+ VariableStatement} from 'ts-morph';
+
+import * as path from 'node:path';
+import { Node, Scope } from 'ts-morph';
+
 import { extractOrphanedContent, findProjectRoot } from './orphaned-content';
 import { getWorkspaceProject } from './ts-project';
+import { TS_PARSEABLE_EXTS } from './types';
 
 // ── Types (compatible with FileSymbol in mcp-server/src/client-pipe.ts) ──
 
 export interface ExtractedSymbolRange {
-  startLine: number;   // 1-indexed
-  startChar: number;   // 0-indexed (column)
-  endLine: number;     // 1-indexed
   endChar: number;     // 0-indexed (column)
+  endLine: number;     // 1-indexed
+  startChar: number;   // 0-indexed (column)
+  startLine: number;   // 1-indexed
 }
 
 export interface ExtractedSymbol {
-  name: string;
-  kind: string;
-  detail?: string;
-  range: ExtractedSymbolRange;
   children: ExtractedSymbol[];
+  detail?: string;
   exported?: boolean;
+  kind: string;
   modifiers?: string[];
+  name: string;
+  range: ExtractedSymbolRange;
 }
 
 // ── Range Helper ──
@@ -63,10 +65,10 @@ function getRange(node: Node): ExtractedSymbolRange {
   const startLc = sf.compilerNode.getLineAndCharacterOfPosition(startPos);
   const endLc = sf.compilerNode.getLineAndCharacterOfPosition(endPos);
   return {
-    startLine: startLc.line + 1,
-    startChar: startLc.character,
-    endLine: endLc.line + 1,
     endChar: endLc.character,
+    endLine: endLc.line + 1,
+    startChar: startLc.character,
+    startLine: startLc.line + 1,
   };
 }
 
@@ -154,12 +156,12 @@ function extractFunction(node: FunctionDeclaration): ExtractedSymbol {
   const isDefault = node.isDefaultExport();
 
   return {
-    name: isDefault && name === '(anonymous)' ? '(default)' : name,
-    kind: 'function',
-    range: getRange(node),
     children: [],
     exported: node.isExported() || undefined,
+    kind: 'function',
     modifiers: mods.length > 0 ? mods : undefined,
+    name: isDefault && name === '(anonymous)' ? '(default)' : name,
+    range: getRange(node),
   };
 }
 
@@ -169,55 +171,55 @@ function extractClassChildren(node: ClassDeclaration): ExtractedSymbol[] {
   for (const ctor of node.getConstructors()) {
     const ctorMods = collectConstructorModifiers(ctor);
     children.push({
-      name: 'constructor',
-      kind: 'constructor',
-      range: getRange(ctor),
       children: [],
+      kind: 'constructor',
       modifiers: ctorMods.length > 0 ? ctorMods : undefined,
+      name: 'constructor',
+      range: getRange(ctor),
     });
   }
 
   for (const method of node.getMethods()) {
     const mods = collectFunctionModifiers(method);
     children.push({
-      name: method.getName() || '(anonymous)',
-      kind: 'method',
-      range: getRange(method),
       children: [],
+      kind: 'method',
       modifiers: mods.length > 0 ? mods : undefined,
+      name: method.getName() || '(anonymous)',
+      range: getRange(method),
     });
   }
 
   for (const prop of node.getProperties()) {
     const mods = collectPropertyModifiers(prop);
     children.push({
-      name: prop.getName() || '(anonymous)',
-      kind: 'property',
-      range: getRange(prop),
       children: [],
+      kind: 'property',
       modifiers: mods.length > 0 ? mods : undefined,
+      name: prop.getName() || '(anonymous)',
+      range: getRange(prop),
     });
   }
 
   for (const getter of node.getGetAccessors()) {
     const mods = collectAccessorModifiers(getter);
     children.push({
-      name: getter.getName() || '(anonymous)',
-      kind: 'getter',
-      range: getRange(getter),
       children: [],
+      kind: 'getter',
       modifiers: mods.length > 0 ? mods : undefined,
+      name: getter.getName() || '(anonymous)',
+      range: getRange(getter),
     });
   }
 
   for (const setter of node.getSetAccessors()) {
     const mods = collectAccessorModifiers(setter);
     children.push({
-      name: setter.getName() || '(anonymous)',
-      kind: 'setter',
-      range: getRange(setter),
       children: [],
+      kind: 'setter',
       modifiers: mods.length > 0 ? mods : undefined,
+      name: setter.getName() || '(anonymous)',
+      range: getRange(setter),
     });
   }
 
@@ -232,12 +234,12 @@ function extractClass(node: ClassDeclaration): ExtractedSymbol {
   const isDefault = node.isDefaultExport();
 
   return {
-    name: isDefault && name === '(anonymous)' ? '(default)' : name,
-    kind: 'class',
-    range: getRange(node),
     children: extractClassChildren(node),
     exported: node.isExported() || undefined,
+    kind: 'class',
     modifiers: mods.length > 0 ? mods : undefined,
+    name: isDefault && name === '(anonymous)' ? '(default)' : name,
+    range: getRange(node),
   };
 }
 
@@ -247,20 +249,20 @@ function extractInterfaceChildren(node: InterfaceDeclaration): ExtractedSymbol[]
   for (const prop of node.getProperties()) {
     const mods = collectPropertySignatureModifiers(prop);
     children.push({
-      name: prop.getName() || '(anonymous)',
-      kind: 'property',
-      range: getRange(prop),
       children: [],
+      kind: 'property',
       modifiers: mods.length > 0 ? mods : undefined,
+      name: prop.getName() || '(anonymous)',
+      range: getRange(prop),
     });
   }
 
   for (const method of node.getMethods()) {
     children.push({
-      name: method.getName() || '(anonymous)',
-      kind: 'method',
-      range: getRange(method),
       children: [],
+      kind: 'method',
+      name: method.getName() || '(anonymous)',
+      range: getRange(method),
     });
   }
 
@@ -268,10 +270,10 @@ function extractInterfaceChildren(node: InterfaceDeclaration): ExtractedSymbol[]
   let callSigIndex = 0;
   for (const sig of node.getCallSignatures()) {
     children.push({
-      name: `(call-signature-${callSigIndex++})`,
-      kind: 'method',
-      range: getRange(sig),
       children: [],
+      kind: 'method',
+      name: `(call-signature-${callSigIndex++})`,
+      range: getRange(sig),
     });
   }
 
@@ -279,10 +281,10 @@ function extractInterfaceChildren(node: InterfaceDeclaration): ExtractedSymbol[]
   let ctorSigIndex = 0;
   for (const sig of node.getConstructSignatures()) {
     children.push({
-      name: `(construct-signature-${ctorSigIndex++})`,
-      kind: 'constructor',
-      range: getRange(sig),
       children: [],
+      kind: 'constructor',
+      name: `(construct-signature-${ctorSigIndex++})`,
+      range: getRange(sig),
     });
   }
 
@@ -290,10 +292,10 @@ function extractInterfaceChildren(node: InterfaceDeclaration): ExtractedSymbol[]
   let indexSigIndex = 0;
   for (const sig of node.getIndexSignatures()) {
     children.push({
-      name: `(index-signature-${indexSigIndex++})`,
-      kind: 'property',
-      range: getRange(sig),
       children: [],
+      kind: 'property',
+      name: `(index-signature-${indexSigIndex++})`,
+      range: getRange(sig),
     });
   }
 
@@ -303,21 +305,21 @@ function extractInterfaceChildren(node: InterfaceDeclaration): ExtractedSymbol[]
 
 function extractInterface(node: InterfaceDeclaration): ExtractedSymbol {
   return {
-    name: node.getName() || '(anonymous)',
-    kind: 'interface',
-    range: getRange(node),
     children: extractInterfaceChildren(node),
     exported: node.isExported() || undefined,
+    kind: 'interface',
+    name: node.getName() || '(anonymous)',
+    range: getRange(node),
   };
 }
 
 function extractTypeAlias(node: TypeAliasDeclaration): ExtractedSymbol {
   return {
-    name: node.getName() || '(anonymous)',
-    kind: 'type',
-    range: getRange(node),
     children: [],
     exported: node.isExported() || undefined,
+    kind: 'type',
+    name: node.getName() || '(anonymous)',
+    range: getRange(node),
   };
 }
 
@@ -325,10 +327,10 @@ function extractEnumChildren(node: EnumDeclaration): ExtractedSymbol[] {
   const children: ExtractedSymbol[] = [];
   for (const member of node.getMembers()) {
     children.push({
-      name: member.getName() || '(anonymous)',
-      kind: 'enumMember',
-      range: getRange(member),
       children: [],
+      kind: 'enumMember',
+      name: member.getName() || '(anonymous)',
+      range: getRange(member),
     });
   }
   return children;
@@ -336,11 +338,11 @@ function extractEnumChildren(node: EnumDeclaration): ExtractedSymbol[] {
 
 function extractEnum(node: EnumDeclaration): ExtractedSymbol {
   return {
-    name: node.getName() || '(anonymous)',
-    kind: 'enum',
-    range: getRange(node),
     children: extractEnumChildren(node),
     exported: node.isExported() || undefined,
+    kind: 'enum',
+    name: node.getName() || '(anonymous)',
+    range: getRange(node),
   };
 }
 
@@ -351,31 +353,31 @@ function extractObjectLiteralChildren(node: Node): ExtractedSymbol[] {
   for (const prop of node.getProperties()) {
     if (Node.isPropertyAssignment(prop) || Node.isShorthandPropertyAssignment(prop)) {
       children.push({
-        name: prop.getName() || '(anonymous)',
-        kind: 'property',
-        range: getRange(prop),
         children: [],
+        kind: 'property',
+        name: prop.getName() || '(anonymous)',
+        range: getRange(prop),
       });
     } else if (Node.isMethodDeclaration(prop)) {
       children.push({
-        name: prop.getName() || '(anonymous)',
-        kind: 'method',
-        range: getRange(prop),
         children: [],
+        kind: 'method',
+        name: prop.getName() || '(anonymous)',
+        range: getRange(prop),
       });
     } else if (Node.isGetAccessorDeclaration(prop)) {
       children.push({
-        name: prop.getName() || '(anonymous)',
-        kind: 'getter',
-        range: getRange(prop),
         children: [],
+        kind: 'getter',
+        name: prop.getName() || '(anonymous)',
+        range: getRange(prop),
       });
     } else if (Node.isSetAccessorDeclaration(prop)) {
       children.push({
-        name: prop.getName() || '(anonymous)',
-        kind: 'setter',
-        range: getRange(prop),
         children: [],
+        kind: 'setter',
+        name: prop.getName() || '(anonymous)',
+        range: getRange(prop),
       });
     }
   }
@@ -398,11 +400,11 @@ function extractVariableStatement(node: VariableStatement): ExtractedSymbol[] {
     if (Node.isArrayBindingPattern(nameNode) || Node.isObjectBindingPattern(nameNode)) {
       const patternText = nameNode.getText();
       symbols.push({
-        name: patternText.length > 40 ? patternText.substring(0, 40) + '...' : patternText,
-        kind,
-        range: isSingleDecl ? stmtRange : getRange(decl),
         children: [],
         exported: isExported || undefined,
+        kind,
+        name: patternText.length > 40 ? `${patternText.substring(0, 40)  }...` : patternText,
+        range: isSingleDecl ? stmtRange : getRange(decl),
       });
       continue;
     }
@@ -412,11 +414,11 @@ function extractVariableStatement(node: VariableStatement): ExtractedSymbol[] {
     const children = initializer ? extractObjectLiteralChildren(initializer) : [];
 
     symbols.push({
-      name,
-      kind,
-      range: isSingleDecl ? stmtRange : getRange(decl),
       children,
       exported: isExported || undefined,
+      kind,
+      name,
+      range: isSingleDecl ? stmtRange : getRange(decl),
     });
   }
 
@@ -443,11 +445,11 @@ function extractModule(node: ModuleDeclaration, sourceFile: SourceFile): Extract
   const isNamespace = node.hasNamespaceKeyword();
 
   return {
-    name,
-    kind: isNamespace ? 'namespace' : 'module',
-    range: getRange(node),
     children: extractModuleChildren(node, sourceFile),
     exported: node.isExported() || undefined,
+    kind: isNamespace ? 'namespace' : 'module',
+    name,
+    range: getRange(node),
   };
 }
 
@@ -478,28 +480,28 @@ function extractCjsPatterns(statements: readonly Node[]): ExtractedSymbol[] {
         for (const p of right.getProperties()) {
           if (Node.isPropertyAssignment(p) || Node.isShorthandPropertyAssignment(p)) {
             children.push({
-              name: p.getName() || '(anonymous)',
-              kind: 'property',
-              range: getRange(p),
               children: [],
+              kind: 'property',
+              name: p.getName() || '(anonymous)',
+              range: getRange(p),
             });
           } else if (Node.isMethodDeclaration(p)) {
             children.push({
-              name: p.getName() || '(anonymous)',
-              kind: 'method',
-              range: getRange(p),
               children: [],
+              kind: 'method',
+              name: p.getName() || '(anonymous)',
+              range: getRange(p),
             });
           }
         }
       }
 
         symbols.push({
-          name: 'module.exports',
-          kind: 'variable',
-          range: getRange(stmt),
           children,
           exported: true,
+          kind: 'variable',
+          name: 'module.exports',
+          range: getRange(stmt),
         });
         continue;
       }
@@ -510,11 +512,11 @@ function extractCjsPatterns(statements: readonly Node[]): ExtractedSymbol[] {
         const outerProp = obj.getName();
         if (Node.isIdentifier(outerObj) && outerObj.getText() === 'module' && outerProp === 'exports') {
           symbols.push({
-            name: prop || '(anonymous)',
-            kind: 'variable',
-            range: getRange(stmt),
             children: [],
             exported: true,
+            kind: 'variable',
+            name: prop || '(anonymous)',
+            range: getRange(stmt),
           });
           continue;
         }
@@ -523,11 +525,11 @@ function extractCjsPatterns(statements: readonly Node[]): ExtractedSymbol[] {
       // exports.foo = ...
       if (Node.isIdentifier(obj) && obj.getText() === 'exports') {
         symbols.push({
-          name: prop || '(anonymous)',
-          kind: 'variable',
-          range: getRange(stmt),
           children: [],
           exported: true,
+          kind: 'variable',
+          name: prop || '(anonymous)',
+          range: getRange(stmt),
         });
         continue;
       }
@@ -568,11 +570,11 @@ function extractStatementsAsSymbols(
       const expr = stmt.getExpression();
       const children = extractObjectLiteralChildren(expr);
       symbols.push({
-        name: '(default)',
-        kind: 'variable',
-        range: getRange(stmt),
         children,
         exported: true,
+        kind: 'variable',
+        name: '(default)',
+        range: getRange(stmt),
       });
     }
   }
@@ -601,15 +603,13 @@ export function extractSymbols(sourceFile: SourceFile): ExtractedSymbol[] {
 // ── Unified File Structure ──
 
 export interface UnifiedFileResult {
-  symbols: ExtractedSymbol[];
   content: string;
-  totalLines: number;
+  directives: SymbolNode[];
+  exports: SymbolNode[];
+  gaps: Array<{ start: number; end: number; type: 'blank' | 'unknown' }>;
   hasSyntaxErrors: boolean;
   imports: SymbolNode[];
-  exports: SymbolNode[];
   orphanComments: SymbolNode[];
-  directives: SymbolNode[];
-  gaps: Array<{ start: number; end: number; type: 'blank' | 'unknown' }>;
   stats: {
     totalImports: number;
     totalExports: number;
@@ -618,6 +618,8 @@ export interface UnifiedFileResult {
     totalBlankLines: number;
     coveragePercent: number;
   };
+  symbols: ExtractedSymbol[];
+  totalLines: number;
 }
 
 /**
@@ -627,7 +629,7 @@ export interface UnifiedFileResult {
 function flattenSymbolRanges(symbols: ExtractedSymbol[]): Array<{ start: number; end: number }> {
   const ranges: Array<{ start: number; end: number }> = [];
   for (const sym of symbols) {
-    ranges.push({ start: sym.range.startLine, end: sym.range.endLine });
+    ranges.push({ end: sym.range.endLine, start: sym.range.startLine });
     if (sym.children.length > 0) {
       ranges.push(...flattenSymbolRanges(sym.children));
     }
@@ -684,16 +686,16 @@ export function extractFileStructure(filePath: string): UnifiedFileResult {
     const hasSyntaxErrors = Array.isArray(parseDiags) && parseDiags.length > 0;
 
     return {
-      symbols,
       content,
-      totalLines,
+      directives: orphaned.directives,
+      exports: orphaned.exports,
+      gaps: orphaned.gaps,
       hasSyntaxErrors,
       imports: orphaned.imports,
-      exports: orphaned.exports,
       orphanComments: orphaned.orphanComments,
-      directives: orphaned.directives,
-      gaps: orphaned.gaps,
       stats: orphaned.stats,
+      symbols,
+      totalLines,
     };
   } catch {
     return emptyUnifiedResult();
@@ -702,22 +704,22 @@ export function extractFileStructure(filePath: string): UnifiedFileResult {
 
 function emptyUnifiedResult(): UnifiedFileResult {
   return {
-    symbols: [],
     content: '',
-    totalLines: 0,
+    directives: [],
+    exports: [],
+    gaps: [],
     hasSyntaxErrors: false,
     imports: [],
-    exports: [],
     orphanComments: [],
-    directives: [],
-    gaps: [],
     stats: {
-      totalImports: 0,
-      totalExports: 0,
-      totalOrphanComments: 0,
-      totalDirectives: 0,
-      totalBlankLines: 0,
       coveragePercent: 0,
+      totalBlankLines: 0,
+      totalDirectives: 0,
+      totalExports: 0,
+      totalImports: 0,
+      totalOrphanComments: 0,
     },
+    symbols: [],
+    totalLines: 0,
   };
 }

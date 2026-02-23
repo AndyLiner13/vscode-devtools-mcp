@@ -20,7 +20,8 @@
  *   If they do but have no associated terminal → marked as "orphaned"
  */
 
-import * as vscode from 'vscode';
+import type * as vscode from 'vscode';
+
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 
@@ -28,52 +29,52 @@ const execAsync = promisify(exec);
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type ProcessStatus = 'running' | 'completed' | 'killed' | 'orphaned';
+export type ProcessStatus = 'completed' | 'killed' | 'orphaned' | 'running';
 
 export interface ChildProcessInfo {
-  pid: number;
-  name: string;
   commandLine: string;
+  name: string;
   parentPid: number;
+  pid: number;
 }
 
 export interface ProcessEntry {
-  pid: number;
+  children?: ChildProcessInfo[];
   command: string;
-  terminalName: string;
-  status: ProcessStatus;
-  startedAt: string;        // ISO timestamp
   endedAt?: string;         // ISO timestamp when completed/killed
   exitCode?: number;
+  pid: number;
   sessionId: string;        // Unique session ID to track across restarts
-  children?: ChildProcessInfo[];
+  startedAt: string;        // ISO timestamp
+  status: ProcessStatus;
+  terminalName: string;
 }
 
 export interface ProcessEvent {
-  event: 'started' | 'completed' | 'killed';
-  pid: number;
   command?: string;
-  terminalName?: string;
+  event: 'completed' | 'killed' | 'started';
   exitCode?: number;
-  ts: string;               // ISO timestamp
+  pid: number;
   sessionId: string;
+  terminalName?: string;
+  ts: string;               // ISO timestamp
 }
 
 export interface TerminalSessionInfo {
-  name: string;
-  shell?: string;
-  pid?: number;
-  isActive: boolean;
-  status: string;
   command?: string;
+  isActive: boolean;
+  name: string;
+  pid?: number;
+  shell?: string;
+  status: string;
 }
 
 export interface ProcessLedgerSummary {
   active: ProcessEntry[];
   orphaned: ProcessEntry[];
   recentlyCompleted: ProcessEntry[];  // Last N completed processes
-  terminalSessions: TerminalSessionInfo[];
   sessionId: string;
+  terminalSessions: TerminalSessionInfo[];
 }
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -89,13 +90,13 @@ const MAX_TREE_ITERATIONS = 200;  // BFS limit to prevent runaway queries
 // ── Process Ledger Service ───────────────────────────────────────────────────
 
 export class ProcessLedger {
-  private workspaceState: vscode.Memento | undefined;
-  private sessionId: string;
-  private activeProcesses = new Map<number, ProcessEntry>();
-  private orphanedProcesses = new Map<number, ProcessEntry>();
-  private recentlyCompleted: ProcessEntry[] = [];
+  private readonly workspaceState: undefined | vscode.Memento;
+  private readonly sessionId: string;
+  private readonly activeProcesses = new Map<number, ProcessEntry>();
+  private readonly orphanedProcesses = new Map<number, ProcessEntry>();
+  private readonly recentlyCompleted: ProcessEntry[] = [];
   private initialized = false;
-  private childCache = new Map<number, ChildProcessInfo[]>();
+  private readonly childCache = new Map<number, ChildProcessInfo[]>();
   private childCacheTimestamp = 0;
 
   constructor(workspaceState?: vscode.Memento) {
@@ -137,23 +138,23 @@ export class ProcessLedger {
    */
   async logStarted(pid: number, command: string, terminalName: string): Promise<void> {
     const entry: ProcessEntry = {
-      pid,
       command,
-      terminalName,
-      status: 'running',
-      startedAt: new Date().toISOString(),
+      pid,
       sessionId: this.sessionId,
+      startedAt: new Date().toISOString(),
+      status: 'running',
+      terminalName,
     };
 
     this.activeProcesses.set(pid, entry);
 
     await this.appendEvent({
+      command,
       event: 'started',
       pid,
-      command,
+      sessionId: this.sessionId,
       terminalName,
       ts: entry.startedAt,
-      sessionId: this.sessionId,
     });
 
     await this.saveActiveProcesses();
@@ -179,10 +180,10 @@ export class ProcessLedger {
 
     await this.appendEvent({
       event: 'completed',
-      pid,
       exitCode,
-      ts: entry.endedAt,
+      pid,
       sessionId: this.sessionId,
+      ts: entry.endedAt,
     });
 
     await this.saveActiveProcesses();
@@ -215,8 +216,8 @@ export class ProcessLedger {
     await this.appendEvent({
       event: 'killed',
       pid,
-      ts: entry.endedAt,
       sessionId: this.sessionId,
+      ts: entry.endedAt,
     });
 
     await this.saveActiveProcesses();
@@ -243,8 +244,8 @@ export class ProcessLedger {
       active: Array.from(this.activeProcesses.values()).map(populateChildren),
       orphaned: Array.from(this.orphanedProcesses.values()).map(populateChildren),
       recentlyCompleted: this.recentlyCompleted,
-      terminalSessions: [],  // Populated by the RPC handler with live terminal data
       sessionId: this.sessionId,
+      terminalSessions: [],  // Populated by the RPC handler with live terminal data
     };
   }
 
@@ -271,7 +272,7 @@ export class ProcessLedger {
   async killProcess(pid: number): Promise<{ success: boolean; error?: string }> {
     const entry = this.getProcess(pid);
     if (!entry) {
-      return { success: false, error: `PID ${pid} is not tracked by Copilot` };
+      return { error: `PID ${pid} is not tracked by Copilot`, success: false };
     }
 
     try {
@@ -292,7 +293,7 @@ export class ProcessLedger {
         await this.logKilled(pid);
         return { success: true };
       }
-      return { success: false, error: msg };
+      return { error: msg, success: false };
     }
   }
 
@@ -308,11 +309,11 @@ export class ProcessLedger {
       if (result.success) {
         killed.push(pid);
       } else {
-        failed.push({ pid, error: result.error ?? 'Unknown error' });
+        failed.push({ error: result.error ?? 'Unknown error', pid });
       }
     }
 
-    return { killed, failed };
+    return { failed, killed };
   }
 
   // ── Child Process Monitoring (Windows CIM/WMI) ─────────────────────────────
@@ -423,14 +424,14 @@ export class ProcessLedger {
       const trimmed = stdout.trim();
       if (!trimmed || trimmed === '[]') return [];
 
-      const parsed = JSON.parse(trimmed) as Record<string, unknown> | Record<string, unknown>[];
+      const parsed = JSON.parse(trimmed) as Array<Record<string, unknown>> | Record<string, unknown>;
       const items = Array.isArray(parsed) ? parsed : [parsed];
 
       return items.map(item => ({
-        pid: item.Pid as number,
-        name: (item.Name as string) ?? '',
         commandLine: (item.CommandLine as string) ?? '',
+        name: (item.Name as string) ?? '',
         parentPid: item.ParentPid as number,
+        pid: item.Pid as number,
       }));
     } catch (err) {
       console.error('[ProcessLedger] Child process tree query failed:', err);
@@ -459,8 +460,8 @@ export class ProcessLedger {
     if (!this.workspaceState) return;
 
     const data = {
-      sessionId: this.sessionId,
       processes: Array.from(this.activeProcesses.values()),
+      sessionId: this.sessionId,
       timestamp: new Date().toISOString(),
     };
 
@@ -532,11 +533,11 @@ export class ProcessLedger {
         // Windows: check via tasklist
         const { stdout } = await execAsync(`tasklist /FI "PID eq ${pid}" /NH`);
         return stdout.includes(String(pid));
-      } else {
+      } 
         // Unix: check via kill -0
         await execAsync(`kill -0 ${pid}`);
         return true;
-      }
+      
     } catch {
       return false;
     }
@@ -545,7 +546,7 @@ export class ProcessLedger {
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   private generateSessionId(): string {
-    return new Date().toISOString().replace(/[:.]/g, '-');
+    return new Date().toISOString().replaceAll(/[:.]/g, '-');
   }
 
   private addToRecentlyCompleted(entry: ProcessEntry): void {
@@ -566,7 +567,7 @@ export class ProcessLedger {
 
 // ── Singleton Instance ───────────────────────────────────────────────────────
 
-let instance: ProcessLedger | null = null;
+let instance: null | ProcessLedger = null;
 
 export function initProcessLedger(workspaceState: vscode.Memento): ProcessLedger {
   if (!instance) {

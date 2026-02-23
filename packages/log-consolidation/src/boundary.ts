@@ -82,7 +82,7 @@ function isEntryHeader(line: string): boolean {
  */
 export function detectBoundaries(lines: string[]): BoundaryResult {
   if (lines.length === 0) {
-    return { entries: [], hasMultiLineEntries: false, groupedLineCount: 0 };
+    return { entries: [], groupedLineCount: 0, hasMultiLineEntries: false };
   }
 
   const entries: LogEntry[] = [];
@@ -100,9 +100,9 @@ export function detectBoundaries(lines: string[]): BoundaryResult {
       }
       // Start a new entry
       currentEntry = {
-        header: line,
         continuationLines: [],
         flattened: line,
+        header: line,
         sourceLineIndex: i,
       };
     } else if (currentEntry) {
@@ -112,9 +112,9 @@ export function detectBoundaries(lines: string[]): BoundaryResult {
     } else {
       // No header seen yet — treat as a standalone entry
       currentEntry = {
-        header: line,
         continuationLines: [],
         flattened: line,
+        header: line,
         sourceLineIndex: i,
       };
     }
@@ -129,7 +129,7 @@ export function detectBoundaries(lines: string[]): BoundaryResult {
   // the input lacks recognizable log headers (e.g., console messages formatted as
   // "#ID [type] text"). Skip boundary grouping and let logpare see raw lines.
   if (entries.length < lines.length * 0.1 && lines.length > 5) {
-    return { entries: [], hasMultiLineEntries: false, groupedLineCount: 0 };
+    return { entries: [], groupedLineCount: 0, hasMultiLineEntries: false };
   }
 
   // Finalize: build flattened representations for multi-line entries
@@ -153,7 +153,7 @@ export function detectBoundaries(lines: string[]): BoundaryResult {
     }
   }
 
-  return { entries, hasMultiLineEntries, groupedLineCount };
+  return { entries, groupedLineCount, hasMultiLineEntries };
 }
 
 /**

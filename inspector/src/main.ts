@@ -1,11 +1,12 @@
 import './styles.css';
-import { McpInspectorClient } from './mcp-client';
+import type { ConnectionState } from './types';
+
 import { createApp } from './components/app';
 import { onRerun } from './components/history-list';
-import { onToolSelect, renderToolList } from './components/tool-list';
 import { onExecute, renderToolDetail, rerunWithInput } from './components/tool-detail';
+import { onToolSelect, renderToolList } from './components/tool-list';
+import { McpInspectorClient } from './mcp-client';
 import { connectStorageSync, pruneUnrated } from './storage';
-import type { ConnectionState } from './types';
 
 // Prune unrated records on load — only flagged/archived survive reloads
 pruneUnrated().catch(console.error);

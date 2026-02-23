@@ -14,55 +14,55 @@ window.MonacoEnvironment = {
 // Custom theme that matches our VS Code dark UI colors exactly
 monaco.editor.defineTheme('vscode-inspector', {
   base: 'vs-dark',
-  inherit: true,
-  rules: [],
   colors: {
     'editor.background': '#3c3c3c',
-    'editor.lineHighlightBackground': '#3c3c3c',
-    'editorGutter.background': '#3c3c3c',
-    'editor.selectionBackground': '#264f78',
     'editor.inactiveSelectionBackground': '#3c3c3c',
+    'editor.lineHighlightBackground': '#3c3c3c',
+    'editor.selectionBackground': '#264f78',
+    'editorGutter.background': '#3c3c3c',
     'editorWidget.background': '#3c3c3c',
+    'scrollbarSlider.activeBackground': '#bfbfbf66',
     'scrollbarSlider.background': '#79797966',
     'scrollbarSlider.hoverBackground': '#646464b3',
-    'scrollbarSlider.activeBackground': '#bfbfbf66',
   },
+  inherit: true,
+  rules: [],
 });
 
 const SHARED_EDITOR_OPTIONS: monaco.editor.IStandaloneEditorConstructionOptions = {
-  theme: 'vscode-inspector',
+  automaticLayout: true,
+  contextmenu: false,
+  folding: false,
   fontFamily: "'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace",
   fontSize: 13,
-  lineHeight: 20,
-  minimap: { enabled: false },
-  scrollBeyondLastLine: false,
-  scrollbar: {
-    vertical: 'hidden',
-    horizontal: 'hidden',
-    handleMouseWheel: false,
-  },
-  renderLineHighlight: 'none',
-  selectionHighlight: false,
-  occurrencesHighlight: 'off',
-  matchBrackets: 'never',
-  overviewRulerLanes: 0,
-  overviewRulerBorder: false,
-  hideCursorInOverviewRuler: true,
-  folding: false,
-  lineNumbers: 'off',
   glyphMargin: false,
-  lineDecorationsWidth: 8,
-  lineNumbersMinChars: 0,
-  padding: { top: 5, bottom: 5 },
-
-  wordWrap: 'on',
-  contextmenu: false,
-  links: false,
   guides: { indentation: false },
+  hideCursorInOverviewRuler: true,
+  lineDecorationsWidth: 8,
+  lineHeight: 20,
+  lineNumbers: 'off',
+  lineNumbersMinChars: 0,
+  links: false,
+  matchBrackets: 'never',
+  minimap: { enabled: false },
+  occurrencesHighlight: 'off',
+  overviewRulerBorder: false,
+  overviewRulerLanes: 0,
+  padding: { bottom: 5, top: 5 },
+  renderLineHighlight: 'none',
+
   renderWhitespace: 'none',
-  tabSize: 2,
-  automaticLayout: true,
+  scrollbar: {
+    handleMouseWheel: false,
+    horizontal: 'hidden',
+    vertical: 'hidden',
+  },
+  scrollBeyondLastLine: false,
+  selectionHighlight: false,
   stickyScroll: { enabled: false },
+  tabSize: 2,
+  theme: 'vscode-inspector',
+  wordWrap: 'on',
 };
 
 /**
@@ -75,11 +75,11 @@ export function createInputEditor(
 ): monaco.editor.IStandaloneCodeEditor {
   const editor = monaco.editor.create(container, {
     ...SHARED_EDITOR_OPTIONS,
-    value: initialValue,
+    ariaLabel: 'Tool input parameters (JSON)',
+    domReadOnly: false,
     language: 'json',
     readOnly: false,
-    domReadOnly: false,
-    ariaLabel: 'Tool input parameters (JSON)',
+    value: initialValue,
   });
 
   autoSizeEditor(editor, container);
@@ -97,13 +97,13 @@ export function createOutputEditor(
 ): monaco.editor.IStandaloneCodeEditor {
   const editor = monaco.editor.create(container, {
     ...SHARED_EDITOR_OPTIONS,
-    value: content,
+    ariaLabel: 'Tool output result',
+    cursorBlinking: 'solid',
+    cursorStyle: 'line-thin',
+    domReadOnly: true,
     language: languageId,
     readOnly: true,
-    domReadOnly: true,
-    ariaLabel: 'Tool output result',
-    cursorStyle: 'line-thin',
-    cursorBlinking: 'solid',
+    value: content,
   });
 
   autoSizeEditor(editor, container);

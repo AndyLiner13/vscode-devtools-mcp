@@ -9,15 +9,15 @@
  * FileSymbol from the shared interface satisfies this.
  */
 export interface SymbolLikeRange {
-  startLine: number;
   endLine: number;
+  startLine: number;
 }
 
 export interface SymbolLike {
-  name: string;
-  kind: string;
-  range: SymbolLikeRange;
   children: SymbolLike[];
+  kind: string;
+  name: string;
+  range: SymbolLikeRange;
 }
 
 /**
@@ -45,11 +45,11 @@ function nameMatches(symbolName: string, targetName: string): boolean {
 export function resolveSymbolTarget<T extends SymbolLike>(
   symbols: T[],
   target: string,
-): { symbol: T; parent?: T; path: string[] } | undefined {
+): undefined | { symbol: T; parent?: T; path: string[] } {
   // First, try exact match at top level (handles module names with dots like './augmented')
   const exactMatch = symbols.find(s => nameMatches(s.name, target));
   if (exactMatch) {
-    return {symbol: exactMatch, parent: undefined, path: [target]};
+    return {parent: undefined, path: [target], symbol: exactMatch};
   }
 
   // Then try dot-path resolution for nested symbols
@@ -70,7 +70,7 @@ export function resolveSymbolTarget<T extends SymbolLike>(
       parent = found as T;
       currentList = found.children;
     } else {
-      return {symbol: found as T, parent, path: pathSoFar};
+      return {parent, path: pathSoFar, symbol: found as T};
     }
   }
 

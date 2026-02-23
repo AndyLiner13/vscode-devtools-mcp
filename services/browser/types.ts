@@ -13,84 +13,84 @@ export interface AXProperty {
 }
 
 export interface AXNode {
-    nodeId: string;
     backendDOMNodeId?: number;
-    role: { type: string; value: string };
-    name?: { type: string; value: string };
-    description?: { type: string; value: string };
-    value?: { type: string; value: unknown };
-    properties?: AXProperty[];
     childIds?: string[];
-    parentId?: string;
-    ignored?: boolean;
-
-    // Extension-managed fields (not from CDP)
-    uid?: string;
     children?: AXNode[];
+    description?: { type: string; value: string };
     frameId?: string;
     frameName?: string;
+    ignored?: boolean;
+    name?: { type: string; value: string };
+    nodeId: string;
+    parentId?: string;
+
+    properties?: AXProperty[];
+    role: { type: string; value: string };
+    // Extension-managed fields (not from CDP)
+    uid?: string;
+    value?: { type: string; value: unknown };
 }
 
 export interface FrameInfo {
     id: string;
-    parentId?: string;
-    url?: string;
     name?: string;
+    parentId?: string;
     sessionId?: string;
+    url?: string;
 }
 
 export interface NodeSignature {
-    role: string;
-    name: string;
     childCount: number;
+    name: string;
+    role: string;
 }
 
 // ── Screenshot Types ─────────────────────────────────────────────────────────
 
 export interface ScreenshotOptions {
-    format?: 'png' | 'jpeg' | 'webp';
+    format?: 'jpeg' | 'png' | 'webp';
+    fullPage?: boolean;
     quality?: number;
     uid?: string;
-    fullPage?: boolean;
 }
 
 // ── Console Types ────────────────────────────────────────────────────────────
 
 export interface ConsoleStackFrame {
-    functionName: string;
-    url: string;
-    lineNumber: number;
     columnNumber: number;
+    functionName: string;
+    lineNumber: number;
+    url: string;
 }
 
 export interface ConsoleMessageArg {
+    className?: string;
+    description?: string;
+    objectId?: string;
+    subtype?: string;
     type: string;
     value?: unknown;
-    description?: string;
-    subtype?: string;
-    className?: string;
-    objectId?: string;
 }
 
 export interface ConsoleMessage {
-    id: number;
-    type: string;
-    text: string;
     args: ConsoleMessageArg[];
-    timestamp: number;
+    id: number;
     stackTrace?: ConsoleStackFrame[];
+    text: string;
+    timestamp: number;
+    type: string;
 }
 
 export interface ConsoleFilterOptions {
-    limit?: number;
-    types?: string[];
-    pattern?: string;
-    sourcePattern?: string;
     afterId?: number;
     beforeId?: number;
     fields?: string[];
-    textLimit?: number;
+    limit?: number;
+    pattern?: string;
+    sourcePattern?: string;
     stackDepth?: number;
+    textLimit?: number;
+    types?: string[];
 }
 
 // ── CDP Target Types ─────────────────────────────────────────────────────────
@@ -108,8 +108,8 @@ export interface CdpTarget {
 // ── Diff Types ───────────────────────────────────────────────────────────────
 
 export interface DiffResult {
-    before: string;
     after: string;
-    summary: string;
+    before: string;
     hasChanges: boolean;
+    summary: string;
 }

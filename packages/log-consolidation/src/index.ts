@@ -14,6 +14,12 @@
  * For drill-down navigation, pass FilterOptions to compressLogs().
  */
 
+// Boundary detection
+export {
+  detectBoundaries,
+  flattenEntries,
+} from './boundary.js';
+
 // Core engine
 export {
   compressLogs,
@@ -21,18 +27,6 @@ export {
   consolidateText,
   toConsolidatedJson,
 } from './engine.js';
-
-// Boundary detection
-export {
-  detectBoundaries,
-  flattenEntries,
-} from './boundary.js';
-
-// Custom strategy
-export {
-  VS_CODE_PATTERNS,
-  vsCodeStrategy,
-} from './strategy.js';
 
 // Composable filters
 export {
@@ -44,6 +38,12 @@ export {
 export {
   formatOverview,
 } from './format.js';
+
+// Custom strategy
+export {
+  VS_CODE_PATTERNS,
+  vsCodeStrategy,
+} from './strategy.js';
 
 // Types
 export type {
