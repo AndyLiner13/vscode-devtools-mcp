@@ -8,6 +8,14 @@ import { join, resolve } from 'node:path';
 
 const nodeRequire = createRequire(import.meta.url);
 
+/**
+ * Logs to stdio (stdout) so messages appear in VS Code output panel.
+ * Uses process.stdout.write for reliable output without console formatting.
+ */
+function log(message: string): void {
+	process.stdout.write(`[Inspector] ${message}\n`);
+}
+
 const IS_WINDOWS = process.platform === 'win32';
 const HOST_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-host' : '/tmp/vscode-devtools-host.sock';
 
@@ -327,15 +335,34 @@ export function inspectorDbPlugin(): Plugin {
 					return;
 				}
 
+				// POST /api/log — receive client-side logs and write to stdio
+				if (pathname === '/api/log' && method === 'POST') {
+					const body = await parseBody(req);
+					const message = typeof body.message === 'string' ? body.message : JSON.stringify(body.message);
+					log(`[client] ${message}`);
+					json(res, { ok: true });
+					return;
+				}
+
 				// GET /api/browse?path=<dir> — list directory contents for file/dir intellisense
 				if (pathname === '/api/browse' && method === 'GET') {
 					const workspaceRoot = resolve(process.cwd(), '..');
 					const requestedPath = url.searchParams.get('path') ?? '';
+					log(`[browse] Request: path=${JSON.stringify(requestedPath)} root=${workspaceRoot}`);
+
 					const targetDir = requestedPath
 						? (requestedPath.startsWith('/') || /^[A-Za-z]:/.test(requestedPath)
 							? requestedPath
 							: resolve(workspaceRoot, requestedPath))
 						: workspaceRoot;
+
+					log(`[browse] Target dir: ${targetDir}`);
+
+					const debug = {
+						requestedPath,
+						targetDir,
+						workspaceRoot
+					};
 
 					try {
 						const entries = readdirSync(targetDir, { withFileTypes: true })
@@ -349,9 +376,11 @@ export function inspectorDbPlugin(): Plugin {
 								return a.name.localeCompare(b.name);
 							});
 
-						json(res, { entries, root: workspaceRoot });
-					} catch {
-						json(res, { entries: [], root: workspaceRoot });
+						log(`[browse] Found ${entries.length} entries, first 5: ${entries.slice(0, 5).map(e => e.name).join(', ')}`);
+						json(res, { debug, entries, root: workspaceRoot });
+					} catch (err) {
+						log(`[browse] ERROR: ${String(err)}`);
+						json(res, { debug, entries: [], error: String(err), root: workspaceRoot });
 					}
 					return;
 				}

@@ -2,8 +2,23 @@ import type { CallToolResult, ConnectionState, ServerCapabilities, ServerInfo, T
 
 type StateChangeHandler = (state: ConnectionState, error?: string) => void;
 
+const LOG_ENDPOINT = '/api/log';
 const MCP_ENDPOINT = 'http://localhost:6274/mcp';
 const PROTOCOL_VERSION = '2025-03-26';
+
+/**
+ * Send log messages to the server to appear in VS Code output panel.
+ * Fire-and-forget, non-blocking. Falls back silently if server unavailable.
+ */
+function log(message: string): void {
+	fetch(LOG_ENDPOINT, {
+		body: JSON.stringify({ message }),
+		headers: { 'Content-Type': 'application/json' },
+		method: 'POST'
+	}).catch(() => {
+		// Silently ignore if server is unavailable
+	});
+}
 
 interface JsonRpcResponse {
 	error?: { code: number; message: string; data?: unknown };
@@ -43,7 +58,7 @@ export class McpInspectorClient {
 		try {
 			await fetch('/api/ensure-mcp', { method: 'POST' });
 		} catch {
-			console.log('[mcp-client] /api/ensure-mcp unavailable — continuing with direct connect');
+			log('[mcp-client] /api/ensure-mcp unavailable — continuing with direct connect');
 		}
 
 		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -78,7 +93,7 @@ export class McpInspectorClient {
 				}
 
 				// Server is restarting or not yet up — retry after delay
-				console.log(`[mcp-client] Connect attempt ${attempt}/${maxAttempts} failed: ${message} — retrying in ${retryDelayMs}ms`);
+				log(`[mcp-client] Connect attempt ${attempt}/${maxAttempts} failed: ${message} — retrying in ${retryDelayMs}ms`);
 				this.onStateChange('connecting');
 				await this.delay(retryDelayMs);
 			}

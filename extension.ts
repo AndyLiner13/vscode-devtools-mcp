@@ -416,6 +416,10 @@ export async function activate(context: vscode.ExtensionContext) {
 			updateStatusBar('connecting');
 			log('Auto-starting MCP server (will spawn client via ensureConnection)...');
 
+			// Startup progress notification that tracks both MCP server and client connection
+			let startupProgressResolve: (() => void) | undefined;
+			const startupProgressPromise = new Promise<void>((r) => { startupProgressResolve = r; });
+
 			void vscode.window.withProgress(
 				{
 					cancellable: false,
@@ -431,14 +435,28 @@ export async function activate(context: vscode.ExtensionContext) {
 							{ waitForLiveTools: true },
 						);
 						log('[auto-start] MCP server started');
-						progress.report({ message: 'Waiting for client window…' });
+						progress.report({ message: 'Connecting to client window…' });
 					} catch (err: unknown) {
 						const msg = err instanceof Error ? err.message : String(err);
 						log(`[auto-start] MCP server start failed: ${msg}`);
 						updateStatusBar('disconnected');
+						return;
 					}
+					// Keep the notification open until the client connects
+					await startupProgressPromise;
 				}
 			);
+
+			// Listen for client connection to dismiss the startup notification
+			const startupClientListener = onClientStateChanged((connected: boolean) => {
+				if (connected && startupProgressResolve) {
+					// Auto-hide notification after 3 seconds
+					vscode.window.setStatusBarMessage('✅ VS Code DevTools started', 3000);
+					startupProgressResolve();
+					startupProgressResolve = undefined;
+					startupClientListener.dispose();
+				}
+			});
 		} else {
 			log('Loading client-handlers module...');
 			const { registerClientHandlers } = await import('./services/client-handlers');

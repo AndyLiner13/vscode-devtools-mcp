@@ -16,6 +16,24 @@ import type { JsonSchema } from './types';
 
 import * as monacoNs from 'monaco-editor';
 
+// ── Logging ──────────────────────────────────────────────────────────────────
+
+const LOG_ENDPOINT = '/api/log';
+
+/**
+ * Send log messages to the server to appear in VS Code output panel.
+ * Fire-and-forget, non-blocking. Falls back silently if server unavailable.
+ */
+function log(message: string): void {
+	fetch(LOG_ENDPOINT, {
+		body: JSON.stringify({ message }),
+		headers: { 'Content-Type': 'application/json' },
+		method: 'POST'
+	}).catch(() => {
+		// Silently ignore if server is unavailable
+	});
+}
+
 // ── Public API ───────────────────────────────────────────────────────────────
 
 /**
@@ -55,9 +73,8 @@ export function setupJsonInteractivity(
 // ── Feature 1: Boolean Toggle ────────────────────────────────────────────────
 
 /**
- * Single-click on `true` or `false` toggles the value.
- * Uses a mouseUp handler with a microtask defer so Monaco finishes
- * its own click processing first.
+ * Single-click on `true` or `false` selects the value so the user can
+ * immediately type a replacement. Tab toggles the value instead.
  */
 function setupBooleanToggle(editor: monacoNs.editor.IStandaloneCodeEditor): monacoNs.IDisposable {
 	return editor.onMouseUp((e) => {
@@ -73,24 +90,20 @@ function setupBooleanToggle(editor: monacoNs.editor.IStandaloneCodeEditor): mona
 
 		if (word.word !== 'true' && word.word !== 'false') return;
 
-		const newValue = word.word === 'true' ? 'false' : 'true';
-		const range = new monacoNs.Range(
-			position.lineNumber, word.startColumn,
-			position.lineNumber, word.endColumn
-		);
+		// Verify it's a value (right side of colon)
+		const line = model.getLineContent(position.lineNumber);
+		const prefix = line.substring(0, word.startColumn - 1);
+		const quoteCount = (prefix.match(/(?<!\\)"/g) ?? []).length;
+		if (quoteCount % 2 !== 0) return;
+		const beforeValue = prefix.trimEnd();
+		if (!beforeValue.endsWith(':')) return;
 
-		editor.executeEdits('boolean-toggle', [{
-			forceMoveMarkers: true,
-			range,
-			text: newValue
-		}]);
-
-		// Place cursor inside the new value without selecting it
+		// Select the entire boolean value
 		queueMicrotask(() => {
-			editor.setPosition({
-				column: range.startColumn + 1,
-				lineNumber: position.lineNumber
-			});
+			editor.setSelection(new monacoNs.Selection(
+				position.lineNumber, word.startColumn,
+				position.lineNumber, word.endColumn
+			));
 		});
 	});
 }
@@ -100,6 +113,8 @@ function setupBooleanToggle(editor: monacoNs.editor.IStandaloneCodeEditor): mona
 /**
  * Single-click on a number value selects the entire number,
  * so the user can immediately start typing a replacement.
+ * Also selects null keywords and handles edge-clicks on values
+ * (when cursor is at the boundary of the value container).
  */
 function setupIntegerSelect(editor: monacoNs.editor.IStandaloneCodeEditor): monacoNs.IDisposable {
 	return editor.onMouseUp((e) => {
@@ -111,14 +126,23 @@ function setupIntegerSelect(editor: monacoNs.editor.IStandaloneCodeEditor): mona
 		if (!model) return;
 
 		const line = model.getLineContent(position.lineNumber);
-		const numRange = findNumberRange(line, position.column);
-		if (!numRange) return;
+
+		// Skip if on property key
+		if (isCursorOnPropertyKey(line, position.column)) return;
+
+		// Try to find any value at or adjacent to click position
+		const valueRange = findJsonValueRange(line, position.column);
+		if (!valueRange) return;
+
+		// Don't interfere with boolean handler (already handles its own selection)
+		const word = model.getWordAtPosition(position);
+		if (word && (word.word === 'true' || word.word === 'false')) return;
 
 		// Defer selection so Monaco's default click handling finishes first
 		queueMicrotask(() => {
 			editor.setSelection(new monacoNs.Selection(
-				position.lineNumber, numRange.start,
-				position.lineNumber, numRange.end
+				position.lineNumber, valueRange.start,
+				position.lineNumber, valueRange.end
 			));
 		});
 	});
@@ -179,7 +203,13 @@ interface BrowseEntry {
 }
 
 interface BrowseResponse {
+	debug?: {
+		requestedPath: string;
+		targetDir: string;
+		workspaceRoot: string;
+	};
 	entries: BrowseEntry[];
+	error?: string;
 	root: string;
 }
 
@@ -310,12 +340,19 @@ function findStringValueRange(
 	column: number,
 	fileProps: Set<string>
 ): null | { contentEnd: number; contentStart: number; propertyName: string } {
+	log(`[findStringValueRange] line: ${JSON.stringify(line)}`);
+	log(`[findStringValueRange] column: ${column} fileProps: ${[...fileProps]}`);
+
 	// Match "propName": "value" patterns (value can be empty)
 	const regex = /"([^"\\]*)"\s*:\s*"([^"\\]*)"/g;
 	let match;
 	while ((match = regex.exec(line)) !== null) {
 		const propName = match[1];
-		if (!fileProps.has(propName)) continue;
+		log(`[findStringValueRange]   Found property: ${JSON.stringify(propName)} value: ${JSON.stringify(match[2])}`);
+		if (!fileProps.has(propName)) {
+			log(`[findStringValueRange]   → Not a file prop, skipping`);
+			continue;
+		}
 
 		// Find the value string's position (the second quoted string)
 		const colonIdx = line.indexOf(':', match.index + match[1].length + 2);
@@ -331,16 +368,23 @@ function findStringValueRange(
 		const contentStart = valueQuoteStart + 2; // 1-based, after opening quote
 		const contentEnd = valueQuoteEnd + 1; // 1-based, at closing quote
 
+		log(`[findStringValueRange]   valueQuoteStart: ${valueQuoteStart} valueQuoteEnd: ${valueQuoteEnd}`);
+		log(`[findStringValueRange]   contentStart: ${contentStart} contentEnd: ${contentEnd}`);
+
 		// For empty strings, contentStart === contentEnd — cursor between
 		// the two quotes should also match
 		const cursorInQuotes = contentStart === contentEnd
 			? column === contentStart
 			: column >= contentStart && column <= contentEnd;
 
+		log(`[findStringValueRange]   cursorInQuotes: ${cursorInQuotes} (column ${column} in range ${contentStart} - ${contentEnd})`);
+
 		if (cursorInQuotes) {
+			log(`[findStringValueRange]   → MATCH!`);
 			return { contentEnd, contentStart, propertyName: propName };
 		}
 	}
+	log(`[findStringValueRange]   → No match found`);
 	return null;
 }
 
@@ -355,33 +399,66 @@ async function providePathCompletions(
 	const empty: monacoNs.languages.CompletionList = { suggestions: [] };
 
 	const line = model.getLineContent(position.lineNumber);
+	log(`[intellisense] providePathCompletions called`);
+	log(`[intellisense]   line: ${JSON.stringify(line)}`);
+	log(`[intellisense]   position: ${position.lineNumber} ${position.column}`);
+	log(`[intellisense]   fileProps: ${[...fileProps]}`);
+
 	const stringRange = findStringValueRange(line, position.column, fileProps);
-	if (!stringRange) return empty;
+	log(`[intellisense]   stringRange: ${JSON.stringify(stringRange)}`);
+	if (!stringRange) {
+		log(`[intellisense]   → No string range found, returning empty`);
+		return empty;
+	}
 
-	// Extract the current path value
-	const currentValue = line.substring(stringRange.contentStart - 1, position.column - 1);
+	// Extract the FULL path value (not just up to cursor) so folder navigation works
+	const fullValue = line.substring(stringRange.contentStart - 1, stringRange.contentEnd - 1);
+	log(`[intellisense]   fullValue: ${JSON.stringify(fullValue)}`);
 
-	// Determine the directory to browse
-	const lastSlash = Math.max(currentValue.lastIndexOf('/'), currentValue.lastIndexOf('\\'));
-	const dirPath = lastSlash >= 0 ? currentValue.substring(0, lastSlash) : '';
-	const prefix = lastSlash >= 0 ? currentValue.substring(lastSlash + 1) : currentValue;
+	// Determine the directory to browse based on full path
+	const lastSlash = Math.max(fullValue.lastIndexOf('/'), fullValue.lastIndexOf('\\'));
+	const dirPath = lastSlash >= 0 ? fullValue.substring(0, lastSlash) : '';
+	log(`[intellisense]   lastSlash: ${lastSlash} dirPath: ${JSON.stringify(dirPath)}`);
+
+	// Prefix for filtering is everything after the last slash (what user is typing)
+	const cursorOffset = position.column - stringRange.contentStart;
+	const textBeforeCursor = fullValue.substring(0, cursorOffset);
+	const lastSlashBeforeCursor = Math.max(textBeforeCursor.lastIndexOf('/'), textBeforeCursor.lastIndexOf('\\'));
+	const prefix = lastSlashBeforeCursor >= 0 ? textBeforeCursor.substring(lastSlashBeforeCursor + 1) : textBeforeCursor;
+	log(`[intellisense]   cursorOffset: ${cursorOffset} textBeforeCursor: ${JSON.stringify(textBeforeCursor)}`);
+	log(`[intellisense]   lastSlashBeforeCursor: ${lastSlashBeforeCursor} prefix: ${JSON.stringify(prefix)}`);
 
 	try {
-		const response = await fetch(`${BROWSE_ENDPOINT}?path=${encodeURIComponent(dirPath)}`);
-		if (!response.ok) return empty;
+		const url = `${BROWSE_ENDPOINT}?path=${encodeURIComponent(dirPath)}`;
+		log(`[intellisense]   Fetching: ${url}`);
+		const response = await fetch(url);
+		log(`[intellisense]   Response status: ${response.status} ${response.ok}`);
+		if (!response.ok) {
+			log(`[intellisense]   → Response not OK, returning empty`);
+			return empty;
+		}
 
 		const data = await response.json() as BrowseResponse;
+		log(`[intellisense]   DEBUG from server: ${JSON.stringify(data.debug)}`);
+		if (data.error) {
+			log(`[intellisense]   Server error: ${data.error}`);
+		}
+		log(`[intellisense]   Entries count: ${data.entries.length}`);
+		log(`[intellisense]   First 5 entries: ${JSON.stringify(data.entries.slice(0, 5))}`);
 
 		const replaceRange = new monacoNs.Range(
 			position.lineNumber, stringRange.contentStart,
 			position.lineNumber, stringRange.contentEnd
 		);
+		log(`[intellisense]   replaceRange: ${replaceRange.startColumn} - ${replaceRange.endColumn}`);
 
-		const suggestions: monacoNs.languages.CompletionItem[] = data.entries
-			.filter((entry) => entry.name.toLowerCase().startsWith(prefix.toLowerCase()))
+		const filtered = data.entries.filter((entry) => entry.name.toLowerCase().startsWith(prefix.toLowerCase()));
+		log(`[intellisense]   Filtered count (prefix=${JSON.stringify(prefix)}): ${filtered.length}`);
+
+		const suggestions: monacoNs.languages.CompletionItem[] = filtered
 			.map((entry, idx) => {
 				const insertPath = dirPath ? `${dirPath}/${entry.name}` : entry.name;
-				return {
+				const item: monacoNs.languages.CompletionItem = {
 					insertText: entry.type === 'dir' ? `${insertPath}/` : insertPath,
 					kind: entry.type === 'dir'
 						? monacoNs.languages.CompletionItemKind.Folder
@@ -390,10 +467,17 @@ async function providePathCompletions(
 					range: replaceRange,
 					sortText: `${entry.type === 'dir' ? '0' : '1'}${String(idx).padStart(4, '0')}`
 				};
+				// Re-trigger suggestions after accepting a directory so its contents appear
+				if (entry.type === 'dir') {
+					item.command = { id: 'editor.action.triggerSuggest', title: 'Browse' };
+				}
+				return item;
 			});
 
-		return { suggestions };
-	} catch {
+		log(`[intellisense]   Returning ${suggestions.length} suggestions`);
+		return { incomplete: true, suggestions };
+	} catch (err) {
+		log(`[intellisense]   ERROR: ${String(err)}`);
 		return empty;
 	}
 }
@@ -642,7 +726,7 @@ function setupEnumArrayToggle(
 		}
 	}));
 
-	// Click handler for toggling enum items
+	// Click handler for selecting enum items (Tab toggles them)
 	disposables.push(editor.onMouseUp((e) => {
 		if (e.target.type !== monacoNs.editor.MouseTargetType.CONTENT_TEXT) return;
 
@@ -657,7 +741,7 @@ function setupEnumArrayToggle(
 
 		const line = model.getLineContent(position.lineNumber);
 
-		// Find which quoted value was clicked
+		// Find which quoted value was clicked and select it
 		const arraySlice = line.substring(bounds.openCol);
 		const regex = /"([^"\\]*)"/g;
 		let match;
@@ -669,54 +753,13 @@ function setupEnumArrayToggle(
 				const clickedValue = match[1];
 				if (!expandedInfo.enumValues.includes(clickedValue)) continue;
 
-				// Toggle: read active set, flip this value, rebuild array
-				const activeSet = getActiveValues(model, expandedInfo.propertyName);
-
-				if (activeSet.has(clickedValue)) {
-					activeSet.delete(clickedValue);
-				} else {
-					activeSet.add(clickedValue);
-				}
-
-				// Update tracked state so subsequent toggles and collapse use correct values
-				trackedActiveValues.set(expandedInfo.propertyName, new Set(activeSet));
-
-				// Build new expanded array text with toggled state
-				const newArrayText = buildExpandedArrayText(expandedInfo, activeSet);
-				const currentBounds = findArrayBounds(model, expandedInfo.propertyName);
-				if (!currentBounds) return;
-
-				const arrayRange = new monacoNs.Range(
-					currentBounds.openLine, currentBounds.openCol,
-					currentBounds.closeLine, currentBounds.closeCol + 1
-				);
-
-				suppressUpdates = true;
-				editor.executeEdits('enum-toggle', [{
-					forceMoveMarkers: true,
-					range: arrayRange,
-					text: newArrayText
-				}]);
-
-				updateInlineDecorations(model, expandedInfo, activeSet);
-
-				// Position cursor inside the toggled item (without selecting it)
-				const updatedBounds = findArrayBounds(model, expandedInfo.propertyName);
-				if (updatedBounds) {
-					const updatedLine = model.getLineContent(updatedBounds.openLine);
-					const updatedSlice = updatedLine.substring(updatedBounds.openCol);
-					const findRegex = /"([^"\\]*)"/g;
-					let findMatch;
-					while ((findMatch = findRegex.exec(updatedSlice)) !== null) {
-						if (findMatch[1] === clickedValue) {
-							const itemCol = updatedBounds.openCol + findMatch.index + 2;
-							editor.setPosition({ column: itemCol, lineNumber: updatedBounds.openLine });
-							break;
-						}
-					}
-				}
-
-				suppressUpdates = false;
+				// Select the entire quoted value (including quotes)
+				queueMicrotask(() => {
+					editor.setSelection(new monacoNs.Selection(
+						position.lineNumber, startCol,
+						position.lineNumber, endCol
+					));
+				});
 				return;
 			}
 		}
@@ -828,8 +871,8 @@ function findArrayBounds(model: monacoNs.editor.ITextModel, propertyName: string
  * the entire value. This makes it easy to replace values by just
  * pressing arrow keys and typing.
  *
- * Skips values inside enum arrays (handled by Feature 4) and
- * property keys (left side of colon).
+ * Inside enum arrays, selects the nearest quoted item. Left/right
+ * arrows navigate between array items when one is selected.
  */
 function setupValueAutoSelect(
 	editor: monacoNs.editor.IStandaloneCodeEditor,
@@ -841,10 +884,13 @@ function setupValueAutoSelect(
 	let settingSelection = false;
 	// Track whether a value was selected so arrow keys can escape without re-selecting
 	let hadSelection = false;
+	// Track the range of the object that was manually escaped from
+	// This object cannot be re-selected until a DIFFERENT object is selected first
+	let escapedRange: { line: number; start: number; end: number } | null = null;
 
 	const disposables: monacoNs.IDisposable[] = [];
 
-	disposables.push(editor.onDidChangeCursorSelection((e) => {
+	disposables.push(editor.onDidChangeCursorSelection(() => {
 		if (settingSelection) return;
 		const sel = editor.getSelection();
 		hadSelection = sel !== null && !sel.isEmpty();
@@ -856,20 +902,72 @@ function setupValueAutoSelect(
 		// Only auto-select on keyboard-driven cursor moves
 		if (e.source !== 'keyboard') return;
 
-		// If the user just collapsed a selection via arrow keys, let them escape
-		if (hadSelection) {
-			hadSelection = false;
-			return;
-		}
-
 		const model = editor.getModel();
 		if (!model) return;
 
 		const line = model.getLineContent(e.position.lineNumber);
+
+		// If the user just collapsed a selection via arrow keys, remember what they escaped from
+		// EXCEPT for arrays — arrays are exempt from the consent system since left/right
+		// is used to navigate between items, not to escape
+		if (hadSelection) {
+			hadSelection = false;
+
+			// Don't apply consent system inside any array (check if line has array items)
+			if (findArrayItemsOnLine(line).length > 0) {
+				// Just let the array navigation handler deal with this
+				return;
+			}
+
+			// Record the range they escaped from so we don't immediately re-select it
+			const sel = editor.getSelection();
+			if (sel && !sel.isEmpty()) {
+				escapedRange = {
+					end: sel.endColumn,
+					line: sel.startLineNumber,
+					start: sel.startColumn
+				};
+			} else {
+				// Selection was collapsed, use the previous position info
+				const valueRange = findJsonValueRange(line, e.position.column);
+				if (valueRange) {
+					escapedRange = {
+						end: valueRange.end,
+						line: e.position.lineNumber,
+						start: valueRange.start
+					};
+				}
+			}
+			return;
+		}
+
 		const col = e.position.column;
 
-		// Skip if cursor is inside an enum array
-		if (isCursorInEnumArraySimple(model, e.position, enumArrayProps)) return;
+		// Inside an enum array: select the nearest quoted item
+		if (isCursorInEnumArraySimple(model, e.position, enumArrayProps)) {
+			const itemRange = findEnumItemAtPosition(model, e.position, enumArrayProps);
+			if (itemRange) {
+				// Check if this is the same range we escaped from
+				if (escapedRange &&
+					escapedRange.line === e.position.lineNumber &&
+					escapedRange.start === itemRange.start &&
+					escapedRange.end === itemRange.end) {
+					// Still inside the escaped object - don't re-select
+					return;
+				}
+				// Different object - clear escape state and select
+				escapedRange = null;
+				settingSelection = true;
+				queueMicrotask(() => {
+					editor.setSelection(new monacoNs.Selection(
+						e.position.lineNumber, itemRange.start,
+						e.position.lineNumber, itemRange.end
+					));
+					settingSelection = false;
+				});
+			}
+			return;
+		}
 
 		// Skip if cursor is on a property key (only select values)
 		if (isCursorOnPropertyKey(line, col)) return;
@@ -877,11 +975,102 @@ function setupValueAutoSelect(
 		const valueRange = findJsonValueRange(line, col);
 		if (!valueRange) return;
 
+		// Check if this is the same range we escaped from
+		if (escapedRange &&
+			escapedRange.line === e.position.lineNumber &&
+			escapedRange.start === valueRange.start &&
+			escapedRange.end === valueRange.end) {
+			// Still inside the escaped object - don't re-select
+			return;
+		}
+
+		// Different object - clear escape state and select
+		escapedRange = null;
 		settingSelection = true;
 		queueMicrotask(() => {
 			editor.setSelection(new monacoNs.Selection(
 				e.position.lineNumber, valueRange.start,
 				e.position.lineNumber, valueRange.end
+			));
+			settingSelection = false;
+		});
+	}));
+
+	// Left/right arrow navigation between array items when selection is active
+	// Works for ANY array (not just enum arrays) so up/down navigation into arrays works seamlessly
+	disposables.push(editor.onKeyDown((e) => {
+		if (e.keyCode !== monacoNs.KeyCode.LeftArrow && e.keyCode !== monacoNs.KeyCode.RightArrow) return;
+
+		const sel = editor.getSelection();
+		if (!sel || sel.isEmpty()) return;
+
+		const model = editor.getModel();
+		if (!model) return;
+
+		const position = sel.getStartPosition();
+		const line = model.getLineContent(position.lineNumber);
+
+		// Find all quoted items in any array on this line
+		const items = findArrayItemsOnLine(line);
+		if (items.length === 0) return;
+
+		// Find which item is currently selected by matching ranges
+		const currentIdx = items.findIndex((r) =>
+			r.start === sel.startColumn && r.end === sel.endColumn
+		);
+		if (currentIdx === -1) return;
+
+		const direction = e.keyCode === monacoNs.KeyCode.LeftArrow ? -1 : 1;
+		const nextIdx = currentIdx + direction;
+		if (nextIdx < 0 || nextIdx >= items.length) return;
+
+		e.preventDefault();
+		e.stopPropagation();
+
+		const nextItem = items[nextIdx];
+		settingSelection = true;
+		queueMicrotask(() => {
+			editor.setSelection(new monacoNs.Selection(
+				position.lineNumber, nextItem.start,
+				position.lineNumber, nextItem.end
+			));
+			settingSelection = false;
+		});
+	}));
+
+	// Up/down arrow navigation to select value on adjacent line
+	disposables.push(editor.onKeyDown((e) => {
+		if (e.keyCode !== monacoNs.KeyCode.UpArrow && e.keyCode !== monacoNs.KeyCode.DownArrow) return;
+
+		const sel = editor.getSelection();
+		if (!sel || sel.isEmpty()) return;
+
+		const model = editor.getModel();
+		if (!model) return;
+
+		const direction = e.keyCode === monacoNs.KeyCode.UpArrow ? -1 : 1;
+		const targetLineNum = sel.startLineNumber + direction;
+
+		// Check bounds
+		if (targetLineNum < 1 || targetLineNum > model.getLineCount()) return;
+
+		const targetLine = model.getLineContent(targetLineNum);
+
+		// Find the value on the target line
+		const valueRange = findValueOnLine(targetLine);
+		if (!valueRange) return;
+
+		e.preventDefault();
+		e.stopPropagation();
+
+		// Clear escaped range since we're moving to a different line/object
+		escapedRange = null;
+
+		settingSelection = true;
+		queueMicrotask(() => {
+			editor.setSelection(new monacoNs.Selection(
+				targetLineNum, valueRange.start,
+				targetLineNum, valueRange.end
 			));
 			settingSelection = false;
 		});
@@ -907,6 +1096,97 @@ function isCursorOnPropertyKey(line: string, column: number): boolean {
 }
 
 /**
+ * Find the quoted enum item at or adjacent to the cursor's column position
+ * inside an enum array. Returns the 1-based range of the full quoted value
+ * (including quotes) or null.
+ */
+function findEnumItemAtPosition(
+	model: monacoNs.editor.ITextModel,
+	position: monacoNs.IPosition,
+	enumArrayProps: Set<string>
+): null | { end: number; start: number } {
+	for (const propName of enumArrayProps) {
+		const bounds = findArrayBounds(model, propName);
+		if (!bounds) continue;
+
+		const afterOpen = bounds.openLine < position.lineNumber ||
+			(bounds.openLine === position.lineNumber && position.column > bounds.openCol);
+		const beforeClose = bounds.closeLine > position.lineNumber ||
+			(bounds.closeLine === position.lineNumber && position.column <= bounds.closeCol);
+
+		if (!afterOpen || !beforeClose) continue;
+
+		const line = model.getLineContent(bounds.openLine);
+		const arraySlice = line.substring(bounds.openCol);
+		const regex = /"([^"\\]*)"/g;
+		let match;
+		let bestMatch: null | { end: number; start: number } = null;
+		let bestDist = Infinity;
+
+		while ((match = regex.exec(arraySlice)) !== null) {
+			const startCol = bounds.openCol + match.index + 1;
+			const endCol = startCol + match[0].length;
+
+			// Direct hit or adjacent
+			if (position.column >= startCol && position.column <= endCol) {
+				return { end: endCol, start: startCol };
+			}
+
+			// Find nearest item for adjacent navigation
+			const dist = Math.min(
+				Math.abs(position.column - startCol),
+				Math.abs(position.column - endCol)
+			);
+			if (dist < bestDist) {
+				bestDist = dist;
+				bestMatch = { end: endCol, start: startCol };
+			}
+		}
+
+		// Select the nearest item if cursor is within 2 chars
+		if (bestMatch && bestDist <= 2) return bestMatch;
+	}
+	return null;
+}
+
+/**
+ * Find all quoted enum item ranges inside the array at the given position.
+ * Returns an array of 1-based { start, end } ranges sorted left-to-right.
+ */
+function findAllEnumItemRanges(
+	model: monacoNs.editor.ITextModel,
+	position: monacoNs.IPosition,
+	enumArrayProps: Set<string>
+): Array<{ end: number; start: number }> {
+	for (const propName of enumArrayProps) {
+		const bounds = findArrayBounds(model, propName);
+		if (!bounds) continue;
+
+		const afterOpen = bounds.openLine < position.lineNumber ||
+			(bounds.openLine === position.lineNumber && position.column > bounds.openCol);
+		const beforeClose = bounds.closeLine > position.lineNumber ||
+			(bounds.closeLine === position.lineNumber && position.column <= bounds.closeCol);
+
+		if (!afterOpen || !beforeClose) continue;
+
+		const line = model.getLineContent(bounds.openLine);
+		const arraySlice = line.substring(bounds.openCol);
+		const regex = /"([^"\\]*)"/g;
+		const items: Array<{ end: number; start: number }> = [];
+		let match;
+
+		while ((match = regex.exec(arraySlice)) !== null) {
+			const startCol = bounds.openCol + match.index + 1;
+			const endCol = startCol + match[0].length;
+			items.push({ end: endCol, start: startCol });
+		}
+
+		return items;
+	}
+	return [];
+}
+
+/**
  * Simple check if cursor is inside any enum array brackets.
  */
 function isCursorInEnumArraySimple(
@@ -926,6 +1206,106 @@ function isCursorInEnumArraySimple(
 		if (afterOpen && beforeClose) return true;
 	}
 	return false;
+}
+
+/**
+ * Find the value on a line (after the colon), regardless of cursor position.
+ * Used for up/down arrow navigation to find the selectable value on adjacent lines.
+ * Returns 1-based { start, end } range or null.
+ */
+function findValueOnLine(line: string): null | { end: number; start: number } {
+	const colonIdx = line.indexOf(':');
+	if (colonIdx === -1) return null;
+
+	// Look for a string value (most common case): "propName": "value"
+	const afterColon = line.substring(colonIdx + 1);
+	const stringMatch = afterColon.match(/^\s*"([^"\\]*)"/);
+	if (stringMatch) {
+		const valueStart = colonIdx + 1 + (afterColon.length - afterColon.trimStart().length);
+		const contentStart = valueStart + 2; // 1-based, after opening quote
+		const contentEnd = contentStart + stringMatch[1].length; // 1-based, at closing quote
+		return { end: contentEnd, start: contentStart };
+	}
+
+	// Look for a number value: "propName": 123 or "propName": -5
+	const numberMatch = afterColon.match(/^\s*(-?\d+)/);
+	if (numberMatch) {
+		const valueStart = colonIdx + 1 + (afterColon.length - afterColon.trimStart().length);
+		return {
+			end: valueStart + numberMatch[1].length + 1, // 1-based, exclusive
+			start: valueStart + 1 // 1-based
+		};
+	}
+
+	// Look for keywords: true, false, null
+	const keywordMatch = afterColon.match(/^\s*(true|false|null)\b/);
+	if (keywordMatch) {
+		const valueStart = colonIdx + 1 + (afterColon.length - afterColon.trimStart().length);
+		return {
+			end: valueStart + keywordMatch[1].length + 1, // 1-based, exclusive
+			start: valueStart + 1 // 1-based
+		};
+	}
+
+	// Look for an array: "propName": ["item1", ...] - select first item INCLUDING quotes
+	// This matches the format expected by findAllEnumItemRanges for left/right navigation
+	const arrayMatch = afterColon.match(/^\s*\[\s*"([^"\\]*)"/);
+	if (arrayMatch) {
+		const bracketIdx = afterColon.indexOf('[');
+		const firstQuoteIdx = afterColon.indexOf('"', bracketIdx);
+		const valueStart = colonIdx + 1 + firstQuoteIdx;
+		// Include the quotes in the selection to match findAllEnumItemRanges
+		const quoteStart = valueStart + 1; // 1-based, at opening quote
+		const quoteEnd = quoteStart + arrayMatch[1].length + 2; // 1-based, after closing quote
+		return { end: quoteEnd, start: quoteStart };
+	}
+
+	return null;
+}
+
+/**
+ * Find all quoted string items in any array on a line.
+ * Returns an array of 1-based { start, end } ranges sorted left-to-right.
+ * Works for any array, not just enum arrays, to support up/down → left/right navigation.
+ */
+function findArrayItemsOnLine(line: string): Array<{ end: number; start: number }> {
+	const colonIdx = line.indexOf(':');
+	if (colonIdx === -1) return [];
+
+	const afterColon = line.substring(colonIdx + 1);
+	const bracketIdx = afterColon.indexOf('[');
+	if (bracketIdx === -1) return [];
+
+	// Find the closing bracket
+	let depth = 0;
+	let closeBracketIdx = -1;
+	for (let i = bracketIdx; i < afterColon.length; i++) {
+		if (afterColon[i] === '[') depth++;
+		else if (afterColon[i] === ']') {
+			depth--;
+			if (depth === 0) {
+				closeBracketIdx = i;
+				break;
+			}
+		}
+	}
+	if (closeBracketIdx === -1) return [];
+
+	// Extract just the array content between brackets
+	const arrayContent = afterColon.substring(bracketIdx + 1, closeBracketIdx);
+	const arrayStartInLine = colonIdx + 1 + bracketIdx + 1; // 0-based index of first char after '['
+
+	// Find all quoted strings in the array content
+	const items: Array<{ end: number; start: number }> = [];
+	const regex = /"([^"\\]*)"/g;
+	let match;
+	while ((match = regex.exec(arrayContent)) !== null) {
+		const start = arrayStartInLine + match.index + 1; // 1-based column
+		const end = start + match[0].length; // 1-based, exclusive end
+		items.push({ end, start });
+	}
+
+	return items;
 }
 
 /**
@@ -1025,63 +1405,15 @@ function findKeywordRange(line: string, column: number): null | { end: number; s
 // ── Feature 6: Clickable Value Cursor Decorations ────────────────────────────
 
 /**
- * Adds pointer (hand) cursor decorations on boolean values so they
- * visually indicate clickability. Enum array items already get pointer
- * cursors from their own CSS class.
+ * Boolean values no longer get pointer cursor decorations since
+ * they are now selected on click and toggled with Tab.
+ * This function is kept as a stub in case custom decorations are added later.
  */
 function setupClickableCursorDecorations(
-	editor: monacoNs.editor.IStandaloneCodeEditor,
-	schema: JsonSchema
+	_editor: monacoNs.editor.IStandaloneCodeEditor,
+	_schema: JsonSchema
 ): monacoNs.IDisposable {
-	const enumArrayProps = new Set(findEnumArrayProperties(schema).map((e) => e.propertyName));
-	const decorationCollection = editor.createDecorationsCollection([]);
-
-	const updateDecorations = (): void => {
-		const model = editor.getModel();
-		if (!model) return;
-
-		const decos: monacoNs.editor.IModelDeltaDecoration[] = [];
-		const lineCount = model.getLineCount();
-
-		for (let i = 1; i <= lineCount; i++) {
-			const line = model.getLineContent(i);
-
-			// Skip lines inside enum arrays (they have their own cursor styling)
-			if (isLineInsideEnumArray(model, i, enumArrayProps)) continue;
-
-			// Find boolean values (true/false) on the value side of a colon
-			const boolRegex = /\b(true|false)\b/g;
-			let match;
-			while ((match = boolRegex.exec(line)) !== null) {
-				const prefix = line.substring(0, match.index);
-				const quoteCount = (prefix.match(/(?<!\\)"/g) ?? []).length;
-				if (quoteCount % 2 !== 0) continue; // Inside a string
-
-				const beforeValue = prefix.trimEnd();
-				if (!beforeValue.endsWith(':')) continue;
-
-				decos.push({
-					options: { inlineClassName: 'json-clickable-value' },
-					range: new monacoNs.Range(
-						i, match.index + 1,
-						i, match.index + match[0].length + 1
-					)
-				});
-			}
-		}
-
-		decorationCollection.set(decos);
-	};
-
-	updateDecorations();
-	const contentDisposable = editor.onDidChangeModelContent(() => updateDecorations());
-
-	return {
-		dispose() {
-			decorationCollection.clear();
-			contentDisposable.dispose();
-		}
-	};
+	return { dispose: noop };
 }
 
 /**
@@ -1104,9 +1436,9 @@ function isLineInsideEnumArray(
 // ── Feature 7: Tab Toggle ────────────────────────────────────────────────────
 
 /**
- * Tab key toggles the value under the cursor:
- * - Boolean values: true↔false
- * - Enum array items: toggle active/inactive
+ * Tab key toggles the value under the cursor and keeps it selected:
+ * - Boolean values: true↔false (value stays selected)
+ * - Enum array items: toggle active/inactive (item stays selected)
  */
 function setupTabToggle(
 	editor: monacoNs.editor.IStandaloneCodeEditor,
@@ -1126,96 +1458,136 @@ function setupTabToggle(
 
 		const line = model.getLineContent(position.lineNumber);
 
-		// Check if on a boolean value
-		const word = model.getWordAtPosition(position);
-		if (word && (word.word === 'true' || word.word === 'false')) {
-			// Verify it's a value (not inside a string or key)
-			const prefix = line.substring(0, word.startColumn - 1);
-			const quoteCount = (prefix.match(/(?<!\\)"/g) ?? []).length;
-			if (quoteCount % 2 === 0) {
-				const beforeValue = prefix.trimEnd();
-				if (beforeValue.endsWith(':')) {
-					e.preventDefault();
-					e.stopPropagation();
+		// Also check selection — the cursor may be at one end of a selected value
+		const sel = editor.getSelection();
+		const checkPositions = [position];
+		if (sel && !sel.isEmpty()) {
+			checkPositions.push(sel.getStartPosition(), sel.getEndPosition());
+		}
 
-					const newValue = word.word === 'true' ? 'false' : 'true';
-					const range = new monacoNs.Range(
-						position.lineNumber, word.startColumn,
-						position.lineNumber, word.endColumn
-					);
-					editor.executeEdits('tab-toggle', [{
-						forceMoveMarkers: true,
-						range,
-						text: newValue
-					}]);
-					return;
+		// Check if on a boolean value (try all positions)
+		for (const pos of checkPositions) {
+			const word = model.getWordAtPosition(pos);
+			if (word && (word.word === 'true' || word.word === 'false')) {
+				const prefix = line.substring(0, word.startColumn - 1);
+				const quoteCount = (prefix.match(/(?<!\\)"/g) ?? []).length;
+				if (quoteCount % 2 === 0) {
+					const beforeValue = prefix.trimEnd();
+					if (beforeValue.endsWith(':')) {
+						e.preventDefault();
+						e.stopPropagation();
+
+						const newValue = word.word === 'true' ? 'false' : 'true';
+						const range = new monacoNs.Range(
+							position.lineNumber, word.startColumn,
+							position.lineNumber, word.endColumn
+						);
+						editor.executeEdits('tab-toggle', [{
+							forceMoveMarkers: true,
+							range,
+							text: newValue
+						}]);
+
+						// Re-select the new value
+						queueMicrotask(() => {
+							editor.setSelection(new monacoNs.Selection(
+								position.lineNumber, word.startColumn,
+								position.lineNumber, word.startColumn + newValue.length
+							));
+						});
+						return;
+					}
 				}
 			}
 		}
 
-		// Check if cursor is inside an enum array on a value
+		// Check if cursor/selection is inside an enum array on a value
 		for (const info of enumArrays) {
 			const bounds = findArrayBounds(model, info.propertyName);
 			if (!bounds) continue;
 
-			const afterOpen = bounds.openLine < position.lineNumber ||
-				(bounds.openLine === position.lineNumber && position.column > bounds.openCol);
-			const beforeClose = bounds.closeLine > position.lineNumber ||
-				(bounds.closeLine === position.lineNumber && position.column <= bounds.closeCol);
+			// Check all positions (cursor + selection endpoints)
+			for (const pos of checkPositions) {
+				const afterOpen = bounds.openLine < pos.lineNumber ||
+					(bounds.openLine === pos.lineNumber && pos.column > bounds.openCol);
+				const beforeClose = bounds.closeLine > pos.lineNumber ||
+					(bounds.closeLine === pos.lineNumber && pos.column <= bounds.closeCol);
 
-			if (!afterOpen || !beforeClose) continue;
+				if (!afterOpen || !beforeClose) continue;
 
-			// Find which quoted value the cursor is on/in
-			const arraySlice = line.substring(bounds.openCol);
-			const regex = /"([^"\\]*)"/g;
-			let match;
-			while ((match = regex.exec(arraySlice)) !== null) {
-				const startCol = bounds.openCol + match.index + 1;
-				const endCol = startCol + match[0].length;
+				// Find which quoted value the cursor/selection is on/in
+				const arraySlice = line.substring(bounds.openCol);
+				const regex = /"([^"\\]*)"/g;
+				let match;
+				while ((match = regex.exec(arraySlice)) !== null) {
+					const startCol = bounds.openCol + match.index + 1;
+					const endCol = startCol + match[0].length;
 
-				if (position.column >= startCol && position.column < endCol) {
-					const itemValue = match[1];
-					if (!info.enumValues.includes(itemValue)) continue;
+					if (pos.column >= startCol && pos.column <= endCol) {
+						const itemValue = match[1];
+						if (!info.enumValues.includes(itemValue)) continue;
 
-					e.preventDefault();
-					e.stopPropagation();
+						e.preventDefault();
+						e.stopPropagation();
 
-					// Use tracked active values (authoritative while expanded)
-					const tracked = trackedActiveValues.get(info.propertyName);
-					const activeSet = tracked ? new Set(tracked) : new Set<string>();
+						// Use tracked active values (authoritative while expanded)
+						const tracked = trackedActiveValues.get(info.propertyName);
+						const activeSet = tracked ? new Set(tracked) : new Set<string>();
 
-					if (activeSet.has(itemValue)) {
-						activeSet.delete(itemValue);
-					} else {
-						activeSet.add(itemValue);
+						if (activeSet.has(itemValue)) {
+							activeSet.delete(itemValue);
+						} else {
+							activeSet.add(itemValue);
+						}
+
+						// Update tracked state
+						trackedActiveValues.set(info.propertyName, new Set(activeSet));
+
+						const sortedActive = info.enumValues
+							.filter((v) => activeSet.has(v))
+							.sort((a, b) => a.localeCompare(b));
+						const sortedInactive = info.enumValues
+							.filter((v) => !activeSet.has(v))
+							.sort((a, b) => a.localeCompare(b));
+						const allItems = [...sortedActive, ...sortedInactive];
+						const newArrayText = `[${allItems.map((v) => `"${v}"`).join(', ')}]`;
+
+						const currentBounds = findArrayBounds(model, info.propertyName);
+						if (!currentBounds) return;
+
+						const arrayRange = new monacoNs.Range(
+							currentBounds.openLine, currentBounds.openCol,
+							currentBounds.closeLine, currentBounds.closeCol + 1
+						);
+
+						editor.executeEdits('tab-toggle-enum', [{
+							forceMoveMarkers: true,
+							range: arrayRange,
+							text: newArrayText
+						}]);
+
+						// Re-select the toggled item in its new position
+						queueMicrotask(() => {
+							const updatedBounds = findArrayBounds(model, info.propertyName);
+							if (!updatedBounds) return;
+							const updatedLine = model.getLineContent(updatedBounds.openLine);
+							const updatedSlice = updatedLine.substring(updatedBounds.openCol);
+							const findRegex = /"([^"\\]*)"/g;
+							let findMatch;
+							while ((findMatch = findRegex.exec(updatedSlice)) !== null) {
+								if (findMatch[1] === itemValue) {
+									const itemStartCol = updatedBounds.openCol + findMatch.index + 1;
+									const itemEndCol = itemStartCol + findMatch[0].length;
+									editor.setSelection(new monacoNs.Selection(
+										updatedBounds.openLine, itemStartCol,
+										updatedBounds.openLine, itemEndCol
+									));
+									break;
+								}
+							}
+						});
+						return;
 					}
-
-					// Update tracked state
-					trackedActiveValues.set(info.propertyName, new Set(activeSet));
-
-					const sortedActive = info.enumValues
-						.filter((v) => activeSet.has(v))
-						.sort((a, b) => a.localeCompare(b));
-					const sortedInactive = info.enumValues
-						.filter((v) => !activeSet.has(v))
-						.sort((a, b) => a.localeCompare(b));
-					const allItems = [...sortedActive, ...sortedInactive];
-					const newArrayText = `[${allItems.map((v) => `"${v}"`).join(', ')}]`;
-
-					const currentBounds = findArrayBounds(model, info.propertyName);
-					if (!currentBounds) return;
-
-					const arrayRange = new monacoNs.Range(
-						currentBounds.openLine, currentBounds.openCol,
-						currentBounds.closeLine, currentBounds.closeCol + 1
-					);
-
-					editor.executeEdits('tab-toggle-enum', [{
-						forceMoveMarkers: true,
-						range: arrayRange,
-						text: newArrayText
-					}]);
-					return;
 				}
 			}
 		}
@@ -1234,6 +1606,7 @@ function setupFieldNavigation(
 	schema: JsonSchema
 ): monacoNs.IDisposable {
 	const enumArrayProps = new Set(findEnumArrayProperties(schema).map((e) => e.propertyName));
+	const fileProps = findFilePathProperties(schema);
 
 	return editor.onKeyDown((e) => {
 		if (e.keyCode !== monacoNs.KeyCode.UpArrow && e.keyCode !== monacoNs.KeyCode.DownArrow) return;
@@ -1246,6 +1619,10 @@ function setupFieldNavigation(
 
 		// Don't intercept if cursor is inside an enum array (let Feature 4 handle it)
 		if (isCursorInEnumArraySimple(model, position, enumArrayProps)) return;
+
+		// Don't intercept if cursor is in a file/dir path field (let suggest widget handle arrows)
+		const line = model.getLineContent(position.lineNumber);
+		if (findStringValueRange(line, position.column, fileProps)) return;
 
 		const direction = e.keyCode === monacoNs.KeyCode.UpArrow ? -1 : 1;
 		const targetLine = position.lineNumber + direction;
@@ -1270,47 +1647,4 @@ function setupFieldNavigation(
 			editor.revealLineInCenterIfOutsideViewport(targetLine);
 		});
 	});
-}
-
-/**
- * Find the first value on a line and return its content range
- * (excluding quotes for strings).
- */
-function findValueOnLine(line: string): null | { end: number; start: number } {
-	const colonIdx = line.indexOf(':');
-	if (colonIdx === -1) return null;
-
-	const afterColon = line.substring(colonIdx + 1).trimStart();
-	const valueStartIdx = line.indexOf(afterColon, colonIdx + 1);
-
-	if (afterColon.startsWith('"')) {
-		// String value — select content between quotes (excluding quotes)
-		const openQuote = valueStartIdx;
-		const closeQuote = line.indexOf('"', openQuote + 1);
-		if (closeQuote === -1) return null;
-
-		// Content range (1-based), excluding quotes
-		const contentStart = openQuote + 2; // After opening quote
-		const contentEnd = closeQuote + 1; // At closing quote (exclusive)
-
-		// If empty string, still return the position between quotes
-		return { end: contentEnd, start: contentStart };
-	}
-
-	// Non-string: boolean, number, null, or array
-	if (afterColon.startsWith('[')) {
-		// Array — don't select, but place cursor inside
-		return { end: valueStartIdx + 2, start: valueStartIdx + 2 };
-	}
-
-	// Boolean, number, null
-	const valueMatch = afterColon.match(/^(true|false|null|-?\d+)/);
-	if (valueMatch) {
-		return {
-			end: valueStartIdx + valueMatch[0].length + 1, // 1-based exclusive
-			start: valueStartIdx + 1 // 1-based
-		};
-	}
-
-	return null;
 }

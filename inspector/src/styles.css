@@ -307,7 +307,7 @@ code {
 /* ── Interactive JSON: Clickable Value Cursors ───────────────────────── */
 
 .json-clickable-value {
-	cursor: pointer;
+	/* no special cursor — values are selected on click, toggled with Tab */
 }
 
 /* ── Interactive JSON: Enum Array Toggle ─────────────────────────────── */
@@ -315,6 +315,5 @@ code {
 .enum-inactive-options {
 	color: rgba(150, 150, 150, 0.45) !important;
 	font-style: italic;
-	cursor: pointer;
 	letter-spacing: 0.02em;
 }
