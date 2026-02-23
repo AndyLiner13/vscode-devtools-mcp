@@ -25,6 +25,14 @@ export interface TreeNode {
   symbols?: SymbolNode[];
   lineCount?: number;
   ignored?: boolean;
+  /** Immediate file count (populated on directory stubs when children aren't expanded). */
+  fileCount?: number;
+  /** Immediate subdirectory count (populated on directory stubs when children aren't expanded). */
+  dirCount?: number;
+  /** Total symbol count including nested children (populated when metadata is enabled). */
+  symbolCount?: number;
+  /** Aggregate reference count across all symbols in this file. */
+  totalReferences?: number;
 }
 
 export interface SymbolNode {
@@ -33,6 +41,10 @@ export interface SymbolNode {
   detail?: string;
   range: { start: number; end: number };
   children?: SymbolNode[];
+  /** Number of references to this symbol across the codebase. */
+  referenceCount?: number;
+  /** Number of implementations of this symbol (interfaces, abstract members). */
+  implementationCount?: number;
 }
 
 export interface OverviewResult {

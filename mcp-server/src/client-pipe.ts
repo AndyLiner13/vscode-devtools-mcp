@@ -225,6 +225,8 @@ export interface CodebaseSymbolNode {
   detail?: string;
   range: {start: number; end: number};
   children?: CodebaseSymbolNode[];
+  referenceCount?: number;
+  implementationCount?: number;
 }
 
 export interface CodebaseTreeNode {
@@ -234,6 +236,10 @@ export interface CodebaseTreeNode {
   symbols?: CodebaseSymbolNode[];
   lineCount?: number;
   ignored?: boolean;
+  fileCount?: number;
+  dirCount?: number;
+  symbolCount?: number;
+  totalReferences?: number;
 }
 
 export interface CodebaseOverviewResult {

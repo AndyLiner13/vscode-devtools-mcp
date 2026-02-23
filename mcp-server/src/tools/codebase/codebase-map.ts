@@ -55,22 +55,29 @@ function countImmediateSubfolders(nodes: CodebaseTreeNode[]): number {
   return count;
 }
 
-function folderMeta(nodes: CodebaseTreeNode[]): string {
-  const f = countImmediateFiles(nodes);
-  const d = countImmediateSubfolders(nodes);
+function folderMeta(node: CodebaseTreeNode): string {
+  const f = node.fileCount ?? countImmediateFiles(node.children ?? []);
+  const d = node.dirCount ?? countImmediateSubfolders(node.children ?? []);
   return `[${f}F|${d}D]`;
 }
 
-function fileMeta(node: CodebaseTreeNode, includeSymbols: boolean): string {
+function fileMeta(node: CodebaseTreeNode): string {
   const parts: string[] = [];
   if (node.lineCount != null) parts.push(`${node.lineCount}L`);
-  if (includeSymbols && node.symbols) parts.push(`${countSymbolsDeep(node.symbols)}S`);
+  const symCount = node.symbolCount ?? (node.symbols ? countSymbolsDeep(node.symbols) : 0);
+  if (symCount > 0) parts.push(`${symCount}S`);
+  if (node.totalReferences != null && node.totalReferences > 0) parts.push(`${node.totalReferences}R`);
   return parts.length > 0 ? `[${parts.join('|')}]` : '';
 }
 
 function formatSymbol(symbol: CodebaseSymbolNode, depth: number, maxSymbolDepth?: number, currentSymbolDepth = 0): string {
   const indent = INDENT.repeat(depth);
-  let output = `${indent}${symbol.kind} ${symbol.name}\n`;
+  // Show reference/implementation metadata if available
+  const metaParts: string[] = [];
+  if (symbol.referenceCount != null) metaParts.push(`${symbol.referenceCount}R`);
+  if (symbol.implementationCount != null) metaParts.push(`${symbol.implementationCount}I`);
+  const meta = metaParts.length > 0 ? `[${metaParts.join('|')}] ` : '';
+  let output = `${indent}${meta}${symbol.kind} ${symbol.name}\n`;
   if (symbol.children && (maxSymbolDepth === undefined || currentSymbolDepth < maxSymbolDepth)) {
     for (const child of symbol.children) {
       output += formatSymbol(child, depth + 1, maxSymbolDepth, currentSymbolDepth + 1);
@@ -116,13 +123,14 @@ function formatTree(
         || (opts.maxFileFolderDepth !== undefined && depth >= opts.maxFileFolderDepth);
 
       const hasContent = !!node.children?.length;
-      const isCompressed = hasContent && (!willRecurse || childFilesHidden);
+      const hasStubMeta = node.fileCount != null || node.dirCount != null;
+      const isCompressed = (hasContent || hasStubMeta) && (!willRecurse || childFilesHidden);
 
       const showMeta = opts.metadata === true
         || (opts.metadata === 'auto' && isCompressed);
 
-      if (showMeta && node.children) {
-        output += `${indent}${folderMeta(node.children)} ${node.name}/\n`;
+      if (showMeta) {
+        output += `${indent}${folderMeta(node)} ${node.name}/\n`;
       } else {
         output += `${indent}${node.name}/\n`;
       }
@@ -143,7 +151,7 @@ function formatTree(
         || (opts.metadata === 'auto' && isCompressed);
 
       if (showMeta) {
-        const meta = fileMeta(node, !showSymsHere);
+        const meta = fileMeta(node);
         output += meta ? `${indent}${meta} ${node.name}\n` : `${indent}${node.name}\n`;
       } else {
         output += `${indent}${node.name}\n`;
@@ -233,7 +241,7 @@ export const map = defineTool({
       .describe('Include symbol skeleton (name + kind, hierarchically nested). Default: false.'),
 
     metadata: zod.boolean().optional()
-      .describe('Show counts. Key: F=files, D=directories, L=lines, S=symbols. E.g. [5F|3D] [61L|25S]. Default: false.'),
+      .describe('Show counts. Key: F=files, D=directories, L=lines, S=symbols, R=references, I=implementations. E.g. [5F|3D] [61L|25S|42R] [3R|1I]. Default: false.'),
   },
   handler: async (request, response) => {
     const {params} = request;

@@ -19,7 +19,7 @@ import {
 } from 'ts-morph';
 import type { OverviewParams, OverviewResult, TreeNode, SymbolNode } from './types';
 import { TS_PARSEABLE_EXTS } from './types';
-import { getTsProject } from './ts-project';
+import { getTsProject, getWorkspaceProject } from './ts-project';
 import { getCustomParser } from './parsers';
 import { discoverFiles, readFileText } from './file-utils';
 import { parseIgnoreRules, applyIgnoreRules } from './ignore-rules';
@@ -54,8 +54,20 @@ export function getOverview(params: OverviewParams): OverviewResult {
   let totalSymbols = 0;
   if (symbols) {
     totalSymbols = populateSymbols(tree, '', fileMap, true);
+    // Populate reference/implementation counts using workspace project
+    try {
+      populateReferenceCounts(tree, resolvedFolder, rootDir);
+    } catch {
+      // Reference counting is best-effort — continue without ref data
+    }
   } else if (metadata) {
-    populateLineCounts(tree, '', fileMap);
+    // Populate line counts AND symbol counts for file metadata
+    populateFileMetadata(tree, '', fileMap);
+  }
+
+  // Non-recursive: populate directory stub metadata from filesystem
+  if (!recursive && metadata) {
+    populateDirectoryStubMeta(tree, resolvedFolder);
   }
 
   return {
@@ -543,7 +555,9 @@ function populateSymbols(
         const tsSymbols = getTypeScriptSymbols(text, node.name);
         if (tsSymbols.length > 0) {
           node.symbols = tsSymbols;
-          totalSymbols += countSymbols(node.symbols);
+          const count = countSymbols(node.symbols);
+          node.symbolCount = count;
+          totalSymbols += count;
         }
         continue;
       }
@@ -553,7 +567,9 @@ function populateSymbols(
         const parsed = parserForExt(text, Infinity);
         if (parsed && parsed.length > 0) {
           node.symbols = parsed;
-          totalSymbols += countSymbols(node.symbols);
+          const count = countSymbols(node.symbols);
+          node.symbolCount = count;
+          totalSymbols += count;
         }
       }
     } catch {
@@ -564,7 +580,7 @@ function populateSymbols(
   return totalSymbols;
 }
 
-function populateLineCounts(
+function populateFileMetadata(
   nodes: TreeNode[],
   pathPrefix: string,
   fileMap: Map<string, string>,
@@ -572,7 +588,7 @@ function populateLineCounts(
   for (const node of nodes) {
     if (node.type === 'directory' && node.children) {
       const childPrefix = pathPrefix ? `${pathPrefix}/${node.name}` : node.name;
-      populateLineCounts(node.children, childPrefix, fileMap);
+      populateFileMetadata(node.children, childPrefix, fileMap);
       continue;
     }
     if (node.type !== 'file') continue;
@@ -581,9 +597,24 @@ function populateLineCounts(
     const absPath = fileMap.get(relativePath);
     if (!absPath) continue;
 
+    const ext = node.name.split('.').pop()?.toLowerCase() ?? '';
+
     try {
-      const { lineCount } = readFileText(absPath);
+      const { text, lineCount } = readFileText(absPath);
       node.lineCount = lineCount;
+
+      let symbolCount = 0;
+      if (TS_PARSEABLE_EXTS.has(ext)) {
+        const tsSymbols = getTypeScriptSymbols(text, node.name);
+        symbolCount = countSymbols(tsSymbols);
+      } else {
+        const parserForExt = getCustomParser(ext);
+        if (parserForExt) {
+          const parsed = parserForExt(text, Infinity);
+          if (parsed) symbolCount = countSymbols(parsed);
+        }
+      }
+      if (symbolCount > 0) node.symbolCount = symbolCount;
     } catch {
       // Skip binary files or files that can't be read as text
     }
@@ -609,4 +640,127 @@ function countDirectories(nodes: TreeNode[]): number {
     }
   }
   return count;
+}
+
+// ── Directory Stub Metadata ──────────────────────────
+
+/**
+ * For non-recursive mode, populate directory stubs with actual file/dir counts
+ * by reading the filesystem. Only runs on directories without expanded children.
+ */
+function populateDirectoryStubMeta(tree: TreeNode[], parentDir: string): void {
+  for (const node of tree) {
+    if (node.type !== 'directory' || node.ignored) continue;
+    if (node.children && node.children.length > 0) continue;
+
+    const dirPath = path.join(parentDir, node.name);
+    try {
+      const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+      let fileCount = 0;
+      let dirCount = 0;
+      for (const entry of entries) {
+        if (entry.isFile()) fileCount++;
+        else if (entry.isDirectory()) dirCount++;
+      }
+      node.fileCount = fileCount;
+      node.dirCount = dirCount;
+    } catch {
+      // Can't read directory — leave counts undefined
+    }
+  }
+}
+
+// ── Reference & Implementation Counting ──────────────
+
+/**
+ * Walk the tree and populate referenceCount/implementationCount on each symbol
+ * using the workspace TypeScript project's language service.
+ * Also sets totalReferences on file nodes as an aggregate.
+ */
+function populateReferenceCounts(
+  tree: TreeNode[],
+  resolvedFolder: string,
+  rootDir: string,
+): void {
+  const project = getWorkspaceProject(rootDir);
+  const langSvc = project.getLanguageService();
+
+  const walk = (nodes: TreeNode[], parentDir: string): void => {
+    for (const node of nodes) {
+      if (node.type === 'directory' && node.children) {
+        walk(node.children, path.join(parentDir, node.name));
+        continue;
+      }
+
+      if (node.type !== 'file' || !node.symbols) continue;
+
+      const ext = node.name.split('.').pop()?.toLowerCase() ?? '';
+      if (!TS_PARSEABLE_EXTS.has(ext)) continue;
+
+      const filePath = path.join(parentDir, node.name).replace(/\\/g, '/');
+      const sourceFile = project.getSourceFile(filePath);
+      if (!sourceFile) continue;
+
+      // Build identifier lookup for efficient matching
+      const identMap = buildIdentifierMap(sourceFile);
+      populateSymbolRefs(node.symbols, sourceFile, identMap);
+      node.totalReferences = sumSymbolRefs(node.symbols);
+    }
+  };
+
+  const populateSymbolRefs = (
+    symbols: SymbolNode[],
+    sourceFile: SourceFile,
+    identMap: Map<string, Node>,
+  ): void => {
+    for (const sym of symbols) {
+      if (sym.name !== 'constructor' && !sym.name.startsWith('<')) {
+        try {
+          const key = `${sym.name}:${sym.range.start}`;
+          const identNode = identMap.get(key);
+          if (identNode) {
+            // Reference count (subtract 1 for the definition itself)
+            const refs = langSvc.findReferencesAsNodes(identNode);
+            sym.referenceCount = Math.max(0, refs.length - 1);
+
+            // Implementation count via raw TS compiler API
+            const impls = langSvc.compilerObject.getImplementationAtPosition(
+              sourceFile.getFilePath(),
+              identNode.getStart(),
+            );
+            sym.implementationCount = impls ? impls.length : 0;
+          }
+        } catch {
+          // Skip symbols that can't be resolved
+        }
+      }
+
+      if (sym.children) {
+        populateSymbolRefs(sym.children, sourceFile, identMap);
+      }
+    }
+  };
+
+  walk(tree, resolvedFolder);
+}
+
+function buildIdentifierMap(sourceFile: SourceFile): Map<string, Node> {
+  const map = new Map<string, Node>();
+  const identifiers = sourceFile.getDescendantsOfKind(SyntaxKind.Identifier);
+  for (const ident of identifiers) {
+    const key = `${ident.getText()}:${ident.getStartLineNumber()}`;
+    if (!map.has(key)) {
+      map.set(key, ident);
+    }
+  }
+  return map;
+}
+
+function sumSymbolRefs(symbols: SymbolNode[]): number {
+  let total = 0;
+  for (const sym of symbols) {
+    if (sym.referenceCount != null) total += sym.referenceCount;
+    if (sym.children) total += sumSymbolRefs(sym.children);
+  }
+  return total;
 }
