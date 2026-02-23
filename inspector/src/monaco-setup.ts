@@ -111,6 +111,17 @@ export function createOutputEditor(
 }
 
 /**
+ * Changes the language mode of an existing editor model.
+ * Exposed so other modules can switch language without a runtime monaco import.
+ */
+export function setModelLanguage(
+  model: monaco.editor.ITextModel,
+  languageId: string,
+): void {
+  monaco.editor.setModelLanguage(model, languageId);
+}
+
+/**
  * Auto-sizes a Monaco editor vertically to fit its content,
  * capped at MAX_HEIGHT_LINES lines (matching VS Code's maxHeightInLines: 13).
  */

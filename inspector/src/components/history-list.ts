@@ -79,14 +79,13 @@ export async function addExecution(
   result: CallToolResult,
   durationMs: number,
 ): Promise<void> {
-  const record = await addRecord(
+  await addRecord(
     toolName,
     input,
     result.content,
     result.isError ?? false,
     durationMs,
   );
-  expandedEntries.add(record.id);
   await renderHistory();
 }
 
@@ -103,7 +102,6 @@ export async function updateExecution(
     result.isError ?? false,
     durationMs,
   );
-  expandedEntries.add(recordId);
   await renderHistory();
 }
 

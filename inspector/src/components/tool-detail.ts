@@ -1,5 +1,5 @@
-import type { CallToolResult, JsonSchema, ToolDefinition } from '../types';
-import { createInputEditor } from '../monaco-setup';
+import type { CallToolResult, ContentBlock, JsonSchema, ToolDefinition } from '../types';
+import { createInputEditor, createOutputEditor, setModelLanguage } from '../monaco-setup';
 import type * as monaco from 'monaco-editor';
 
 import { addExecution, createHistoryContainer, setCurrentTool, updateExecution } from './history-list';
@@ -8,8 +8,10 @@ import { addExecution, createHistoryContainer, setCurrentTool, updateExecution }
 let executeHandler: ((toolName: string, args: Record<string, unknown>) => Promise<CallToolResult>) | null = null;
 
 let activeInputEditor: monaco.editor.IStandaloneCodeEditor | null = null;
+let activeOutputEditor: monaco.editor.IStandaloneCodeEditor | null = null;
 let activeExecuteBtn: HTMLButtonElement | null = null;
 let activeExecutionTime: HTMLElement | null = null;
+let activeOutputSection: HTMLElement | null = null;
 let activeToolName = '';
 
 export function onExecute(
@@ -23,8 +25,13 @@ function disposeEditors(): void {
     activeInputEditor.dispose();
     activeInputEditor = null;
   }
+  if (activeOutputEditor) {
+    activeOutputEditor.dispose();
+    activeOutputEditor = null;
+  }
   activeExecuteBtn = null;
   activeExecutionTime = null;
+  activeOutputSection = null;
 }
 
 let pendingRerunRecordId: string | null = null;
@@ -56,6 +63,7 @@ async function executeCurrentInput(): Promise<void> {
     const result = await executeHandler(activeToolName, args);
     const elapsed = performance.now() - startTime;
     activeExecutionTime.textContent = `${elapsed.toFixed(0)}ms`;
+    renderLiveOutput(result.content, result.isError ?? false);
     if (rerunId) {
       await updateExecution(activeToolName, rerunId, result, Math.round(elapsed));
     } else {
@@ -66,6 +74,7 @@ async function executeCurrentInput(): Promise<void> {
     activeExecutionTime.textContent = `${elapsed.toFixed(0)}ms`;
     const message = err instanceof Error ? err.message : String(err);
     const errorResult = { content: [{ type: 'text' as const, text: `Error: ${message}` }], isError: true };
+    renderLiveOutput(errorResult.content, true);
     if (rerunId) {
       await updateExecution(activeToolName, rerunId, errorResult, Math.round(elapsed));
     } else {
@@ -157,6 +166,23 @@ export function renderToolDetail(tool: ToolDefinition): void {
   executeRow.appendChild(activeExecutionTime);
   card.appendChild(executeRow);
 
+  // ── Live Output Section (visible by default, empty until execution) ──
+  activeOutputSection = document.createElement('div');
+  activeOutputSection.id = 'live-output-section';
+  activeOutputSection.className = 'tool-io-section';
+
+  const outputLabel = document.createElement('h3');
+  outputLabel.id = 'live-output-label';
+  outputLabel.textContent = 'Output';
+  activeOutputSection.appendChild(outputLabel);
+
+  const outputWrapper = document.createElement('div');
+  outputWrapper.className = 'tool-io-editor-wrapper';
+  activeOutputEditor = createOutputEditor(outputWrapper, '', 'plaintext');
+  activeOutputSection.appendChild(outputWrapper);
+
+  card.appendChild(activeOutputSection);
+
   // ── History List ──
   const historyContainer = createHistoryContainer();
   card.appendChild(historyContainer);
@@ -171,6 +197,38 @@ export function renderToolDetail(tool: ToolDefinition): void {
 
   // Populate from SQLite after DOM is mounted
   void setCurrentTool(tool.name);
+}
+
+// ── Live Output ──
+
+function renderLiveOutput(content: ContentBlock[], isError: boolean): void {
+  if (!activeOutputEditor) return;
+
+  const outputText = content
+    .filter(b => b.text)
+    .map(b => b.text)
+    .join('\n');
+
+  let languageId = 'plaintext';
+  try {
+    JSON.parse(outputText);
+    languageId = 'json';
+  } catch {
+    // Not JSON
+  }
+
+  const model = activeOutputEditor.getModel();
+  if (model) {
+    setModelLanguage(model, languageId);
+    activeOutputEditor.setValue(outputText);
+  }
+
+  const label = document.getElementById('live-output-label');
+  if (label) {
+    label.style.color = isError
+      ? 'var(--vscode-editorError-foreground, #f44747)'
+      : '';
+  }
 }
 
 // ── Helpers ──

@@ -33,32 +33,53 @@ export class McpInspectorClient {
     return this.sessionId !== null;
   }
 
-  async connect(): Promise<void> {
-    this.onStateChange('connecting');
+  /**
+   * Connect to the MCP server with automatic retries.
+   * Handles the case where the server is rebuilding/restarting after code
+   * changes — keeps retrying until it comes up or the max attempts are hit.
+   */
+  async connect(maxAttempts = 15, retryDelayMs = 2000): Promise<void> {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      this.onStateChange('connecting');
 
-    try {
-      const initResult = await this.sendRequest('initialize', {
-        protocolVersion: PROTOCOL_VERSION,
-        capabilities: {},
-        clientInfo: {
-          name: 'devtools-inspector',
-          version: '1.0.0',
-        },
-      });
+      try {
+        const initResult = await this.sendRequest('initialize', {
+          protocolVersion: PROTOCOL_VERSION,
+          capabilities: {},
+          clientInfo: {
+            name: 'devtools-inspector',
+            version: '1.0.0',
+          },
+        });
 
-      this.serverInfo = (initResult.serverInfo as ServerInfo) ?? null;
-      this.capabilities = (initResult.capabilities as ServerCapabilities) ?? null;
+        this.serverInfo = (initResult.serverInfo as ServerInfo) ?? null;
+        this.capabilities = (initResult.capabilities as ServerCapabilities) ?? null;
 
-      await this.sendNotification('notifications/initialized');
-      await this.refreshTools();
+        await this.sendNotification('notifications/initialized');
+        await this.refreshTools();
 
-      this.onStateChange('connected');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      this.sessionId = null;
-      this.onStateChange('error', message);
-      throw err;
+        this.onStateChange('connected');
+        return;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.sessionId = null;
+
+        // Last attempt — give up
+        if (attempt >= maxAttempts) {
+          this.onStateChange('error', message);
+          throw err;
+        }
+
+        // Server is restarting or not yet up — retry after delay
+        console.log(`[mcp-client] Connect attempt ${attempt}/${maxAttempts} failed: ${message} — retrying in ${retryDelayMs}ms`);
+        this.onStateChange('connecting');
+        await this.delay(retryDelayMs);
+      }
     }
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   async refreshTools(): Promise<ToolDefinition[]> {

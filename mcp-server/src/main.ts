@@ -421,6 +421,19 @@ function startInspectorServer(): void {
         return;
       }
 
+      // Hot-reload check before creating a new session.
+      // This gives inspector refreshes the same rebuild+restart
+      // behavior that tool calls get via the request pipeline.
+      const hotReloadStatus = await pipeline.runHotReloadCheck();
+      if (hotReloadStatus === 'restarting') {
+        res.writeHead(503, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify({
+          jsonrpc: '2.0',
+          error: {code: -32000, message: 'Server restarting after rebuild'},
+        }));
+        return;
+      }
+
       // New session: create a dedicated McpServer + transport pair
       const inspectorTransport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),

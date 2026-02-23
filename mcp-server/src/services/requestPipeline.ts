@@ -322,4 +322,50 @@ export class RequestPipeline {
       });
     }
   }
+
+  /**
+   * Run the hot-reload check outside of a tool call context.
+   * Used by the inspector HTTP handler to trigger rebuild+restart on
+   * session init — the same check that tool calls get for free.
+   *
+   * Returns 'ready' when the server is up-to-date, 'restarting' when
+   * the MCP source was rebuilt and the process is about to exit.
+   */
+  async runHotReloadCheck(): Promise<'ready' | 'restarting'> {
+    if (!this.deps.hotReloadEnabled || this.restartScheduled) {
+      return this.restartScheduled ? 'restarting' : 'ready';
+    }
+
+    this.deps.onBeforeChangeCheck?.();
+
+    let check: ChangeCheckResult;
+    try {
+      check = await this.deps.checkForChanges(
+        this.deps.mcpServerRoot,
+        this.deps.extensionPath,
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger(`[pipeline] runHotReloadCheck: checkForChanges failed: ${message}`);
+      return 'ready';
+    }
+
+    try {
+      await this.deps.onAfterChangeCheck?.(check);
+    } catch (afterErr) {
+      const msg = afterErr instanceof Error ? afterErr.message : String(afterErr);
+      logger(`[pipeline] runHotReloadCheck: onAfterChangeCheck failed: ${msg}`);
+    }
+
+    if (check.mcpRebuilt) {
+      this.signalRestart('MCP server source changed (inspector session init)');
+      return 'restarting';
+    }
+
+    // Reset batchChecked so the next tool call in the pipeline
+    // doesn't redundantly re-check after we just checked.
+    this.batchChecked = true;
+
+    return 'ready';
+  }
 }
