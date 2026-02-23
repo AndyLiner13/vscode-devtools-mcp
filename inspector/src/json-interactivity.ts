@@ -1633,6 +1633,98 @@ function setupTabToggle(
 // ── Feature 8: Up/Down Field Navigation ──────────────────────────────────────
 
 /**
+ * Find the selectable range of a bare array item on a line (no key-colon prefix).
+ * Handles strings, numbers, booleans, and null.
+ * Returns 1-based { start, end } or null.
+ */
+function findBareArrayItemRange(line: string): { end: number; start: number } | null {
+	const trimmed = line.trim();
+	if (!trimmed) return null;
+
+	const stringMatch = trimmed.match(/^"([^"\\]*)"/);
+	if (stringMatch) {
+		const firstQuoteIdx = line.indexOf('"');
+		const contentStart = firstQuoteIdx + 2; // 1-based, skip opening quote
+		return { end: contentStart + stringMatch[1].length, start: contentStart };
+	}
+
+	const numberMatch = trimmed.match(/^(-?\d+(?:\.\d+)?)/);
+	if (numberMatch) {
+		const firstCharIdx = line.search(/\S/);
+		return { end: firstCharIdx + 1 + numberMatch[1].length, start: firstCharIdx + 1 };
+	}
+
+	const keywordMatch = trimmed.match(/^(true|false|null)\b/);
+	if (keywordMatch) {
+		const firstCharIdx = line.search(/\S/);
+		return { end: firstCharIdx + 1 + keywordMatch[1].length, start: firstCharIdx + 1 };
+	}
+
+	return null;
+}
+
+/**
+ * Starting from the line after an array opener, scan forward to find the first
+ * selectable item in the array. Handles nesting by tracking bracket depth.
+ */
+function findFirstArrayItem(
+	model: monacoNs.editor.ITextModel,
+	openerLine: number
+): { line: number; range: { end: number; start: number } } | null {
+	const lineCount = model.getLineCount();
+	let depth = 0;
+
+	for (let i = openerLine + 1; i <= lineCount; i++) {
+		const lineContent = model.getLineContent(i);
+		const trimmed = lineContent.trim();
+		if (!trimmed) continue;
+
+		if (trimmed.endsWith('[')) { depth++; continue; }
+		if (trimmed === ']' || trimmed === '],') {
+			if (depth === 0) break;
+			depth--;
+			continue;
+		}
+
+		if (depth === 0) {
+			const range = findBareArrayItemRange(lineContent);
+			if (range) return { line: i, range };
+		}
+	}
+	return null;
+}
+
+/**
+ * Starting from the line before an array closer, scan backward to find the last
+ * selectable item in the array. Handles nesting by tracking bracket depth.
+ */
+function findLastArrayItem(
+	model: monacoNs.editor.ITextModel,
+	closerLine: number
+): { line: number; range: { end: number; start: number } } | null {
+	let depth = 0;
+
+	for (let i = closerLine - 1; i >= 1; i--) {
+		const lineContent = model.getLineContent(i);
+		const trimmed = lineContent.trim();
+		if (!trimmed) continue;
+
+		if (trimmed === ']' || trimmed === '],') { depth++; continue; }
+		if (trimmed.endsWith('[')) {
+			if (depth === 0) break;
+			depth--;
+			continue;
+		}
+
+		if (depth === 0) {
+			const range = findBareArrayItemRange(lineContent);
+			if (range) return { line: i, range };
+		}
+	}
+	return null;
+}
+
+/**
  * Up/down arrow keys navigate between JSON property values on adjacent lines.
  * When pressed, the cursor moves to the value on the previous/next line and
  * selects it (content only, excluding quotes for strings).
@@ -1667,9 +1759,61 @@ function setupFieldNavigation(
 
 		const targetLineContent = model.getLineContent(targetLine);
 
+		// For lines that contain an inline array, pick first or last item based on direction
+		// rather than always defaulting to the first item like findValueOnLine does.
+		const inlineArrayItems = findArrayItemsOnLine(targetLineContent);
+		if (inlineArrayItems.length > 0) {
+			const chosen = direction === -1
+				? inlineArrayItems[inlineArrayItems.length - 1]
+				: inlineArrayItems[0];
+			e.preventDefault();
+			e.stopPropagation();
+			queueMicrotask(() => {
+				editor.setSelection(new monacoNs.Selection(
+					targetLine, chosen.start,
+					targetLine, chosen.end
+				));
+			});
+			return;
+		}
+
 		// Find a value on the target line
 		const valueRange = findValueOnLine(targetLineContent);
-		if (!valueRange) return;
+		if (!valueRange) {
+			const trimmedTarget = targetLineContent.trim();
+
+			// Going DOWN into a multi-line array opener → jump to first item
+			if (direction === 1 && trimmedTarget.endsWith('[')) {
+				const firstItem = findFirstArrayItem(model, targetLine);
+				if (!firstItem) return;
+				e.preventDefault();
+				e.stopPropagation();
+				queueMicrotask(() => {
+					editor.setSelection(new monacoNs.Selection(
+						firstItem.line, firstItem.range.start,
+						firstItem.line, firstItem.range.end
+					));
+				});
+				return;
+			}
+
+			// Going UP into a multi-line array closer → jump to last item
+			if (direction === -1 && (trimmedTarget === ']' || trimmedTarget === '],')) {
+				const lastItem = findLastArrayItem(model, targetLine);
+				if (!lastItem) return;
+				e.preventDefault();
+				e.stopPropagation();
+				queueMicrotask(() => {
+					editor.setSelection(new monacoNs.Selection(
+						lastItem.line, lastItem.range.start,
+						lastItem.line, lastItem.range.end
+					));
+				});
+				return;
+			}
+
+			return;
+		}
 
 		e.preventDefault();
 		e.stopPropagation();
