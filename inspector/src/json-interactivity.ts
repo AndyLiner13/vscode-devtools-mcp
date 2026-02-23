@@ -887,6 +887,8 @@ function setupValueAutoSelect(
 	// Track the range of the object that was manually escaped from
 	// This object cannot be re-selected until a DIFFERENT object is selected first
 	let escapedRange: { line: number; start: number; end: number } | null = null;
+	// Suppress auto-select on the next cursor move if the user just typed something
+	let suppressAutoSelect = false;
 
 	const disposables: monacoNs.IDisposable[] = [];
 
@@ -896,8 +898,23 @@ function setupValueAutoSelect(
 		hadSelection = sel !== null && !sel.isEmpty();
 	}));
 
+	// When the model content changes (user typed), suppress the next auto-select
+	// so typing into a field doesn't immediately re-select the entire value
+	disposables.push(editor.onDidChangeModelContent(() => {
+		if (settingSelection) return;
+		suppressAutoSelect = true;
+		// Ranges are now invalid since text changed
+		escapedRange = null;
+	}));
+
 	disposables.push(editor.onDidChangeCursorPosition((e) => {
 		if (settingSelection) return;
+
+		// Skip auto-select when the cursor moved because the user typed
+		if (suppressAutoSelect) {
+			suppressAutoSelect = false;
+			return;
+		}
 
 		// Only auto-select on keyboard-driven cursor moves
 		if (e.source !== 'keyboard') return;
@@ -1124,22 +1141,26 @@ function findEnumItemAtPosition(
 		let bestDist = Infinity;
 
 		while ((match = regex.exec(arraySlice)) !== null) {
-			const startCol = bounds.openCol + match.index + 1;
-			const endCol = startCol + match[0].length;
+			// Full range (including quotes) for cursor hit-detection
+			const fullStart = bounds.openCol + match.index + 1;
+			const fullEnd = fullStart + match[0].length;
+			// Content range (excluding quotes) for the selection
+			const contentStart = fullStart + 1;
+			const contentEnd = contentStart + match[1].length;
 
-			// Direct hit or adjacent
-			if (position.column >= startCol && position.column <= endCol) {
-				return { end: endCol, start: startCol };
+			// Direct hit or adjacent — use the full quoted range for detection
+			if (position.column >= fullStart && position.column <= fullEnd) {
+				return { end: contentEnd, start: contentStart };
 			}
 
 			// Find nearest item for adjacent navigation
 			const dist = Math.min(
-				Math.abs(position.column - startCol),
-				Math.abs(position.column - endCol)
+				Math.abs(position.column - fullStart),
+				Math.abs(position.column - fullEnd)
 			);
 			if (dist < bestDist) {
 				bestDist = dist;
-				bestMatch = { end: endCol, start: startCol };
+				bestMatch = { end: contentEnd, start: contentStart };
 			}
 		}
 
@@ -1176,8 +1197,9 @@ function findAllEnumItemRanges(
 		let match;
 
 		while ((match = regex.exec(arraySlice)) !== null) {
-			const startCol = bounds.openCol + match.index + 1;
-			const endCol = startCol + match[0].length;
+			// Exclude surrounding quotes — highlight content only
+			const startCol = bounds.openCol + match.index + 2;
+			const endCol = startCol + match[1].length;
 			items.push({ end: endCol, start: startCol });
 		}
 
@@ -1247,17 +1269,16 @@ function findValueOnLine(line: string): null | { end: number; start: number } {
 		};
 	}
 
-	// Look for an array: "propName": ["item1", ...] - select first item INCLUDING quotes
-	// This matches the format expected by findAllEnumItemRanges for left/right navigation
+	// Look for an array: "propName": ["item1", ...] - select first item content only
 	const arrayMatch = afterColon.match(/^\s*\[\s*"([^"\\]*)"/);
 	if (arrayMatch) {
 		const bracketIdx = afterColon.indexOf('[');
 		const firstQuoteIdx = afterColon.indexOf('"', bracketIdx);
 		const valueStart = colonIdx + 1 + firstQuoteIdx;
-		// Include the quotes in the selection to match findAllEnumItemRanges
-		const quoteStart = valueStart + 1; // 1-based, at opening quote
-		const quoteEnd = quoteStart + arrayMatch[1].length + 2; // 1-based, after closing quote
-		return { end: quoteEnd, start: quoteStart };
+		// Skip the opening quote to highlight content only
+		const contentStart = valueStart + 2; // 1-based, after opening quote
+		const contentEnd = contentStart + arrayMatch[1].length; // before closing quote
+		return { end: contentEnd, start: contentStart };
 	}
 
 	return null;
@@ -1295,13 +1316,13 @@ function findArrayItemsOnLine(line: string): Array<{ end: number; start: number 
 	const arrayContent = afterColon.substring(bracketIdx + 1, closeBracketIdx);
 	const arrayStartInLine = colonIdx + 1 + bracketIdx + 1; // 0-based index of first char after '['
 
-	// Find all quoted strings in the array content
+	// Find all quoted strings in the array content, highlighting content only (no quotes)
 	const items: Array<{ end: number; start: number }> = [];
 	const regex = /"([^"\\]*)"/g;
 	let match;
 	while ((match = regex.exec(arrayContent)) !== null) {
-		const start = arrayStartInLine + match.index + 1; // 1-based column
-		const end = start + match[0].length; // 1-based, exclusive end
+		const start = arrayStartInLine + match.index + 2; // 1-based, after opening quote
+		const end = start + match[1].length; // ends before closing quote
 		items.push({ end, start });
 	}
 
