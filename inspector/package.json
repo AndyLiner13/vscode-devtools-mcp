@@ -1,21 +1,21 @@
 {
-  "name": "devtools-inspector",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "better-sqlite3": "^11.7.0",
-    "monaco-editor": "^0.52.2"
-  },
-  "devDependencies": {
-    "@tailwindcss/vite": "^4.1.0",
-    "@types/better-sqlite3": "^7.6.12",
-    "tailwindcss": "^4.1.0",
-    "vite": "^6.3.0"
-  }
+	"name": "devtools-inspector",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"build": "tsc && vite build",
+		"dev": "vite",
+		"preview": "vite preview"
+	},
+	"dependencies": {
+		"better-sqlite3": "^11.7.0",
+		"monaco-editor": "^0.52.2"
+	},
+	"devDependencies": {
+		"@tailwindcss/vite": "^4.1.0",
+		"@types/better-sqlite3": "^7.6.12",
+		"tailwindcss": "^4.1.0",
+		"vite": "^6.3.0"
+	}
 }

@@ -26,49 +26,49 @@ const RESTART_WINDOW_MS = 60_000;
 
 // Per-operation timeout overrides (ms)
 const OPERATION_TIMEOUTS: Record<string, number> = {
-  chunkFile: 60_000,
-  extractOrphanedContent: 30_000,
-  findDeadCode: 120_000,
-  findDuplicates: 120_000,
-  getExports: 60_000,
-  getImportGraph: 60_000,
-  getOverview: 90_000,
-  invalidateProject: 10_000,
-  traceSymbol: 120_000,
+	chunkFile: 60_000,
+	extractOrphanedContent: 30_000,
+	findDeadCode: 120_000,
+	findDuplicates: 120_000,
+	getExports: 60_000,
+	getImportGraph: 60_000,
+	getOverview: 90_000,
+	invalidateProject: 10_000,
+	traceSymbol: 120_000
 };
 
 // ── Message Protocol ─────────────────────────────────────
 
 interface WorkerRequest {
-  id: number;
-  operation: string;
-  params: unknown;
+	id: number;
+	operation: string;
+	params: unknown;
 }
 
 interface WorkerResponse {
-  error?: string;
-  id: number;
-  result?: unknown;
-  stack?: string;
-  type: 'response';
+	error?: string;
+	id: number;
+	result?: unknown;
+	stack?: string;
+	type: 'response';
 }
 
 interface ReadyMessage {
-  type: 'ready';
+	type: 'ready';
 }
 
 type WorkerMessage = ReadyMessage | WorkerResponse;
 
 function isReadyMessage(msg: WorkerMessage): msg is ReadyMessage {
-  return msg.type === 'ready';
+	return msg.type === 'ready';
 }
 
 // ── Pending Request Tracking ─────────────────────────────
 
 interface PendingRequest {
-  reject: (reason: Error) => void;
-  resolve: (value: unknown) => void;
-  timer: ReturnType<typeof setTimeout>;
+	reject: (reason: Error) => void;
+	resolve: (value: unknown) => void;
+	timer: ReturnType<typeof setTimeout>;
 }
 
 // ── Worker Proxy ─────────────────────────────────────────
@@ -85,213 +85,211 @@ let intentionallyStopped = false;
 const crashTimestamps: number[] = [];
 
 function getWorkerPath(): string {
-  return path.join(__dirname, 'codebase-worker.js');
+	return path.join(__dirname, 'codebase-worker.js');
 }
 
 function shouldAllowRestart(): boolean {
-  const now = Date.now();
-  // Prune crashes outside the window
-  while (crashTimestamps.length > 0 && now - crashTimestamps[0] > RESTART_WINDOW_MS) {
-    crashTimestamps.shift();
-  }
-  return crashTimestamps.length < MAX_RESTART_ATTEMPTS;
+	const now = Date.now();
+	// Prune crashes outside the window
+	while (crashTimestamps.length > 0 && now - crashTimestamps[0] > RESTART_WINDOW_MS) {
+		crashTimestamps.shift();
+	}
+	return crashTimestamps.length < MAX_RESTART_ATTEMPTS;
 }
 
 function spawnWorker(): void {
-  workerReady = new Promise<void>((resolve, reject) => {
-    workerReadyResolve = resolve;
+	workerReady = new Promise<void>((resolve, reject) => {
+		workerReadyResolve = resolve;
 
-    workerReadyTimer = setTimeout(() => {
-      workerReadyResolve = null;
-      workerReadyTimer = null;
-      reject(new Error('Worker failed to signal ready within timeout'));
-      teardownWorker();
-    }, READY_TIMEOUT_MS);
-  });
+		workerReadyTimer = setTimeout(() => {
+			workerReadyResolve = null;
+			workerReadyTimer = null;
+			reject(new Error('Worker failed to signal ready within timeout'));
+			teardownWorker();
+		}, READY_TIMEOUT_MS);
+	});
 
-  worker = new Worker(getWorkerPath());
+	worker = new Worker(getWorkerPath());
 
-  worker.on('message', (msg: WorkerMessage) => {
-    if (isReadyMessage(msg)) {
-      if (workerReadyTimer) {
-        clearTimeout(workerReadyTimer);
-        workerReadyTimer = null;
-      }
-      workerReadyResolve?.();
-      workerReadyResolve = null;
-      return;
-    }
+	worker.on('message', (msg: WorkerMessage) => {
+		if (isReadyMessage(msg)) {
+			if (workerReadyTimer) {
+				clearTimeout(workerReadyTimer);
+				workerReadyTimer = null;
+			}
+			workerReadyResolve?.();
+			workerReadyResolve = null;
+			return;
+		}
 
-    const pending = pendingRequests.get(msg.id);
-    if (!pending) return;
+		const pending = pendingRequests.get(msg.id);
+		if (!pending) return;
 
-    clearTimeout(pending.timer);
-    pendingRequests.delete(msg.id);
+		clearTimeout(pending.timer);
+		pendingRequests.delete(msg.id);
 
-    if (msg.error) {
-      const err = new Error(msg.error);
-      if (msg.stack) err.stack = msg.stack;
-      pending.reject(err);
-    } else {
-      pending.resolve(msg.result);
-    }
-  });
+		if (msg.error) {
+			const err = new Error(msg.error);
+			if (msg.stack) err.stack = msg.stack;
+			pending.reject(err);
+		} else {
+			pending.resolve(msg.result);
+		}
+	});
 
-  worker.on('error', (err) => {
-    console.error('[codebase-worker] Worker error:', err.message);
-    rejectAllPending(err);
-  });
+	worker.on('error', (err) => {
+		console.error('[codebase-worker] Worker error:', err.message);
+		rejectAllPending(err);
+	});
 
-  worker.on('exit', (code) => {
-    worker = null;
-    workerReady = null;
+	worker.on('exit', (code) => {
+		worker = null;
+		workerReady = null;
 
-    if (workerReadyTimer) {
-      clearTimeout(workerReadyTimer);
-      workerReadyTimer = null;
-    }
+		if (workerReadyTimer) {
+			clearTimeout(workerReadyTimer);
+			workerReadyTimer = null;
+		}
 
-    if (code !== 0 && !intentionallyStopped) {
-      console.warn(`[codebase-worker] Worker exited with code ${code} — will auto-restart on next request`);
-      crashTimestamps.push(Date.now());
-    }
+		if (code !== 0 && !intentionallyStopped) {
+			console.warn(`[codebase-worker] Worker exited with code ${code} — will auto-restart on next request`);
+			crashTimestamps.push(Date.now());
+		}
 
-    rejectAllPending(new Error(`Worker exited with code ${code}`));
-  });
+		rejectAllPending(new Error(`Worker exited with code ${code}`));
+	});
 }
 
 export function startWorker(): void {
-  if (worker) return;
-  intentionallyStopped = false;
-  spawnWorker();
+	if (worker) return;
+	intentionallyStopped = false;
+	spawnWorker();
 }
 
 export async function stopWorker(): Promise<void> {
-  if (!worker) return;
+	if (!worker) return;
 
-  intentionallyStopped = true;
-  rejectAllPending(new Error('Worker is shutting down'));
+	intentionallyStopped = true;
+	rejectAllPending(new Error('Worker is shutting down'));
 
-  if (workerReadyTimer) {
-    clearTimeout(workerReadyTimer);
-    workerReadyTimer = null;
-  }
+	if (workerReadyTimer) {
+		clearTimeout(workerReadyTimer);
+		workerReadyTimer = null;
+	}
 
-  await worker.terminate();
-  worker = null;
-  workerReady = null;
+	await worker.terminate();
+	worker = null;
+	workerReady = null;
 }
 
 function teardownWorker(): void {
-  if (!worker) return;
-  const w = worker;
-  worker = null;
-  workerReady = null;
-  rejectAllPending(new Error('Worker torn down'));
-  w.terminate().catch(() => {});
+	if (!worker) return;
+	const w = worker;
+	worker = null;
+	workerReady = null;
+	rejectAllPending(new Error('Worker torn down'));
+	w.terminate().catch(() => {});
 }
 
 function rejectAllPending(err: Error): void {
-  for (const pending of pendingRequests.values()) {
-    clearTimeout(pending.timer);
-    pending.reject(err);
-  }
-  pendingRequests.clear();
+	for (const pending of pendingRequests.values()) {
+		clearTimeout(pending.timer);
+		pending.reject(err);
+	}
+	pendingRequests.clear();
 }
 
 async function ensureWorker(): Promise<void> {
-  if (worker && workerReady) return workerReady;
+	if (worker && workerReady) return workerReady;
 
-  if (!shouldAllowRestart()) {
-    return Promise.reject(new Error(
-      `Worker crashed ${MAX_RESTART_ATTEMPTS} times within ${RESTART_WINDOW_MS / 1000}s — refusing to restart. Call startWorker() to reset.`
-    ));
-  }
+	if (!shouldAllowRestart()) {
+		return Promise.reject(new Error(`Worker crashed ${MAX_RESTART_ATTEMPTS} times within ${RESTART_WINDOW_MS / 1000}s — refusing to restart. Call startWorker() to reset.`));
+	}
 
-  intentionallyStopped = false;
-  spawnWorker();
-  if (!workerReady) {
-    return Promise.reject(new Error('Worker failed to initialize'));
-  }
-  return workerReady;
+	intentionallyStopped = false;
+	spawnWorker();
+	if (!workerReady) {
+		return Promise.reject(new Error('Worker failed to initialize'));
+	}
+	return workerReady;
 }
 
 async function sendRequest<T>(operation: string, params: unknown): Promise<T> {
-  await ensureWorker();
+	await ensureWorker();
 
-  const id = nextRequestId++;
-  const timeoutMs = OPERATION_TIMEOUTS[operation] ?? DEFAULT_TIMEOUT_MS;
-  const request: WorkerRequest = { id, operation, params };
+	const id = nextRequestId++;
+	const timeoutMs = OPERATION_TIMEOUTS[operation] ?? DEFAULT_TIMEOUT_MS;
+	const request: WorkerRequest = { id, operation, params };
 
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => {
-      pendingRequests.delete(id);
-      reject(new Error(`Worker operation '${operation}' timed out after ${timeoutMs}ms`));
-    }, timeoutMs);
+	return new Promise<T>((resolve, reject) => {
+		const timer = setTimeout(() => {
+			pendingRequests.delete(id);
+			reject(new Error(`Worker operation '${operation}' timed out after ${timeoutMs}ms`));
+		}, timeoutMs);
 
-    pendingRequests.set(id, {
-      reject,
-      resolve: resolve as (value: unknown) => void,
-      timer,
-    });
-    const w = worker;
-    if (!w) {
-      clearTimeout(timer);
-      pendingRequests.delete(id);
-      reject(new Error('Worker disappeared before request could be sent'));
-      return;
-    }
-    w.postMessage(request);
-  });
+		pendingRequests.set(id, {
+			reject,
+			resolve: resolve as (value: unknown) => void,
+			timer
+		});
+		const w = worker;
+		if (!w) {
+			clearTimeout(timer);
+			pendingRequests.delete(id);
+			reject(new Error('Worker disappeared before request could be sent'));
+			return;
+		}
+		w.postMessage(request);
+	});
 }
 
 // ── Public API (matches direct service imports) ──────────
 
 export async function getOverview(params: OverviewParams): Promise<OverviewResult> {
-  return sendRequest<OverviewResult>('getOverview', params);
+	return sendRequest<OverviewResult>('getOverview', params);
 }
 
 export async function getExports(params: ExportsParams): Promise<ExportsResult> {
-  return sendRequest<ExportsResult>('getExports', params);
+	return sendRequest<ExportsResult>('getExports', params);
 }
 
 export async function traceSymbol(params: TraceSymbolParams): Promise<TraceSymbolResult> {
-  return sendRequest<TraceSymbolResult>('traceSymbol', params);
+	return sendRequest<TraceSymbolResult>('traceSymbol', params);
 }
 
 export async function findDeadCode(params: DeadCodeParams): Promise<DeadCodeResult> {
-  return sendRequest<DeadCodeResult>('findDeadCode', params);
+	return sendRequest<DeadCodeResult>('findDeadCode', params);
 }
 
 export async function getImportGraph(params: ImportGraphParams): Promise<ImportGraphResult> {
-  return sendRequest<ImportGraphResult>('getImportGraph', params);
+	return sendRequest<ImportGraphResult>('getImportGraph', params);
 }
 
 export async function findDuplicates(params: DuplicateDetectionParams): Promise<DuplicateDetectionResult> {
-  return sendRequest<DuplicateDetectionResult>('findDuplicates', params);
+	return sendRequest<DuplicateDetectionResult>('findDuplicates', params);
 }
 
 export async function chunkFile(params: ChunkFileParams): Promise<ChunkFileResult> {
-  return sendRequest<ChunkFileResult>('chunkFile', params);
+	return sendRequest<ChunkFileResult>('chunkFile', params);
 }
 
 export async function invalidateProject(rootDir?: string): Promise<void> {
-  return sendRequest<void>('invalidateProject', { rootDir });
+	return sendRequest<void>('invalidateProject', { rootDir });
 }
 
 export interface ExtractOrphanedContentParams {
-  filePath: string;
-  symbolRanges?: Array<{ start: number; end: number }>;
+	filePath: string;
+	symbolRanges?: Array<{ start: number; end: number }>;
 }
 
 export async function extractOrphanedContent(params: ExtractOrphanedContentParams): Promise<OrphanedContentResult> {
-  return sendRequest<OrphanedContentResult>('extractOrphanedContent', params);
+	return sendRequest<OrphanedContentResult>('extractOrphanedContent', params);
 }
 
 export async function extractFileStructure(filePath: string): Promise<UnifiedFileResult> {
-  return sendRequest<UnifiedFileResult>('extractFileStructure', { filePath });
+	return sendRequest<UnifiedFileResult>('extractFileStructure', { filePath });
 }
 
 export async function extractStructure(filePath: string): Promise<FileStructure | undefined> {
-  return sendRequest<FileStructure | undefined>('extractStructure', { filePath });
+	return sendRequest<FileStructure | undefined>('extractStructure', { filePath });
 }

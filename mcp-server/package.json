@@ -1,28 +1,28 @@
 {
-  "name": "vscode-devtools-mcp",
-  "version": "0.16.0",
-  "description": "MCP server for VS Code DevTools",
-  "type": "module",
-  "bin": "./build/src/index.js",
-  "main": "index.js",
-  "scripts": {
-    "build": "node esbuild.mjs"
-  },
-  "files": [
-    "build/src",
-    "LICENSE"
-  ],
-  "license": "Apache-2.0",
-  "devDependencies": {
-    "@types/debug": "^4.1.12",
-    "@types/filesystem": "^0.0.36",
-    "debug": "4.4.3",
-    "zod": "^4.3.6"
-  },
-  "engines": {
-    "node": "^20.19.0 || ^22.12.0 || >=23"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "1.27.0"
-  }
+	"name": "vscode-devtools-mcp",
+	"version": "0.16.0",
+	"description": "MCP server for VS Code DevTools",
+	"license": "Apache-2.0",
+	"type": "module",
+	"main": "index.js",
+	"bin": "./build/src/index.js",
+	"files": [
+		"build/src",
+		"LICENSE"
+	],
+	"scripts": {
+		"build": "node esbuild.mjs"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "1.27.0"
+	},
+	"devDependencies": {
+		"@types/debug": "^4.1.12",
+		"@types/filesystem": "^0.0.36",
+		"debug": "4.4.3",
+		"zod": "^4.3.6"
+	},
+	"engines": {
+		"node": "^20.19.0 || ^22.12.0 || >=23"
+	}
 }

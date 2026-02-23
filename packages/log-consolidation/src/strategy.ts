@@ -23,34 +23,34 @@
 import { DEFAULT_PATTERNS, defineStrategy } from 'logpare';
 
 export const /**
- *
- */
-VS_CODE_PATTERNS: Record<string, RegExp> = {
-  ...DEFAULT_PATTERNS,
+	 *
+	 */
+	VS_CODE_PATTERNS: Record<string, RegExp> = {
+		...DEFAULT_PATTERNS,
 
-  // VS Code extension IDs: publisher.extensionName (e.g. ms-python.python)
-  extensionId: /\b[a-zA-Z][\w-]*\.[a-zA-Z][\w-]*/,
+		// VS Code extension IDs: publisher.extensionName (e.g. ms-python.python)
+		extensionId: /\b[a-zA-Z][\w-]*\.[a-zA-Z][\w-]*/,
 
-  // Semantic versions: 1.96.0, v22.13.1-beta.1
-  semver: /\bv?\d+\.\d+\.\d+(-[\w.]+)?\b/,
+		// Semantic versions: 1.96.0, v22.13.1-beta.1
+		semver: /\bv?\d+\.\d+\.\d+(-[\w.]+)?\b/,
 
-  // Process/thread IDs: PID:12345, Worker #3, Thread-12
-  processId: /\b(?:PID|pid|Worker|Thread)[\s:#-]*\d+\b/,
+		// Process/thread IDs: PID:12345, Worker #3, Thread-12
+		processId: /\b(?:PID|pid|Worker|Thread)[\s:#-]*\d+\b/,
 
-  // Memory sizes: 128MB, 1.5GB, 4096KB
-  memorySize: /\b\d+(?:\.\d+)?\s*(?:KB|MB|GB|TB|bytes?)\b/i,
+		// Memory sizes: 128MB, 1.5GB, 4096KB
+		memorySize: /\b\d+(?:\.\d+)?\s*(?:KB|MB|GB|TB|bytes?)\b/i,
 
-  // VS Code log session timestamps: 20260221T211915
-  logSessionId: /\b\d{8}T\d{6}\b/,
-};
+		// VS Code log session timestamps: 20260221T211915
+		logSessionId: /\b\d{8}T\d{6}\b/
+	};
 
 /**
  * Custom parsing strategy for VS Code logs.
  * Pass to logpare's compress/createDrain via `drain.preprocessing`.
  */
 export const /**
- *
- */
-vsCodeStrategy = defineStrategy({
-  patterns: VS_CODE_PATTERNS,
-});
+	 *
+	 */
+	vsCodeStrategy = defineStrategy({
+		patterns: VS_CODE_PATTERNS
+	});

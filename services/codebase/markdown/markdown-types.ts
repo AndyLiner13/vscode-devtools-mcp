@@ -3,42 +3,40 @@
 
 /** Symbol kinds for Markdown constructs. */
 export const /**
- *
- */
-MD_KINDS = {
-  blockquote: 'blockquote',
-  code: 'code',
-  column: 'column',
-  directive: 'directive',
-  frontmatter: 'frontmatter',
-  html: 'html',
-  item: 'item',
-  key: 'key',
-  list: 'list',
-  math: 'math',
-  rule: 'rule',
-  section: 'section',
-  table: 'table',
-} as const;
+	 *
+	 */
+	MD_KINDS = {
+		blockquote: 'blockquote',
+		code: 'code',
+		column: 'column',
+		directive: 'directive',
+		frontmatter: 'frontmatter',
+		html: 'html',
+		item: 'item',
+		key: 'key',
+		list: 'list',
+		math: 'math',
+		rule: 'rule',
+		section: 'section',
+		table: 'table'
+	} as const;
 
-type MdKind = typeof MD_KINDS[keyof typeof MD_KINDS];
+type MdKind = (typeof MD_KINDS)[keyof typeof MD_KINDS];
 
 /** GitHub callout types recognized by the parser. */
 export const /**
- *
- */
-CALLOUT_TYPES = new Set([
-  'NOTE', 'TIP', 'IMPORTANT', 'WARNING', 'CAUTION',
-]);
+	 *
+	 */
+	CALLOUT_TYPES = new Set(['NOTE', 'TIP', 'IMPORTANT', 'WARNING', 'CAUTION']);
 
 /** Regex to detect GitHub-flavored callout syntax: `> [!TYPE]` */
 export const /**
- *
- */
-CALLOUT_PATTERN = /^\[!(\w+)\]\s*/;
+	 *
+	 */
+	CALLOUT_PATTERN = /^\[!(\w+)\]\s*/;
 
 /** File extensions handled by the Markdown language service. */
 export const /**
- *
- */
-MD_EXTENSIONS = ['md', 'markdown'] as const;
+	 *
+	 */
+	MD_EXTENSIONS = ['md', 'markdown'] as const;

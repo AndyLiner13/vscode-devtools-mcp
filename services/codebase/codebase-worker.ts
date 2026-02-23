@@ -38,17 +38,17 @@ registry.register(new JsonLanguageService());
 // ── Message Protocol ─────────────────────────────────────
 
 interface WorkerRequest {
-  id: number;
-  operation: string;
-  params: unknown;
+	id: number;
+	operation: string;
+	params: unknown;
 }
 
 interface WorkerResponse {
-  error?: string;
-  id: number;
-  result?: unknown;
-  stack?: string;
-  type: 'response';
+	error?: string;
+	id: number;
+	result?: unknown;
+	stack?: string;
+	type: 'response';
 }
 
 // ── Operation Registry ───────────────────────────────────
@@ -56,60 +56,60 @@ interface WorkerResponse {
 type OperationHandler = (params: never) => Promise<unknown> | unknown;
 
 const operations: Record<string, OperationHandler> = {
-  chunkFile: (params: ChunkFileParams) => chunkFile(params),
-  extractFileStructure: (params: { filePath: string }) => {
-    return extractFileStructure(params.filePath);
-  },
-  extractOrphanedContent: (params: { filePath: string; symbolRanges?: Array<{ start: number; end: number }> }) => {
-    return extractOrphanedContent(params.filePath, params.symbolRanges);
-  },
-  extractStructure: async (params: { filePath: string }) => {
-    const ext = path.extname(params.filePath).slice(1).toLowerCase();
-    const service = registry.get(ext);
-    if (!service) return null;
-    return service.extractStructure(params.filePath);
-  },
-  findDeadCode: async (params: DeadCodeParams) => findDeadCode(params),
-  findDuplicates: async (params: DuplicateDetectionParams) => findDuplicates(params),
-  getExports: (params: ExportsParams) => getExports(params),
-  getImportGraph: async (params: ImportGraphParams) => getImportGraph(params),
-  getOverview: (params: OverviewParams) => getOverview(params),
-  invalidateProject: (params: { rootDir?: string }) => {
-    invalidateWorkspaceProject(params.rootDir);
-    return { ok: true };
-  },
-  traceSymbol: async (params: TraceSymbolParams) => traceSymbol(params),
+	chunkFile: (params: ChunkFileParams) => chunkFile(params),
+	extractFileStructure: (params: { filePath: string }) => {
+		return extractFileStructure(params.filePath);
+	},
+	extractOrphanedContent: (params: { filePath: string; symbolRanges?: Array<{ start: number; end: number }> }) => {
+		return extractOrphanedContent(params.filePath, params.symbolRanges);
+	},
+	extractStructure: async (params: { filePath: string }) => {
+		const ext = path.extname(params.filePath).slice(1).toLowerCase();
+		const service = registry.get(ext);
+		if (!service) return null;
+		return service.extractStructure(params.filePath);
+	},
+	findDeadCode: async (params: DeadCodeParams) => findDeadCode(params),
+	findDuplicates: async (params: DuplicateDetectionParams) => findDuplicates(params),
+	getExports: (params: ExportsParams) => getExports(params),
+	getImportGraph: async (params: ImportGraphParams) => getImportGraph(params),
+	getOverview: (params: OverviewParams) => getOverview(params),
+	invalidateProject: (params: { rootDir?: string }) => {
+		invalidateWorkspaceProject(params.rootDir);
+		return { ok: true };
+	},
+	traceSymbol: async (params: TraceSymbolParams) => traceSymbol(params)
 };
 
 // ── Message Handler ──────────────────────────────────────
 
 if (!parentPort) {
-  throw new Error('codebase-worker.ts must be run as a worker thread');
+	throw new Error('codebase-worker.ts must be run as a worker thread');
 }
 
 parentPort.on('message', async (msg: WorkerRequest) => {
-  const { id, operation, params } = msg;
-  const handler = operations[operation];
+	const { id, operation, params } = msg;
+	const handler = operations[operation];
 
-  const port = parentPort;
-  if (!port) return;
+	const port = parentPort;
+	if (!port) return;
 
-  if (!handler) {
-    const response: WorkerResponse = { error: `Unknown operation: ${operation}`, id, type: 'response' };
-    port.postMessage(response);
-    return;
-  }
+	if (!handler) {
+		const response: WorkerResponse = { error: `Unknown operation: ${operation}`, id, type: 'response' };
+		port.postMessage(response);
+		return;
+	}
 
-  try {
-    const result = await handler(params as never);
-    const response: WorkerResponse = { id, result, type: 'response' };
-    port.postMessage(response);
-  } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : String(err);
-    const errorStack = err instanceof Error ? err.stack : undefined;
-    const response: WorkerResponse = { error: errorMessage, id, stack: errorStack, type: 'response' };
-    port.postMessage(response);
-  }
+	try {
+		const result = await handler(params as never);
+		const response: WorkerResponse = { id, result, type: 'response' };
+		port.postMessage(response);
+	} catch (err: unknown) {
+		const errorMessage = err instanceof Error ? err.message : String(err);
+		const errorStack = err instanceof Error ? err.stack : undefined;
+		const response: WorkerResponse = { error: errorMessage, id, stack: errorStack, type: 'response' };
+		port.postMessage(response);
+	}
 });
 
 // Signal that the worker is ready

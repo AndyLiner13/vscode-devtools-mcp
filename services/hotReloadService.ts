@@ -30,259 +30,246 @@ const HASH_KEY_EXT = 'hotReload:hash:extension';
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface ChangeCheckResult {
-  extBuildError: null | string;
-  extChanged: boolean;
-  extClientReloaded: boolean;
-  extRebuilt: boolean;
-  mcpBuildError: null | string;
-  mcpChanged: boolean;
-  mcpRebuilt: boolean;
-  newCdpPort: null | number;
-  newClientStartedAt: null | number;
+	extBuildError: null | string;
+	extChanged: boolean;
+	extClientReloaded: boolean;
+	extRebuilt: boolean;
+	mcpBuildError: null | string;
+	mcpChanged: boolean;
+	mcpRebuilt: boolean;
+	newCdpPort: null | number;
+	newClientStartedAt: null | number;
 }
 
 interface PackageCheckResult {
-  buildError: null | string;
-  changed: boolean;
-  rebuilt: boolean;
+	buildError: null | string;
+	changed: boolean;
+	rebuilt: boolean;
 }
 
 // ── Service ──────────────────────────────────────────────────────────────────
 
 class HotReloadService {
-  constructor(private readonly workspaceState: vscode.Memento) {}
+	constructor(private readonly workspaceState: vscode.Memento) {}
 
-  /**
-   * Discover source files using TypeScript's own tsconfig resolution.
-   *
-   * Prefers tsconfig.build.json (build-specific config) over tsconfig.json.
-   * Uses ts.readConfigFile() + ts.parseJsonConfigFileContent() to resolve
-   * the full list of matching files, respecting include/exclude/extends.
-   */
-  discoverSourceFiles(packageRoot: string): string[] {
-    const buildConfigPath = join(packageRoot, 'tsconfig.build.json');
-    const defaultConfigPath = join(packageRoot, 'tsconfig.json');
-    const configPath = existsSync(buildConfigPath) ? buildConfigPath : defaultConfigPath;
+	/**
+	 * Discover source files using TypeScript's own tsconfig resolution.
+	 *
+	 * Prefers tsconfig.build.json (build-specific config) over tsconfig.json.
+	 * Uses ts.readConfigFile() + ts.parseJsonConfigFileContent() to resolve
+	 * the full list of matching files, respecting include/exclude/extends.
+	 */
+	discoverSourceFiles(packageRoot: string): string[] {
+		const buildConfigPath = join(packageRoot, 'tsconfig.build.json');
+		const defaultConfigPath = join(packageRoot, 'tsconfig.json');
+		const configPath = existsSync(buildConfigPath) ? buildConfigPath : defaultConfigPath;
 
-    if (!existsSync(configPath)) {
-      console.log(`[hotReload] No tsconfig found in ${  packageRoot}`);
-      return [];
-    }
+		if (!existsSync(configPath)) {
+			console.log(`[hotReload] No tsconfig found in ${packageRoot}`);
+			return [];
+		}
 
-    const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
-    if (configFile.error) {
-      const msg = ts.flattenDiagnosticMessageText(configFile.error.messageText, '\n');
-      console.log(`[hotReload] Failed to read ${  configPath  }: ${  msg}`);
-      return [];
-    }
+		const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
+		if (configFile.error) {
+			const msg = ts.flattenDiagnosticMessageText(configFile.error.messageText, '\n');
+			console.log(`[hotReload] Failed to read ${configPath}: ${msg}`);
+			return [];
+		}
 
-    const parsed = ts.parseJsonConfigFileContent(
-      configFile.config,
-      ts.sys,
-      packageRoot,
-      undefined,
-      configPath,
-    );
+		const parsed = ts.parseJsonConfigFileContent(configFile.config, ts.sys, packageRoot, undefined, configPath);
 
-    if (parsed.errors.length > 0) {
-      for (const diag of parsed.errors) {
-        const msg = ts.flattenDiagnosticMessageText(diag.messageText, '\n');
-        console.log(`[hotReload] tsconfig warning: ${  msg}`);
-      }
-    }
+		if (parsed.errors.length > 0) {
+			for (const diag of parsed.errors) {
+				const msg = ts.flattenDiagnosticMessageText(diag.messageText, '\n');
+				console.log(`[hotReload] tsconfig warning: ${msg}`);
+			}
+		}
 
-    return parsed.fileNames;
-  }
+		return parsed.fileNames;
+	}
 
-  /**
-   * Compute SHA-256 of all source file contents.
-   *
-   * Files are sorted by relative path for deterministic output.
-   * Each file contributes its relative path (forward slashes) and
-   * its raw byte content to the hash. No mtime, no metadata.
-   */
-  computeContentHash(packageRoot: string, files: string[]): string {
-    const hash = createHash('sha256');
+	/**
+	 * Compute SHA-256 of all source file contents.
+	 *
+	 * Files are sorted by relative path for deterministic output.
+	 * Each file contributes its relative path (forward slashes) and
+	 * its raw byte content to the hash. No mtime, no metadata.
+	 */
+	computeContentHash(packageRoot: string, files: string[]): string {
+		const hash = createHash('sha256');
 
-    const sorted = files
-      .map(absPath => ({
-        abs: absPath,
-        rel: relative(packageRoot, absPath).replaceAll('\\', '/'),
-      }))
-      .sort((a, b) => a.rel.localeCompare(b.rel));
+		const sorted = files
+			.map((absPath) => ({
+				abs: absPath,
+				rel: relative(packageRoot, absPath).replaceAll('\\', '/')
+			}))
+			.sort((a, b) => a.rel.localeCompare(b.rel));
 
-    for (const file of sorted) {
-      hash.update(file.rel);
-      try {
-        hash.update(readFileSync(file.abs));
-      } catch {
-        // Skip unreadable files (e.g., locked by another process)
-      }
-    }
+		for (const file of sorted) {
+			hash.update(file.rel);
+			try {
+				hash.update(readFileSync(file.abs));
+			} catch {
+				// Skip unreadable files (e.g., locked by another process)
+			}
+		}
 
-    return hash.digest('hex');
-  }
+		return hash.digest('hex');
+	}
 
-  getStoredHash(key: string): string | undefined {
-    return this.workspaceState.get<string>(key);
-  }
+	getStoredHash(key: string): string | undefined {
+		return this.workspaceState.get<string>(key);
+	}
 
-  setStoredHash(key: string, hash: string): Thenable<void> {
-    return this.workspaceState.update(key, hash);
-  }
+	setStoredHash(key: string, hash: string): Thenable<void> {
+		return this.workspaceState.update(key, hash);
+	}
 
-  /**
-   * Detect the package manager by checking for lockfiles.
-   */
-  detectPackageManager(packageRoot: string): 'npm' | 'pnpm' | 'yarn' {
-    if (existsSync(join(packageRoot, 'pnpm-lock.yaml'))) {
-      return 'pnpm';
-    }
-    if (existsSync(join(packageRoot, 'yarn.lock'))) {
-      return 'yarn';
-    }
-    return 'npm';
-  }
+	/**
+	 * Detect the package manager by checking for lockfiles.
+	 */
+	detectPackageManager(packageRoot: string): 'npm' | 'pnpm' | 'yarn' {
+		if (existsSync(join(packageRoot, 'pnpm-lock.yaml'))) {
+			return 'pnpm';
+		}
+		if (existsSync(join(packageRoot, 'yarn.lock'))) {
+			return 'yarn';
+		}
+		return 'npm';
+	}
 
-  /**
-   * Run a package.json script using the detected package manager.
-   * Returns null on success, error output on failure.
-   */
-  async runBuild(packageRoot: string, scriptName: string): Promise<null | string> {
-    return new Promise(resolve => {
-      const pm = this.detectPackageManager(packageRoot);
-      const cmd = `${pm  } run ${  scriptName}`;
+	/**
+	 * Run a package.json script using the detected package manager.
+	 * Returns null on success, error output on failure.
+	 */
+	async runBuild(packageRoot: string, scriptName: string): Promise<null | string> {
+		return new Promise((resolve) => {
+			const pm = this.detectPackageManager(packageRoot);
+			const cmd = `${pm} run ${scriptName}`;
 
-      console.log(`[hotReload] Running build: ${  cmd  } in ${  packageRoot}`);
+			console.log(`[hotReload] Running build: ${cmd} in ${packageRoot}`);
 
-      exec(cmd, { cwd: packageRoot, timeout: 300_000 }, (error, stdout, stderr) => {
-        if (error) {
-          const output = [stderr, stdout].filter(Boolean).join('\n').trim();
-          resolve(output || error.message);
-        } else {
-          resolve(null);
-        }
-      });
-    });
-  }
+			exec(cmd, { cwd: packageRoot, timeout: 300_000 }, (error, stdout, stderr) => {
+				if (error) {
+					const output = [stderr, stdout].filter(Boolean).join('\n').trim();
+					resolve(output || error.message);
+				} else {
+					resolve(null);
+				}
+			});
+		});
+	}
 
-  /**
-   * Check extension source only (for mcpReady / hotReloadRequired handlers).
-   * Returns whether the extension changed and was rebuilt.
-   */
-  async checkExtensionOnly(extensionRoot: string): Promise<PackageCheckResult> {
-    return this.checkPackage(extensionRoot, HASH_KEY_EXT, 'compile');
-  }
+	/**
+	 * Check extension source only (for mcpReady / hotReloadRequired handlers).
+	 * Returns whether the extension changed and was rebuilt.
+	 */
+	async checkExtensionOnly(extensionRoot: string): Promise<PackageCheckResult> {
+		return this.checkPackage(extensionRoot, HASH_KEY_EXT, 'compile');
+	}
 
-  /**
-   * Check if source files have changed without triggering a build.
-   * Returns the current content hash and whether it differs from stored.
-   * Use with runBuild() + commitHash() for progress-aware workflows.
-   */
-  detectChange(packageRoot: string, hashKey: 'ext' | 'mcp'): { changed: boolean; currentHash: string } {
-    const key = hashKey === 'mcp' ? HASH_KEY_MCP : HASH_KEY_EXT;
-    const files = this.discoverSourceFiles(packageRoot);
-    if (files.length === 0) {
-      return { changed: false, currentHash: '' };
-    }
+	/**
+	 * Check if source files have changed without triggering a build.
+	 * Returns the current content hash and whether it differs from stored.
+	 * Use with runBuild() + commitHash() for progress-aware workflows.
+	 */
+	detectChange(packageRoot: string, hashKey: 'ext' | 'mcp'): { changed: boolean; currentHash: string } {
+		const key = hashKey === 'mcp' ? HASH_KEY_MCP : HASH_KEY_EXT;
+		const files = this.discoverSourceFiles(packageRoot);
+		if (files.length === 0) {
+			return { changed: false, currentHash: '' };
+		}
 
-    const currentHash = this.computeContentHash(packageRoot, files);
-    const storedHash = this.getStoredHash(key);
+		const currentHash = this.computeContentHash(packageRoot, files);
+		const storedHash = this.getStoredHash(key);
 
-    if (storedHash === currentHash) {
-      return { changed: false, currentHash };
-    }
+		if (storedHash === currentHash) {
+			return { changed: false, currentHash };
+		}
 
-    const storedPrefix = storedHash ? `${storedHash.slice(0, 12)  }...` : 'none';
-    const currentPrefix = `${currentHash.slice(0, 12)  }...`;
-    console.log(`[hotReload] Content changed (${  key  }): ${  storedPrefix  } -> ${  currentPrefix}`);
-    return { changed: true, currentHash };
-  }
+		const storedPrefix = storedHash ? `${storedHash.slice(0, 12)}...` : 'none';
+		const currentPrefix = `${currentHash.slice(0, 12)}...`;
+		console.log(`[hotReload] Content changed (${key}): ${storedPrefix} -> ${currentPrefix}`);
+		return { changed: true, currentHash };
+	}
 
-  /**
-   * Store a content hash after a successful build.
-   * Call after runBuild() succeeds to persist the hash for future comparisons.
-   */
-  async commitHash(hashKey: 'ext' | 'mcp', hash: string): Promise<void> {
-    const key = hashKey === 'mcp' ? HASH_KEY_MCP : HASH_KEY_EXT;
-    await this.setStoredHash(key, hash);
-    console.log(`[hotReload] Hash committed (${  key  }): ${  hash.slice(0, 12)  }...`);
-  }
+	/**
+	 * Store a content hash after a successful build.
+	 * Call after runBuild() succeeds to persist the hash for future comparisons.
+	 */
+	async commitHash(hashKey: 'ext' | 'mcp', hash: string): Promise<void> {
+		const key = hashKey === 'mcp' ? HASH_KEY_MCP : HASH_KEY_EXT;
+		await this.setStoredHash(key, hash);
+		console.log(`[hotReload] Hash committed (${key}): ${hash.slice(0, 12)}...`);
+	}
 
-  /**
-   * Check for changes in a single package.
-   * Discovers files, hashes content, compares to stored hash,
-   * and rebuilds if content has changed.
-   */
-  private async checkPackage(
-    packageRoot: string,
-    hashKey: string,
-    buildScript: string,
-  ): Promise<PackageCheckResult> {
-    const files = this.discoverSourceFiles(packageRoot);
-    if (files.length === 0) {
-      return { buildError: null, changed: false, rebuilt: false };
-    }
+	/**
+	 * Check for changes in a single package.
+	 * Discovers files, hashes content, compares to stored hash,
+	 * and rebuilds if content has changed.
+	 */
+	private async checkPackage(packageRoot: string, hashKey: string, buildScript: string): Promise<PackageCheckResult> {
+		const files = this.discoverSourceFiles(packageRoot);
+		if (files.length === 0) {
+			return { buildError: null, changed: false, rebuilt: false };
+		}
 
-    const currentHash = this.computeContentHash(packageRoot, files);
-    const storedHash = this.getStoredHash(hashKey);
+		const currentHash = this.computeContentHash(packageRoot, files);
+		const storedHash = this.getStoredHash(hashKey);
 
-    if (storedHash === currentHash) {
-      return { buildError: null, changed: false, rebuilt: false };
-    }
+		if (storedHash === currentHash) {
+			return { buildError: null, changed: false, rebuilt: false };
+		}
 
-    const storedPrefix = storedHash ? `${storedHash.slice(0, 12)  }...` : 'none';
-    const currentPrefix = `${currentHash.slice(0, 12)  }...`;
-    console.log(`[hotReload] Content changed (${  hashKey  }): ${  storedPrefix  } -> ${  currentPrefix}`);
+		const storedPrefix = storedHash ? `${storedHash.slice(0, 12)}...` : 'none';
+		const currentPrefix = `${currentHash.slice(0, 12)}...`;
+		console.log(`[hotReload] Content changed (${hashKey}): ${storedPrefix} -> ${currentPrefix}`);
 
-    const buildError = await this.runBuild(packageRoot, buildScript);
-    if (buildError) {
-      console.log(`[hotReload] Build failed (${  hashKey  }): ${  buildError}`);
-      return { buildError, changed: true, rebuilt: false };
-    }
+		const buildError = await this.runBuild(packageRoot, buildScript);
+		if (buildError) {
+			console.log(`[hotReload] Build failed (${hashKey}): ${buildError}`);
+			return { buildError, changed: true, rebuilt: false };
+		}
 
-    await this.setStoredHash(hashKey, currentHash);
-    console.log(`[hotReload] Build succeeded, hash stored: ${  currentPrefix}`);
-    return { buildError: null, changed: true, rebuilt: true };
-  }
+		await this.setStoredHash(hashKey, currentHash);
+		console.log(`[hotReload] Build succeeded, hash stored: ${currentPrefix}`);
+		return { buildError: null, changed: true, rebuilt: true };
+	}
 
-  /**
-   * Main entry point: check both extension and MCP server source.
-   *
-   * Extension is checked first, then MCP server.
-   * - If extension changed: rebuild inline, caller handles Client restart
-   * - If MCP changed: rebuild MCP source, caller handles MCP restart
-   */
-  async checkForChanges(
-    mcpServerRoot: string,
-    extensionRoot: string,
-  ): Promise<ChangeCheckResult> {
-    const result: ChangeCheckResult = {
-      extBuildError: null,
-      extChanged: false,
-      extClientReloaded: false,
-      extRebuilt: false,
-      mcpBuildError: null,
-      mcpChanged: false,
-      mcpRebuilt: false,
-      newCdpPort: null,
-      newClientStartedAt: null,
-    };
+	/**
+	 * Main entry point: check both extension and MCP server source.
+	 *
+	 * Extension is checked first, then MCP server.
+	 * - If extension changed: rebuild inline, caller handles Client restart
+	 * - If MCP changed: rebuild MCP source, caller handles MCP restart
+	 */
+	async checkForChanges(mcpServerRoot: string, extensionRoot: string): Promise<ChangeCheckResult> {
+		const result: ChangeCheckResult = {
+			extBuildError: null,
+			extChanged: false,
+			extClientReloaded: false,
+			extRebuilt: false,
+			mcpBuildError: null,
+			mcpChanged: false,
+			mcpRebuilt: false,
+			newCdpPort: null,
+			newClientStartedAt: null
+		};
 
-    // Extension first - uses 'compile' script (esbuild)
-    const extResult = await this.checkPackage(extensionRoot, HASH_KEY_EXT, 'compile');
-    result.extChanged = extResult.changed;
-    result.extRebuilt = extResult.rebuilt;
-    result.extBuildError = extResult.buildError;
+		// Extension first - uses 'compile' script (esbuild)
+		const extResult = await this.checkPackage(extensionRoot, HASH_KEY_EXT, 'compile');
+		result.extChanged = extResult.changed;
+		result.extRebuilt = extResult.rebuilt;
+		result.extBuildError = extResult.buildError;
 
-    // MCP server - uses 'build' script (rollup)
-    const mcpResult = await this.checkPackage(mcpServerRoot, HASH_KEY_MCP, 'build');
-    result.mcpChanged = mcpResult.changed;
-    result.mcpRebuilt = mcpResult.rebuilt;
-    result.mcpBuildError = mcpResult.buildError;
+		// MCP server - uses 'build' script (rollup)
+		const mcpResult = await this.checkPackage(mcpServerRoot, HASH_KEY_MCP, 'build');
+		result.mcpChanged = mcpResult.changed;
+		result.mcpRebuilt = mcpResult.rebuilt;
+		result.mcpBuildError = mcpResult.buildError;
 
-    return result;
-  }
+		return result;
+	}
 }
 
 // ── Factory ──────────────────────────────────────────────────────────────────
@@ -290,12 +277,12 @@ class HotReloadService {
 let serviceInstance: HotReloadService | undefined;
 
 function createHotReloadService(workspaceState: vscode.Memento): HotReloadService {
-  serviceInstance = new HotReloadService(workspaceState);
-  return serviceInstance;
+	serviceInstance = new HotReloadService(workspaceState);
+	return serviceInstance;
 }
 
 function getHotReloadService(): HotReloadService | undefined {
-  return serviceInstance;
+	return serviceInstance;
 }
 
 export type { ChangeCheckResult, PackageCheckResult };

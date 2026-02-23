@@ -15,57 +15,22 @@
  */
 
 // Boundary detection
-export {
-  detectBoundaries,
-  flattenEntries,
-} from './boundary.js';
+export { detectBoundaries, flattenEntries } from './boundary.js';
 
 // Core engine
-export {
-  compressLogs,
-  consolidateLines,
-  consolidateText,
-  toConsolidatedJson,
-} from './engine.js';
+export { compressLogs, consolidateLines, consolidateText, toConsolidatedJson } from './engine.js';
 
 // Composable filters
-export {
-  applyFilters,
-  applyPreFilters,
-} from './filters.js';
+export { applyFilters, applyPreFilters } from './filters.js';
 
 // Output formatting
-export {
-  formatOverview,
-} from './format.js';
+export { formatOverview } from './format.js';
 
 // Custom strategy
-export {
-  VS_CODE_PATTERNS,
-  vsCodeStrategy,
-} from './strategy.js';
+export { VS_CODE_PATTERNS, vsCodeStrategy } from './strategy.js';
 
 // Types
-export type {
-  BoundaryResult,
-  CompressionRequest,
-  CompressionResult,
-  CompressionStats,
-  ConsolidationResult,
-  FilterOptions,
-  LogEntry,
-  LogFormat,
-  Severity,
-  Template,
-} from './types.js';
+export type { BoundaryResult, CompressionRequest, CompressionResult, CompressionStats, ConsolidationResult, FilterOptions, LogEntry, LogFormat, Severity, Template } from './types.js';
 
 // Constants
-export {
-  CHARS_PER_TOKEN,
-  DEFAULT_CHAR_LIMIT,
-  DEFAULT_TOKEN_LIMIT,
-  EXPERIMENTAL_LOG_EXTENSIONS,
-  LOG_FILE_EXTENSIONS,
-  MIN_COMPRESSION_RATIO,
-  MIN_LINES_FOR_COMPRESSION,
-} from './types.js';
+export { CHARS_PER_TOKEN, DEFAULT_CHAR_LIMIT, DEFAULT_TOKEN_LIMIT, EXPERIMENTAL_LOG_EXTENSIONS, LOG_FILE_EXTENSIONS, MIN_COMPRESSION_RATIO, MIN_LINES_FOR_COMPRESSION } from './types.js';

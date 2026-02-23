@@ -13,10 +13,10 @@
  * receives a fully-configured context — identical to how VS Code spawns it.
  */
 
-import {spawn} from 'node:child_process';
-import {existsSync, readFileSync} from 'node:fs';
-import {dirname, isAbsolute, resolve} from 'node:path';
-import {fileURLToPath} from 'node:url';
+import { spawn } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, isAbsolute, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 // mcp-server/scripts → mcp-server → vscode-devtools (host workspace root)
@@ -58,31 +58,25 @@ function get(key, defaultValue) {
 const clientWorkspaceRaw = get('devtools.clientWorkspace', '');
 const extensionPathRaw = get('devtools.extensionPath', '.');
 
-const clientWorkspace = clientWorkspaceRaw
-	? (isAbsolute(clientWorkspaceRaw)
-		? clientWorkspaceRaw
-		: resolve(hostWorkspace, clientWorkspaceRaw))
-	: hostWorkspace;
+const clientWorkspace = clientWorkspaceRaw ? (isAbsolute(clientWorkspaceRaw) ? clientWorkspaceRaw : resolve(hostWorkspace, clientWorkspaceRaw)) : hostWorkspace;
 
-const extensionPath = isAbsolute(extensionPathRaw)
-	? extensionPathRaw
-	: resolve(hostWorkspace, extensionPathRaw);
+const extensionPath = isAbsolute(extensionPathRaw) ? extensionPathRaw : resolve(hostWorkspace, extensionPathRaw);
 
 const devtoolsConfig = {
 	clientWorkspace,
 	extensionPath,
 	hotReload: {
-		enabled:          get('devtools.hotReload.enabled', true),
-		mcpStatusTimeout: get('devtools.hotReload.mcpStatusTimeout', 60_000),
+		enabled: get('devtools.hotReload.enabled', true),
+		mcpStatusTimeout: get('devtools.hotReload.mcpStatusTimeout', 60_000)
 	},
 	launch: {
-		disableGpu:       get('devtools.launch.disableGpu', false),
+		disableGpu: get('devtools.launch.disableGpu', false),
 		disableWorkspaceTrust: get('devtools.launch.disableWorkspaceTrust', false),
-		extraArgs:        get('devtools.launch.extraArgs', []),
+		extraArgs: get('devtools.launch.extraArgs', []),
 		skipReleaseNotes: get('devtools.launch.skipReleaseNotes', true),
-		skipWelcome:      get('devtools.launch.skipWelcome', true),
-		verbose:          get('devtools.launch.verbose', false),
-	},
+		skipWelcome: get('devtools.launch.skipWelcome', true),
+		verbose: get('devtools.launch.verbose', false)
+	}
 };
 
 console.log('[inspect] DEVTOOLS_CONFIG:');
@@ -100,10 +94,10 @@ const inspector = spawn(inspectorCommand, [], {
 	cwd: hostWorkspace,
 	env: {
 		...process.env,
-		DEVTOOLS_CONFIG: JSON.stringify(devtoolsConfig),
+		DEVTOOLS_CONFIG: JSON.stringify(devtoolsConfig)
 	},
 	shell: true,
-	stdio: 'inherit',
+	stdio: 'inherit'
 });
 
 inspector.on('error', (/** @type {Error} */ err) => {

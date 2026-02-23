@@ -17,10 +17,7 @@ import { setBrowserService as _setBrowserService, setReconnectCdpCallback as _se
 import { InspectorReadTool } from './inspectorReadTool';
 import { McpStatusTool } from './mcpStatusTool';
 import { OutputReadTool, setClientLogsStoragePath, setHostLogUri } from './readHostOutputTool';
-import {
-    TerminalExecuteTool,
-    TerminalReadTool,
-} from './terminalLmTools';
+import { TerminalExecuteTool, TerminalReadTool } from './terminalLmTools';
 import { disposeUserActionTracker, getUserActionTracker } from './userActionTracker';
 import { WaitTool } from './waitLmTool';
 
@@ -34,7 +31,7 @@ import { WaitTool } from './waitLmTool';
  * This ensures the callback is set in THIS bundle's clientDevTools module instance.
  */
 export function wireReconnectCdpCallback(callback: () => Promise<boolean>): void {
-    _setReconnectCdpCallback(callback);
+	_setReconnectCdpCallback(callback);
 }
 
 /**
@@ -43,83 +40,91 @@ export function wireReconnectCdpCallback(callback: () => Promise<boolean>): void
  * This ensures the service is set in THIS bundle's clientDevTools module instance.
  */
 export function wireBrowserService(service: BrowserService | null): void {
-    _setBrowserService(service);
+	_setBrowserService(service);
 }
 
 export async function activate(context: vscode.ExtensionContext) {
-    console.log('[devtools:runtime] Runtime module loading...');
+	console.log('[devtools:runtime] Runtime module loading...');
 
-    const trackedDisposables: vscode.Disposable[] = [];
-    const track = <T extends vscode.Disposable>(disposable: T): T => {
-        trackedDisposables[trackedDisposables.length] = disposable;
-        return disposable;
-    };
+	const trackedDisposables: vscode.Disposable[] = [];
+	const track = <T extends vscode.Disposable>(disposable: T): T => {
+		trackedDisposables[trackedDisposables.length] = disposable;
+		return disposable;
+	};
 
-    context.subscriptions.push(
-        new vscode.Disposable(() => {
-            for (let i = trackedDisposables.length - 1; i >= 0; i--) {
-                try {
-                    trackedDisposables[i].dispose();
-                } catch {
-                    // Ignore disposal errors
-                }
-            }
-        }),
-    );
+	context.subscriptions.push(
+		new vscode.Disposable(() => {
+			for (let i = trackedDisposables.length - 1; i >= 0; i--) {
+				try {
+					trackedDisposables[i].dispose();
+				} catch {
+					// Ignore disposal errors
+				}
+			}
+		})
+	);
 
-    // ========================================================================
-    // Settings View — empty-state welcome button opens extension settings
-    // ========================================================================
+	// ========================================================================
+	// Settings View — empty-state welcome button opens extension settings
+	// ========================================================================
 
-    const emptyTreeProvider: vscode.TreeDataProvider<never> = {
-        getChildren: () => [],
-        getTreeItem: () => { throw new Error('No items'); },
-    };
+	const emptyTreeProvider: vscode.TreeDataProvider<never> = {
+		getChildren: () => [],
+		getTreeItem: () => {
+			throw new Error('No items');
+		}
+	};
 
-    const settingsView = vscode.window.createTreeView('devtools.settings', {
-        canSelectMany: false,
-        treeDataProvider: emptyTreeProvider,
-    });
-    track(settingsView);
+	const settingsView = vscode.window.createTreeView('devtools.settings', {
+		canSelectMany: false,
+		treeDataProvider: emptyTreeProvider
+	});
+	track(settingsView);
 
-    track(vscode.commands.registerCommand('devtools.openSettings', () => {
-        vscode.commands.executeCommand('workbench.action.openSettings', '@ext:AndyLiner.vscode-devtools');
-    }));
+	track(
+		vscode.commands.registerCommand('devtools.openSettings', () => {
+			vscode.commands.executeCommand('workbench.action.openSettings', '@ext:AndyLiner.vscode-devtools');
+		})
+	);
 
-    // ========================================================================
-    // LM Tool Registration (all registered unconditionally, native toggle)
-    // ========================================================================
+	// ========================================================================
+	// LM Tool Registration (all registered unconditionally, native toggle)
+	// ========================================================================
 
-    if (context.storageUri) {
-        setClientLogsStoragePath(context.storageUri.fsPath);
-    }
-    setHostLogUri(context.logUri.fsPath);
+	if (context.storageUri) {
+		setClientLogsStoragePath(context.storageUri.fsPath);
+	}
+	setHostLogUri(context.logUri.fsPath);
 
-    track(vscode.lm.registerTool('output_read', new OutputReadTool()));
-    track(vscode.lm.registerTool('terminal_read', new TerminalReadTool()));
-    track(vscode.lm.registerTool('terminal_execute', new TerminalExecuteTool()));
-    track(vscode.lm.registerTool('wait', new WaitTool()));
-    track(vscode.lm.registerTool('mcpStatus', new McpStatusTool()));
-    track(vscode.lm.registerTool('inspector_read', new InspectorReadTool()));
+	track(vscode.lm.registerTool('output_read', new OutputReadTool()));
+	track(vscode.lm.registerTool('terminal_read', new TerminalReadTool()));
+	track(vscode.lm.registerTool('terminal_execute', new TerminalExecuteTool()));
+	track(vscode.lm.registerTool('wait', new WaitTool()));
+	track(vscode.lm.registerTool('mcpStatus', new McpStatusTool()));
+	track(vscode.lm.registerTool('inspector_read', new InspectorReadTool()));
 
-    // Client DevTools — browser automation via CDP (factory-created tools)
-    for (const entry of getClientDevTools()) {
-        track(vscode.lm.registerTool(entry.name, entry.tool));
-    }
+	// Client DevTools — browser automation via CDP (factory-created tools)
+	for (const entry of getClientDevTools()) {
+		track(vscode.lm.registerTool(entry.name, entry.tool));
+	}
 
-    console.log('[devtools:runtime] All LM tools registered');
+	console.log('[devtools:runtime] All LM tools registered');
 
-    // ========================================================================
-    // User Action Tracker (detect user interventions)
-    // ========================================================================
+	// ========================================================================
+	// User Action Tracker (detect user interventions)
+	// ========================================================================
 
-    getUserActionTracker();
-    track({ dispose: () => { disposeUserActionTracker(); } });
-    console.log('[devtools:runtime] User action tracker initialized');
+	getUserActionTracker();
+	track({
+		dispose: () => {
+			disposeUserActionTracker();
+		}
+	});
+	console.log('[devtools:runtime] User action tracker initialized');
 
-    console.log('[devtools:runtime] Runtime activation complete');
+	console.log('[devtools:runtime] Runtime activation complete');
 }
 
 export async function deactivate() {
-    console.log('[devtools:runtime] Runtime deactivating...');
+	console.log('[devtools:runtime] Runtime deactivating...');
 }

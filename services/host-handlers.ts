@@ -4,10 +4,10 @@
  * IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
  * We have no access to proposed APIs. Do not add enabledApiProposals
  * to package.json or use --enable-proposed-api flags.
- * 
+ *
  * Handles lifecycle management for the VS Code DevTools MCP system.
  * The Host is the VSIX-installed extension in the main VS Code window.
- * 
+ *
  * API Surface (4 methods only):
  * - mcpReady: MCP announces presence → Host spawns/reconnects Client → returns connection info
  * - hotReloadRequired: Extension files changed → Host rebuilds, restarts Client → returns new connection
@@ -33,18 +33,16 @@ const _onClientStateChanged = new vscode.EventEmitter<boolean>();
 
 /** Fires when the client window connects or disconnects. Payload = connected state. */
 export const /**
- *
- */
-onClientStateChanged = _onClientStateChanged.event;
+	 *
+	 */
+	onClientStateChanged = _onClientStateChanged.event;
 
 let lastKnownClientState = false;
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
 const IS_WINDOWS = process.platform === 'win32';
-const CLIENT_PIPE_PATH = IS_WINDOWS
-  ? '\\\\.\\pipe\\vscode-devtools-client'
-  : '/tmp/vscode-devtools-client.sock';
+const CLIENT_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-client' : '/tmp/vscode-devtools-client.sock';
 
 // ── Module State ─────────────────────────────────────────────────────────────
 
@@ -73,7 +71,7 @@ let currentDebugSession: null | vscode.DebugSession = null;
 const MCP_SERVER_ID = 'andyliner.vscode-devtools/Experimental DevTools';
 
 function getMcpServerId(): string {
-  return MCP_SERVER_ID;
+	return MCP_SERVER_ID;
 }
 
 /** Flag to prevent MCP shutdown during hot-reload */
@@ -84,9 +82,9 @@ let hotReloadInProgress = false;
 const INSPECTOR_BASE_URL = 'http://localhost:6275';
 
 function markInspectorRecordsStale(): void {
-  fetch(`${INSPECTOR_BASE_URL}/api/records/mark-stale`, { method: 'POST' }).catch(() => {
-    // Inspector may not be running — that's fine
-  });
+	fetch(`${INSPECTOR_BASE_URL}/api/records/mark-stale`, { method: 'POST' }).catch(() => {
+		// Inspector may not be running — that's fine
+	});
 }
 
 /** Workspace storage path for persisting user-data, set during registerHostHandlers */
@@ -121,7 +119,7 @@ let onBrowserServiceChangedCallback: ((service: BrowserService | null) => void) 
  * Used by extension.ts to wire browser service to the runtime bundle.
  */
 export function onBrowserServiceChanged(callback: (service: BrowserService | null) => void): void {
-  onBrowserServiceChangedCallback = callback;
+	onBrowserServiceChangedCallback = callback;
 }
 
 // ── MCP Server Readiness Tracking ───────────────────────────────────────────
@@ -134,18 +132,20 @@ export function onBrowserServiceChanged(callback: (service: BrowserService | nul
 let mcpReadyDeferred: null | { promise: Promise<void>; resolve: () => void } = null;
 
 function expectMcpRestart(): void {
-  let resolver!: () => void;  // Definite assignment: Promise executor runs synchronously
-  const promise = new Promise<void>(r => { resolver = r; });
-  mcpReadyDeferred = { promise, resolve: resolver };
-  console.log('[host] MCP restart expected — mcpStatus will block until mcpReady');
+	let resolver!: () => void; // Definite assignment: Promise executor runs synchronously
+	const promise = new Promise<void>((r) => {
+		resolver = r;
+	});
+	mcpReadyDeferred = { promise, resolve: resolver };
+	console.log('[host] MCP restart expected — mcpStatus will block until mcpReady');
 }
 
 function signalMcpReady(): void {
-  if (mcpReadyDeferred) {
-    mcpReadyDeferred.resolve();
-    mcpReadyDeferred = null;
-    console.log('[host] MCP ready signaled — mcpStatus unblocked');
-  }
+	if (mcpReadyDeferred) {
+		mcpReadyDeferred.resolve();
+		mcpReadyDeferred = null;
+		console.log('[host] MCP ready signaled — mcpStatus unblocked');
+	}
 }
 
 /**
@@ -154,13 +154,17 @@ function signalMcpReady(): void {
  * If no restart is pending, resolves immediately (server is already running).
  */
 export async function waitForMcpReady(timeoutMs: number): Promise<boolean> {
-  if (!mcpReadyDeferred) {
-    return Promise.resolve(true);
-  }
-  return Promise.race([
-    mcpReadyDeferred.promise.then(() => true),
-    new Promise<boolean>(r => setTimeout(() => { r(false); }, timeoutMs)),
-  ]);
+	if (!mcpReadyDeferred) {
+		return Promise.resolve(true);
+	}
+	return Promise.race([
+		mcpReadyDeferred.promise.then(() => true),
+		new Promise<boolean>((r) =>
+			setTimeout(() => {
+				r(false);
+			}, timeoutMs)
+		)
+	]);
 }
 
 // ── Export Types ─────────────────────────────────────────────────────────────
@@ -170,31 +174,25 @@ export type RegisterHandler = (method: string, handler: (params: Record<string, 
 // ── Session Persistence ──────────────────────────────────────────────────────
 
 interface PersistedSession {
-  cdpPort: number;
-  clientPid: number;
-  extensionPath: string;
-  inspectorPort: number;
-  startedAt: number;
+	cdpPort: number;
+	clientPid: number;
+	extensionPath: string;
+	inspectorPort: number;
+	startedAt: number;
 }
 
 function isPersistedSession(value: unknown): value is PersistedSession {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
+	if (!value || typeof value !== 'object') {
+		return false;
+	}
 
-  const clientPid = Reflect.get(value, 'clientPid');
-  const persistedCdpPort = Reflect.get(value, 'cdpPort');
-  const persistedInspectorPort = Reflect.get(value, 'inspectorPort');
-  const extensionPath = Reflect.get(value, 'extensionPath');
-  const startedAt = Reflect.get(value, 'startedAt');
+	const clientPid = Reflect.get(value, 'clientPid');
+	const persistedCdpPort = Reflect.get(value, 'cdpPort');
+	const persistedInspectorPort = Reflect.get(value, 'inspectorPort');
+	const extensionPath = Reflect.get(value, 'extensionPath');
+	const startedAt = Reflect.get(value, 'startedAt');
 
-  return (
-    typeof clientPid === 'number' &&
-    typeof persistedCdpPort === 'number' &&
-    typeof persistedInspectorPort === 'number' &&
-    typeof extensionPath === 'string' &&
-    typeof startedAt === 'number'
-  );
+	return typeof clientPid === 'number' && typeof persistedCdpPort === 'number' && typeof persistedInspectorPort === 'number' && typeof extensionPath === 'string' && typeof startedAt === 'number';
 }
 
 // Captured during registerHostHandlers — used by session persistence helpers
@@ -202,112 +200,103 @@ let hostWorkspaceState: null | vscode.Memento = null;
 const HOST_SESSION_KEY = 'devtools.hostSession';
 
 function getWorkspacePath(): null | string {
-  return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
+	return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
 }
 
 function computeMcpSocketPath(workspacePath: string): string {
-  if (IS_WINDOWS) {
-    const resolved = path.resolve(workspacePath);
-    const hash = crypto
-      .createHash('sha256')
-      .update(resolved.toLowerCase())
-      .digest('hex')
-      .slice(0, 8);
-    return `\\\\.\\pipe\\vscode-devtools-mcp-${hash}`;
-  }
-  return path.join(workspacePath, '.vscode', 'vscode-devtools-mcp.sock');
+	if (IS_WINDOWS) {
+		const resolved = path.resolve(workspacePath);
+		const hash = crypto.createHash('sha256').update(resolved.toLowerCase()).digest('hex').slice(0, 8);
+		return `\\\\.\\pipe\\vscode-devtools-mcp-${hash}`;
+	}
+	return path.join(workspacePath, '.vscode', 'vscode-devtools-mcp.sock');
 }
 
-async function notifyMcpClientReconnected(params: {
-  electronPid: null | number;
-  cdpPort: number;
-  inspectorPort: number;
-  at: number;
-}): Promise<void> {
-  const workspacePath = getWorkspacePath();
-  if (!workspacePath) {
-    return;
-  }
+async function notifyMcpClientReconnected(params: { electronPid: null | number; cdpPort: number; inspectorPort: number; at: number }): Promise<void> {
+	const workspacePath = getWorkspacePath();
+	if (!workspacePath) {
+		return;
+	}
 
-  const socketPath = computeMcpSocketPath(workspacePath);
-  await new Promise<void>((resolve) => {
-    const socket = net.createConnection(socketPath);
-    let settled = false;
+	const socketPath = computeMcpSocketPath(workspacePath);
+	await new Promise<void>((resolve) => {
+		const socket = net.createConnection(socketPath);
+		let settled = false;
 
-    const done = () => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      resolve();
-    };
+		const done = () => {
+			if (settled) {
+				return;
+			}
+			settled = true;
+			resolve();
+		};
 
-    const timer = setTimeout(() => {
-      try {
-        socket.destroy();
-      } catch {
-        // best-effort
-      }
-      done();
-    }, 1500);
+		const timer = setTimeout(() => {
+			try {
+				socket.destroy();
+			} catch {
+				// best-effort
+			}
+			done();
+		}, 1500);
 
-    socket.on('connect', () => {
-      const payload = {
-        jsonrpc: '2.0',
-        method: 'client-reconnected',
-        params,
-      };
-      socket.write(`${JSON.stringify(payload)  }\n`, () => {
-        clearTimeout(timer);
-        socket.end();
-        done();
-      });
-    });
+		socket.on('connect', () => {
+			const payload = {
+				jsonrpc: '2.0',
+				method: 'client-reconnected',
+				params
+			};
+			socket.write(`${JSON.stringify(payload)}\n`, () => {
+				clearTimeout(timer);
+				socket.end();
+				done();
+			});
+		});
 
-    socket.on('error', () => {
-      clearTimeout(timer);
-      done();
-    });
+		socket.on('error', () => {
+			clearTimeout(timer);
+			done();
+		});
 
-    socket.on('close', () => {
-      clearTimeout(timer);
-      done();
-    });
-  });
+		socket.on('close', () => {
+			clearTimeout(timer);
+			done();
+		});
+	});
 }
 
 function loadPersistedSession(): null | PersistedSession {
-  if (!hostWorkspaceState) return null;
-  try {
-    const data: unknown = hostWorkspaceState.get(HOST_SESSION_KEY);
-    if (data && isPersistedSession(data)) {
-      return data;
-    }
-    if (data) {
-      console.log('[host] Ignoring invalid persisted session payload');
-    }
-  } catch (err) {
-    console.log('[host] Failed to load persisted session:', err);
-  }
-  return null;
+	if (!hostWorkspaceState) return null;
+	try {
+		const data: unknown = hostWorkspaceState.get(HOST_SESSION_KEY);
+		if (data && isPersistedSession(data)) {
+			return data;
+		}
+		if (data) {
+			console.log('[host] Ignoring invalid persisted session payload');
+		}
+	} catch (err) {
+		console.log('[host] Failed to load persisted session:', err);
+	}
+	return null;
 }
 
 function persistSession(session: PersistedSession): void {
-  if (!hostWorkspaceState) return;
-  try {
-    hostWorkspaceState.update(HOST_SESSION_KEY, session);
-  } catch (err) {
-    console.log('[host] Failed to persist session:', err);
-  }
+	if (!hostWorkspaceState) return;
+	try {
+		hostWorkspaceState.update(HOST_SESSION_KEY, session);
+	} catch (err) {
+		console.log('[host] Failed to persist session:', err);
+	}
 }
 
 function clearPersistedSession(): void {
-  if (!hostWorkspaceState) return;
-  try {
-    hostWorkspaceState.update(HOST_SESSION_KEY);
-  } catch {
-    // Ignore cleanup errors
-  }
+	if (!hostWorkspaceState) return;
+	try {
+		hostWorkspaceState.update(HOST_SESSION_KEY);
+	} catch {
+		// Ignore cleanup errors
+	}
 }
 
 // ── Client Health Checks ────────────────────────────────────────────────────
@@ -316,12 +305,12 @@ function clearPersistedSession(): void {
  * Check if a process with the given PID is still running
  */
 function isProcessAlive(pid: number): boolean {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch {
-    return false;
-  }
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 /**
@@ -335,56 +324,57 @@ function isProcessAlive(pid: number): boolean {
  * for cleanup — we need the real Electron PID.
  */
 function discoverElectronPid(port: number): null | number {
-  try {
-    if (IS_WINDOWS) {
-      const out = execSync(
-        `netstat -ano | findstr "LISTENING" | findstr ":${port} "`,
-        { encoding: 'utf8', timeout: 5000 },
-      ).trim();
-      for (const line of out.split('\n')) {
-        const parts = line.trim().split(/\s+/);
-        if (parts.length >= 5) {
-          const pid = parseInt(parts[parts.length - 1], 10);
-          if (pid > 0) { return pid; }
-        }
-      }
-    } else {
-      const out = execSync(`lsof -ti :${port}`, {
-        encoding: 'utf8',
-        timeout: 5000,
-      }).trim();
-      const pid = parseInt(out.split('\n')[0], 10);
-      if (pid > 0) { return pid; }
-    }
-  } catch {
-    // Command failed — maybe no process or tool not available
-  }
-  return null;
+	try {
+		if (IS_WINDOWS) {
+			const out = execSync(`netstat -ano | findstr "LISTENING" | findstr ":${port} "`, { encoding: 'utf8', timeout: 5000 }).trim();
+			for (const line of out.split('\n')) {
+				const parts = line.trim().split(/\s+/);
+				if (parts.length >= 5) {
+					const pid = parseInt(parts[parts.length - 1], 10);
+					if (pid > 0) {
+						return pid;
+					}
+				}
+			}
+		} else {
+			const out = execSync(`lsof -ti :${port}`, {
+				encoding: 'utf8',
+				timeout: 5000
+			}).trim();
+			const pid = parseInt(out.split('\n')[0], 10);
+			if (pid > 0) {
+				return pid;
+			}
+		}
+	} catch {
+		// Command failed — maybe no process or tool not available
+	}
+	return null;
 }
 
 /**
  * Check if a port is responding (TCP probe)
  */
 async function isPortResponding(port: number, timeout = 1000): Promise<boolean> {
-  return new Promise((resolve) => {
-    const socket = new net.Socket();
-    const timer = setTimeout(() => {
-      socket.destroy();
-      resolve(false);
-    }, timeout);
-    
-    socket.connect(port, '127.0.0.1', () => {
-      clearTimeout(timer);
-      socket.destroy();
-      resolve(true);
-    });
-    
-    socket.on('error', () => {
-      clearTimeout(timer);
-      socket.destroy();
-      resolve(false);
-    });
-  });
+	return new Promise((resolve) => {
+		const socket = new net.Socket();
+		const timer = setTimeout(() => {
+			socket.destroy();
+			resolve(false);
+		}, timeout);
+
+		socket.connect(port, '127.0.0.1', () => {
+			clearTimeout(timer);
+			socket.destroy();
+			resolve(true);
+		});
+
+		socket.on('error', () => {
+			clearTimeout(timer);
+			socket.destroy();
+			resolve(false);
+		});
+	});
 }
 
 /**
@@ -392,46 +382,48 @@ async function isPortResponding(port: number, timeout = 1000): Promise<boolean> 
  * This is the authoritative check — TCP may be open before the HTTP server is ready.
  */
 async function isCdpPortReady(port: number, timeout = 2000): Promise<boolean> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => { controller.abort(); }, timeout);
-  
-  try {
-    const response = await fetch(`http://127.0.0.1:${port}/json/version`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-    return response.ok;
-  } catch {
-    clearTimeout(timer);
-    return false;
-  }
+	const controller = new AbortController();
+	const timer = setTimeout(() => {
+		controller.abort();
+	}, timeout);
+
+	try {
+		const response = await fetch(`http://127.0.0.1:${port}/json/version`, {
+			signal: controller.signal
+		});
+		clearTimeout(timer);
+		return response.ok;
+	} catch {
+		clearTimeout(timer);
+		return false;
+	}
 }
 
 /**
  * Check if the Client pipe is connectable
  */
 async function isClientPipeConnectable(timeout = 1000): Promise<boolean> {
-  return new Promise((resolve) => {
-    const socket = net.createConnection(CLIENT_PIPE_PATH, () => {
-      socket.end();
-      resolve(true);
-    });
-    
-    const timer = setTimeout(() => {
-      socket.destroy();
-      resolve(false);
-    }, timeout);
-    
-    socket.on('error', () => {
-      clearTimeout(timer);
-      socket.destroy();
-      resolve(false);
-    });
-    
-    socket.on('connect', () => {
-      clearTimeout(timer);
-    });
-  });
+	return new Promise((resolve) => {
+		const socket = net.createConnection(CLIENT_PIPE_PATH, () => {
+			socket.end();
+			resolve(true);
+		});
+
+		const timer = setTimeout(() => {
+			socket.destroy();
+			resolve(false);
+		}, timeout);
+
+		socket.on('error', () => {
+			clearTimeout(timer);
+			socket.destroy();
+			resolve(false);
+		});
+
+		socket.on('connect', () => {
+			clearTimeout(timer);
+		});
+	});
 }
 
 /**
@@ -440,42 +432,52 @@ async function isClientPipeConnectable(timeout = 1000): Promise<boolean> {
  * that accept connections but never process messages.
  */
 async function pingClientPipe(timeout = 3000): Promise<boolean> {
-  return new Promise((resolve) => {
-    let settled = false;
-    const finish = (result: boolean) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      try { socket.destroy(); } catch { /* best-effort */ }
-      resolve(result);
-    };
+	return new Promise((resolve) => {
+		let settled = false;
+		const finish = (result: boolean) => {
+			if (settled) return;
+			settled = true;
+			clearTimeout(timer);
+			try {
+				socket.destroy();
+			} catch {
+				/* best-effort */
+			}
+			resolve(result);
+		};
 
-    const socket = net.createConnection(CLIENT_PIPE_PATH, () => {
-      const reqId = `health-ping-${Date.now()}`;
-      const request = `${JSON.stringify({
-        id: reqId,
-        jsonrpc: '2.0',
-        method: 'system.ping',
-        params: {},
-      })  }\n`;
-      socket.write(request);
-    });
+		const socket = net.createConnection(CLIENT_PIPE_PATH, () => {
+			const reqId = `health-ping-${Date.now()}`;
+			const request = `${JSON.stringify({
+				id: reqId,
+				jsonrpc: '2.0',
+				method: 'system.ping',
+				params: {}
+			})}\n`;
+			socket.write(request);
+		});
 
-    let response = '';
-    socket.setEncoding('utf8');
+		let response = '';
+		socket.setEncoding('utf8');
 
-    socket.on('data', (chunk: string) => {
-      response += chunk;
-      if (response.includes('\n')) {
-        finish(true);
-      }
-    });
+		socket.on('data', (chunk: string) => {
+			response += chunk;
+			if (response.includes('\n')) {
+				finish(true);
+			}
+		});
 
-    socket.on('error', () => { finish(false); });
-    socket.on('close', () => { finish(false); });
+		socket.on('error', () => {
+			finish(false);
+		});
+		socket.on('close', () => {
+			finish(false);
+		});
 
-    const timer = setTimeout(() => { finish(false); }, timeout);
-  });
+		const timer = setTimeout(() => {
+			finish(false);
+		}, timeout);
+	});
 }
 
 /**
@@ -483,16 +485,16 @@ async function pingClientPipe(timeout = 3000): Promise<boolean> {
  * Used after stopClient() to avoid race conditions when spawning a new Client.
  */
 async function waitForPipeRelease(maxWaitMs = 5000): Promise<void> {
-  const start = Date.now();
-  while (Date.now() - start < maxWaitMs) {
-    const alive = await isClientPipeConnectable(500);
-    if (!alive) {
-      console.log(`[host] Client pipe released after ${Date.now() - start}ms`);
-      return;
-    }
-    await sleep(300);
-  }
-  console.log(`[host] Client pipe still exists after ${maxWaitMs}ms — proceeding anyway`);
+	const start = Date.now();
+	while (Date.now() - start < maxWaitMs) {
+		const alive = await isClientPipeConnectable(500);
+		if (!alive) {
+			console.log(`[host] Client pipe released after ${Date.now() - start}ms`);
+			return;
+		}
+		await sleep(300);
+	}
+	console.log(`[host] Client pipe still exists after ${maxWaitMs}ms — proceeding anyway`);
 }
 
 /**
@@ -501,40 +503,40 @@ async function waitForPipeRelease(maxWaitMs = 5000): Promise<void> {
  * Instead checks the real Electron PID (if known), CDP port, and Client pipe.
  */
 async function isClientHealthy(): Promise<boolean> {
-  if (!cdpPort) {
-    return false;
-  }
-  
-  // Check real Electron PID (the actual process, not the launcher)
-  if (electronPid && !isProcessAlive(electronPid)) {
-    console.log('[host] Real Electron PID no longer alive');
-    return false;
-  }
-  
-  // Check CDP port (authoritative signal — if CDP responds, the process is alive)
-  const cdpOk = await isPortResponding(cdpPort);
-  if (!cdpOk) {
-    console.log('[host] CDP port not responding');
-    return false;
-  }
-  
-  // If we don't have the real PID yet, try to discover it from the CDP port
-  if (!electronPid) {
-    const realPid = discoverElectronPid(cdpPort);
-    if (realPid) {
-      electronPid = realPid;
-      console.log(`[host] Discovered real Electron PID: ${electronPid}`);
-    }
-  }
-  
-  // Check Client pipe responsiveness (not just connectivity)
-  const pipeOk = await pingClientPipe(3000);
-  if (!pipeOk) {
-    console.log('[host] Client pipe not responding to ping');
-    return false;
-  }
-  
-  return true;
+	if (!cdpPort) {
+		return false;
+	}
+
+	// Check real Electron PID (the actual process, not the launcher)
+	if (electronPid && !isProcessAlive(electronPid)) {
+		console.log('[host] Real Electron PID no longer alive');
+		return false;
+	}
+
+	// Check CDP port (authoritative signal — if CDP responds, the process is alive)
+	const cdpOk = await isPortResponding(cdpPort);
+	if (!cdpOk) {
+		console.log('[host] CDP port not responding');
+		return false;
+	}
+
+	// If we don't have the real PID yet, try to discover it from the CDP port
+	if (!electronPid) {
+		const realPid = discoverElectronPid(cdpPort);
+		if (realPid) {
+			electronPid = realPid;
+			console.log(`[host] Discovered real Electron PID: ${electronPid}`);
+		}
+	}
+
+	// Check Client pipe responsiveness (not just connectivity)
+	const pipeOk = await pingClientPipe(3000);
+	if (!pipeOk) {
+		console.log('[host] Client pipe not responding to ping');
+		return false;
+	}
+
+	return true;
 }
 
 // ── Client Spawn & Lifecycle ─────────────────────────────────────────────────
@@ -543,27 +545,29 @@ async function isClientHealthy(): Promise<boolean> {
  * Allocate a free port for CDP
  */
 async function allocatePort(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.listen(0, '127.0.0.1', () => {
-      const address = server.address();
-      if (address && typeof address === 'object') {
-        const {port} = address;
-        server.close(() => { resolve(port); });
-      } else {
-        reject(new Error('Failed to get port from server'));
-      }
-    });
-    server.on('error', reject);
-  });
+	return new Promise((resolve, reject) => {
+		const server = net.createServer();
+		server.listen(0, '127.0.0.1', () => {
+			const address = server.address();
+			if (address && typeof address === 'object') {
+				const { port } = address;
+				server.close(() => {
+					resolve(port);
+				});
+			} else {
+				reject(new Error('Failed to get port from server'));
+			}
+		});
+		server.on('error', reject);
+	});
 }
 
 /**
  * Get the path to the Electron executable
  */
 function getElectronPath(): string {
-  // process.execPath in VS Code extension points to the Electron binary
-  return process.execPath;
+	// process.execPath in VS Code extension points to the Electron binary
+	return process.execPath;
 }
 
 /**
@@ -572,232 +576,230 @@ function getElectronPath(): string {
  * @param extensionPath - Extension development path (from host config)
  */
 async function spawnClient(clientWorkspace: string, extensionPath: string, launchFlags?: Record<string, unknown>): Promise<{ cdpPort: number; userDataDir: string; clientStartedAt: number }> {
-  // Allocate ports (CDP for browser debugging + inspector for Extension Host debugging)
-  const allocatedCdpPort = await allocatePort();
-  const allocatedInspectorPort = await allocatePort();
-  console.log(`[host] Allocated CDP port: ${allocatedCdpPort}, inspector port: ${allocatedInspectorPort}`);
-  
-  const electronPath = getElectronPath();
-  
-  // User data directory for the Client (persists state, stored in workspace storage)
-  const userDataDir = hostStoragePath
-    ? path.join(hostStoragePath, 'user-data')
-    : path.join(clientWorkspace, '.devtools', 'user-data');
-  if (!fs.existsSync(userDataDir)) {
-    fs.mkdirSync(userDataDir, { recursive: true });
-  }
-  
-  // Build launch arguments — core flags first
-  const args = [
-    `--extensionDevelopmentPath=${  extensionPath}`,
-    `--remote-debugging-port=${  allocatedCdpPort}`,
-    `--inspect-extensions=${  allocatedInspectorPort}`,
-    `--user-data-dir=${  userDataDir}`,
-    '--new-window',
-    '--no-sandbox',
-    '--disable-gpu-sandbox',
-    '--disable-updates',
-  ];
+	// Allocate ports (CDP for browser debugging + inspector for Extension Host debugging)
+	const allocatedCdpPort = await allocatePort();
+	const allocatedInspectorPort = await allocatePort();
+	console.log(`[host] Allocated CDP port: ${allocatedCdpPort}, inspector port: ${allocatedInspectorPort}`);
 
-  // Apply launch flags from MCP config (if provided)
-  if (launchFlags) {
-    if (launchFlags.skipReleaseNotes) {
-      args.push('--skip-release-notes');
-    }
-    if (launchFlags.skipWelcome) {
-      args.push('--skip-welcome');
-    }
-    if (launchFlags.disableGpu) {
-      args.push('--disable-gpu');
-    }
-    if (launchFlags.disableWorkspaceTrust) {
-      args.push('--disable-workspace-trust');
-    }
-    if (launchFlags.verbose) {
-      args.push('--verbose');
-    }
-    // Extra raw args
-    const {extraArgs} = launchFlags;
-    if (Array.isArray(extraArgs)) {
-      for (const arg of extraArgs) {
-        if (typeof arg === 'string') {
-          args.push(arg);
-        }
-      }
-    }
-  }
+	const electronPath = getElectronPath();
 
-  // Client workspace folder — last positional arg
-  args.push(clientWorkspace);
-  
-  console.log('[host] Spawning Client:', electronPath);
-  console.log('[host] Spawn args:', JSON.stringify(args, null, 2));
+	// User data directory for the Client (persists state, stored in workspace storage)
+	const userDataDir = hostStoragePath ? path.join(hostStoragePath, 'user-data') : path.join(clientWorkspace, '.devtools', 'user-data');
+	if (!fs.existsSync(userDataDir)) {
+		fs.mkdirSync(userDataDir, { recursive: true });
+	}
 
-  // Strip environment variables that would make the child VS Code
-  // communicate with the parent instance instead of starting fresh.
-  // This matches the original working vscode.ts logic.
-  const childEnv = { ...process.env };
-  delete childEnv.ELECTRON_RUN_AS_NODE;
-  delete childEnv.ELECTRON_NO_ASAR;
-  for (const key of Object.keys(childEnv)) {
-    if (key.startsWith('VSCODE_')) {
-      delete childEnv[key];
-    }
-  }
+	// Build launch arguments — core flags first
+	const args = [
+		`--extensionDevelopmentPath=${extensionPath}`,
+		`--remote-debugging-port=${allocatedCdpPort}`,
+		`--inspect-extensions=${allocatedInspectorPort}`,
+		`--user-data-dir=${userDataDir}`,
+		'--new-window',
+		'--no-sandbox',
+		'--disable-gpu-sandbox',
+		'--disable-updates'
+	];
 
-  // `detached: true` is REQUIRED on Windows because Code.exe is a launcher
-  // stub that forks the real Electron binary and immediately exits (code 9).
-  // We do NOT call unref() — keep a reference so Node doesn't exit early.
-  // Capture stderr for diagnostics — Code.exe may log startup failures.
-  const child = spawn(electronPath, args, {
-    detached: true,
-    env: childEnv,
-    stdio: ['ignore', 'ignore', 'pipe'],
-  });
-  
-  if (!child.pid) {
-    throw new Error('Failed to spawn Client: no PID');
-  }
+	// Apply launch flags from MCP config (if provided)
+	if (launchFlags) {
+		if (launchFlags.skipReleaseNotes) {
+			args.push('--skip-release-notes');
+		}
+		if (launchFlags.skipWelcome) {
+			args.push('--skip-welcome');
+		}
+		if (launchFlags.disableGpu) {
+			args.push('--disable-gpu');
+		}
+		if (launchFlags.disableWorkspaceTrust) {
+			args.push('--disable-workspace-trust');
+		}
+		if (launchFlags.verbose) {
+			args.push('--verbose');
+		}
+		// Extra raw args
+		const { extraArgs } = launchFlags;
+		if (Array.isArray(extraArgs)) {
+			for (const arg of extraArgs) {
+				if (typeof arg === 'string') {
+					args.push(arg);
+				}
+			}
+		}
+	}
 
-  // Capture launcher stderr for diagnostics
-  if (child.stderr) {
-    let stderrOutput = '';
-    child.stderr.setEncoding('utf8');
-    child.stderr.on('data', (chunk: string) => { stderrOutput += chunk; });
-    child.stderr.on('end', () => {
-      const trimmed = stderrOutput.trim();
-      if (trimmed) {
-        console.log(`[host] Launcher stderr: ${trimmed}`);
-      }
-    });
-  }
+	// Client workspace folder — last positional arg
+	args.push(clientWorkspace);
 
-  console.log(`[host] Launcher spawned — PID: ${child.pid} (may exit immediately on Windows)`);
+	console.log('[host] Spawning Client:', electronPath);
+	console.log('[host] Spawn args:', JSON.stringify(args, null, 2));
 
-  // Track launcher exit (on Windows this fires almost immediately with code=9)
-  child.on('exit', (code, signal) => {
-    console.log(`[host] Launcher process exited: code=${code}, signal=${signal}`);
-    if (clientProcess === child) {
-      clientProcess = null;
-      launcherPid = null;
-    }
-  });
+	// Strip environment variables that would make the child VS Code
+	// communicate with the parent instance instead of starting fresh.
+	// This matches the original working vscode.ts logic.
+	const childEnv = { ...process.env };
+	delete childEnv.ELECTRON_RUN_AS_NODE;
+	delete childEnv.ELECTRON_NO_ASAR;
+	for (const key of Object.keys(childEnv)) {
+		if (key.startsWith('VSCODE_')) {
+			delete childEnv[key];
+		}
+	}
 
-  child.on('error', (err) => {
-    console.log(`[host] Spawn error: ${err.message}`);
-    clientProcess = null;
-    launcherPid = null;
-  });
+	// `detached: true` is REQUIRED on Windows because Code.exe is a launcher
+	// stub that forks the real Electron binary and immediately exits (code 9).
+	// We do NOT call unref() — keep a reference so Node doesn't exit early.
+	// Capture stderr for diagnostics — Code.exe may log startup failures.
+	const child = spawn(electronPath, args, {
+		detached: true,
+		env: childEnv,
+		stdio: ['ignore', 'ignore', 'pipe']
+	});
 
-  // Store state — note: this is the LAUNCHER PID, not the real Electron PID
-  clientProcess = child;
-  launcherPid = child.pid;
-  electronPid = null; // Will be discovered after CDP port becomes available
-  cdpPort = allocatedCdpPort;
-  inspectorPort = allocatedInspectorPort;
-  clientStartedAt = Date.now();
-  currentExtensionPath = extensionPath;
-  currentClientWorkspace = clientWorkspace;
-  const spawnTimestamp = clientStartedAt;
-  
-  // Wait for Client to be ready (poll CDP and pipe — NOT PID)
-  await waitForClientReady(allocatedCdpPort);
+	if (!child.pid) {
+		throw new Error('Failed to spawn Client: no PID');
+	}
 
-  // After CDP is ready, discover the REAL Electron PID from the port.
-  // On Windows, Code.exe (launcher) exits immediately — the real Electron
-  // process is the one actually listening on the CDP port.
-  const realPid = discoverElectronPid(allocatedCdpPort);
-  if (realPid) {
-    electronPid = realPid;
-    console.log(`[host] Real Electron PID: ${electronPid}`);
-  } else {
-    console.log('[host] Warning: could not discover Electron PID — cleanup may be incomplete');
-  }
+	// Capture launcher stderr for diagnostics
+	if (child.stderr) {
+		let stderrOutput = '';
+		child.stderr.setEncoding('utf8');
+		child.stderr.on('data', (chunk: string) => {
+			stderrOutput += chunk;
+		});
+		child.stderr.on('end', () => {
+			const trimmed = stderrOutput.trim();
+			if (trimmed) {
+				console.log(`[host] Launcher stderr: ${trimmed}`);
+			}
+		});
+	}
 
-  // Attach debugger to the Client's Extension Host inspector.
-  // This lights up the full debug UI: orange status bar, floating toolbar, call stack.
-  try {
-    await attachDebuggerToInspector(allocatedInspectorPort);
-    console.log('[host] Debug session attached — full debug UI active');
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.log(`[host] Warning: debugger attach failed: ${msg}. Continuing without debug UI.`);
-  }
+	console.log(`[host] Launcher spawned — PID: ${child.pid} (may exit immediately on Windows)`);
 
-  // Persist session with REAL Electron PID (not launcher PID)
-  persistSession({
-    cdpPort: allocatedCdpPort,
-    clientPid: electronPid ?? child.pid,
-    extensionPath,
-    inspectorPort: allocatedInspectorPort,
-    startedAt: clientStartedAt,
-  });
-  
-  return { cdpPort: allocatedCdpPort, clientStartedAt: spawnTimestamp, userDataDir };
+	// Track launcher exit (on Windows this fires almost immediately with code=9)
+	child.on('exit', (code, signal) => {
+		console.log(`[host] Launcher process exited: code=${code}, signal=${signal}`);
+		if (clientProcess === child) {
+			clientProcess = null;
+			launcherPid = null;
+		}
+	});
+
+	child.on('error', (err) => {
+		console.log(`[host] Spawn error: ${err.message}`);
+		clientProcess = null;
+		launcherPid = null;
+	});
+
+	// Store state — note: this is the LAUNCHER PID, not the real Electron PID
+	clientProcess = child;
+	launcherPid = child.pid;
+	electronPid = null; // Will be discovered after CDP port becomes available
+	cdpPort = allocatedCdpPort;
+	inspectorPort = allocatedInspectorPort;
+	clientStartedAt = Date.now();
+	currentExtensionPath = extensionPath;
+	currentClientWorkspace = clientWorkspace;
+	const spawnTimestamp = clientStartedAt;
+
+	// Wait for Client to be ready (poll CDP and pipe — NOT PID)
+	await waitForClientReady(allocatedCdpPort);
+
+	// After CDP is ready, discover the REAL Electron PID from the port.
+	// On Windows, Code.exe (launcher) exits immediately — the real Electron
+	// process is the one actually listening on the CDP port.
+	const realPid = discoverElectronPid(allocatedCdpPort);
+	if (realPid) {
+		electronPid = realPid;
+		console.log(`[host] Real Electron PID: ${electronPid}`);
+	} else {
+		console.log('[host] Warning: could not discover Electron PID — cleanup may be incomplete');
+	}
+
+	// Attach debugger to the Client's Extension Host inspector.
+	// This lights up the full debug UI: orange status bar, floating toolbar, call stack.
+	try {
+		await attachDebuggerToInspector(allocatedInspectorPort);
+		console.log('[host] Debug session attached — full debug UI active');
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		console.log(`[host] Warning: debugger attach failed: ${msg}. Continuing without debug UI.`);
+	}
+
+	// Persist session with REAL Electron PID (not launcher PID)
+	persistSession({
+		cdpPort: allocatedCdpPort,
+		clientPid: electronPid ?? child.pid,
+		extensionPath,
+		inspectorPort: allocatedInspectorPort,
+		startedAt: clientStartedAt
+	});
+
+	return { cdpPort: allocatedCdpPort, clientStartedAt: spawnTimestamp, userDataDir };
 }
 
 /**
  * Wait for Client to be ready (CDP HTTP server responding + pipe connectable)
- * 
+ *
  * NOTE: We use isCdpPortReady() which checks the actual CDP HTTP endpoint,
  * not just TCP connectivity. The TCP port may be open before the HTTP server
  * is ready to accept WebSocket connections.
- * 
+ *
  * Adaptive timeout: if the Client pipe comes UP (extension loaded) but CDP
  * is still DOWN, the Client IS alive and making progress — extend the wait
  * up to `adaptiveMaxMs` to give CDP time to initialize.
  */
 async function waitForClientReady(port: number, maxWaitMs = 90_000, adaptiveMaxMs = 120_000): Promise<void> {
-  const startTime = Date.now();
-  const pollInterval = 500;
-  let lastLog = 0;
-  let pipeSeenUp = false;
-  
-  console.log(`[host] Waiting for Client to be ready (CDP port=${port}, timeout=${maxWaitMs}ms, adaptiveMax=${adaptiveMaxMs}ms)...`);
-  
-  while (true) {
-    const elapsed = Date.now() - startTime;
-    const effectiveTimeout = pipeSeenUp ? adaptiveMaxMs : maxWaitMs;
+	const startTime = Date.now();
+	const pollInterval = 500;
+	let lastLog = 0;
+	let pipeSeenUp = false;
 
-    if (elapsed >= effectiveTimeout) {
-      break;
-    }
+	console.log(`[host] Waiting for Client to be ready (CDP port=${port}, timeout=${maxWaitMs}ms, adaptiveMax=${adaptiveMaxMs}ms)...`);
 
-    const cdpOk = await isCdpPortReady(port);
-    const pipeOk = await isClientPipeConnectable();
-    
-    if (cdpOk && pipeOk) {
-      const finalElapsed = Date.now() - startTime;
-      console.log(`[host] Client is ready (CDP HTTP + pipe responding) after ${finalElapsed}ms`);
-      return;
-    }
+	while (true) {
+		const elapsed = Date.now() - startTime;
+		const effectiveTimeout = pipeSeenUp ? adaptiveMaxMs : maxWaitMs;
 
-    if (pipeOk && !pipeSeenUp) {
-      pipeSeenUp = true;
-      console.log(`[host] Client pipe is UP after ${elapsed}ms — extending timeout to ${adaptiveMaxMs}ms while waiting for CDP`);
-    }
-    
-    // Log status every 5 seconds so we can diagnose hangs
-    const now = Date.now();
-    if (now - lastLog >= 5000) {
-      console.log(`[host] Still waiting for Client (${elapsed}ms elapsed) — CDP: ${cdpOk ? 'UP' : 'DOWN'}, pipe: ${pipeOk ? 'UP' : 'DOWN'}${pipeSeenUp ? ' (adaptive timeout active)' : ''}`);
-      lastLog = now;
-    }
-    
-    await sleep(pollInterval);
-  }
-  
-  // Final diagnostic before throwing
-  const finalCdp = await isCdpPortReady(port);
-  const finalPipe = await isClientPipeConnectable();
-  const totalElapsed = Date.now() - startTime;
-  throw new Error(
-    `Client did not become ready within ${totalElapsed}ms — CDP: ${finalCdp ? 'UP' : 'DOWN'}, pipe: ${finalPipe ? 'UP' : 'DOWN'}`
-  );
+		if (elapsed >= effectiveTimeout) {
+			break;
+		}
+
+		const cdpOk = await isCdpPortReady(port);
+		const pipeOk = await isClientPipeConnectable();
+
+		if (cdpOk && pipeOk) {
+			const finalElapsed = Date.now() - startTime;
+			console.log(`[host] Client is ready (CDP HTTP + pipe responding) after ${finalElapsed}ms`);
+			return;
+		}
+
+		if (pipeOk && !pipeSeenUp) {
+			pipeSeenUp = true;
+			console.log(`[host] Client pipe is UP after ${elapsed}ms — extending timeout to ${adaptiveMaxMs}ms while waiting for CDP`);
+		}
+
+		// Log status every 5 seconds so we can diagnose hangs
+		const now = Date.now();
+		if (now - lastLog >= 5000) {
+			console.log(`[host] Still waiting for Client (${elapsed}ms elapsed) — CDP: ${cdpOk ? 'UP' : 'DOWN'}, pipe: ${pipeOk ? 'UP' : 'DOWN'}${pipeSeenUp ? ' (adaptive timeout active)' : ''}`);
+			lastLog = now;
+		}
+
+		await sleep(pollInterval);
+	}
+
+	// Final diagnostic before throwing
+	const finalCdp = await isCdpPortReady(port);
+	const finalPipe = await isClientPipeConnectable();
+	const totalElapsed = Date.now() - startTime;
+	throw new Error(`Client did not become ready within ${totalElapsed}ms — CDP: ${finalCdp ? 'UP' : 'DOWN'}, pipe: ${finalPipe ? 'UP' : 'DOWN'}`);
 }
 
 async function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -805,114 +807,114 @@ async function sleep(ms: number): Promise<void> {
  * Used to wait for the Extension Host inspector port before attaching debugger.
  */
 async function waitForPort(port: number, timeout = 30000): Promise<void> {
-  const start = Date.now();
-  while (Date.now() - start < timeout) {
-    if (await isPortResponding(port)) {
-      return;
-    }
-    await sleep(300);
-  }
-  throw new Error(`Port ${port} did not become available within ${timeout}ms`);
+	const start = Date.now();
+	while (Date.now() - start < timeout) {
+		if (await isPortResponding(port)) {
+			return;
+		}
+		await sleep(300);
+	}
+	throw new Error(`Port ${port} did not become available within ${timeout}ms`);
 }
 
 async function attachDebuggerToInspector(port: number): Promise<void> {
-  await waitForPort(port);
-  await vscode.debug.startDebugging(undefined, {
-    autoAttachChildProcesses: false,
-    name: `Extension Host (port ${port})`,
-    port,
-    request: 'attach',
-    skipFiles: ['<node_internals>/**'],
-    type: 'node',
-  });
+	await waitForPort(port);
+	await vscode.debug.startDebugging(undefined, {
+		autoAttachChildProcesses: false,
+		name: `Extension Host (port ${port})`,
+		port,
+		request: 'attach',
+		skipFiles: ['<node_internals>/**'],
+		type: 'node'
+	});
 }
 
 async function reconnectToClient(maxWaitMs = 60_000): Promise<boolean> {
-  if (reconnectPromise) {
-    return reconnectPromise;
-  }
+	if (reconnectPromise) {
+		return reconnectPromise;
+	}
 
-  reconnectPromise = (async () => {
-    if (clientReconnecting) {
-      return false;
-    }
+	reconnectPromise = (async () => {
+		if (clientReconnecting) {
+			return false;
+		}
 
-    if (!cdpPort || !inspectorPort) {
-      console.log('[host] Reconnect skipped: missing cdpPort or inspectorPort');
-      return false;
-    }
+		if (!cdpPort || !inspectorPort) {
+			console.log('[host] Reconnect skipped: missing cdpPort or inspectorPort');
+			return false;
+		}
 
-    clientReconnecting = true;
-    const started = Date.now();
-    console.log(`[host] Reconnect started (cdp=${cdpPort}, inspector=${inspectorPort})`);
+		clientReconnecting = true;
+		const started = Date.now();
+		console.log(`[host] Reconnect started (cdp=${cdpPort}, inspector=${inspectorPort})`);
 
-    try {
-      while (Date.now() - started < maxWaitMs) {
-        const cdpOk = await isCdpPortReady(cdpPort, 2000);
-        const pipeOk = await isClientPipeConnectable(2000);
-        if (cdpOk && pipeOk) {
-          break;
-        }
-        await sleep(400);
-      }
+		try {
+			while (Date.now() - started < maxWaitMs) {
+				const cdpOk = await isCdpPortReady(cdpPort, 2000);
+				const pipeOk = await isClientPipeConnectable(2000);
+				if (cdpOk && pipeOk) {
+					break;
+				}
+				await sleep(400);
+			}
 
-      const cdpAlive = await isCdpPortReady(cdpPort, 2500);
-      const pipeAlive = await isClientPipeConnectable(2500);
-      if (!cdpAlive || !pipeAlive) {
-        console.log(`[host] Reconnect timed out — cdp=${cdpAlive}, pipe=${pipeAlive}`);
-        return false;
-      }
+			const cdpAlive = await isCdpPortReady(cdpPort, 2500);
+			const pipeAlive = await isClientPipeConnectable(2500);
+			if (!cdpAlive || !pipeAlive) {
+				console.log(`[host] Reconnect timed out — cdp=${cdpAlive}, pipe=${pipeAlive}`);
+				return false;
+			}
 
-      const refreshedPid = discoverElectronPid(cdpPort);
-      if (refreshedPid) {
-        electronPid = refreshedPid;
-        console.log(`[host] Reconnect discovered Electron PID: ${electronPid}`);
-      }
+			const refreshedPid = discoverElectronPid(cdpPort);
+			if (refreshedPid) {
+				electronPid = refreshedPid;
+				console.log(`[host] Reconnect discovered Electron PID: ${electronPid}`);
+			}
 
-      if (currentDebugSession) {
-        try {
-          await vscode.debug.stopDebugging(currentDebugSession);
-        } catch {
-          // session may have already ended
-        }
-      }
+			if (currentDebugSession) {
+				try {
+					await vscode.debug.stopDebugging(currentDebugSession);
+				} catch {
+					// session may have already ended
+				}
+			}
 
-      await attachDebuggerToInspector(inspectorPort);
-      console.log('[host] Reconnect debugger attach complete');
+			await attachDebuggerToInspector(inspectorPort);
+			console.log('[host] Reconnect debugger attach complete');
 
-      const pidToPersist = electronPid ?? launcherPid;
-      if (pidToPersist && currentExtensionPath && clientStartedAt) {
-        persistSession({
-          cdpPort,
-          clientPid: pidToPersist,
-          extensionPath: currentExtensionPath,
-          inspectorPort,
-          startedAt: clientStartedAt,
-        });
-      }
+			const pidToPersist = electronPid ?? launcherPid;
+			if (pidToPersist && currentExtensionPath && clientStartedAt) {
+				persistSession({
+					cdpPort,
+					clientPid: pidToPersist,
+					extensionPath: currentExtensionPath,
+					inspectorPort,
+					startedAt: clientStartedAt
+				});
+			}
 
-      void notifyMcpClientReconnected({
-        at: Date.now(),
-        cdpPort,
-        electronPid,
-        inspectorPort,
-      }).catch(() => {
-        // best-effort notification
-      });
+			void notifyMcpClientReconnected({
+				at: Date.now(),
+				cdpPort,
+				electronPid,
+				inspectorPort
+			}).catch(() => {
+				// best-effort notification
+			});
 
-      return true;
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.log(`[host] Reconnect failed: ${msg}`);
-      return false;
-    } finally {
-      clientReconnecting = false;
-    }
-  })().finally(() => {
-    reconnectPromise = null;
-  });
+			return true;
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			console.log(`[host] Reconnect failed: ${msg}`);
+			return false;
+		} finally {
+			clientReconnecting = false;
+		}
+	})().finally(() => {
+		reconnectPromise = null;
+	});
 
-  return reconnectPromise;
+	return reconnectPromise;
 }
 
 /**
@@ -923,54 +925,54 @@ async function reconnectToClient(maxWaitMs = 60_000): Promise<boolean> {
  * kill its entire process tree with `taskkill /F /T`.
  */
 function stopClient(): void {
-  let pidToKill = electronPid;
+	let pidToKill = electronPid;
 
-  // Fallback: rediscover from CDP port if we lost the real PID
-  if (!pidToKill && cdpPort) {
-    pidToKill = discoverElectronPid(cdpPort);
-    if (pidToKill) {
-      console.log(`[host] Rediscovered Electron PID ${pidToKill} from CDP port ${cdpPort}`);
-    }
-  }
+	// Fallback: rediscover from CDP port if we lost the real PID
+	if (!pidToKill && cdpPort) {
+		pidToKill = discoverElectronPid(cdpPort);
+		if (pidToKill) {
+			console.log(`[host] Rediscovered Electron PID ${pidToKill} from CDP port ${cdpPort}`);
+		}
+	}
 
-  // Kill the real Electron process
-  if (pidToKill) {
-    try {
-      console.log('[host] Stopping real Electron PID:', pidToKill);
-      if (IS_WINDOWS) {
-        execSync(`taskkill /F /T /PID ${pidToKill}`, { stdio: 'ignore' });
-      } else {
-        process.kill(pidToKill, 'SIGKILL');
-      }
-    } catch {
-      // Process may have already exited
-    }
-  }
+	// Kill the real Electron process
+	if (pidToKill) {
+		try {
+			console.log('[host] Stopping real Electron PID:', pidToKill);
+			if (IS_WINDOWS) {
+				execSync(`taskkill /F /T /PID ${pidToKill}`, { stdio: 'ignore' });
+			} else {
+				process.kill(pidToKill, 'SIGKILL');
+			}
+		} catch {
+			// Process may have already exited
+		}
+	}
 
-  // Also try the launcher PID (may still be alive on non-Windows)
-  if (launcherPid && launcherPid !== pidToKill) {
-    try {
-      if (IS_WINDOWS) {
-        execSync(`taskkill /F /T /PID ${launcherPid}`, { stdio: 'ignore' });
-      } else {
-        process.kill(launcherPid, 'SIGKILL');
-      }
-    } catch {
-      // Process may have already exited
-    }
-  }
-  
-  clientProcess = null;
-  launcherPid = null;
-  electronPid = null;
-  cdpPort = null;
-  inspectorPort = null;
-  clientStartedAt = null;
-  currentExtensionPath = null;
-  currentClientWorkspace = null;
-  clientReconnecting = false;
-  reconnectPromise = null;
-  clearPersistedSession();
+	// Also try the launcher PID (may still be alive on non-Windows)
+	if (launcherPid && launcherPid !== pidToKill) {
+		try {
+			if (IS_WINDOWS) {
+				execSync(`taskkill /F /T /PID ${launcherPid}`, { stdio: 'ignore' });
+			} else {
+				process.kill(launcherPid, 'SIGKILL');
+			}
+		} catch {
+			// Process may have already exited
+		}
+	}
+
+	clientProcess = null;
+	launcherPid = null;
+	electronPid = null;
+	cdpPort = null;
+	inspectorPort = null;
+	clientStartedAt = null;
+	currentExtensionPath = null;
+	currentClientWorkspace = null;
+	clientReconnecting = false;
+	reconnectPromise = null;
+	clearPersistedSession();
 }
 
 /**
@@ -979,45 +981,45 @@ function stopClient(): void {
  * Registers a WebSocket disconnect callback for instant client death detection.
  */
 async function connectCdpClient(port: number): Promise<void> {
-  hostLog?.(`connectCdpClient: Connecting to CDP on port ${port}...`);
-  disconnectCdpClient();
+	hostLog?.(`connectCdpClient: Connecting to CDP on port ${port}...`);
+	disconnectCdpClient();
 
-  try {
-    const client = new CdpClient();
-    await client.connect(port);
-    activeCdpClient = client;
+	try {
+		const client = new CdpClient();
+		await client.connect(port);
+		activeCdpClient = client;
 
-    // Instant disconnect detection via WebSocket close event
-    client.onDisconnect(() => {
-      console.log('[host] CDP WebSocket closed — client window died');
-      hostLog?.('CDP WebSocket closed — client window disconnected');
-      
-      // Clean up immediately — no polling needed
-      setBrowserService(null);
-      onBrowserServiceChangedCallback?.(null);
-      activeCdpClient = null;
-      lastKnownClientState = false;
-      _onClientStateChanged.fire(false);
-    });
+		// Instant disconnect detection via WebSocket close event
+		client.onDisconnect(() => {
+			console.log('[host] CDP WebSocket closed — client window died');
+			hostLog?.('CDP WebSocket closed — client window disconnected');
 
-    const service = new BrowserService(client);
-    service.initConsoleCollection();
-    setBrowserService(service);
-    onBrowserServiceChangedCallback?.(service);
+			// Clean up immediately — no polling needed
+			setBrowserService(null);
+			onBrowserServiceChangedCallback?.(null);
+			activeCdpClient = null;
+			lastKnownClientState = false;
+			_onClientStateChanged.fire(false);
+		});
 
-    lastKnownClientState = true;
-    _onClientStateChanged.fire(true);
+		const service = new BrowserService(client);
+		service.initConsoleCollection();
+		setBrowserService(service);
+		onBrowserServiceChangedCallback?.(service);
 
-    const msg = `CDP client connected on port ${port} — browser LM tools active`;
-    console.log(`[host] ${msg}`);
-    hostLog?.(msg);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    const warning = `CDP client connection failed on port ${port}: ${msg}. Browser LM tools unavailable.`;
-    console.log(`[host] Warning: ${warning}`);
-    hostLog?.(warning);
-    disconnectCdpClient();
-  }
+		lastKnownClientState = true;
+		_onClientStateChanged.fire(true);
+
+		const msg = `CDP client connected on port ${port} — browser LM tools active`;
+		console.log(`[host] ${msg}`);
+		hostLog?.(msg);
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		const warning = `CDP client connection failed on port ${port}: ${msg}. Browser LM tools unavailable.`;
+		console.log(`[host] Warning: ${warning}`);
+		hostLog?.(warning);
+		disconnectCdpClient();
+	}
 }
 
 /**
@@ -1025,13 +1027,13 @@ async function connectCdpClient(port: number): Promise<void> {
  * Safe to call multiple times (idempotent).
  */
 function disconnectCdpClient(): void {
-  setBrowserService(null);
-  onBrowserServiceChangedCallback?.(null);
-  if (activeCdpClient) {
-    activeCdpClient.dispose();
-    activeCdpClient = null;
-    console.log('[host] CDP client disconnected');
-  }
+	setBrowserService(null);
+	onBrowserServiceChangedCallback?.(null);
+	if (activeCdpClient) {
+		activeCdpClient.dispose();
+		activeCdpClient = null;
+		console.log('[host] CDP client disconnected');
+	}
 }
 
 // ── RPC Handlers ────────────────────────────────────────────────────────────
@@ -1039,576 +1041,569 @@ function disconnectCdpClient(): void {
 /**
  * Register all Host RPC handlers with the bootstrap
  */
-export function registerHostHandlers(
-  register: RegisterHandler,
-  context: vscode.ExtensionContext,
-  log?: (msg: string) => void,
-): void {
-  console.log('[host] Registering Host RPC handlers');
+export function registerHostHandlers(register: RegisterHandler, context: vscode.ExtensionContext, log?: (msg: string) => void): void {
+	console.log('[host] Registering Host RPC handlers');
 
-  // Store the output channel log function for CDP and lifecycle messages
-  hostLog = log ?? null;
+	// Store the output channel log function for CDP and lifecycle messages
+	hostLog = log ?? null;
 
-  // Capture workspaceState for session persistence helpers
-  hostWorkspaceState = context.workspaceState;
+	// Capture workspaceState for session persistence helpers
+	hostWorkspaceState = context.workspaceState;
 
-  // Capture storage path for user-data directory
-  hostStoragePath = context.storageUri?.fsPath ?? null;
+	// Capture storage path for user-data directory
+	hostStoragePath = context.storageUri?.fsPath ?? null;
 
-  // Initialize the hot reload service (content-hash change detection)
-  const hotReloadService = createHotReloadService(context.workspaceState);
+	// Initialize the hot reload service (content-hash change detection)
+	const hotReloadService = createHotReloadService(context.workspaceState);
 
-  // Register lazy CDP reconnection callback for browser LM tools.
-  // NOTE: The reconnect callback is no longer set here because the extension.js and
-  // runtime.js bundles have separate clientDevTools module instances. Instead, we export
-  // createReconnectCdpCallback() and extension.ts wires it to runtime.js after loading.
-  
-  /**
-   * mcpReady — MCP announces it's online
-   * Host spawns Client (or reconnects to existing) and returns connection info
-   */
-  register('mcpReady', async (params) => {
-    console.log('[host] mcpReady called with params:', JSON.stringify(params));
+	// Register lazy CDP reconnection callback for browser LM tools.
+	// NOTE: The reconnect callback is no longer set here because the extension.js and
+	// runtime.js bundles have separate clientDevTools module instances. Instead, we export
+	// createReconnectCdpCallback() and extension.ts wires it to runtime.js after loading.
 
-    // Signal that the MCP server is ready (unblocks mcpStatus tool if waiting)
-    signalMcpReady();
+	/**
+	 * mcpReady — MCP announces it's online
+	 * Host spawns Client (or reconnects to existing) and returns connection info
+	 */
+	register('mcpReady', async (params) => {
+		console.log('[host] mcpReady called with params:', JSON.stringify(params));
 
-    // MCP tells us where the client workspace and extension are
-    const clientWorkspace = typeof params.clientWorkspace === 'string' ? params.clientWorkspace : undefined;
-    const extensionPath = typeof params.extensionPath === 'string' ? params.extensionPath : undefined;
-    const launchFlags = typeof params.launch === 'object' && params.launch !== null
-      ? params.launch as Record<string, unknown>
-      : undefined;
-    const forceRestart = typeof params.forceRestart === 'boolean' ? params.forceRestart : false;
-    
-    if (!clientWorkspace) {
-      throw new Error('mcpReady: clientWorkspace is required');
-    }
-    if (!extensionPath) {
-      throw new Error('mcpReady: extensionPath is required');
-    }
-    
-    // Check if extension source changed (content hash, not mtime)
-    const extCheck = await hotReloadService.checkExtensionOnly(extensionPath);
-    if (extCheck.changed && !extCheck.rebuilt) {
-      console.log(`[host] Extension build failed: ${  extCheck.buildError ?? 'unknown'}`);
-    }
+		// Signal that the MCP server is ready (unblocks mcpStatus tool if waiting)
+		signalMcpReady();
 
-    // Check for existing healthy Client
-    const session = loadPersistedSession();
-    if (session) {
-      electronPid = session.clientPid; // Persisted PID is the real Electron PID
-      cdpPort = session.cdpPort;
-      inspectorPort = session.inspectorPort;
-      currentExtensionPath = session.extensionPath;
+		// MCP tells us where the client workspace and extension are
+		const clientWorkspace = typeof params.clientWorkspace === 'string' ? params.clientWorkspace : undefined;
+		const extensionPath = typeof params.extensionPath === 'string' ? params.extensionPath : undefined;
+		const launchFlags = typeof params.launch === 'object' && params.launch !== null ? (params.launch as Record<string, unknown>) : undefined;
+		const forceRestart = typeof params.forceRestart === 'boolean' ? params.forceRestart : false;
 
-      if (forceRestart) {
-        // MCP explicitly requested a restart — Client is unresponsive
-        console.log('[host] forceRestart requested — stopping existing Client unconditionally');
-        stopClient();
-        clearPersistedSession();
-        electronPid = null;
-        cdpPort = null;
-        inspectorPort = null;
-        currentExtensionPath = null;
-        await waitForPipeRelease();
-      } else {
-        const healthy = await isClientHealthy();
-        if (healthy && !extCheck.changed) {
-          console.log('[host] Existing Client is healthy and build is current, returning connection info');
-          const dataDir = hostStoragePath
-            ? path.join(hostStoragePath, 'user-data')
-            : path.join(clientWorkspace, '.devtools', 'user-data');
+		if (!clientWorkspace) {
+			throw new Error('mcpReady: clientWorkspace is required');
+		}
+		if (!extensionPath) {
+			throw new Error('mcpReady: extensionPath is required');
+		}
 
-          // Ensure CDP client is connected for browser automation LM tools
-          if (!activeCdpClient?.connected) {
-            await connectCdpClient(session.cdpPort);
-          }
+		// Check if extension source changed (content hash, not mtime)
+		const extCheck = await hotReloadService.checkExtensionOnly(extensionPath);
+		if (extCheck.changed && !extCheck.rebuilt) {
+			console.log(`[host] Extension build failed: ${extCheck.buildError ?? 'unknown'}`);
+		}
 
-          return { cdpPort: session.cdpPort, clientStartedAt: session.startedAt, userDataDir: dataDir };
-        }
+		// Check for existing healthy Client
+		const session = loadPersistedSession();
+		if (session) {
+			electronPid = session.clientPid; // Persisted PID is the real Electron PID
+			cdpPort = session.cdpPort;
+			inspectorPort = session.inspectorPort;
+			currentExtensionPath = session.extensionPath;
 
-        // Client exists but source changed — restart with fresh code
-        if (healthy && extCheck.rebuilt) {
-          console.log('[host] Extension source changed — stopping existing Client to restart with fresh code');
-        } else {
-          console.log('[host] Persisted session exists but Client is not healthy');
-        }
-        stopClient();
-        clearPersistedSession();
-        electronPid = null;
-        cdpPort = null;
-        inspectorPort = null;
-        currentExtensionPath = null;
-        await waitForPipeRelease();
-      }
-    }
-    
-    // Spawn new Client with MCP-provided paths (build is guaranteed up-to-date)
-    console.log(`[host] Spawning new Client — workspace: ${clientWorkspace}, ext: ${extensionPath}`);
-    const result = await spawnClient(clientWorkspace, extensionPath, launchFlags);
+			if (forceRestart) {
+				// MCP explicitly requested a restart — Client is unresponsive
+				console.log('[host] forceRestart requested — stopping existing Client unconditionally');
+				stopClient();
+				clearPersistedSession();
+				electronPid = null;
+				cdpPort = null;
+				inspectorPort = null;
+				currentExtensionPath = null;
+				await waitForPipeRelease();
+			} else {
+				const healthy = await isClientHealthy();
+				if (healthy && !extCheck.changed) {
+					console.log('[host] Existing Client is healthy and build is current, returning connection info');
+					const dataDir = hostStoragePath ? path.join(hostStoragePath, 'user-data') : path.join(clientWorkspace, '.devtools', 'user-data');
 
-    // Connect CDP client for browser automation LM tools
-    await connectCdpClient(result.cdpPort);
+					// Ensure CDP client is connected for browser automation LM tools
+					if (!activeCdpClient?.connected) {
+						await connectCdpClient(session.cdpPort);
+					}
 
-    return { cdpPort: result.cdpPort, clientStartedAt: result.clientStartedAt, userDataDir: result.userDataDir };
-  });
-  
-  /**
-   * hotReloadRequired — Extension files changed
-   * Host rebuilds, restarts Client, returns new connection info
-   */
-  register('hotReloadRequired', async (params) => {
-    console.log('[host] hotReloadRequired called');
-    hotReloadInProgress = true;
-    
-    const clientWorkspace = typeof params.clientWorkspace === 'string' ? params.clientWorkspace : undefined;
-    const extensionPath = typeof params.extensionPath === 'string' ? params.extensionPath : undefined;
-    const launchFlags = typeof params.launch === 'object' && params.launch !== null
-      ? params.launch as Record<string, unknown>
-      : undefined;
-    
-    if (!clientWorkspace || !extensionPath) {
-      throw new Error('hotReloadRequired: clientWorkspace and extensionPath are required');
-    }
-    
-    try {
-      // Stop existing Client + teardown CDP client
-      disconnectCdpClient();
-      stopClient();
-      
-      // Wait for pipe to be released before spawning new Client
-      await waitForPipeRelease();
-      
-      // Ensure build is up-to-date before relaunching (content hash check)
-      await hotReloadService.checkExtensionOnly(extensionPath);
-      
-      // Spawn fresh Client with latest build
-      const result = await spawnClient(clientWorkspace, extensionPath, launchFlags);
+					return { cdpPort: session.cdpPort, clientStartedAt: session.startedAt, userDataDir: dataDir };
+				}
 
-      // Reconnect CDP for browser automation LM tools
-      await connectCdpClient(result.cdpPort);
+				// Client exists but source changed — restart with fresh code
+				if (healthy && extCheck.rebuilt) {
+					console.log('[host] Extension source changed — stopping existing Client to restart with fresh code');
+				} else {
+					console.log('[host] Persisted session exists but Client is not healthy');
+				}
+				stopClient();
+				clearPersistedSession();
+				electronPid = null;
+				cdpPort = null;
+				inspectorPort = null;
+				currentExtensionPath = null;
+				await waitForPipeRelease();
+			}
+		}
 
-      return { cdpPort: result.cdpPort, clientStartedAt: result.clientStartedAt, userDataDir: result.userDataDir };
-    } finally {
-      hotReloadInProgress = false;
-    }
-  });
+		// Spawn new Client with MCP-provided paths (build is guaranteed up-to-date)
+		console.log(`[host] Spawning new Client — workspace: ${clientWorkspace}, ext: ${extensionPath}`);
+		const result = await spawnClient(clientWorkspace, extensionPath, launchFlags);
 
-  /**
-   * clientShuttingDown — Client notifies Host before extension host reload/deactivate.
-   * If CDP is still alive, this is likely a reload and we should reconnect.
-   */
-  register('clientShuttingDown', async (params) => {
-    const reason = typeof params.reason === 'string' ? params.reason : 'unknown';
-    console.log(`[host] clientShuttingDown received: reason=${reason}`);
+		// Connect CDP client for browser automation LM tools
+		await connectCdpClient(result.cdpPort);
 
-    if (hotReloadInProgress) {
-      return { acknowledged: true, ignored: 'hot-reload', reconnecting: false };
-    }
+		return { cdpPort: result.cdpPort, clientStartedAt: result.clientStartedAt, userDataDir: result.userDataDir };
+	});
 
-    if (!cdpPort) {
-      return { acknowledged: true, ignored: 'no-cdp-port', reconnecting: false };
-    }
+	/**
+	 * hotReloadRequired — Extension files changed
+	 * Host rebuilds, restarts Client, returns new connection info
+	 */
+	register('hotReloadRequired', async (params) => {
+		console.log('[host] hotReloadRequired called');
+		hotReloadInProgress = true;
 
-    const cdpStillAlive = await isCdpPortReady(cdpPort, 2000);
-    if (!cdpStillAlive) {
-      console.log('[host] CDP is down after shutdown notification; treating as close');
-      return { acknowledged: true, ignored: 'cdp-down', reconnecting: false };
-    }
+		const clientWorkspace = typeof params.clientWorkspace === 'string' ? params.clientWorkspace : undefined;
+		const extensionPath = typeof params.extensionPath === 'string' ? params.extensionPath : undefined;
+		const launchFlags = typeof params.launch === 'object' && params.launch !== null ? (params.launch as Record<string, unknown>) : undefined;
 
-    void reconnectToClient().then((ok) => {
-      console.log(`[host] Background reconnect completed: ${ok ? 'success' : 'failed'}`);
-    });
+		if (!clientWorkspace || !extensionPath) {
+			throw new Error('hotReloadRequired: clientWorkspace and extensionPath are required');
+		}
 
-    return { acknowledged: true, reconnecting: true };
-  });
-  
-  /**
-   * getStatus — Query current state
-   */
-  register('getStatus', async (_params) => {
-    const healthy = cdpPort ? await isClientHealthy() : false;
-    
-    return {
-      cdpPort,
-      clientConnected: healthy,
-      clientReconnecting,
-      electronPid,
-      hotReloadInProgress,
-      inspectorPort,
-      launcherPid,
-    };
-  });
-  
-  /**
-   * takeover — Another VS Code instance wants to become Host
-   */
-  register('takeover', async (params) => {
-    const reason = (params.reason as string) || 'unknown';
-    console.log('[host] takeover requested:', reason);
-    
-    // Show notification to user
-    const choice = await vscode.window.showInformationMessage(
-      `Your DevTools session was overridden: ${reason}`,
-      'Reclaim'
-    );
-    
-    if (choice === 'Reclaim') {
-      // TODO: Send takeover to new Host
-      console.log('[host] User wants to reclaim, but this is not yet implemented');
-    }
-    
-    // Gracefully shut down
-    stopClient();
-    
-    // Note: The pipe server will be stopped separately by the bootstrap
-    // when the extension deactivates
-    
-    return { acknowledged: true };
-  });
-  
-  /**
-   * teardown — MCP server is shutting down
-   * Stop Client, clean up debug sessions, release resources
-   */
-  register('teardown', async (_params) => {
-    console.log('[host] teardown called — MCP server shutting down');
-    
-    // Stop any debug sessions first
-    if (currentDebugSession) {
-      try {
-        await vscode.debug.stopDebugging();
-        console.log('[host] Debug sessions stopped');
-      } catch {
-        // Session may have already ended
-      }
-    }
-    
-    // Stop the Client process
-    stopClient();
-    
-    return { stopped: true };
-  });
-  
-  /**
-   * readyToRestart — MCP server has drained its queue and is ready to be stopped.
-   *
-   * The build was already completed during `checkForChanges`, so this is just:
-   * stop → clear tool cache → start. Near-instant since no build step.
-   *
-   * Deduplication guard: if a restart is already in progress, subsequent calls
-   * wait for the existing restart to complete instead of triggering another.
-   */
-  // ── MCP Progress Bridge ─────────────────────────────────
-  // Bridges the progress notification started during checkForChanges
-  // (rebuild phase) into readyToRestart (stop/clear/start phases).
-  // If the MCP process crashes before calling readyToRestart, a 30s
-  // safety timeout closes the notification automatically.
-  interface McpProgressBridge {
-    report: (message: string) => void;
-    resolve: () => void;
-  }
-  let mcpProgressBridge: McpProgressBridge | null = null;
+		try {
+			// Stop existing Client + teardown CDP client
+			disconnectCdpClient();
+			stopClient();
 
-  let restartInProgress: null | Promise<Record<string, unknown>> = null;
+			// Wait for pipe to be released before spawning new Client
+			await waitForPipeRelease();
 
-  const delay = async (ms: number) => new Promise<void>(r => setTimeout(r, ms));
+			// Ensure build is up-to-date before relaunching (content hash check)
+			await hotReloadService.checkExtensionOnly(extensionPath);
 
-  const handleMcpRestart = async (): Promise<Record<string, unknown>> => {
-    if (restartInProgress) {
-      console.log('[host] MCP restart already in progress — waiting');
-      return restartInProgress;
-    }
+			// Spawn fresh Client with latest build
+			const result = await spawnClient(clientWorkspace, extensionPath, launchFlags);
 
-    const doRestart = async (): Promise<Record<string, unknown>> => {
-      console.log('[host] readyToRestart — stop → clearCache → start');
-      // Suppress health monitor during MCP restart to prevent
-      // the tethered lifecycle from stopping the server mid-restart
-      hotReloadInProgress = true;
-      const serverId = getMcpServerId();
-      const bridge = mcpProgressBridge;
-      mcpProgressBridge = null;
+			// Reconnect CDP for browser automation LM tools
+			await connectCdpClient(result.cdpPort);
 
-      if (bridge) {
-        // Continue in the progress notification started by checkForChanges
-        bridge.report('Stopping…');
-        try {
-          await vscode.commands.executeCommand('workbench.mcp.stopServer', serverId);
-          console.log('[host] MCP server stopped');
-        } catch (stopErr) {
-          const msg = stopErr instanceof Error ? stopErr.message : String(stopErr);
-          console.log(`[host] MCP stopServer failed: ${  msg  } — continuing`);
-        }
+			return { cdpPort: result.cdpPort, clientStartedAt: result.clientStartedAt, userDataDir: result.userDataDir };
+		} finally {
+			hotReloadInProgress = false;
+		}
+	});
 
-        bridge.report('Clearing tool cache…');
-        try {
-          await vscode.commands.executeCommand('workbench.mcp.resetCachedTools');
-          console.log('[host] Tool cache cleared');
-        } catch (cacheErr) {
-          const msg = cacheErr instanceof Error ? cacheErr.message : String(cacheErr);
-          console.log(`[host] resetCachedTools failed: ${  msg}`);
-        }
+	/**
+	 * clientShuttingDown — Client notifies Host before extension host reload/deactivate.
+	 * If CDP is still alive, this is likely a reload and we should reconnect.
+	 */
+	register('clientShuttingDown', async (params) => {
+		const reason = typeof params.reason === 'string' ? params.reason : 'unknown';
+		console.log(`[host] clientShuttingDown received: reason=${reason}`);
 
-        bridge.report('Starting…');
-        try {
-          await vscode.commands.executeCommand('workbench.mcp.startServer', serverId);
-          console.log('[host] MCP server started');
-        } catch (startErr) {
-          const msg = startErr instanceof Error ? startErr.message : String(startErr);
-          console.log(`[host] MCP startServer failed: ${  msg}`);
-          vscode.window.showWarningMessage(`❌ MCP Server failed to start: ${  msg}`);
-          bridge.resolve();
-          return { error: msg, restarted: false };
-        }
+		if (hotReloadInProgress) {
+			return { acknowledged: true, ignored: 'hot-reload', reconnecting: false };
+		}
 
-        bridge.resolve();
-        return { restarted: true, toolCacheCleared: true };
-      }
+		if (!cdpPort) {
+			return { acknowledged: true, ignored: 'no-cdp-port', reconnecting: false };
+		}
 
-      // Fallback: no bridge (e.g., manual restart via command palette)
-      return vscode.window.withProgress(
-        {
-          cancellable: false,
-          location: vscode.ProgressLocation.Notification,
-          title: 'MCP Server',
-        },
-        async (progress) => {
-          progress.report({ increment: 0, message: 'Stopping…' });
-          try {
-            await vscode.commands.executeCommand('workbench.mcp.stopServer', serverId);
-            console.log('[host] MCP server stopped');
-          } catch (stopErr) {
-            const msg = stopErr instanceof Error ? stopErr.message : String(stopErr);
-            console.log(`[host] MCP stopServer failed: ${  msg  } — continuing`);
-          }
+		const cdpStillAlive = await isCdpPortReady(cdpPort, 2000);
+		if (!cdpStillAlive) {
+			console.log('[host] CDP is down after shutdown notification; treating as close');
+			return { acknowledged: true, ignored: 'cdp-down', reconnecting: false };
+		}
 
-          progress.report({ increment: 33, message: 'Clearing tool cache…' });
-          try {
-            await vscode.commands.executeCommand('workbench.mcp.resetCachedTools');
-            console.log('[host] Tool cache cleared');
-          } catch (cacheErr) {
-            const msg = cacheErr instanceof Error ? cacheErr.message : String(cacheErr);
-            console.log(`[host] resetCachedTools failed: ${  msg}`);
-          }
+		void reconnectToClient().then((ok) => {
+			console.log(`[host] Background reconnect completed: ${ok ? 'success' : 'failed'}`);
+		});
 
-          progress.report({ increment: 33, message: 'Starting…' });
-          try {
-            await vscode.commands.executeCommand('workbench.mcp.startServer', serverId);
-            console.log('[host] MCP server started');
-          } catch (startErr) {
-            const msg = startErr instanceof Error ? startErr.message : String(startErr);
-            console.log(`[host] MCP startServer failed: ${  msg}`);
-            vscode.window.showWarningMessage(`❌ MCP Server failed to start: ${  msg}`);
-            return { error: msg, restarted: false };
-          }
+		return { acknowledged: true, reconnecting: true };
+	});
 
-          progress.report({ increment: 34, message: '✅ Restarted' });
-          await delay(3000);
-          return { restarted: true, toolCacheCleared: true };
-        },
-      );
-    };
+	/**
+	 * getStatus — Query current state
+	 */
+	register('getStatus', async (_params) => {
+		const healthy = cdpPort ? await isClientHealthy() : false;
 
-    try {
-      restartInProgress = doRestart();
-      return await restartInProgress;
-    } finally {
-      restartInProgress = null;
-      hotReloadInProgress = false;
-      console.log('[host] MCP restart complete — health monitor resumed');
-    }
-  };
+		return {
+			cdpPort,
+			clientConnected: healthy,
+			clientReconnecting,
+			electronPid,
+			hotReloadInProgress,
+			inspectorPort,
+			launcherPid
+		};
+	});
 
-  register('readyToRestart', async () => handleMcpRestart());
+	/**
+	 * takeover — Another VS Code instance wants to become Host
+	 */
+	register('takeover', async (params) => {
+		const reason = (params.reason as string) || 'unknown';
+		console.log('[host] takeover requested:', reason);
 
-  /**
-   * checkForChanges — MCP server asks extension to check for source changes.
-   *
-   * Called per-batch by the RequestPipeline. Detects changes via content
-   * hashing, rebuilds if changed, and shows progress notifications:
-   *   - Extension notification: Rebuilding → Stopping client → Launching client → ✅ Connected
-   *   - MCP Server notification: Rebuilding → Rebuilt ✓ (bridges into readyToRestart)
-   * Both notifications can appear simultaneously when both packages changed.
-   */
-  register('checkForChanges', async (params) => {
-    const mcpServerRoot = typeof params.mcpServerRoot === 'string' ? params.mcpServerRoot : undefined;
-    const extensionPath = typeof params.extensionPath === 'string' ? params.extensionPath : undefined;
+		// Show notification to user
+		const choice = await vscode.window.showInformationMessage(`Your DevTools session was overridden: ${reason}`, 'Reclaim');
 
-    if (!mcpServerRoot || !extensionPath) {
-      throw new Error('checkForChanges: mcpServerRoot and extensionPath are required');
-    }
+		if (choice === 'Reclaim') {
+			// TODO: Send takeover to new Host
+			console.log('[host] User wants to reclaim, but this is not yet implemented');
+		}
 
-    const result: ChangeCheckResult = {
-      extBuildError: null,
-      extChanged: false,
-      extClientReloaded: false,
-      extRebuilt: false,
-      mcpBuildError: null,
-      mcpChanged: false,
-      mcpRebuilt: false,
-      newCdpPort: null,
-      newClientStartedAt: null,
-    };
+		// Gracefully shut down
+		stopClient();
 
-    // Phase 1: Detect changes (fast hash checks only — no builds yet)
-    const extChange = hotReloadService.detectChange(extensionPath, 'ext');
-    const mcpChange = hotReloadService.detectChange(mcpServerRoot, 'mcp');
-    result.extChanged = extChange.changed;
-    result.mcpChanged = mcpChange.changed;
+		// Note: The pipe server will be stopped separately by the bootstrap
+		// when the extension deactivates
 
-    if (!extChange.changed && !mcpChange.changed) {
-      return result;
-    }
+		return { acknowledged: true };
+	});
 
-    // Suppress health monitor during the entire checkForChanges operation.
-    // Without this, stopping the client window (Phase 2) causes the health
-    // monitor to fire onClientStateChanged(false), which triggers the
-    // tethered lifecycle in extension.ts to call workbench.mcp.stopServer,
-    // killing the MCP server process that is waiting for this RPC response.
-    hotReloadInProgress = true;
-    console.log('[host] checkForChanges: changes detected — suppressing health monitor');
+	/**
+	 * teardown — MCP server is shutting down
+	 * Stop Client, clean up debug sessions, release resources
+	 */
+	register('teardown', async (_params) => {
+		console.log('[host] teardown called — MCP server shutting down');
 
-    try {
-    // Phase 2: Extension progress notification — rebuild → stop client → launch client
-    if (extChange.changed) {
-      await vscode.window.withProgress(
-        {
-          cancellable: false,
-          location: vscode.ProgressLocation.Notification,
-          title: 'Extension',
-        },
-        async (progress) => {
-          progress.report({ message: 'Rebuilding…' });
-          const buildError = await hotReloadService.runBuild(extensionPath, 'compile');
-          if (buildError) {
-            result.extBuildError = buildError;
-            return;
-          }
+		// Stop any debug sessions first
+		if (currentDebugSession) {
+			try {
+				await vscode.debug.stopDebugging();
+				console.log('[host] Debug sessions stopped');
+			} catch {
+				// Session may have already ended
+			}
+		}
 
-          await hotReloadService.commitHash('ext', extChange.currentHash);
-          result.extRebuilt = true;
+		// Stop the Client process
+		stopClient();
 
-          // Mark flagged inspector records as stale — extension code changed
-          markInspectorRecordsStale();
+		return { stopped: true };
+	});
 
-          // Capture workspace before stopClient clears it
-          const workspace = currentClientWorkspace;
+	/**
+	 * readyToRestart — MCP server has drained its queue and is ready to be stopped.
+	 *
+	 * The build was already completed during `checkForChanges`, so this is just:
+	 * stop → clear tool cache → start. Near-instant since no build step.
+	 *
+	 * Deduplication guard: if a restart is already in progress, subsequent calls
+	 * wait for the existing restart to complete instead of triggering another.
+	 */
+	// ── MCP Progress Bridge ─────────────────────────────────
+	// Bridges the progress notification started during checkForChanges
+	// (rebuild phase) into readyToRestart (stop/clear/start phases).
+	// If the MCP process crashes before calling readyToRestart, a 30s
+	// safety timeout closes the notification automatically.
+	interface McpProgressBridge {
+		report: (message: string) => void;
+		resolve: () => void;
+	}
+	let mcpProgressBridge: McpProgressBridge | null = null;
 
-          progress.report({ message: 'Stopping client window…' });
-          stopClient();
-          await waitForPipeRelease();
+	let restartInProgress: null | Promise<Record<string, unknown>> = null;
 
-          if (workspace) {
-            progress.report({ message: 'Launching client window…' });
-            const spawnResult = await spawnClient(workspace, extensionPath);
-            result.extClientReloaded = true;
-            result.newCdpPort = spawnResult.cdpPort;
-            result.newClientStartedAt = spawnResult.clientStartedAt;
-            console.log(`[host] Client restarted with fresh extension code (cdpPort: ${  spawnResult.cdpPort  })`);
+	const delay = async (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-            progress.report({ message: '✅ Client reconnected' });
-            await delay(3000);
-          }
-        },
-      );
-    }
+	const handleMcpRestart = async (): Promise<Record<string, unknown>> => {
+		if (restartInProgress) {
+			console.log('[host] MCP restart already in progress — waiting');
+			return restartInProgress;
+		}
 
-    // Phase 3: MCP progress notification — rebuild → bridge to readyToRestart
-    if (mcpChange.changed) {
-      let buildDoneResolve!: (error: null | string) => void;
-      const buildDone = new Promise<null | string>(r => { buildDoneResolve = r; });
+		const doRestart = async (): Promise<Record<string, unknown>> => {
+			console.log('[host] readyToRestart — stop → clearCache → start');
+			// Suppress health monitor during MCP restart to prevent
+			// the tethered lifecycle from stopping the server mid-restart
+			hotReloadInProgress = true;
+			const serverId = getMcpServerId();
+			const bridge = mcpProgressBridge;
+			mcpProgressBridge = null;
 
-      let bridgeResolve!: () => void;
-      const bridgePromise = new Promise<void>(r => { bridgeResolve = r; });
+			if (bridge) {
+				// Continue in the progress notification started by checkForChanges
+				bridge.report('Stopping…');
+				try {
+					await vscode.commands.executeCommand('workbench.mcp.stopServer', serverId);
+					console.log('[host] MCP server stopped');
+				} catch (stopErr) {
+					const msg = stopErr instanceof Error ? stopErr.message : String(stopErr);
+					console.log(`[host] MCP stopServer failed: ${msg} — continuing`);
+				}
 
-      // Fire-and-forget: the notification stays open until readyToRestart completes
-      void vscode.window.withProgress(
-        {
-          cancellable: false,
-          location: vscode.ProgressLocation.Notification,
-          title: 'MCP Server',
-        },
-        async (progress) => {
-          progress.report({ message: 'Rebuilding…' });
-          const buildError = await hotReloadService.runBuild(mcpServerRoot, 'build');
-          buildDoneResolve(buildError);
+				bridge.report('Clearing tool cache…');
+				try {
+					await vscode.commands.executeCommand('workbench.mcp.resetCachedTools');
+					console.log('[host] Tool cache cleared');
+				} catch (cacheErr) {
+					const msg = cacheErr instanceof Error ? cacheErr.message : String(cacheErr);
+					console.log(`[host] resetCachedTools failed: ${msg}`);
+				}
 
-          if (buildError) {
-            return;
-          }
+				bridge.report('Starting…');
+				try {
+					await vscode.commands.executeCommand('workbench.mcp.startServer', serverId);
+					console.log('[host] MCP server started');
+				} catch (startErr) {
+					const msg = startErr instanceof Error ? startErr.message : String(startErr);
+					console.log(`[host] MCP startServer failed: ${msg}`);
+					vscode.window.showWarningMessage(`❌ MCP Server failed to start: ${msg}`);
+					bridge.resolve();
+					return { error: msg, restarted: false };
+				}
 
-          progress.report({ message: 'Rebuilt ✓ — restarting…' });
+				bridge.resolve();
+				return { restarted: true, toolCacheCleared: true };
+			}
 
-          // Store bridge so readyToRestart can continue this notification
-          mcpProgressBridge = {
-            report: (msg: string) => { progress.report({ message: msg }); },
-            resolve: bridgeResolve,
-          };
+			// Fallback: no bridge (e.g., manual restart via command palette)
+			return vscode.window.withProgress(
+				{
+					cancellable: false,
+					location: vscode.ProgressLocation.Notification,
+					title: 'MCP Server'
+				},
+				async (progress) => {
+					progress.report({ increment: 0, message: 'Stopping…' });
+					try {
+						await vscode.commands.executeCommand('workbench.mcp.stopServer', serverId);
+						console.log('[host] MCP server stopped');
+					} catch (stopErr) {
+						const msg = stopErr instanceof Error ? stopErr.message : String(stopErr);
+						console.log(`[host] MCP stopServer failed: ${msg} — continuing`);
+					}
 
-          // Keep notification open until readyToRestart resolves (or 30s safety timeout)
-          const safetyTimeout = setTimeout(() => {
-            if (mcpProgressBridge) {
-              mcpProgressBridge = null;
-              bridgeResolve();
-            }
-          }, 30_000);
+					progress.report({ increment: 33, message: 'Clearing tool cache…' });
+					try {
+						await vscode.commands.executeCommand('workbench.mcp.resetCachedTools');
+						console.log('[host] Tool cache cleared');
+					} catch (cacheErr) {
+						const msg = cacheErr instanceof Error ? cacheErr.message : String(cacheErr);
+						console.log(`[host] resetCachedTools failed: ${msg}`);
+					}
 
-          await bridgePromise;
-          clearTimeout(safetyTimeout);
+					progress.report({ increment: 33, message: 'Starting…' });
+					try {
+						await vscode.commands.executeCommand('workbench.mcp.startServer', serverId);
+						console.log('[host] MCP server started');
+					} catch (startErr) {
+						const msg = startErr instanceof Error ? startErr.message : String(startErr);
+						console.log(`[host] MCP startServer failed: ${msg}`);
+						vscode.window.showWarningMessage(`❌ MCP Server failed to start: ${msg}`);
+						return { error: msg, restarted: false };
+					}
 
-          progress.report({ message: '✅ Restarted' });
-          await delay(3000);
-        },
-      );
+					progress.report({ increment: 34, message: '✅ Restarted' });
+					await delay(3000);
+					return { restarted: true, toolCacheCleared: true };
+				}
+			);
+		};
 
-      // Wait only for the build to finish, then return result to MCP
-      const buildError = await buildDone;
-      if (buildError) {
-        result.mcpBuildError = buildError;
-      } else {
-        await hotReloadService.commitHash('mcp', mcpChange.currentHash);
-        result.mcpRebuilt = true;
-        expectMcpRestart();
+		try {
+			restartInProgress = doRestart();
+			return await restartInProgress;
+		} finally {
+			restartInProgress = null;
+			hotReloadInProgress = false;
+			console.log('[host] MCP restart complete — health monitor resumed');
+		}
+	};
 
-        // Mark flagged inspector records as stale — tool code changed
-        markInspectorRecordsStale();
-      }
-    }
-    } finally {
-      // Only reset if no MCP restart is pending — handleMcpRestart owns the
-      // flag when MCP changes need stop → clearCache → start cycle
-      if (!result.mcpRebuilt) {
-        hotReloadInProgress = false;
-        console.log('[host] checkForChanges: complete — health monitor resumed');
-      } else {
-        console.log('[host] checkForChanges: MCP restart pending — health monitor stays suppressed until readyToRestart');
-      }
-    }
+	register('readyToRestart', async () => handleMcpRestart());
 
-    return result;
-  });
+	/**
+	 * checkForChanges — MCP server asks extension to check for source changes.
+	 *
+	 * Called per-batch by the RequestPipeline. Detects changes via content
+	 * hashing, rebuilds if changed, and shows progress notifications:
+	 *   - Extension notification: Rebuilding → Stopping client → Launching client → ✅ Connected
+	 *   - MCP Server notification: Rebuilding → Rebuilt ✓ (bridges into readyToRestart)
+	 * Both notifications can appear simultaneously when both packages changed.
+	 */
+	register('checkForChanges', async (params) => {
+		const mcpServerRoot = typeof params.mcpServerRoot === 'string' ? params.mcpServerRoot : undefined;
+		const extensionPath = typeof params.extensionPath === 'string' ? params.extensionPath : undefined;
 
-  // Track debug session lifecycle
-  context.subscriptions.push(
-    vscode.debug.onDidStartDebugSession((session) => {
-      currentDebugSession = session;
-      console.log('[host] Debug session started:', session.name);
-    }),
-    vscode.debug.onDidTerminateDebugSession((session) => {
-      if (currentDebugSession?.id === session.id) {
-        currentDebugSession = null;
-        console.log('[host] Debug session ended:', session.name);
-      }
-    })
-  );
+		if (!mcpServerRoot || !extensionPath) {
+			throw new Error('checkForChanges: mcpServerRoot and extensionPath are required');
+		}
+
+		const result: ChangeCheckResult = {
+			extBuildError: null,
+			extChanged: false,
+			extClientReloaded: false,
+			extRebuilt: false,
+			mcpBuildError: null,
+			mcpChanged: false,
+			mcpRebuilt: false,
+			newCdpPort: null,
+			newClientStartedAt: null
+		};
+
+		// Phase 1: Detect changes (fast hash checks only — no builds yet)
+		const extChange = hotReloadService.detectChange(extensionPath, 'ext');
+		const mcpChange = hotReloadService.detectChange(mcpServerRoot, 'mcp');
+		result.extChanged = extChange.changed;
+		result.mcpChanged = mcpChange.changed;
+
+		if (!extChange.changed && !mcpChange.changed) {
+			return result;
+		}
+
+		// Suppress health monitor during the entire checkForChanges operation.
+		// Without this, stopping the client window (Phase 2) causes the health
+		// monitor to fire onClientStateChanged(false), which triggers the
+		// tethered lifecycle in extension.ts to call workbench.mcp.stopServer,
+		// killing the MCP server process that is waiting for this RPC response.
+		hotReloadInProgress = true;
+		console.log('[host] checkForChanges: changes detected — suppressing health monitor');
+
+		try {
+			// Phase 2: Extension progress notification — rebuild → stop client → launch client
+			if (extChange.changed) {
+				await vscode.window.withProgress(
+					{
+						cancellable: false,
+						location: vscode.ProgressLocation.Notification,
+						title: 'Extension'
+					},
+					async (progress) => {
+						progress.report({ message: 'Rebuilding…' });
+						const buildError = await hotReloadService.runBuild(extensionPath, 'compile');
+						if (buildError) {
+							result.extBuildError = buildError;
+							return;
+						}
+
+						await hotReloadService.commitHash('ext', extChange.currentHash);
+						result.extRebuilt = true;
+
+						// Mark flagged inspector records as stale — extension code changed
+						markInspectorRecordsStale();
+
+						// Capture workspace before stopClient clears it
+						const workspace = currentClientWorkspace;
+
+						progress.report({ message: 'Stopping client window…' });
+						stopClient();
+						await waitForPipeRelease();
+
+						if (workspace) {
+							progress.report({ message: 'Launching client window…' });
+							const spawnResult = await spawnClient(workspace, extensionPath);
+							result.extClientReloaded = true;
+							result.newCdpPort = spawnResult.cdpPort;
+							result.newClientStartedAt = spawnResult.clientStartedAt;
+							console.log(`[host] Client restarted with fresh extension code (cdpPort: ${spawnResult.cdpPort})`);
+
+							progress.report({ message: '✅ Client reconnected' });
+							await delay(3000);
+						}
+					}
+				);
+			}
+
+			// Phase 3: MCP progress notification — rebuild → bridge to readyToRestart
+			if (mcpChange.changed) {
+				let buildDoneResolve!: (error: null | string) => void;
+				const buildDone = new Promise<null | string>((r) => {
+					buildDoneResolve = r;
+				});
+
+				let bridgeResolve!: () => void;
+				const bridgePromise = new Promise<void>((r) => {
+					bridgeResolve = r;
+				});
+
+				// Fire-and-forget: the notification stays open until readyToRestart completes
+				void vscode.window.withProgress(
+					{
+						cancellable: false,
+						location: vscode.ProgressLocation.Notification,
+						title: 'MCP Server'
+					},
+					async (progress) => {
+						progress.report({ message: 'Rebuilding…' });
+						const buildError = await hotReloadService.runBuild(mcpServerRoot, 'build');
+						buildDoneResolve(buildError);
+
+						if (buildError) {
+							return;
+						}
+
+						progress.report({ message: 'Rebuilt ✓ — restarting…' });
+
+						// Store bridge so readyToRestart can continue this notification
+						mcpProgressBridge = {
+							report: (msg: string) => {
+								progress.report({ message: msg });
+							},
+							resolve: bridgeResolve
+						};
+
+						// Keep notification open until readyToRestart resolves (or 30s safety timeout)
+						const safetyTimeout = setTimeout(() => {
+							if (mcpProgressBridge) {
+								mcpProgressBridge = null;
+								bridgeResolve();
+							}
+						}, 30_000);
+
+						await bridgePromise;
+						clearTimeout(safetyTimeout);
+
+						progress.report({ message: '✅ Restarted' });
+						await delay(3000);
+					}
+				);
+
+				// Wait only for the build to finish, then return result to MCP
+				const buildError = await buildDone;
+				if (buildError) {
+					result.mcpBuildError = buildError;
+				} else {
+					await hotReloadService.commitHash('mcp', mcpChange.currentHash);
+					result.mcpRebuilt = true;
+					expectMcpRestart();
+
+					// Mark flagged inspector records as stale — tool code changed
+					markInspectorRecordsStale();
+				}
+			}
+		} finally {
+			// Only reset if no MCP restart is pending — handleMcpRestart owns the
+			// flag when MCP changes need stop → clearCache → start cycle
+			if (!result.mcpRebuilt) {
+				hotReloadInProgress = false;
+				console.log('[host] checkForChanges: complete — health monitor resumed');
+			} else {
+				console.log('[host] checkForChanges: MCP restart pending — health monitor stays suppressed until readyToRestart');
+			}
+		}
+
+		return result;
+	});
+
+	// Track debug session lifecycle
+	context.subscriptions.push(
+		vscode.debug.onDidStartDebugSession((session) => {
+			currentDebugSession = session;
+			console.log('[host] Debug session started:', session.name);
+		}),
+		vscode.debug.onDidTerminateDebugSession((session) => {
+			if (currentDebugSession?.id === session.id) {
+				currentDebugSession = null;
+				console.log('[host] Debug session ended:', session.name);
+			}
+		})
+	);
 }
 
 /**
  * Export for extension.ts to check hot-reload state
  */
 export function isHotReloadInProgress(): boolean {
-  return hotReloadInProgress;
+	return hotReloadInProgress;
 }
 
 // ── Client Lifecycle Exports ─────────────────────────────────────────────────
@@ -1618,33 +1613,29 @@ export function isHotReloadInProgress(): boolean {
  * Mirrors the config resolution in mcpServerProvider's buildConfigEnv.
  */
 function resolveClientConfig(): null | { clientWorkspace: string; extensionPath: string; launchFlags: Record<string, unknown> } {
-  const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-  if (!workspacePath) {
-    return null;
-  }
+	const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+	if (!workspacePath) {
+		return null;
+	}
 
-  const config = vscode.workspace.getConfiguration('devtools');
+	const config = vscode.workspace.getConfiguration('devtools');
 
-  const clientWorkspaceRaw = config.get<string>('clientWorkspace', '');
-  const extensionPathRaw = config.get<string>('extensionPath', '.');
+	const clientWorkspaceRaw = config.get<string>('clientWorkspace', '');
+	const extensionPathRaw = config.get<string>('extensionPath', '.');
 
-  const clientWorkspace = clientWorkspaceRaw
-    ? (path.isAbsolute(clientWorkspaceRaw) ? clientWorkspaceRaw : path.resolve(workspacePath, clientWorkspaceRaw))
-    : workspacePath;
-  const extensionPath = path.isAbsolute(extensionPathRaw)
-    ? extensionPathRaw
-    : path.resolve(workspacePath, extensionPathRaw);
+	const clientWorkspace = clientWorkspaceRaw ? (path.isAbsolute(clientWorkspaceRaw) ? clientWorkspaceRaw : path.resolve(workspacePath, clientWorkspaceRaw)) : workspacePath;
+	const extensionPath = path.isAbsolute(extensionPathRaw) ? extensionPathRaw : path.resolve(workspacePath, extensionPathRaw);
 
-  const launchFlags: Record<string, unknown> = {
-    disableGpu: config.get<boolean>('launch.disableGpu', false),
-    disableWorkspaceTrust: config.get<boolean>('launch.disableWorkspaceTrust', false),
-    extraArgs: config.get<string[]>('launch.extraArgs', []),
-    skipReleaseNotes: config.get<boolean>('launch.skipReleaseNotes', true),
-    skipWelcome: config.get<boolean>('launch.skipWelcome', true),
-    verbose: config.get<boolean>('launch.verbose', false),
-  };
+	const launchFlags: Record<string, unknown> = {
+		disableGpu: config.get<boolean>('launch.disableGpu', false),
+		disableWorkspaceTrust: config.get<boolean>('launch.disableWorkspaceTrust', false),
+		extraArgs: config.get<string[]>('launch.extraArgs', []),
+		skipReleaseNotes: config.get<boolean>('launch.skipReleaseNotes', true),
+		skipWelcome: config.get<boolean>('launch.skipWelcome', true),
+		verbose: config.get<boolean>('launch.verbose', false)
+	};
 
-  return { clientWorkspace, extensionPath, launchFlags };
+	return { clientWorkspace, extensionPath, launchFlags };
 }
 
 /**
@@ -1654,99 +1645,99 @@ function resolveClientConfig(): null | { clientWorkspace: string; extensionPath:
  * Called during extension activation to auto-start the client.
  */
 export async function startClientWindow(): Promise<boolean> {
-  hostLog?.('startClientWindow: ENTRY');
-  console.log('[host] startClientWindow: ENTRY');
-  
-  // Already running?
-  if (cdpPort && electronPid) {
-    hostLog?.(`startClientWindow: PATH=already-running (cdpPort=${cdpPort}, pid=${electronPid})`);
-    const healthy = await isClientHealthy();
-    if (healthy) {
-      console.log('[host] Client window already running and healthy');
-      if (!activeCdpClient?.connected) {
-        await connectCdpClient(cdpPort);
-      }
-      if (!activeCdpClient?.connected) {
-        hostLog?.('Client window healthy but CDP connection failed — browser LM tools unavailable until reconnection');
-      }
-      lastKnownClientState = true;
-      _onClientStateChanged.fire(true);
-      return true;
-    }
-    // Not healthy — clean up and respawn
-    stopClient();
-  }
+	hostLog?.('startClientWindow: ENTRY');
+	console.log('[host] startClientWindow: ENTRY');
 
-  // Try persisted session first
-  const session = loadPersistedSession();
-  hostLog?.(`startClientWindow: PATH=persisted-session (session=${session ? 'FOUND' : 'NULL'})`);
-  if (session) {
-    electronPid = session.clientPid;
-    cdpPort = session.cdpPort;
-    inspectorPort = session.inspectorPort;
-    currentExtensionPath = session.extensionPath;
+	// Already running?
+	if (cdpPort && electronPid) {
+		hostLog?.(`startClientWindow: PATH=already-running (cdpPort=${cdpPort}, pid=${electronPid})`);
+		const healthy = await isClientHealthy();
+		if (healthy) {
+			console.log('[host] Client window already running and healthy');
+			if (!activeCdpClient?.connected) {
+				await connectCdpClient(cdpPort);
+			}
+			if (!activeCdpClient?.connected) {
+				hostLog?.('Client window healthy but CDP connection failed — browser LM tools unavailable until reconnection');
+			}
+			lastKnownClientState = true;
+			_onClientStateChanged.fire(true);
+			return true;
+		}
+		// Not healthy — clean up and respawn
+		stopClient();
+	}
 
-    hostLog?.(`startClientWindow: Checking persisted session health (pid=${session.clientPid}, cdpPort=${session.cdpPort})`);
-    const healthy = await isClientHealthy();
-    hostLog?.(`startClientWindow: Persisted session healthy=${healthy}`);
-    if (healthy) {
-      console.log('[host] Reconnected to persisted client session');
-      hostLog?.(`Reconnected to persisted client session (cdpPort: ${session.cdpPort})`);
-      await connectCdpClient(session.cdpPort);
-      if (!activeCdpClient?.connected) {
-        hostLog?.('Client session healthy but CDP connection failed — browser LM tools will retry on first use');
-      }
-      lastKnownClientState = true;
-      _onClientStateChanged.fire(true);
-      return true;
-    }
-    // Stale session — clean up
-    stopClient();
-    await waitForPipeRelease();
-  }
+	// Try persisted session first
+	const session = loadPersistedSession();
+	hostLog?.(`startClientWindow: PATH=persisted-session (session=${session ? 'FOUND' : 'NULL'})`);
+	if (session) {
+		electronPid = session.clientPid;
+		cdpPort = session.cdpPort;
+		inspectorPort = session.inspectorPort;
+		currentExtensionPath = session.extensionPath;
 
-  const resolved = resolveClientConfig();
-  hostLog?.(`startClientWindow: PATH=spawn (resolved=${resolved ? 'OK' : 'NULL'})`);
-  if (!resolved) {
-    console.log('[host] Cannot auto-start client: no workspace folder or config');
-    hostLog?.('startClientWindow: FAILED — no workspace folder or config');
-    return false;
-  }
+		hostLog?.(`startClientWindow: Checking persisted session health (pid=${session.clientPid}, cdpPort=${session.cdpPort})`);
+		const healthy = await isClientHealthy();
+		hostLog?.(`startClientWindow: Persisted session healthy=${healthy}`);
+		if (healthy) {
+			console.log('[host] Reconnected to persisted client session');
+			hostLog?.(`Reconnected to persisted client session (cdpPort: ${session.cdpPort})`);
+			await connectCdpClient(session.cdpPort);
+			if (!activeCdpClient?.connected) {
+				hostLog?.('Client session healthy but CDP connection failed — browser LM tools will retry on first use');
+			}
+			lastKnownClientState = true;
+			_onClientStateChanged.fire(true);
+			return true;
+		}
+		// Stale session — clean up
+		stopClient();
+		await waitForPipeRelease();
+	}
 
-  try {
-    console.log('[host] Auto-starting client window...');
-    hostLog?.(`startClientWindow: Spawning client window...`);
-    const result = await spawnClient(resolved.clientWorkspace, resolved.extensionPath, resolved.launchFlags);
-    hostLog?.(`startClientWindow: Client spawned, connecting CDP on port ${result.cdpPort}...`);
-    await connectCdpClient(result.cdpPort);
-    hostLog?.(`startClientWindow: CDP connection attempt complete, activeCdpClient.connected=${activeCdpClient?.connected}`);
-    console.log(`[host] Client window auto-started successfully (cdpPort: ${  result.cdpPort  })`);
-    lastKnownClientState = true;
-    _onClientStateChanged.fire(true);
-    return true;
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.log(`[host] Failed to auto-start client window: ${  msg}`);
-    hostLog?.(`startClientWindow: FAILED — ${msg}`);
-    return false;
-  }
+	const resolved = resolveClientConfig();
+	hostLog?.(`startClientWindow: PATH=spawn (resolved=${resolved ? 'OK' : 'NULL'})`);
+	if (!resolved) {
+		console.log('[host] Cannot auto-start client: no workspace folder or config');
+		hostLog?.('startClientWindow: FAILED — no workspace folder or config');
+		return false;
+	}
+
+	try {
+		console.log('[host] Auto-starting client window...');
+		hostLog?.(`startClientWindow: Spawning client window...`);
+		const result = await spawnClient(resolved.clientWorkspace, resolved.extensionPath, resolved.launchFlags);
+		hostLog?.(`startClientWindow: Client spawned, connecting CDP on port ${result.cdpPort}...`);
+		await connectCdpClient(result.cdpPort);
+		hostLog?.(`startClientWindow: CDP connection attempt complete, activeCdpClient.connected=${activeCdpClient?.connected}`);
+		console.log(`[host] Client window auto-started successfully (cdpPort: ${result.cdpPort})`);
+		lastKnownClientState = true;
+		_onClientStateChanged.fire(true);
+		return true;
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		console.log(`[host] Failed to auto-start client window: ${msg}`);
+		hostLog?.(`startClientWindow: FAILED — ${msg}`);
+		return false;
+	}
 }
 
 /**
  * Stop the client window and disconnect CDP.
  */
 export function stopClientWindow(): void {
-  disconnectCdpClient();
-  stopClient();
-  lastKnownClientState = false;
-  _onClientStateChanged.fire(false);
+	disconnectCdpClient();
+	stopClient();
+	lastKnownClientState = false;
+	_onClientStateChanged.fire(false);
 }
 
 /**
  * Returns whether the client window is currently connected (fast, no I/O).
  */
 export function isClientWindowConnected(): boolean {
-  return lastKnownClientState;
+	return lastKnownClientState;
 }
 
 /**
@@ -1754,39 +1745,39 @@ export function isClientWindowConnected(): boolean {
  * Called by extension.ts after loading the runtime module to bridge the bundle gap.
  */
 export function createReconnectCdpCallback(): () => Promise<boolean> {
-  return async () => {
-    console.log('[host] lazyReconnectCallback: INVOKED');
-    hostLog?.('lazyReconnectCallback: Attempting CDP reconnection...');
-    
-    const session = loadPersistedSession();
-    hostLog?.(`lazyReconnectCallback: session=${session ? `FOUND(cdpPort=${session.cdpPort})` : 'NULL'}`);
-    if (!session?.cdpPort) return false;
+	return async () => {
+		console.log('[host] lazyReconnectCallback: INVOKED');
+		hostLog?.('lazyReconnectCallback: Attempting CDP reconnection...');
 
-    const healthy = await isClientHealthy();
-    hostLog?.(`lazyReconnectCallback: isClientHealthy=${healthy}`);
-    if (!healthy) return false;
+		const session = loadPersistedSession();
+		hostLog?.(`lazyReconnectCallback: session=${session ? `FOUND(cdpPort=${session.cdpPort})` : 'NULL'}`);
+		if (!session?.cdpPort) return false;
 
-    // Restore module state from persisted session
-    if (!cdpPort) {
-      electronPid = session.clientPid;
-      cdpPort = session.cdpPort;
-      inspectorPort = session.inspectorPort;
-      currentExtensionPath = session.extensionPath;
-    }
+		const healthy = await isClientHealthy();
+		hostLog?.(`lazyReconnectCallback: isClientHealthy=${healthy}`);
+		if (!healthy) return false;
 
-    hostLog?.(`lazyReconnectCallback: Calling connectCdpClient(${session.cdpPort})...`);
-    await connectCdpClient(session.cdpPort);
-    const result = activeCdpClient?.connected === true;
-    hostLog?.(`lazyReconnectCallback: RESULT=${result}`);
-    return result;
-  };
+		// Restore module state from persisted session
+		if (!cdpPort) {
+			electronPid = session.clientPid;
+			cdpPort = session.cdpPort;
+			inspectorPort = session.inspectorPort;
+			currentExtensionPath = session.extensionPath;
+		}
+
+		hostLog?.(`lazyReconnectCallback: Calling connectCdpClient(${session.cdpPort})...`);
+		await connectCdpClient(session.cdpPort);
+		const result = activeCdpClient?.connected === true;
+		hostLog?.(`lazyReconnectCallback: RESULT=${result}`);
+		return result;
+	};
 }
 
 /**
  * Export for deactivate cleanup
  */
 export function cleanup(): void {
-  disconnectCdpClient();
-  stopClient();
-  _onClientStateChanged.dispose();
+	disconnectCdpClient();
+	stopClient();
+	_onClientStateChanged.dispose();
 }

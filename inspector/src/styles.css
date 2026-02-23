@@ -1,305 +1,305 @@
-@import "tailwindcss";
-@import "@vscode/codicons/dist/codicon.css";
+@import 'tailwindcss';
+@import '@vscode/codicons/dist/codicon.css';
 
 @theme {
-  /* VS Code Dark Theme Color Tokens
+	/* VS Code Dark Theme Color Tokens
    * When integrated into a VS Code WebView, swap these defaults
    * for --vscode-* CSS custom properties for automatic theme adaptation. */
-  --color-vscode-bg: #1e1e1e;
-  --color-vscode-sidebar: #252526;
-  --color-vscode-input: #3c3c3c;
-  --color-vscode-border: #474747;
-  --color-vscode-text: #cccccc;
-  --color-vscode-text-dim: #969696;
-  --color-vscode-accent: #007acc;
-  --color-vscode-accent-hover: #1177bb;
-  --color-vscode-success: #4ec9b0;
-  --color-vscode-error: #f44747;
-  --color-vscode-warning: #cca700;
-  --color-vscode-header: #181818;
-  --color-vscode-active: #37373d;
-  --color-vscode-hover: #2a2d2e;
-  --color-vscode-selection: #264f78;
-  --color-vscode-badge: #4d4d4d;
+	--color-vscode-bg: #1e1e1e;
+	--color-vscode-sidebar: #252526;
+	--color-vscode-input: #3c3c3c;
+	--color-vscode-border: #474747;
+	--color-vscode-text: #cccccc;
+	--color-vscode-text-dim: #969696;
+	--color-vscode-accent: #007acc;
+	--color-vscode-accent-hover: #1177bb;
+	--color-vscode-success: #4ec9b0;
+	--color-vscode-error: #f44747;
+	--color-vscode-warning: #cca700;
+	--color-vscode-header: #181818;
+	--color-vscode-active: #37373d;
+	--color-vscode-hover: #2a2d2e;
+	--color-vscode-selection: #264f78;
+	--color-vscode-badge: #4d4d4d;
 
-  --font-family-mono: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
-  --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+	--font-family-mono: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+	--font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 body {
-  font-family: var(--font-family-sans);
-  font-size: 13px;
-  line-height: 1.4;
-  -webkit-font-smoothing: antialiased;
+	font-family: var(--font-family-sans);
+	font-size: 13px;
+	line-height: 1.4;
+	-webkit-font-smoothing: antialiased;
 }
 
 /* VS Code-style scrollbar */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+	width: 10px;
+	height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+	background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(121, 121, 121, 0.4);
-  border-radius: 5px;
+	background: rgba(121, 121, 121, 0.4);
+	border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(121, 121, 121, 0.7);
+	background: rgba(121, 121, 121, 0.7);
 }
 
 textarea,
 pre,
 code {
-  font-family: var(--font-family-mono);
-  font-size: 13px;
+	font-family: var(--font-family-mono);
+	font-size: 13px;
 }
 
 *:focus-visible {
-  outline: 1px solid var(--color-vscode-accent);
-  outline-offset: -1px;
+	outline: 1px solid var(--color-vscode-accent);
+	outline-offset: -1px;
 }
 
 /* ── VS Code Copilot Chat-style Tool Invocation Card ── */
 
 .tool-invocation-card {
-  border: 1px solid var(--color-vscode-border);
-  border-radius: 4px;
-  font-size: 13px;
+	border: 1px solid var(--color-vscode-border);
+	border-radius: 4px;
+	font-size: 13px;
 }
 
 .tool-invocation-card h3 {
-  font-weight: 600;
-  margin: 4px 0 8px;
-  font-size: 12px;
-  color: var(--color-vscode-text-dim);
-  user-select: none;
+	font-weight: 600;
+	margin: 4px 0 8px;
+	font-size: 12px;
+	color: var(--color-vscode-text-dim);
+	user-select: none;
 }
 
 .tool-io-section {
-  padding: 0 8px;
-  margin: 8px 0;
+	padding: 0 8px;
+	margin: 8px 0;
 }
 
 .tool-io-editor-wrapper {
-  border: 1px solid var(--color-vscode-border);
-  border-radius: 4px;
-  overflow: hidden;
-  background-color: var(--color-vscode-input);
+	border: 1px solid var(--color-vscode-border);
+	border-radius: 4px;
+	overflow: hidden;
+	background-color: var(--color-vscode-input);
 }
 
 /* Result section styling */
 .tool-result-section {
-  margin-top: 2px;
-  border-top: 1px solid var(--color-vscode-border);
+	margin-top: 2px;
+	border-top: 1px solid var(--color-vscode-border);
 }
 
 .tool-result-section .tool-io-section {
-  margin-top: 12px;
+	margin-top: 12px;
 }
 
 /* Error state for the result card */
 .tool-invocation-card.error-state {
-  border-color: color-mix(in srgb, var(--color-vscode-error) 50%, transparent);
+	border-color: color-mix(in srgb, var(--color-vscode-error) 50%, transparent);
 }
 
 .tool-error-message {
-  padding: 8px 12px;
-  color: var(--color-vscode-error);
-  font-size: 13px;
+	padding: 8px 12px;
+	color: var(--color-vscode-error);
+	font-size: 13px;
 }
 
 .tool-error-message .error-label {
-  font-weight: 600;
+	font-weight: 600;
 }
 
 /* Content block rendering inside output */
 .tool-output-image {
-  max-width: 100%;
-  border-radius: 4px;
-  margin-top: 4px;
+	max-width: 100%;
+	border-radius: 4px;
+	margin-top: 4px;
 }
 
 /* Execution time stamp */
 .tool-execution-time {
-  font-size: 11px;
-  color: var(--color-vscode-text-dim);
+	font-size: 11px;
+	color: var(--color-vscode-text-dim);
 }
 
 /* ── History List ── */
 
 .history-section {
-  margin-top: 4px;
+	margin-top: 4px;
 }
 
 .history-section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 8px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-vscode-text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-top: 1px solid var(--color-vscode-border);
-  user-select: none;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 6px 8px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--color-vscode-text-dim);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	border-top: 1px solid var(--color-vscode-border);
+	user-select: none;
 }
 
 .history-entry {
-  border-top: 1px solid var(--color-vscode-border);
+	border-top: 1px solid var(--color-vscode-border);
 }
 
 .history-entry-error .history-entry-row {
-  border-left: 2px solid var(--color-vscode-error);
+	border-left: 2px solid var(--color-vscode-error);
 }
 
 .history-entry-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  cursor: pointer;
-  user-select: none;
-  font-size: 13px;
-  transition: background-color 0.1s;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 8px;
+	cursor: pointer;
+	user-select: none;
+	font-size: 13px;
+	transition: background-color 0.1s;
 }
 
 .history-entry-row:hover {
-  background: var(--color-vscode-hover);
+	background: var(--color-vscode-hover);
 }
 
 .history-chevron {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  flex-shrink: 0;
-  color: var(--color-vscode-text-dim);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 16px;
+	flex-shrink: 0;
+	color: var(--color-vscode-text-dim);
 }
 
 .history-chevron svg {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
+	width: 16px;
+	height: 16px;
+	fill: currentColor;
 }
 
 /* Inline-editable comment field (replaces tool name + popover) */
 .history-comment-field {
-  flex: 1;
-  font-size: 13px;
-  font-family: var(--font-family-sans);
-  color: var(--color-vscode-text);
-  background: transparent;
-  border: 1px solid transparent;
-  padding: 1px 4px;
-  border-radius: 3px;
-  outline: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  cursor: text;
-  min-width: 0;
+	flex: 1;
+	font-size: 13px;
+	font-family: var(--font-family-sans);
+	color: var(--color-vscode-text);
+	background: transparent;
+	border: 1px solid transparent;
+	padding: 1px 4px;
+	border-radius: 3px;
+	outline: none;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	cursor: text;
+	min-width: 0;
 }
 
 .history-comment-field:hover {
-  border-color: var(--color-vscode-border);
+	border-color: var(--color-vscode-border);
 }
 
 .history-comment-field:focus {
-  border-color: var(--color-vscode-accent);
-  background: var(--color-vscode-input);
+	border-color: var(--color-vscode-accent);
+	background: var(--color-vscode-input);
 }
 
 .history-comment-field::placeholder {
-  color: var(--color-vscode-text-dim);
-  font-style: italic;
+	color: var(--color-vscode-text-dim);
+	font-style: italic;
 }
 
 .history-time {
-  font-size: 11px;
-  color: var(--color-vscode-text-dim);
-  flex-shrink: 0;
+	font-size: 11px;
+	color: var(--color-vscode-text-dim);
+	flex-shrink: 0;
 }
 
 .history-duration {
-  font-size: 11px;
-  color: var(--color-vscode-text-dim);
-  flex-shrink: 0;
-  min-width: 40px;
-  text-align: right;
+	font-size: 11px;
+	color: var(--color-vscode-text-dim);
+	flex-shrink: 0;
+	min-width: 40px;
+	text-align: right;
 }
 
 .history-rating-badge {
-  font-size: 14px;
-  flex-shrink: 0;
-  width: 20px;
-  text-align: center;
+	font-size: 14px;
+	flex-shrink: 0;
+	width: 20px;
+	text-align: center;
 }
 
 /* Collapsed row inline rating buttons */
 .history-row-rating {
-  display: flex;
-  gap: 2px;
-  flex-shrink: 0;
-  align-items: center;
+	display: flex;
+	gap: 2px;
+	flex-shrink: 0;
+	align-items: center;
 }
 
 /* Expanded detail */
 .history-entry-detail {
-  padding: 8px 12px 12px;
-  background: var(--color-vscode-bg);
+	padding: 8px 12px 12px;
+	background: var(--color-vscode-bg);
 }
 
 .history-detail-section {
-  margin-bottom: 8px;
+	margin-bottom: 8px;
 }
 
 .history-detail-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-vscode-text-dim);
-  margin-bottom: 4px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--color-vscode-text-dim);
+	margin-bottom: 4px;
 }
 
 /* Rating buttons — matches VS Code actionbar.css + chat.css exactly */
 .history-rating-row {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 4px;
+	display: flex;
+	gap: 4px;
+	margin-bottom: 4px;
 }
 
 .history-rating-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  border-radius: 5px;
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--color-vscode-text-dim);
-  position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 4px;
+	border-radius: 5px;
+	cursor: pointer;
+	background: transparent;
+	border: 1px solid transparent;
+	color: var(--color-vscode-text-dim);
+	position: relative;
 }
 
 .history-rating-btn svg {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
+	width: 16px;
+	height: 16px;
+	fill: currentColor;
 }
 
 .history-rating-btn:hover {
-  color: var(--color-vscode-text);
-  background: var(--color-vscode-hover);
+	color: var(--color-vscode-text);
+	background: var(--color-vscode-hover);
 }
 
 .history-rating-btn.checked,
 .history-rating-btn.checked:hover {
-  color: var(--vscode-inputOption-activeForeground, #fff) !important;
-  border-color: var(--vscode-inputOption-activeBorder, #007acc);
-  background-color: var(--vscode-inputOption-activeBackground, rgba(0, 122, 204, 0.3));
+	color: var(--vscode-inputOption-activeForeground, #fff) !important;
+	border-color: var(--vscode-inputOption-activeBorder, #007acc);
+	background-color: var(--vscode-inputOption-activeBackground, rgba(0, 122, 204, 0.3));
 }

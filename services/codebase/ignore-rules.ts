@@ -3,134 +3,134 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 export interface IgnoreRule {
-  negated: boolean;
-  pattern: string;
-  scope: null | string;
+	negated: boolean;
+	pattern: string;
+	scope: null | string;
 }
 
 const DEVTOOLS_IGNORE_FILENAME = '.devtoolsignore';
 
 function normalizeRelativePath(input: string): string {
-  return input.replaceAll('\\', '/');
+	return input.replaceAll('\\', '/');
 }
 
 function escapeRegex(text: string): string {
-  return text.replaceAll(/[|\\{}()[\]^$+?.]/g, '\\$&');
+	return text.replaceAll(/[|\\{}()[\]^$+?.]/g, '\\$&');
 }
 
 export function globToRegex(pattern: string): RegExp {
-  const normalized = normalizeRelativePath(pattern.trim());
-  let source = '';
-  for (let i = 0; i < normalized.length; i++) {
-    const char = normalized[i];
-    const next = normalized[i + 1];
-    if (char === '*' && next === '*') {
-      // `**/` means "zero or more directories" — the trailing `/` is optional
-      if (normalized[i + 2] === '/') {
-        source += '(.*/)?';
-        i += 2;
-      } else {
-        source += '.*';
-        i++;
-      }
-      continue;
-    }
-    if (char === '*') {
-      source += '[^/]*';
-      continue;
-    }
-    source += escapeRegex(char);
-  }
-  return new RegExp(`^${source}$`);
+	const normalized = normalizeRelativePath(pattern.trim());
+	let source = '';
+	for (let i = 0; i < normalized.length; i++) {
+		const char = normalized[i];
+		const next = normalized[i + 1];
+		if (char === '*' && next === '*') {
+			// `**/` means "zero or more directories" — the trailing `/` is optional
+			if (normalized[i + 2] === '/') {
+				source += '(.*/)?';
+				i += 2;
+			} else {
+				source += '.*';
+				i++;
+			}
+			continue;
+		}
+		if (char === '*') {
+			source += '[^/]*';
+			continue;
+		}
+		source += escapeRegex(char);
+	}
+	return new RegExp(`^${source}$`);
 }
 
 export function parseIgnoreRules(rootDir: string): IgnoreRule[] {
-  const rules: IgnoreRule[] = [];
-  const filePath = path.join(rootDir, DEVTOOLS_IGNORE_FILENAME);
-  if (!fs.existsSync(filePath)) return rules;
+	const rules: IgnoreRule[] = [];
+	const filePath = path.join(rootDir, DEVTOOLS_IGNORE_FILENAME);
+	if (!fs.existsSync(filePath)) return rules;
 
-  let raw = '';
-  try {
-    raw = fs.readFileSync(filePath, 'utf8');
-  } catch {
-    return rules;
-  }
+	let raw = '';
+	try {
+		raw = fs.readFileSync(filePath, 'utf8');
+	} catch {
+		return rules;
+	}
 
-  // Section syntax:
-  //   # global        — all following patterns apply to ALL tools
-  //   # tool:name     — all following patterns apply only to that tool
-  // Lines before any section header are treated as file description (ignored).
-  type Section = 'global' | 'preamble' | 'tool';
-  let section: Section = 'preamble';
-  let currentScope: null | string = null;
+	// Section syntax:
+	//   # global        — all following patterns apply to ALL tools
+	//   # tool:name     — all following patterns apply only to that tool
+	// Lines before any section header are treated as file description (ignored).
+	type Section = 'global' | 'preamble' | 'tool';
+	let section: Section = 'preamble';
+	let currentScope: null | string = null;
 
-  for (const line of raw.split(/\r?\n/u)) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
+	for (const line of raw.split(/\r?\n/u)) {
+		const trimmed = line.trim();
+		if (!trimmed) continue;
 
-    if (trimmed.startsWith('#')) {
-      const sectionName = trimmed.slice(1).trim();
+		if (trimmed.startsWith('#')) {
+			const sectionName = trimmed.slice(1).trim();
 
-      // # global — global patterns section
-      if (sectionName.toLowerCase() === 'global') {
-        section = 'global';
-        currentScope = null;
-        continue;
-      }
+			// # global — global patterns section
+			if (sectionName.toLowerCase() === 'global') {
+				section = 'global';
+				currentScope = null;
+				continue;
+			}
 
-      // # tool:tool_name — per-tool section
-      if (sectionName.toLowerCase().startsWith('tool:')) {
-        const toolName = sectionName.slice(5).trim();
-        if (toolName) {
-          section = 'tool';
-          currentScope = toolName;
-        }
-        continue;
-      }
+			// # tool:tool_name — per-tool section
+			if (sectionName.toLowerCase().startsWith('tool:')) {
+				const toolName = sectionName.slice(5).trim();
+				if (toolName) {
+					section = 'tool';
+					currentScope = toolName;
+				}
+				continue;
+			}
 
-      // Any other # line is a comment — skip
-      continue;
-    }
+			// Any other # line is a comment — skip
+			continue;
+		}
 
-    // Ignore pattern lines in preamble
-    if (section === 'preamble') continue;
+		// Ignore pattern lines in preamble
+		if (section === 'preamble') continue;
 
-    const negated = trimmed.startsWith('!');
-    const pattern = negated ? trimmed.slice(1).trim() : trimmed;
-    if (!pattern) continue;
-    rules.push({ negated, pattern, scope: currentScope });
-  }
+		const negated = trimmed.startsWith('!');
+		const pattern = negated ? trimmed.slice(1).trim() : trimmed;
+		if (!pattern) continue;
+		rules.push({ negated, pattern, scope: currentScope });
+	}
 
-  return rules;
+	return rules;
 }
 
 export function applyIgnoreRules(relativePath: string, rules: IgnoreRule[], toolScope?: string): boolean {
-  let ignored = false;
-  const normalized = normalizeRelativePath(relativePath);
-  for (const rule of rules) {
-    if (rule.scope !== null && rule.scope !== toolScope) continue;
+	let ignored = false;
+	const normalized = normalizeRelativePath(relativePath);
+	for (const rule of rules) {
+		if (rule.scope !== null && rule.scope !== toolScope) continue;
 
-    const raw = normalizeRelativePath(rule.pattern);
-    const directoryPattern = raw.endsWith('/');
-    const basePattern = directoryPattern ? raw.slice(0, -1) : raw;
+		const raw = normalizeRelativePath(rule.pattern);
+		const directoryPattern = raw.endsWith('/');
+		const basePattern = directoryPattern ? raw.slice(0, -1) : raw;
 
-    // .gitignore semantics: patterns without / (other than trailing) match at any depth
-    const hasPathSep = basePattern.includes('/');
-    const prefix = hasPathSep ? '' : '**/';
+		// .gitignore semantics: patterns without / (other than trailing) match at any depth
+		const hasPathSep = basePattern.includes('/');
+		const prefix = hasPathSep ? '' : '**/';
 
-    if (directoryPattern) {
-      // Directory patterns match the directory itself AND anything inside it
-      const selfMatcher = globToRegex(`${prefix}${basePattern}`);
-      const childMatcher = globToRegex(`${prefix}${basePattern}/**`);
-      if (selfMatcher.test(normalized) || childMatcher.test(normalized)) {
-        ignored = !rule.negated;
-      }
-    } else {
-      const matcher = globToRegex(`${prefix}${raw}`);
-      if (matcher.test(normalized)) {
-        ignored = !rule.negated;
-      }
-    }
-  }
-  return ignored;
+		if (directoryPattern) {
+			// Directory patterns match the directory itself AND anything inside it
+			const selfMatcher = globToRegex(`${prefix}${basePattern}`);
+			const childMatcher = globToRegex(`${prefix}${basePattern}/**`);
+			if (selfMatcher.test(normalized) || childMatcher.test(normalized)) {
+				ignored = !rule.negated;
+			}
+		} else {
+			const matcher = globToRegex(`${prefix}${raw}`);
+			if (matcher.test(normalized)) {
+				ignored = !rule.negated;
+			}
+		}
+	}
+	return ignored;
 }

@@ -17,14 +17,12 @@
 
 import net from 'node:net';
 
-import {logger} from './logger.js';
+import { logger } from './logger.js';
 
 // ── Constants ────────────────────────────────────────────
 
 const IS_WINDOWS = process.platform === 'win32';
-const HOST_PIPE_PATH = IS_WINDOWS
-  ? '\\\\.\\pipe\\vscode-devtools-host'
-  : '/tmp/vscode-devtools-host.sock';
+const HOST_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-host' : '/tmp/vscode-devtools-host.sock';
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 // Spawning the Client VS Code window can take 30+ seconds (cold start)
@@ -34,47 +32,47 @@ const HOT_RELOAD_TIMEOUT_MS = 120_000;
 // ── Types ────────────────────────────────────────────────
 
 interface JsonRpcResponse {
-  error?: {code: number; message: string; data?: unknown};
-  id: null | number | string;
-  jsonrpc: '2.0';
-  result?: unknown;
+	error?: { code: number; message: string; data?: unknown };
+	id: null | number | string;
+	jsonrpc: '2.0';
+	result?: unknown;
 }
 
 export interface McpReadyParams {
-  clientWorkspace: string;
-  extensionPath: string;
-  forceRestart?: boolean;
-  launch?: Record<string, unknown>;
+	clientWorkspace: string;
+	extensionPath: string;
+	forceRestart?: boolean;
+	launch?: Record<string, unknown>;
 }
 
 export interface McpReadyResult {
-  cdpPort: number;
-  clientStartedAt?: number;
-  userDataDir?: string;
+	cdpPort: number;
+	clientStartedAt?: number;
+	userDataDir?: string;
 }
 
 export interface HotReloadResult {
-  cdpPort: number;
-  clientStartedAt?: number;
-  userDataDir?: string;
+	cdpPort: number;
+	clientStartedAt?: number;
+	userDataDir?: string;
 }
 
 export interface HostStatus {
-  cdpPort: null | number;
-  clientHealthy: boolean;
-  clientPid: null | number;
-  clientStartedAt: null | string;
-  hotReloadInProgress: boolean;
-  role: 'host';
+	cdpPort: null | number;
+	clientHealthy: boolean;
+	clientPid: null | number;
+	clientStartedAt: null | string;
+	hotReloadInProgress: boolean;
+	role: 'host';
 }
 
 export interface TeardownResult {
-  stopped: boolean;
+	stopped: boolean;
 }
 
 export interface TakeoverResult {
-  accepted: boolean;
-  previousClientPid?: number;
+	accepted: boolean;
+	previousClientPid?: number;
 }
 
 // ── JSON-RPC Transport ───────────────────────────────────
@@ -84,93 +82,68 @@ export interface TakeoverResult {
  * Each call creates a fresh connection, sends the request, reads one
  * newline-delimited response, and disconnects.
  */
-async function sendHostRequest(
-  method: string,
-  params: Record<string, unknown>,
-  timeoutMs: number = DEFAULT_TIMEOUT_MS,
-): Promise<unknown> {
-  return new Promise((resolve, reject) => {
-    logger(`[host-pipe] ${method} → ${HOST_PIPE_PATH} (timeout=${timeoutMs}ms)`);
-    const client = net.createConnection(HOST_PIPE_PATH);
-    const reqId = `${method}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+async function sendHostRequest(method: string, params: Record<string, unknown>, timeoutMs: number = DEFAULT_TIMEOUT_MS): Promise<unknown> {
+	return new Promise((resolve, reject) => {
+		logger(`[host-pipe] ${method} → ${HOST_PIPE_PATH} (timeout=${timeoutMs}ms)`);
+		const client = net.createConnection(HOST_PIPE_PATH);
+		const reqId = `${method}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-    let response = '';
-    let settled = false;
-    client.setEncoding('utf8');
+		let response = '';
+		let settled = false;
+		client.setEncoding('utf8');
 
-    const settle = (fn: typeof reject | typeof resolve, value: unknown) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      try {
-        client.destroy();
-      } catch {
-        /* best-effort */
-      }
-      fn(value);
-    };
+		const settle = (fn: typeof reject | typeof resolve, value: unknown) => {
+			if (settled) return;
+			settled = true;
+			clearTimeout(timer);
+			try {
+				client.destroy();
+			} catch {
+				/* best-effort */
+			}
+			fn(value);
+		};
 
-    client.on('connect', () => {
-      logger(`[host-pipe] ${method} connected — sending request (id=${reqId})`);
-      const request =
-        `${JSON.stringify({id: reqId, jsonrpc: '2.0', method, params})  }\n`;
-      client.write(request);
-    });
+		client.on('connect', () => {
+			logger(`[host-pipe] ${method} connected — sending request (id=${reqId})`);
+			const request = `${JSON.stringify({ id: reqId, jsonrpc: '2.0', method, params })}\n`;
+			client.write(request);
+		});
 
-    client.on('data', (chunk: string) => {
-      if (settled) return;
-      response += chunk;
-      const nlIdx = response.indexOf('\n');
-      if (nlIdx !== -1) {
-        try {
-          const parsed = JSON.parse(response.slice(0, nlIdx)) as JsonRpcResponse;
-          if (parsed.error) {
-            logger(
-              `[host-pipe] ${method} ✗ error: [${parsed.error.code}] ${parsed.error.message}`,
-            );
-            settle(
-              reject,
-              new Error(
-                `Host ${method} failed [${parsed.error.code}]: ${parsed.error.message}`,
-              ),
-            );
-          } else {
-            logger(`[host-pipe] ${method} ✓ success`);
-            settle(resolve, parsed.result);
-          }
-        } catch (e) {
-          settle(
-            reject,
-            new Error(
-              `Failed to parse Host response: ${(e as Error).message}`,
-            ),
-          );
-        }
-      }
-    });
+		client.on('data', (chunk: string) => {
+			if (settled) return;
+			response += chunk;
+			const nlIdx = response.indexOf('\n');
+			if (nlIdx !== -1) {
+				try {
+					const parsed = JSON.parse(response.slice(0, nlIdx)) as JsonRpcResponse;
+					if (parsed.error) {
+						logger(`[host-pipe] ${method} ✗ error: [${parsed.error.code}] ${parsed.error.message}`);
+						settle(reject, new Error(`Host ${method} failed [${parsed.error.code}]: ${parsed.error.message}`));
+					} else {
+						logger(`[host-pipe] ${method} ✓ success`);
+						settle(resolve, parsed.result);
+					}
+				} catch (e) {
+					settle(reject, new Error(`Failed to parse Host response: ${(e as Error).message}`));
+				}
+			}
+		});
 
-    client.on('error', (err: Error) => {
-      logger(`[host-pipe] ${method} ✗ connection error: ${err.message}`);
-      settle(reject, new Error(`Host connection error: ${err.message}`));
-    });
+		client.on('error', (err: Error) => {
+			logger(`[host-pipe] ${method} ✗ connection error: ${err.message}`);
+			settle(reject, new Error(`Host connection error: ${err.message}`));
+		});
 
-    client.on('close', () => {
-      settle(
-        reject,
-        new Error(
-          `Host ${method} socket closed before response was received`,
-        ),
-      );
-    });
+		client.on('close', () => {
+			settle(reject, new Error(`Host ${method} socket closed before response was received`));
+		});
 
-    const timer = setTimeout(() => {
-      logger(`[host-pipe] ${method} ✗ TIMEOUT after ${timeoutMs}ms`);
-      settle(
-        reject,
-        new Error(`Host ${method} request timed out (${timeoutMs}ms)`),
-      );
-    }, timeoutMs);
-  });
+		const timer = setTimeout(() => {
+			logger(`[host-pipe] ${method} ✗ TIMEOUT after ${timeoutMs}ms`);
+			settle(reject, new Error(`Host ${method} request timed out (${timeoutMs}ms)`));
+		}, timeoutMs);
+	});
 }
 
 // ── Public Methods ───────────────────────────────────────
@@ -181,8 +154,8 @@ async function sendHostRequest(
  * and return the CDP port for Chrome DevTools Protocol connections.
  */
 export async function mcpReady(params: McpReadyParams): Promise<McpReadyResult> {
-  const result = await sendHostRequest('mcpReady', {...params}, SPAWN_TIMEOUT_MS);
-  return result as McpReadyResult;
+	const result = await sendHostRequest('mcpReady', { ...params }, SPAWN_TIMEOUT_MS);
+	return result as McpReadyResult;
 }
 
 /**
@@ -190,20 +163,16 @@ export async function mcpReady(params: McpReadyParams): Promise<McpReadyResult> 
  * This has a longer timeout since builds can take time.
  */
 export async function hotReloadRequired(params: McpReadyParams): Promise<HotReloadResult> {
-  const result = await sendHostRequest(
-    'hotReloadRequired',
-    {...params},
-    HOT_RELOAD_TIMEOUT_MS,
-  );
-  return result as HotReloadResult;
+	const result = await sendHostRequest('hotReloadRequired', { ...params }, HOT_RELOAD_TIMEOUT_MS);
+	return result as HotReloadResult;
 }
 
 /**
  * Query the current state of the Host and Client.
  */
 async function getStatus(): Promise<HostStatus> {
-  const result = await sendHostRequest('getStatus', {});
-  return result as HostStatus;
+	const result = await sendHostRequest('getStatus', {});
+	return result as HostStatus;
 }
 
 /**
@@ -211,8 +180,8 @@ async function getStatus(): Promise<HostStatus> {
  * The Host will stop the Client, clean up debug sessions, and release resources.
  */
 export async function teardown(): Promise<TeardownResult> {
-  const result = await sendHostRequest('teardown', {});
-  return result as TeardownResult;
+	const result = await sendHostRequest('teardown', {});
+	return result as TeardownResult;
 }
 
 /**
@@ -220,8 +189,8 @@ export async function teardown(): Promise<TeardownResult> {
  * Used when a new MCP instance wants to control the session.
  */
 async function requestTakeover(): Promise<TakeoverResult> {
-  const result = await sendHostRequest('takeover', {});
-  return result as TakeoverResult;
+	const result = await sendHostRequest('takeover', {});
+	return result as TakeoverResult;
 }
 
 /**
@@ -237,28 +206,21 @@ async function requestTakeover(): Promise<TakeoverResult> {
  * 3. Rebuild MCP server and/or extension if changed
  * 4. Restart the Client window if extension was rebuilt
  */
-export async function checkForChanges(
-  mcpServerRoot: string,
-  extensionPath: string,
-): Promise<CheckForChangesResult> {
-  const result = await sendHostRequest(
-    'checkForChanges',
-    {extensionPath, mcpServerRoot},
-    HOT_RELOAD_TIMEOUT_MS,
-  );
-  return result as CheckForChangesResult;
+export async function checkForChanges(mcpServerRoot: string, extensionPath: string): Promise<CheckForChangesResult> {
+	const result = await sendHostRequest('checkForChanges', { extensionPath, mcpServerRoot }, HOT_RELOAD_TIMEOUT_MS);
+	return result as CheckForChangesResult;
 }
 
 export interface CheckForChangesResult {
-  extBuildError: null | string;
-  extChanged: boolean;
-  extClientReloaded: boolean;
-  extRebuilt: boolean;
-  mcpBuildError: null | string;
-  mcpChanged: boolean;
-  mcpRebuilt: boolean;
-  newCdpPort?: number;
-  newClientStartedAt?: number;
+	extBuildError: null | string;
+	extChanged: boolean;
+	extClientReloaded: boolean;
+	extRebuilt: boolean;
+	mcpBuildError: null | string;
+	mcpChanged: boolean;
+	mcpRebuilt: boolean;
+	newCdpPort?: number;
+	newClientStartedAt?: number;
 }
 
 /**
@@ -273,28 +235,28 @@ export interface CheckForChangesResult {
  * is about to be killed.
  */
 export async function readyToRestart(): Promise<void> {
-  try {
-    await sendHostRequest('readyToRestart', {}, 15_000);
-  } catch {
-    // Expected — the server may be killed before the response arrives
-  }
+	try {
+		await sendHostRequest('readyToRestart', {}, 15_000);
+	} catch {
+		// Expected — the server may be killed before the response arrives
+	}
 }
 
 /**
  * Check if the Host pipe is reachable via a system.ping.
  */
 async function pingHost(): Promise<boolean> {
-  try {
-    await sendHostRequest('system.ping', {}, 3_000);
-    return true;
-  } catch {
-    return false;
-  }
+	try {
+		await sendHostRequest('system.ping', {}, 3_000);
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 /**
  * Returns the fixed Host pipe path for this platform.
  */
 function getHostPipePath(): string {
-  return HOST_PIPE_PATH;
+	return HOST_PIPE_PATH;
 }

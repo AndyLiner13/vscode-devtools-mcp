@@ -4,19 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {existsSync, statSync} from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
-import {z as zod} from 'zod';
+import { z as zod } from 'zod';
 
-import {
-  codebaseGetOverview,
-  type CodebaseSymbolNode,
-  type CodebaseTreeNode,
-} from '../../client-pipe.js';
-import {getClientWorkspace} from '../../config.js';
-import {ToolCategory} from '../categories.js';
-import {defineTool} from '../ToolDefinition.js';
-import {readIgnoreContext} from './ignore-context.js';
+import { codebaseGetOverview, type CodebaseSymbolNode, type CodebaseTreeNode } from '../../client-pipe.js';
+import { getClientWorkspace } from '../../config.js';
+import { ToolCategory } from '../categories.js';
+import { defineTool } from '../ToolDefinition.js';
+import { readIgnoreContext } from './ignore-context.js';
 
 // ── Constants ────────────────────────────────────────────
 
@@ -32,424 +28,415 @@ type MetadataMode = 'auto' | boolean;
 // ── Formatting ───────────────────────────────────────────
 
 function countSymbolsDeep(symbols: CodebaseSymbolNode[]): number {
-  let count = symbols.length;
-  for (const s of symbols) {
-    if (s.children) count += countSymbolsDeep(s.children);
-  }
-  return count;
+	let count = symbols.length;
+	for (const s of symbols) {
+		if (s.children) count += countSymbolsDeep(s.children);
+	}
+	return count;
 }
 
 function countImmediateFiles(nodes: CodebaseTreeNode[]): number {
-  let count = 0;
-  for (const n of nodes) {
-    if (n.type === 'file') count++;
-  }
-  return count;
+	let count = 0;
+	for (const n of nodes) {
+		if (n.type === 'file') count++;
+	}
+	return count;
 }
 
 function countImmediateSubfolders(nodes: CodebaseTreeNode[]): number {
-  let count = 0;
-  for (const n of nodes) {
-    if (n.type === 'directory') count++;
-  }
-  return count;
+	let count = 0;
+	for (const n of nodes) {
+		if (n.type === 'directory') count++;
+	}
+	return count;
 }
 
 function folderMeta(node: CodebaseTreeNode): string {
-  const f = node.fileCount ?? countImmediateFiles(node.children ?? []);
-  const d = node.dirCount ?? countImmediateSubfolders(node.children ?? []);
-  return `[${f}F|${d}D]`;
+	const f = node.fileCount ?? countImmediateFiles(node.children ?? []);
+	const d = node.dirCount ?? countImmediateSubfolders(node.children ?? []);
+	return `[${f}F|${d}D]`;
 }
 
 function fileMeta(node: CodebaseTreeNode): string {
-  const parts: string[] = [];
-  if (node.lineCount !== undefined) parts.push(`${node.lineCount}L`);
-  const symCount = node.symbolCount ?? (node.symbols ? countSymbolsDeep(node.symbols) : 0);
-  if (symCount > 0) parts.push(`${symCount}S`);
-  if ((node.totalReferences ?? 0) > 0) parts.push(`${node.totalReferences}R`);
-  return parts.length > 0 ? `[${parts.join('|')}]` : '';
+	const parts: string[] = [];
+	if (node.lineCount !== undefined) parts.push(`${node.lineCount}L`);
+	const symCount = node.symbolCount ?? (node.symbols ? countSymbolsDeep(node.symbols) : 0);
+	if (symCount > 0) parts.push(`${symCount}S`);
+	if ((node.totalReferences ?? 0) > 0) parts.push(`${node.totalReferences}R`);
+	return parts.length > 0 ? `[${parts.join('|')}]` : '';
 }
 
 function formatSymbol(symbol: CodebaseSymbolNode, depth: number, maxSymbolDepth?: number, currentSymbolDepth = 0): string {
-  const indent = INDENT.repeat(depth);
-  // Show reference/implementation metadata if available
-  const metaParts: string[] = [];
-  if ((symbol.referenceCount ?? 0) > 0) metaParts.push(`${symbol.referenceCount}R`);
-  if ((symbol.implementationCount ?? 0) > 0) metaParts.push(`${symbol.implementationCount}I`);
-  const meta = metaParts.length > 0 ? `[${metaParts.join('|')}] ` : '';
-  let output = `${indent}${meta}${symbol.kind} ${symbol.name}\n`;
-  if (symbol.children && (maxSymbolDepth === undefined || currentSymbolDepth < maxSymbolDepth)) {
-    for (const child of symbol.children) {
-      output += formatSymbol(child, depth + 1, maxSymbolDepth, currentSymbolDepth + 1);
-    }
-  }
-  return output;
+	const indent = INDENT.repeat(depth);
+	// Show reference/implementation metadata if available
+	const metaParts: string[] = [];
+	if ((symbol.referenceCount ?? 0) > 0) metaParts.push(`${symbol.referenceCount}R`);
+	if ((symbol.implementationCount ?? 0) > 0) metaParts.push(`${symbol.implementationCount}I`);
+	const meta = metaParts.length > 0 ? `[${metaParts.join('|')}] ` : '';
+	let output = `${indent}${meta}${symbol.kind} ${symbol.name}\n`;
+	if (symbol.children && (maxSymbolDepth === undefined || currentSymbolDepth < maxSymbolDepth)) {
+		for (const child of symbol.children) {
+			output += formatSymbol(child, depth + 1, maxSymbolDepth, currentSymbolDepth + 1);
+		}
+	}
+	return output;
 }
 
 interface TreeFormatOptions {
-  /** Fallback nesting for folder depths beyond deepNestingUpTo. */
-  baseSymbolNesting?: number;
-  /** Folder depths 0..this get maxSymbolNesting; deeper depths get baseSymbolNesting. */
-  deepNestingUpTo?: number;
-  maxFileFolderDepth?: number;
-  maxFolderDepth?: number;
-  maxSymbolFolderDepth?: number;
-  maxSymbolNesting?: number;
-  metadata: MetadataMode;
-  showFiles: boolean;
-  showSymbols: boolean;
+	/** Fallback nesting for folder depths beyond deepNestingUpTo. */
+	baseSymbolNesting?: number;
+	/** Folder depths 0..this get maxSymbolNesting; deeper depths get baseSymbolNesting. */
+	deepNestingUpTo?: number;
+	maxFileFolderDepth?: number;
+	maxFolderDepth?: number;
+	maxSymbolFolderDepth?: number;
+	maxSymbolNesting?: number;
+	metadata: MetadataMode;
+	showFiles: boolean;
+	showSymbols: boolean;
 }
 
-function formatTree(
-  nodes: CodebaseTreeNode[],
-  opts: TreeFormatOptions,
-  depth = 0,
-): string {
-  let output = '';
-  const indent = INDENT.repeat(depth);
+function formatTree(nodes: CodebaseTreeNode[], opts: TreeFormatOptions, depth = 0): string {
+	let output = '';
+	const indent = INDENT.repeat(depth);
 
-  for (const node of nodes) {
-    if (node.ignored) {
-      const suffix = node.type === 'directory' ? `${node.name}/` : node.name;
-      output += `${indent}[Ignored] ${suffix}\n`;
-      continue;
-    }
+	for (const node of nodes) {
+		if (node.ignored) {
+			const suffix = node.type === 'directory' ? `${node.name}/` : node.name;
+			output += `${indent}[Ignored] ${suffix}\n`;
+			continue;
+		}
 
-    if (node.type === 'directory') {
-      const willRecurse = !!node.children?.length
-        && (opts.maxFolderDepth === undefined || depth < opts.maxFolderDepth);
+		if (node.type === 'directory') {
+			const willRecurse = !!node.children?.length && (opts.maxFolderDepth === undefined || depth < opts.maxFolderDepth);
 
-      const childFilesHidden = !opts.showFiles
-        || (opts.maxFileFolderDepth !== undefined && depth >= opts.maxFileFolderDepth);
+			const childFilesHidden = !opts.showFiles || (opts.maxFileFolderDepth !== undefined && depth >= opts.maxFileFolderDepth);
 
-      const hasContent = !!node.children?.length;
-      const hasStubMeta = node.fileCount !== undefined || node.dirCount !== undefined;
-      const isCompressed = (hasContent || hasStubMeta) && (!willRecurse || childFilesHidden);
+			const hasContent = !!node.children?.length;
+			const hasStubMeta = node.fileCount !== undefined || node.dirCount !== undefined;
+			const isCompressed = (hasContent || hasStubMeta) && (!willRecurse || childFilesHidden);
 
-      const showMeta = opts.metadata === true
-        || (opts.metadata === 'auto' && isCompressed);
+			const showMeta = opts.metadata === true || (opts.metadata === 'auto' && isCompressed);
 
-      if (showMeta) {
-        output += `${indent}${folderMeta(node)} ${node.name}/\n`;
-      } else {
-        output += `${indent}${node.name}/\n`;
-      }
+			if (showMeta) {
+				output += `${indent}${folderMeta(node)} ${node.name}/\n`;
+			} else {
+				output += `${indent}${node.name}/\n`;
+			}
 
-      if (willRecurse && node.children) {
-        output += formatTree(node.children, opts, depth + 1);
-      }
-    } else if (node.type === 'file') {
-      if (!opts.showFiles) continue;
-      if (opts.maxFileFolderDepth !== undefined && depth > opts.maxFileFolderDepth) continue;
+			if (willRecurse && node.children) {
+				output += formatTree(node.children, opts, depth + 1);
+			}
+		} else if (node.type === 'file') {
+			if (!opts.showFiles) continue;
+			if (opts.maxFileFolderDepth !== undefined && depth > opts.maxFileFolderDepth) continue;
 
-      const showSymsHere = opts.showSymbols
-        && (opts.maxSymbolFolderDepth === undefined || depth <= opts.maxSymbolFolderDepth);
-      const hasSymbols = !!node.symbols?.length;
-      const isCompressed = hasSymbols && !showSymsHere;
+			const showSymsHere = opts.showSymbols && (opts.maxSymbolFolderDepth === undefined || depth <= opts.maxSymbolFolderDepth);
+			const hasSymbols = !!node.symbols?.length;
+			const isCompressed = hasSymbols && !showSymsHere;
 
-      const showMeta = opts.metadata === true
-        || (opts.metadata === 'auto' && isCompressed);
+			const showMeta = opts.metadata === true || (opts.metadata === 'auto' && isCompressed);
 
-      if (showMeta) {
-        const meta = fileMeta(node);
-        output += meta ? `${indent}${meta} ${node.name}\n` : `${indent}${node.name}\n`;
-      } else {
-        output += `${indent}${node.name}\n`;
-      }
+			if (showMeta) {
+				const meta = fileMeta(node);
+				output += meta ? `${indent}${meta} ${node.name}\n` : `${indent}${node.name}\n`;
+			} else {
+				output += `${indent}${node.name}\n`;
+			}
 
-      if (showSymsHere && node.symbols) {
-        const effectiveNesting =
-          (opts.deepNestingUpTo !== undefined && depth > opts.deepNestingUpTo)
-            ? (opts.baseSymbolNesting ?? opts.maxSymbolNesting)
-            : opts.maxSymbolNesting;
+			if (showSymsHere && node.symbols) {
+				const effectiveNesting = opts.deepNestingUpTo !== undefined && depth > opts.deepNestingUpTo ? (opts.baseSymbolNesting ?? opts.maxSymbolNesting) : opts.maxSymbolNesting;
 
-        for (const sym of node.symbols) {
-          output += formatSymbol(sym, depth + 1, effectiveNesting);
-        }
-      }
-    }
-  }
-  return output;
+				for (const sym of node.symbols) {
+					output += formatSymbol(sym, depth + 1, effectiveNesting);
+				}
+			}
+		}
+	}
+	return output;
 }
 
 function maxSymbolTreeDepth(symbols: CodebaseSymbolNode[], current = 0): number {
-  let max = current;
-  for (const s of symbols) {
-    if (s.children && s.children.length > 0) {
-      max = Math.max(max, maxSymbolTreeDepth(s.children, current + 1));
-    }
-  }
-  return max;
+	let max = current;
+	for (const s of symbols) {
+		if (s.children && s.children.length > 0) {
+			max = Math.max(max, maxSymbolTreeDepth(s.children, current + 1));
+		}
+	}
+	return max;
 }
 
 function maxTreeSymbolDepth(nodes: CodebaseTreeNode[]): number {
-  let max = 0;
-  for (const node of nodes) {
-    if (node.type === 'file' && node.symbols) {
-      max = Math.max(max, maxSymbolTreeDepth(node.symbols));
-    } else if (node.type === 'directory' && node.children) {
-      max = Math.max(max, maxTreeSymbolDepth(node.children));
-    }
-  }
-  return max;
+	let max = 0;
+	for (const node of nodes) {
+		if (node.type === 'file' && node.symbols) {
+			max = Math.max(max, maxSymbolTreeDepth(node.symbols));
+		} else if (node.type === 'directory' && node.children) {
+			max = Math.max(max, maxTreeSymbolDepth(node.children));
+		}
+	}
+	return max;
 }
 
 function maxFolderTreeDepth(nodes: CodebaseTreeNode[], current = 0): number {
-  let max = current;
-  for (const node of nodes) {
-    if (node.type === 'directory' && node.children) {
-      max = Math.max(max, maxFolderTreeDepth(node.children, current + 1));
-    }
-  }
-  return max;
+	let max = current;
+	for (const node of nodes) {
+		if (node.type === 'directory' && node.children) {
+			max = Math.max(max, maxFolderTreeDepth(node.children, current + 1));
+		}
+	}
+	return max;
 }
 
 // ── Tool Definition ──────────────────────────────────────
 
 export const /**
- *
- */
-map = defineTool({
-  annotations: {
-    category: ToolCategory.CODEBASE_ANALYSIS,
-    conditions: ['client-pipe', 'codebase-sequential'],
-    destructiveHint: false,
-    idempotentHint: true,
-    openWorldHint: false,
-    readOnlyHint: true,
-    title: 'Codebase Map',
-  },
-  description: 'Get a structural map of the codebase at any granularity — folders, files, or symbols.\n\n' +
-    'Returns a tree with folders ending in `/`, files with extensions, and symbols as `kind name`.\n\n' +
-    '**Parameters:**\n' +
-    '- `dir` — Folder to map (relative or absolute). Defaults to workspace root.\n' +
-    '- `recursive` — Include subdirectories recursively. Default: false (immediate children only).\n' +
-    '- `symbols` — Include symbol skeleton (name + kind, hierarchically nested). Default: false.\n' +
-    '- `metadata` — Show counts per file/folder. Key: F=files, D=directories, L=lines, S=symbols. Example: `[5F|3D]` = 5 files, 3 dirs. `[61L|25S]` = 61 lines, 25 symbols. Default: false.\n\n' +
-    '**EXAMPLES:**\n' +
-    '- Shallow view of root: `{}`\n' +
-    '- Full project tree: `{ recursive: true }`\n' +
-    '- Specific folder with symbols: `{ dir: "src", recursive: true, symbols: true }`\n' +
-    '- Tree with metadata: `{ recursive: true, metadata: true }`\n' +
-    '- Only a subfolder: `{ dir: "src/styles", recursive: true }`',
-  handler: async (request, response) => {
-    const {params} = request;
-    response.setSkipLedger();
+	 *
+	 */
+	map = defineTool({
+		annotations: {
+			category: ToolCategory.CODEBASE_ANALYSIS,
+			conditions: ['client-pipe', 'codebase-sequential'],
+			destructiveHint: false,
+			idempotentHint: true,
+			openWorldHint: false,
+			readOnlyHint: true,
+			title: 'Codebase Map'
+		},
+		description:
+			'Get a structural map of the codebase at any granularity — folders, files, or symbols.\n\n' +
+			'Returns a tree with folders ending in `/`, files with extensions, and symbols as `kind name`.\n\n' +
+			'**Parameters:**\n' +
+			'- `dir` — Folder to map (relative or absolute). Defaults to workspace root.\n' +
+			'- `recursive` — Include subdirectories recursively. Default: false (immediate children only).\n' +
+			'- `symbols` — Include symbol skeleton (name + kind, hierarchically nested). Default: false.\n' +
+			'- `metadata` — Show counts per file/folder. Key: F=files, D=directories, L=lines, S=symbols. Example: `[5F|3D]` = 5 files, 3 dirs. `[61L|25S]` = 61 lines, 25 symbols. Default: false.\n\n' +
+			'**EXAMPLES:**\n' +
+			'- Shallow view of root: `{}`\n' +
+			'- Full project tree: `{ recursive: true }`\n' +
+			'- Specific folder with symbols: `{ dir: "src", recursive: true, symbols: true }`\n' +
+			'- Tree with metadata: `{ recursive: true, metadata: true }`\n' +
+			'- Only a subfolder: `{ dir: "src/styles", recursive: true }`',
+		handler: async (request, response) => {
+			const { params } = request;
+			response.setSkipLedger();
 
-    const rootDir = getClientWorkspace();
-    const dir = params.dir ?? rootDir;
-    const recursive = params.recursive ?? false;
-    const symbols = params.symbols ?? false;
-    const metadata = params.metadata ?? false;
+			const rootDir = getClientWorkspace();
+			const dir = params.dir ?? rootDir;
+			const recursive = params.recursive ?? false;
+			const symbols = params.symbols ?? false;
+			const metadata = params.metadata ?? false;
 
-    // Resolve relative paths against workspace root for validation
-    const resolvedDir = path.isAbsolute(dir) ? dir : path.resolve(rootDir, dir);
+			// Resolve relative paths against workspace root for validation
+			const resolvedDir = path.isAbsolute(dir) ? dir : path.resolve(rootDir, dir);
 
-    // Validate directory exists before scanning
-    if (!existsSync(resolvedDir)) {
-      throw new Error(`Directory not found: "${dir}". Verify the path exists and is accessible.`);
-    }
-    if (!statSync(resolvedDir).isDirectory()) {
-      throw new Error(`Path is not a directory: "${dir}". The "dir" parameter must point to a folder, not a file.`);
-    }
+			// Validate directory exists before scanning
+			if (!existsSync(resolvedDir)) {
+				throw new Error(`Directory not found: "${dir}". Verify the path exists and is accessible.`);
+			}
+			if (!statSync(resolvedDir).isDirectory()) {
+				throw new Error(`Path is not a directory: "${dir}". The "dir" parameter must point to a folder, not a file.`);
+			}
 
-    // Dynamic timeout based on request scope
-    const dynamicTimeout =
-      TIMEOUT_BASE_MS +
-      (recursive ? TIMEOUT_RECURSIVE_MS : 0) +
-      (symbols ? TIMEOUT_SYMBOLS_MS : 0);
+			// Dynamic timeout based on request scope
+			const dynamicTimeout = TIMEOUT_BASE_MS + (recursive ? TIMEOUT_RECURSIVE_MS : 0) + (symbols ? TIMEOUT_SYMBOLS_MS : 0);
 
-    const overviewResult = await codebaseGetOverview(
-      rootDir,
-      dir,
-      recursive,
-      symbols,
-      dynamicTimeout,
-      metadata,
-      'codebase_map',
-    );
+			const overviewResult = await codebaseGetOverview(rootDir, dir, recursive, symbols, dynamicTimeout, metadata, 'codebase_map');
 
-    if (overviewResult.summary.totalFiles === 0) {
-      const ignoreContext = readIgnoreContext(overviewResult.projectRoot);
-      response.appendResponseLine('No files found. Check scope patterns or .devtoolsignore.\n');
-      if (ignoreContext.activePatterns.length > 0) {
-        response.appendResponseLine('Current .devtoolsignore patterns:\n');
-        for (const pattern of ignoreContext.activePatterns) {
-          response.appendResponseLine(pattern);
-        }
-      }
-      return;
-    }
+			if (overviewResult.summary.totalFiles === 0) {
+				const ignoreContext = readIgnoreContext(overviewResult.projectRoot);
+				response.appendResponseLine('No files found. Check scope patterns or .devtoolsignore.\n');
+				if (ignoreContext.activePatterns.length > 0) {
+					response.appendResponseLine('Current .devtoolsignore patterns:\n');
+					for (const pattern of ignoreContext.activePatterns) {
+						response.appendResponseLine(pattern);
+					}
+				}
+				return;
+			}
 
-    // ── Incremental compression ──
-    // Build output from shallowest to deepest, checking the character count at
-    // each level. Stop at the first level that would exceed the limit.
-    // Order: folders (by depth) → files (by folder depth) → symbols (by folder depth × nesting depth)
-    const {tree} = overviewResult;
-    const maxFD = maxFolderTreeDepth(tree);
-    const maxSN = symbols ? maxTreeSymbolDepth(tree) : 0;
+			// ── Incremental compression ──
+			// Build output from shallowest to deepest, checking the character count at
+			// each level. Stop at the first level that would exceed the limit.
+			// Order: folders (by depth) → files (by folder depth) → symbols (by folder depth × nesting depth)
+			const { tree } = overviewResult;
+			const maxFD = maxFolderTreeDepth(tree);
+			const maxSN = symbols ? maxTreeSymbolDepth(tree) : 0;
 
-    // Quick check: does the full output fit without any compression?
-    const fullOutput = formatTree(tree, {
-      metadata,
-      showFiles: true,
-      showSymbols: symbols,
-    });
+			// Quick check: does the full output fit without any compression?
+			const fullOutput = formatTree(tree, {
+				metadata,
+				showFiles: true,
+				showSymbols: symbols
+			});
 
-    if (fullOutput.length <= OUTPUT_CHAR_LIMIT) {
-      response.appendResponseLine(fullOutput.trimEnd());
-      return;
-    }
+			if (fullOutput.length <= OUTPUT_CHAR_LIMIT) {
+				response.appendResponseLine(fullOutput.trimEnd());
+				return;
+			}
 
-    // Compression needed — incrementally build up detail levels.
-    // Metadata auto-enables on compressed items to show what's hidden.
-    const metaMode: MetadataMode = metadata ? true : 'auto';
-    let bestOutput = '';
-    let compressionLabel = '';
+			// Compression needed — incrementally build up detail levels.
+			// Metadata auto-enables on compressed items to show what's hidden.
+			const metaMode: MetadataMode = metadata ? true : 'auto';
+			let bestOutput = '';
+			let compressionLabel = '';
 
-    // Phase 1: Folders — expand folder depth level by level
-    let folderLimit = 0;
-    for (let fd = 0; fd <= maxFD; fd++) {
-      const candidate = formatTree(tree, {
-        maxFolderDepth: fd, metadata: metaMode, showFiles: false,
-        showSymbols: false,
-      });
-      if (candidate.length > OUTPUT_CHAR_LIMIT) {
-        if (fd === 0) {
-          response.appendResponseLine(
-            'Error: the folder structure at the root level alone exceeds the output limit. ' +
-            'Try targeting a specific subfolder with the dir parameter.\n',
-          );
-          return;
-        }
-        folderLimit = fd - 1;
-        compressionLabel = `folder depth ${folderLimit} of ${maxFD}`;
-        break;
-      }
-      folderLimit = fd;
-      bestOutput = candidate;
-    }
+			// Phase 1: Folders — expand folder depth level by level
+			let folderLimit = 0;
+			for (let fd = 0; fd <= maxFD; fd++) {
+				const candidate = formatTree(tree, {
+					maxFolderDepth: fd,
+					metadata: metaMode,
+					showFiles: false,
+					showSymbols: false
+				});
+				if (candidate.length > OUTPUT_CHAR_LIMIT) {
+					if (fd === 0) {
+						response.appendResponseLine('Error: the folder structure at the root level alone exceeds the output limit. ' + 'Try targeting a specific subfolder with the dir parameter.\n');
+						return;
+					}
+					folderLimit = fd - 1;
+					compressionLabel = `folder depth ${folderLimit} of ${maxFD}`;
+					break;
+				}
+				folderLimit = fd;
+				bestOutput = candidate;
+			}
 
-    // Phase 2: Files — expand per folder depth level
-    let fileLimit = -1;
-    if (!compressionLabel) {
-      for (let fd = 0; fd <= folderLimit; fd++) {
-        const candidate = formatTree(tree, {
-          maxFileFolderDepth: fd, maxFolderDepth: folderLimit, metadata: metaMode,
-          showFiles: true,
-          showSymbols: false,
-        });
-        if (candidate.length > OUTPUT_CHAR_LIMIT) {
-          if (fd === 0) {
-            compressionLabel = 'folders only';
-          } else {
-            fileLimit = fd - 1;
-            bestOutput = formatTree(tree, {
-              maxFileFolderDepth: fileLimit, maxFolderDepth: folderLimit, metadata: metaMode,
-              showFiles: true, showSymbols: false,
-            });
-            compressionLabel = `files depth ${fileLimit} of ${folderLimit}`;
-          }
-          break;
-        }
-        fileLimit = fd;
-        bestOutput = candidate;
-      }
-    }
+			// Phase 2: Files — expand per folder depth level
+			let fileLimit = -1;
+			if (!compressionLabel) {
+				for (let fd = 0; fd <= folderLimit; fd++) {
+					const candidate = formatTree(tree, {
+						maxFileFolderDepth: fd,
+						maxFolderDepth: folderLimit,
+						metadata: metaMode,
+						showFiles: true,
+						showSymbols: false
+					});
+					if (candidate.length > OUTPUT_CHAR_LIMIT) {
+						if (fd === 0) {
+							compressionLabel = 'folders only';
+						} else {
+							fileLimit = fd - 1;
+							bestOutput = formatTree(tree, {
+								maxFileFolderDepth: fileLimit,
+								maxFolderDepth: folderLimit,
+								metadata: metaMode,
+								showFiles: true,
+								showSymbols: false
+							});
+							compressionLabel = `files depth ${fileLimit} of ${folderLimit}`;
+						}
+						break;
+					}
+					fileLimit = fd;
+					bestOutput = candidate;
+				}
+			}
 
-    // Phase 3: Symbols — expand per folder depth, then per nesting depth
-    let symbolFolderLimit = -1;
-    if (!compressionLabel && symbols && fileLimit >= 0) {
-      // Phase 3a: Top-level symbols (nesting 0) per folder depth
-      for (let fd = 0; fd <= fileLimit; fd++) {
-        const candidate = formatTree(tree, {
-          maxFileFolderDepth: fileLimit, maxFolderDepth: folderLimit, maxSymbolFolderDepth: fd,
-          maxSymbolNesting: 0, metadata: metaMode,
-          showFiles: true, showSymbols: true,
-        });
-        if (candidate.length > OUTPUT_CHAR_LIMIT) {
-          if (fd === 0) {
-            compressionLabel = 'no symbols';
-          } else {
-            symbolFolderLimit = fd - 1;
-            bestOutput = formatTree(tree, {
-              maxFileFolderDepth: fileLimit, maxFolderDepth: folderLimit, maxSymbolFolderDepth: symbolFolderLimit,
-              maxSymbolNesting: 0, metadata: metaMode,
-              showFiles: true, showSymbols: true,
-            });
-            compressionLabel = `symbols folder depth ${symbolFolderLimit} of ${fileLimit}`;
-          }
-          break;
-        }
-        symbolFolderLimit = fd;
-        bestOutput = candidate;
-      }
+			// Phase 3: Symbols — expand per folder depth, then per nesting depth
+			let symbolFolderLimit = -1;
+			if (!compressionLabel && symbols && fileLimit >= 0) {
+				// Phase 3a: Top-level symbols (nesting 0) per folder depth
+				for (let fd = 0; fd <= fileLimit; fd++) {
+					const candidate = formatTree(tree, {
+						maxFileFolderDepth: fileLimit,
+						maxFolderDepth: folderLimit,
+						maxSymbolFolderDepth: fd,
+						maxSymbolNesting: 0,
+						metadata: metaMode,
+						showFiles: true,
+						showSymbols: true
+					});
+					if (candidate.length > OUTPUT_CHAR_LIMIT) {
+						if (fd === 0) {
+							compressionLabel = 'no symbols';
+						} else {
+							symbolFolderLimit = fd - 1;
+							bestOutput = formatTree(tree, {
+								maxFileFolderDepth: fileLimit,
+								maxFolderDepth: folderLimit,
+								maxSymbolFolderDepth: symbolFolderLimit,
+								maxSymbolNesting: 0,
+								metadata: metaMode,
+								showFiles: true,
+								showSymbols: true
+							});
+							compressionLabel = `symbols folder depth ${symbolFolderLimit} of ${fileLimit}`;
+						}
+						break;
+					}
+					symbolFolderLimit = fd;
+					bestOutput = candidate;
+				}
 
-      // Phase 3b: Deeper nesting — for each nesting level, expand per folder depth
-      if (!compressionLabel && symbolFolderLimit >= 0) {
-        for (let nesting = 1; nesting <= maxSN; nesting++) {
-          let nestingFailed = false;
+				// Phase 3b: Deeper nesting — for each nesting level, expand per folder depth
+				if (!compressionLabel && symbolFolderLimit >= 0) {
+					for (let nesting = 1; nesting <= maxSN; nesting++) {
+						let nestingFailed = false;
 
-          for (let fd = 0; fd <= symbolFolderLimit; fd++) {
-            const isFullCoverage = fd >= symbolFolderLimit;
-            const candidate = formatTree(tree, {
-              maxFileFolderDepth: fileLimit, maxFolderDepth: folderLimit, maxSymbolFolderDepth: symbolFolderLimit,
-              maxSymbolNesting: nesting, metadata: metaMode,
-              showFiles: true,
-              showSymbols: true,
-              ...(isFullCoverage ? {} : {
-                baseSymbolNesting: nesting - 1,
-                deepNestingUpTo: fd,
-              }),
-            });
+						for (let fd = 0; fd <= symbolFolderLimit; fd++) {
+							const isFullCoverage = fd >= symbolFolderLimit;
+							const candidate = formatTree(tree, {
+								maxFileFolderDepth: fileLimit,
+								maxFolderDepth: folderLimit,
+								maxSymbolFolderDepth: symbolFolderLimit,
+								maxSymbolNesting: nesting,
+								metadata: metaMode,
+								showFiles: true,
+								showSymbols: true,
+								...(isFullCoverage
+									? {}
+									: {
+											baseSymbolNesting: nesting - 1,
+											deepNestingUpTo: fd
+										})
+							});
 
-            if (candidate.length > OUTPUT_CHAR_LIMIT) {
-              nestingFailed = true;
-              if (fd === 0) {
-                compressionLabel = `symbol depth ${nesting - 1} of ${maxSN}`;
-              } else {
-                bestOutput = formatTree(tree, {
-                  baseSymbolNesting: nesting - 1, deepNestingUpTo: fd - 1, maxFileFolderDepth: fileLimit,
-                  maxFolderDepth: folderLimit, maxSymbolFolderDepth: symbolFolderLimit,
-                  maxSymbolNesting: nesting,
-                  metadata: metaMode,
-                  showFiles: true,
-                  showSymbols: true,
-                });
-                compressionLabel = `symbol depth ${nesting} of ${maxSN} (deep up to folder depth ${fd - 1} of ${symbolFolderLimit})`;
-              }
-              break;
-            }
-            bestOutput = candidate;
-          }
+							if (candidate.length > OUTPUT_CHAR_LIMIT) {
+								nestingFailed = true;
+								if (fd === 0) {
+									compressionLabel = `symbol depth ${nesting - 1} of ${maxSN}`;
+								} else {
+									bestOutput = formatTree(tree, {
+										baseSymbolNesting: nesting - 1,
+										deepNestingUpTo: fd - 1,
+										maxFileFolderDepth: fileLimit,
+										maxFolderDepth: folderLimit,
+										maxSymbolFolderDepth: symbolFolderLimit,
+										maxSymbolNesting: nesting,
+										metadata: metaMode,
+										showFiles: true,
+										showSymbols: true
+									});
+									compressionLabel = `symbol depth ${nesting} of ${maxSN} (deep up to folder depth ${fd - 1} of ${symbolFolderLimit})`;
+								}
+								break;
+							}
+							bestOutput = candidate;
+						}
 
-          if (nestingFailed) break;
-        }
-      }
-    }
+						if (nestingFailed) break;
+					}
+				}
+			}
 
-    // Emit compressed result
-    if (compressionLabel) {
-      response.appendResponseLine(
-        `Output compressed: ${compressionLabel}. ` +
-        'Use dir to target a specific subfolder, or file_read for full file details.\n',
-      );
-    }
+			// Emit compressed result
+			if (compressionLabel) {
+				response.appendResponseLine(`Output compressed: ${compressionLabel}. ` + 'Use dir to target a specific subfolder, or file_read for full file details.\n');
+			}
 
-    response.appendResponseLine(bestOutput.trimEnd());
-  },
-  name: 'codebase_map',
-  schema: {
-    dir: zod.string().optional()
-      .describe('Folder to map. Relative to workspace root or absolute. Defaults to workspace root.'),
+			response.appendResponseLine(bestOutput.trimEnd());
+		},
+		name: 'codebase_map',
+		schema: {
+			dir: zod.string().optional().describe('Folder to map. Relative to workspace root or absolute. Defaults to workspace root.'),
 
-    metadata: zod.boolean().optional()
-      .describe('Show counts. Key: F=files, D=directories, L=lines, S=symbols, R=references, I=implementations. E.g. [5F|3D] [61L|25S|42R] [3R|1I]. Default: false.'),
+			metadata: zod.boolean().optional().describe('Show counts. Key: F=files, D=directories, L=lines, S=symbols, R=references, I=implementations. E.g. [5F|3D] [61L|25S|42R] [3R|1I]. Default: false.'),
 
-    recursive: zod.boolean().optional()
-      .describe('Include subdirectories recursively. Default: false (immediate children only).'),
+			recursive: zod.boolean().optional().describe('Include subdirectories recursively. Default: false (immediate children only).'),
 
-    symbols: zod.boolean().optional()
-      .describe('Include symbol skeleton (name + kind, hierarchically nested). Default: false.'),
-  },
-});
+			symbols: zod.boolean().optional().describe('Include symbol skeleton (name + kind, hierarchically nested). Default: false.')
+		}
+	});

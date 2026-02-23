@@ -4,176 +4,149 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {RequestHandlerExtra} from '@modelcontextprotocol/sdk/shared/protocol.js';
-import type {ServerNotification, ServerRequest} from '@modelcontextprotocol/sdk/types.js';
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
+import type { ServerNotification, ServerRequest } from '@modelcontextprotocol/sdk/types.js';
 
-import {z as zod} from 'zod';
+import { z as zod } from 'zod';
 
 export type ToolExtra = RequestHandlerExtra<ServerRequest, ServerNotification>;
 
-import type {ToolCategory} from './categories.js';
+import type { ToolCategory } from './categories.js';
 
 /**
  * Maximum response size in characters to prevent overwhelming context windows.
  */
 export const /**
- *
- */
-CHARACTER_LIMIT = 25000;
+	 *
+	 */
+	CHARACTER_LIMIT = 25000;
 
 /**
  * Standard response format options.
  */
 export enum ResponseFormat {
-  JSON = 'json',
-  MARKDOWN = 'markdown',
+	JSON = 'json',
+	MARKDOWN = 'markdown'
 }
 
 /**
  * Standard pagination metadata for list responses.
  */
 export interface PaginationMetadata {
-  count: number;
-  has_more: boolean;
-  next_offset?: number;
-  offset: number;
-  total: number;
+	count: number;
+	has_more: boolean;
+	next_offset?: number;
+	offset: number;
+	total: number;
 }
 
-export interface ToolDefinition<
-  Schema extends zod.ZodRawShape = zod.ZodRawShape,
-  OutputSchema extends zod.ZodTypeAny = zod.ZodTypeAny,
-> {
-  annotations: {
-    title?: string;
-    category: ToolCategory;
-    /**
-     * If true, the tool does not modify its environment.
-     */
-    readOnlyHint: boolean;
-    /**
-     * If true, the tool may perform destructive updates.
-     * Default: true (conservative assumption).
-     */
-    destructiveHint?: boolean;
-    /**
-     * If true, repeated calls with same args have no additional effect.
-     */
-    idempotentHint?: boolean;
-    /**
-     * If true, the tool interacts with external entities.
-     * Default: true.
-     */
-    openWorldHint?: boolean;
-    conditions?: string[];
-  };
-  description: string;
-  handler: (
-    request: Request<Schema>,
-    response: Response,
-    extra: ToolExtra,
-  ) => Promise<void>;
-  name: string;
-  outputSchema?: OutputSchema;
-  schema: Schema;
-  /**
-   * Maximum time in milliseconds for this tool to complete.
-   * If not specified, defaults to 30000 (30 seconds).
-   */
-  timeoutMs?: number;
+export interface ToolDefinition<Schema extends zod.ZodRawShape = zod.ZodRawShape, OutputSchema extends zod.ZodTypeAny = zod.ZodTypeAny> {
+	annotations: {
+		title?: string;
+		category: ToolCategory;
+		/**
+		 * If true, the tool does not modify its environment.
+		 */
+		readOnlyHint: boolean;
+		/**
+		 * If true, the tool may perform destructive updates.
+		 * Default: true (conservative assumption).
+		 */
+		destructiveHint?: boolean;
+		/**
+		 * If true, repeated calls with same args have no additional effect.
+		 */
+		idempotentHint?: boolean;
+		/**
+		 * If true, the tool interacts with external entities.
+		 * Default: true.
+		 */
+		openWorldHint?: boolean;
+		conditions?: string[];
+	};
+	description: string;
+	handler: (request: Request<Schema>, response: Response, extra: ToolExtra) => Promise<void>;
+	name: string;
+	outputSchema?: OutputSchema;
+	schema: Schema;
+	/**
+	 * Maximum time in milliseconds for this tool to complete.
+	 * If not specified, defaults to 30000 (30 seconds).
+	 */
+	timeoutMs?: number;
 }
 
 export interface Request<Schema extends zod.ZodRawShape> {
-  params: zod.output<zod.ZodObject<Schema>>;
+	params: zod.output<zod.ZodObject<Schema>>;
 }
 
 export interface ImageContentData {
-  data: string;
-  mimeType: string;
+	data: string;
+	mimeType: string;
 }
 
 interface SnapshotParams {
-  filePath?: string;
-  verbose?: boolean;
+	filePath?: string;
+	verbose?: boolean;
 }
 
 interface DevToolsData {
-  cdpBackendNodeId?: number;
-  cdpRequestId?: string;
+	cdpBackendNodeId?: number;
+	cdpRequestId?: string;
 }
 
 export interface Response {
-  appendResponseLine: (value: string) => void;
-  attachImage: (value: ImageContentData) => void;
-  /**
-   * Call to skip appending the process ledger to this response.
-   * Use for JSON-format responses to avoid corrupting output.
-   */
-  setSkipLedger: () => void;
+	appendResponseLine: (value: string) => void;
+	attachImage: (value: ImageContentData) => void;
+	/**
+	 * Call to skip appending the process ledger to this response.
+	 * Use for JSON-format responses to avoid corrupting output.
+	 */
+	setSkipLedger: () => void;
 }
 
-export function defineTool<Schema extends zod.ZodRawShape>(
-  definition: ToolDefinition<Schema>,
-) {
-  return definition;
+export function defineTool<Schema extends zod.ZodRawShape>(definition: ToolDefinition<Schema>) {
+	return definition;
 }
 
 export const /**
- *
- */
-responseFormatSchema = zod.nativeEnum(ResponseFormat)
-  .optional()
-  .default(ResponseFormat.MARKDOWN)
-  .describe(
-    'Output format: "markdown" for human-readable or "json" for machine-readable structured data.',
-  );
+	 *
+	 */
+	responseFormatSchema = zod.nativeEnum(ResponseFormat).optional().default(ResponseFormat.MARKDOWN).describe('Output format: "markdown" for human-readable or "json" for machine-readable structured data.');
 
 const timeoutSchema = {
-  timeout: zod
-    .number()
-    .int()
-    .optional()
-    .describe(
-      `Maximum wait time in milliseconds. If set to 0, the default timeout will be used.`,
-    )
-    .transform(value => {
-      return value && value <= 0 ? undefined : value;
-    }),
+	timeout: zod
+		.number()
+		.int()
+		.optional()
+		.describe(`Maximum wait time in milliseconds. If set to 0, the default timeout will be used.`)
+		.transform((value) => {
+			return value && value <= 0 ? undefined : value;
+		})
 };
 
 /**
  * Check if content exceeds CHARACTER_LIMIT and throw an error with available params.
  */
-export function checkCharacterLimit(
-  content: string,
-  toolName: string,
-  availableParams: Record<string, string>,
-): void {
-  if (content.length > CHARACTER_LIMIT) {
-    const paramList = Object.entries(availableParams)
-      .map(([name, desc]) => `  - ${name}: ${desc}`)
-      .join('\n');
-    throw new Error(
-      `Response too long (${content.length} chars, limit: ${CHARACTER_LIMIT}). ` +
-      `Optimize your request using these parameters:\n${paramList}`,
-    );
-  }
+export function checkCharacterLimit(content: string, toolName: string, availableParams: Record<string, string>): void {
+	if (content.length > CHARACTER_LIMIT) {
+		const paramList = Object.entries(availableParams)
+			.map(([name, desc]) => `  - ${name}: ${desc}`)
+			.join('\n');
+		throw new Error(`Response too long (${content.length} chars, limit: ${CHARACTER_LIMIT}). ` + `Optimize your request using these parameters:\n${paramList}`);
+	}
 }
 
 /**
  * Create standard pagination metadata.
  */
-function createPaginationMetadata(
-  total: number,
-  count: number,
-  offset: number,
-): PaginationMetadata {
-  const has_more = total > offset + count;
-  return {
-    count,
-    has_more,
-    offset,
-    total,
-    ...(has_more ? { next_offset: offset + count } : {}),
-  };
+function createPaginationMetadata(total: number, count: number, offset: number): PaginationMetadata {
+	const has_more = total > offset + count;
+	return {
+		count,
+		has_more,
+		offset,
+		total,
+		...(has_more ? { next_offset: offset + count } : {})
+	};
 }

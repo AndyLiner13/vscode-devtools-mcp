@@ -14,37 +14,34 @@ import { MD_KINDS } from './markdown-types';
  * Produces symbols, orphaned content, gaps, and stats.
  */
 export function extractMarkdownStructure(filePath: string): FileStructure {
-  const { text } = readFileText(filePath);
-  return extractMarkdownStructureFromText(text);
+	const { text } = readFileText(filePath);
+	return extractMarkdownStructureFromText(text);
 }
 
 /**
  * Extract FileStructure from Markdown text (for testing or in-memory usage).
  */
 export function extractMarkdownStructureFromText(text: string): FileStructure {
-  const allSymbols = parseMarkdown(text);
-  const lines = text.split('\n');
-  const totalLines = lines.length;
+	const allSymbols = parseMarkdown(text);
+	const lines = text.split('\n');
+	const totalLines = lines.length;
 
-  // Root-level HTML comments become orphaned content (targetable via #comments)
-  const { commentOrphans, symbols } = extractRootHtmlComments(allSymbols);
+	// Root-level HTML comments become orphaned content (targetable via #comments)
+	const { commentOrphans, symbols } = extractRootHtmlComments(allSymbols);
 
-  const orphaned = [
-    ...commentOrphans,
-    ...detectOrphanedContent(symbols, commentOrphans, lines, totalLines),
-  ];
-  const gaps = computeGaps(symbols, orphaned, totalLines);
-  const stats = computeStats(symbols, orphaned, lines);
+	const orphaned = [...commentOrphans, ...detectOrphanedContent(symbols, commentOrphans, lines, totalLines)];
+	const gaps = computeGaps(symbols, orphaned, totalLines);
+	const stats = computeStats(symbols, orphaned, lines);
 
-  return {
-    content: text,
-    fileType: 'markdown',
-    gaps,
-    orphaned: { items: orphaned },
-    stats,
-    symbols,
-    totalLines,
-  };
+	return {
+		content: text,
+		fileType: 'markdown',
+		gaps,
+		orphaned: { items: orphaned },
+		stats,
+		symbols,
+		totalLines
+	};
 }
 
 // ── Orphaned Content Detection ───────────────────────────
@@ -55,185 +52,172 @@ export function extractMarkdownStructureFromText(text: string): FileStructure {
  * keeping them consistent with how TS/JS handles orphan comments.
  */
 function extractRootHtmlComments(allSymbols: FileSymbol[]): {
-  symbols: FileSymbol[];
-  commentOrphans: OrphanedItem[];
+	symbols: FileSymbol[];
+	commentOrphans: OrphanedItem[];
 } {
-  const symbols: FileSymbol[] = [];
-  const commentOrphans: OrphanedItem[] = [];
+	const symbols: FileSymbol[] = [];
+	const commentOrphans: OrphanedItem[] = [];
 
-  for (const sym of allSymbols) {
-    if (sym.kind === MD_KINDS.html && sym.name === 'comment') {
-      commentOrphans.push({
-        category: 'comment',
-        kind: 'comment',
-        name: sym.name,
-        range: { end: sym.range.endLine, start: sym.range.startLine },
-      });
-    } else {
-      symbols.push(sym);
-    }
-  }
+	for (const sym of allSymbols) {
+		if (sym.kind === MD_KINDS.html && sym.name === 'comment') {
+			commentOrphans.push({
+				category: 'comment',
+				kind: 'comment',
+				name: sym.name,
+				range: { end: sym.range.endLine, start: sym.range.startLine }
+			});
+		} else {
+			symbols.push(sym);
+		}
+	}
 
-  return { commentOrphans, symbols };
+	return { commentOrphans, symbols };
 }
 
-function detectOrphanedContent(
-  symbols: FileSymbol[],
-  existingOrphans: OrphanedItem[],
-  lines: string[],
-  totalLines: number,
-): OrphanedItem[] {
-  const orphaned: OrphanedItem[] = [];
+function detectOrphanedContent(symbols: FileSymbol[], existingOrphans: OrphanedItem[], lines: string[], totalLines: number): OrphanedItem[] {
+	const orphaned: OrphanedItem[] = [];
 
-  // Build a set of all lines covered by top-level symbols and existing orphans
-  const coveredLines = new Set<number>();
-  for (const sym of symbols) {
-    for (let i = sym.range.startLine; i <= sym.range.endLine; i++) {
-      coveredLines.add(i);
-    }
-  }
-  for (const item of existingOrphans) {
-    for (let i = item.range.start; i <= item.range.end; i++) {
-      coveredLines.add(i);
-    }
-  }
+	// Build a set of all lines covered by top-level symbols and existing orphans
+	const coveredLines = new Set<number>();
+	for (const sym of symbols) {
+		for (let i = sym.range.startLine; i <= sym.range.endLine; i++) {
+			coveredLines.add(i);
+		}
+	}
+	for (const item of existingOrphans) {
+		for (let i = item.range.start; i <= item.range.end; i++) {
+			coveredLines.add(i);
+		}
+	}
 
-  // Scan uncovered lines for orphaned content (HTML comments handled by extractRootHtmlComments)
-  let i = 1;
-  while (i <= totalLines) {
-    if (coveredLines.has(i)) {
-      i++;
-      continue;
-    }
+	// Scan uncovered lines for orphaned content (HTML comments handled by extractRootHtmlComments)
+	let i = 1;
+	while (i <= totalLines) {
+		if (coveredLines.has(i)) {
+			i++;
+			continue;
+		}
 
-    const line = lines[i - 1];
+		const line = lines[i - 1];
 
-    // Footnote definitions: [^id]: text
-    const footnoteMatch = /^\[\^([^\]]+)\]:\s*(.*)/.exec(line);
-    if (footnoteMatch) {
-      orphaned.push({
-        category: 'footnote',
-        kind: 'footnote',
-        name: `[^${footnoteMatch[1]}]`,
-        range: { end: i, start: i },
-      });
-      i++;
-      continue;
-    }
+		// Footnote definitions: [^id]: text
+		const footnoteMatch = /^\[\^([^\]]+)\]:\s*(.*)/.exec(line);
+		if (footnoteMatch) {
+			orphaned.push({
+				category: 'footnote',
+				kind: 'footnote',
+				name: `[^${footnoteMatch[1]}]`,
+				range: { end: i, start: i }
+			});
+			i++;
+			continue;
+		}
 
-    // Reference link definitions: [id]: url
-    const linkDefMatch = /^\[([^\]^][^\]]*)\]:\s+\S+/.exec(line);
-    if (linkDefMatch) {
-      orphaned.push({
-        category: 'linkdef',
-        kind: 'linkdef',
-        name: `[${linkDefMatch[1]}]`,
-        range: { end: i, start: i },
-      });
-      i++;
-      continue;
-    }
+		// Reference link definitions: [id]: url
+		const linkDefMatch = /^\[([^\]^][^\]]*)\]:\s+\S+/.exec(line);
+		if (linkDefMatch) {
+			orphaned.push({
+				category: 'linkdef',
+				kind: 'linkdef',
+				name: `[${linkDefMatch[1]}]`,
+				range: { end: i, start: i }
+			});
+			i++;
+			continue;
+		}
 
-    i++;
-  }
+		i++;
+	}
 
-  return orphaned;
+	return orphaned;
 }
 
 // ── Gap Computation ──────────────────────────────────────
 
-function computeGaps(
-  symbols: FileSymbol[],
-  orphaned: OrphanedItem[],
-  totalLines: number,
-): Array<{ start: number; end: number; type: 'blank' | 'unknown' }> {
-  const covered = new Set<number>();
+function computeGaps(symbols: FileSymbol[], orphaned: OrphanedItem[], totalLines: number): Array<{ start: number; end: number; type: 'blank' | 'unknown' }> {
+	const covered = new Set<number>();
 
-  // Mark lines covered by symbols (recursively)
-  const markSymbol = (sym: FileSymbol): void => {
-    for (let i = sym.range.startLine; i <= sym.range.endLine; i++) {
-      covered.add(i);
-    }
-    for (const child of sym.children) {
-      markSymbol(child);
-    }
-  };
-  for (const sym of symbols) markSymbol(sym);
+	// Mark lines covered by symbols (recursively)
+	const markSymbol = (sym: FileSymbol): void => {
+		for (let i = sym.range.startLine; i <= sym.range.endLine; i++) {
+			covered.add(i);
+		}
+		for (const child of sym.children) {
+			markSymbol(child);
+		}
+	};
+	for (const sym of symbols) markSymbol(sym);
 
-  // Mark lines covered by orphaned items
-  for (const item of orphaned) {
-    for (let i = item.range.start; i <= item.range.end; i++) {
-      covered.add(i);
-    }
-  }
+	// Mark lines covered by orphaned items
+	for (const item of orphaned) {
+		for (let i = item.range.start; i <= item.range.end; i++) {
+			covered.add(i);
+		}
+	}
 
-  // Collect gaps
-  const gaps: Array<{ start: number; end: number; type: 'blank' | 'unknown' }> = [];
-  let gapStart: number | undefined;
+	// Collect gaps
+	const gaps: Array<{ start: number; end: number; type: 'blank' | 'unknown' }> = [];
+	let gapStart: number | undefined;
 
-  for (let line = 1; line <= totalLines; line++) {
-    if (!covered.has(line)) {
-      if (gapStart === undefined) gapStart = line;
-    } else {
-      if (gapStart !== undefined) {
-        gaps.push({ end: line - 1, start: gapStart, type: 'blank' });
-        gapStart = undefined;
-      }
-    }
-  }
-  if (gapStart !== undefined) {
-    gaps.push({ end: totalLines, start: gapStart, type: 'blank' });
-  }
+	for (let line = 1; line <= totalLines; line++) {
+		if (!covered.has(line)) {
+			if (gapStart === undefined) gapStart = line;
+		} else {
+			if (gapStart !== undefined) {
+				gaps.push({ end: line - 1, start: gapStart, type: 'blank' });
+				gapStart = undefined;
+			}
+		}
+	}
+	if (gapStart !== undefined) {
+		gaps.push({ end: totalLines, start: gapStart, type: 'blank' });
+	}
 
-  return gaps;
+	return gaps;
 }
 
 // ── Stats ────────────────────────────────────────────────
 
-function computeStats(
-  symbols: FileSymbol[],
-  orphaned: OrphanedItem[],
-  lines: string[],
-): { totalSymbols: number; totalOrphaned: number; totalBlankLines: number; coveragePercent: number } {
-  const totalLines = lines.length;
-  let totalSymbols = 0;
+function computeStats(symbols: FileSymbol[], orphaned: OrphanedItem[], lines: string[]): { totalSymbols: number; totalOrphaned: number; totalBlankLines: number; coveragePercent: number } {
+	const totalLines = lines.length;
+	let totalSymbols = 0;
 
-  const countSymbols = (syms: FileSymbol[]): void => {
-    for (const sym of syms) {
-      totalSymbols++;
-      countSymbols(sym.children);
-    }
-  };
-  countSymbols(symbols);
+	const countSymbols = (syms: FileSymbol[]): void => {
+		for (const sym of syms) {
+			totalSymbols++;
+			countSymbols(sym.children);
+		}
+	};
+	countSymbols(symbols);
 
-  let blankLines = 0;
-  for (const line of lines) {
-    if (line.trim() === '') blankLines++;
-  }
+	let blankLines = 0;
+	for (const line of lines) {
+		if (line.trim() === '') blankLines++;
+	}
 
-  // Coverage: lines covered by symbols + orphaned vs total
-  const covered = new Set<number>();
-  const markSymbol = (sym: FileSymbol): void => {
-    for (let i = sym.range.startLine; i <= sym.range.endLine; i++) {
-      covered.add(i);
-    }
-    for (const child of sym.children) {
-      markSymbol(child);
-    }
-  };
-  for (const sym of symbols) markSymbol(sym);
-  for (const item of orphaned) {
-    for (let i = item.range.start; i <= item.range.end; i++) {
-      covered.add(i);
-    }
-  }
+	// Coverage: lines covered by symbols + orphaned vs total
+	const covered = new Set<number>();
+	const markSymbol = (sym: FileSymbol): void => {
+		for (let i = sym.range.startLine; i <= sym.range.endLine; i++) {
+			covered.add(i);
+		}
+		for (const child of sym.children) {
+			markSymbol(child);
+		}
+	};
+	for (const sym of symbols) markSymbol(sym);
+	for (const item of orphaned) {
+		for (let i = item.range.start; i <= item.range.end; i++) {
+			covered.add(i);
+		}
+	}
 
-  const coveragePercent = totalLines > 0 ? Math.round((covered.size / totalLines) * 100) : 100;
+	const coveragePercent = totalLines > 0 ? Math.round((covered.size / totalLines) * 100) : 100;
 
-  return {
-    coveragePercent,
-    totalBlankLines: blankLines,
-    totalOrphaned: orphaned.length,
-    totalSymbols,
-  };
+	return {
+		coveragePercent,
+		totalBlankLines: blankLines,
+		totalOrphaned: orphaned.length,
+		totalSymbols
+	};
 }

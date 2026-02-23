@@ -1,27 +1,18 @@
 {
-  "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "module": "ESNext",
-    "target": "ES2022",
-    "lib": ["ES2022"],
-    "outDir": "dist",
-    "rootDir": ".",
-    "resolveJsonModule": true,
-    "declaration": false,
-    "sourceMap": true,
-    "paths": {
-      "@packages/log-consolidation": ["./packages/log-consolidation/src/index.ts"]
-    }
-  },
-  "include": [
-    "**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "mcp-server",
-    "tests",
-    "resources",
-    "client-workspace"
-  ]
+	"extends": "./tsconfig.base.json",
+	"compilerOptions": {
+		"module": "ESNext",
+		"target": "ES2022",
+		"lib": ["ES2022"],
+		"outDir": "dist",
+		"rootDir": ".",
+		"resolveJsonModule": true,
+		"declaration": false,
+		"sourceMap": true,
+		"paths": {
+			"@packages/log-consolidation": ["./packages/log-consolidation/src/index.ts"]
+		}
+	},
+	"include": ["**/*.ts"],
+	"exclude": ["node_modules", "dist", "mcp-server", "tests", "resources", "client-workspace"]
 }

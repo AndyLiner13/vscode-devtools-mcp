@@ -4,4 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export {lifecycleService} from './LifecycleService.js';
+export { lifecycleService } from './LifecycleService.js';

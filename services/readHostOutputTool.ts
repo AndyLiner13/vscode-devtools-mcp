@@ -1,9 +1,9 @@
 /**
  * Language Model Tool: output_read
- * 
+ *
  * A read-only LM tool that allows Copilot to read VS Code output logs
  * from ALL active sessions (Host and Client/Extension Development Host).
- * 
+ *
  * Host logs: %APPDATA%/Code/logs/ (or platform equivalent)
  * Client logs: <workspaceStorage>/user-data/logs/ (or fallback .devtools/user-data/logs/)
  */
@@ -24,15 +24,15 @@ let clientLogsStoragePath: null | string = null;
 let hostLogUri: null | string = null;
 
 export function setClientLogsStoragePath(storagePath: string): void {
-    clientLogsStoragePath = storagePath;
+	clientLogsStoragePath = storagePath;
 }
 
 export function setHostLogUri(logUri: string): void {
-    hostLogUri = logUri;
+	hostLogUri = logUri;
 }
 
 function getClientLogsStoragePath(): null | string {
-    return clientLogsStoragePath;
+	return clientLogsStoragePath;
 }
 
 // ============================================================================
@@ -40,19 +40,19 @@ function getClientLogsStoragePath(): null | string {
 // ============================================================================
 
 export interface IReadOutputChannelsParams {
-    afterLine?: number;
-    beforeLine?: number;
-    channel?: string;
-    correlationId?: string;
-    includeStackFrames?: boolean;
-    limit?: number;
-    lineLimit?: number;
-    minDuration?: string;
-    pattern?: string;
-    session?: 'client' | 'host';
-    severity?: string;
-    templateId?: string;
-    timeRange?: string;
+	afterLine?: number;
+	beforeLine?: number;
+	channel?: string;
+	correlationId?: string;
+	includeStackFrames?: boolean;
+	limit?: number;
+	lineLimit?: number;
+	minDuration?: string;
+	pattern?: string;
+	session?: 'client' | 'host';
+	severity?: string;
+	templateId?: string;
+	timeRange?: string;
 }
 
 // ============================================================================
@@ -62,19 +62,19 @@ export interface IReadOutputChannelsParams {
 type SessionType = 'client' | 'host';
 
 interface LogFileInfo {
-    category: string;
-    name: string;
-    path: string;
-    session: SessionType;
-    size: number;
+	category: string;
+	name: string;
+	path: string;
+	session: SessionType;
+	size: number;
 }
 
 const categoryLabels: Record<string, string> = {
-    extension: 'Extension Logs',
-    exthost: 'Extension Host',
-    output: 'Output Channels',
-    root: 'Main Logs',
-    window: 'Window Logs',
+	extension: 'Extension Logs',
+	exthost: 'Extension Host',
+	output: 'Output Channels',
+	root: 'Main Logs',
+	window: 'Window Logs'
 };
 
 // ============================================================================
@@ -82,72 +82,72 @@ const categoryLabels: Record<string, string> = {
 // ============================================================================
 
 function getUserDataDir(): null | string {
-    const {platform} = process;
-    const homeDir = os.homedir();
+	const { platform } = process;
+	const homeDir = os.homedir();
 
-    switch (platform) {
-        case 'win32': {
-            const appData = process.env.APPDATA;
-            if (appData) {
-                return path.join(appData, 'Code');
-            }
-            return path.join(homeDir, 'AppData', 'Roaming', 'Code');
-        }
-        case 'darwin':
-            return path.join(homeDir, 'Library', 'Application Support', 'Code');
-        case 'linux':
-            return path.join(homeDir, '.config', 'Code');
-        default:
-            return null;
-    }
+	switch (platform) {
+		case 'win32': {
+			const appData = process.env.APPDATA;
+			if (appData) {
+				return path.join(appData, 'Code');
+			}
+			return path.join(homeDir, 'AppData', 'Roaming', 'Code');
+		}
+		case 'darwin':
+			return path.join(homeDir, 'Library', 'Application Support', 'Code');
+		case 'linux':
+			return path.join(homeDir, '.config', 'Code');
+		default:
+			return null;
+	}
 }
 
 function findLogFiles(dir: string, session: SessionType, category = 'root'): LogFileInfo[] {
-    const results: LogFileInfo[] = [];
+	const results: LogFileInfo[] = [];
 
-    if (!fs.existsSync(dir)) {
-        return results;
-    }
+	if (!fs.existsSync(dir)) {
+		return results;
+	}
 
-    let entries: fs.Dirent[];
-    try {
-        entries = fs.readdirSync(dir, { withFileTypes: true });
-    } catch {
-        return results;
-    }
+	let entries: fs.Dirent[];
+	try {
+		entries = fs.readdirSync(dir, { withFileTypes: true });
+	} catch {
+		return results;
+	}
 
-    for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name);
+	for (const entry of entries) {
+		const fullPath = path.join(dir, entry.name);
 
-        if (entry.isDirectory()) {
-            let newCategory = category;
-            if (entry.name.startsWith('window')) {
-                newCategory = 'window';
-            } else if (entry.name === 'exthost') {
-                newCategory = 'exthost';
-            } else if (entry.name.startsWith('output_')) {
-                newCategory = 'output';
-            } else if (entry.name.startsWith('vscode.')) {
-                newCategory = 'extension';
-            }
-            results.push(...findLogFiles(fullPath, session, newCategory));
-        } else if (entry.name.endsWith('.log')) {
-            try {
-                const stats = fs.statSync(fullPath);
-                results.push({
-                    category,
-                    name: entry.name.replace('.log', ''),
-                    path: fullPath,
-                    session,
-                    size: stats.size,
-                });
-            } catch {
-                // Skip files we can't stat
-            }
-        }
-    }
+		if (entry.isDirectory()) {
+			let newCategory = category;
+			if (entry.name.startsWith('window')) {
+				newCategory = 'window';
+			} else if (entry.name === 'exthost') {
+				newCategory = 'exthost';
+			} else if (entry.name.startsWith('output_')) {
+				newCategory = 'output';
+			} else if (entry.name.startsWith('vscode.')) {
+				newCategory = 'extension';
+			}
+			results.push(...findLogFiles(fullPath, session, newCategory));
+		} else if (entry.name.endsWith('.log')) {
+			try {
+				const stats = fs.statSync(fullPath);
+				results.push({
+					category,
+					name: entry.name.replace('.log', ''),
+					path: fullPath,
+					session,
+					size: stats.size
+				});
+			} catch {
+				// Skip files we can't stat
+			}
+		}
+	}
 
-    return results;
+	return results;
 }
 
 const MAX_SESSION_SCAN = 10;
@@ -159,135 +159,133 @@ const MAX_DIRS_TO_CHECK = 50;
  * Session root = the directory whose parent is named 'logs'.
  */
 function findSessionRootFromLogUri(logUri: string): null | string {
-    let current = logUri;
-    for (let i = 0; i < 6; i++) {
-        const parent = path.dirname(current);
-        if (parent === current) break;
-        if (path.basename(parent) === 'logs') {
-            return current;
-        }
-        current = parent;
-    }
-    return null;
+	let current = logUri;
+	for (let i = 0; i < 6; i++) {
+		const parent = path.dirname(current);
+		if (parent === current) break;
+		if (path.basename(parent) === 'logs') {
+			return current;
+		}
+		current = parent;
+	}
+	return null;
 }
 
 function hasWindowLogs(sessionDir: string): boolean {
-    try {
-        const entries = fs.readdirSync(sessionDir, { withFileTypes: true });
-        return entries.some(e => e.isDirectory() && e.name.startsWith('window'));
-    } catch {
-        return false;
-    }
+	try {
+		const entries = fs.readdirSync(sessionDir, { withFileTypes: true });
+		return entries.some((e) => e.isDirectory() && e.name.startsWith('window'));
+	} catch {
+		return false;
+	}
 }
 
 function getRecentSessionDirs(logsRoot: string, max = MAX_SESSION_SCAN): string[] {
-    if (!fs.existsSync(logsRoot)) {
-        return [];
-    }
-    try {
-        const names = fs
-            .readdirSync(logsRoot, { withFileTypes: true })
-            .filter(d => d.isDirectory())
-            .map(d => d.name)
-            .sort()
-            .reverse()
-            .slice(0, MAX_DIRS_TO_CHECK);
+	if (!fs.existsSync(logsRoot)) {
+		return [];
+	}
+	try {
+		const names = fs
+			.readdirSync(logsRoot, { withFileTypes: true })
+			.filter((d) => d.isDirectory())
+			.map((d) => d.name)
+			.sort()
+			.reverse()
+			.slice(0, MAX_DIRS_TO_CHECK);
 
-        const result: string[] = [];
-        for (const name of names) {
-            if (result.length >= max) break;
-            const sessionDir = path.join(logsRoot, name);
-            if (hasWindowLogs(sessionDir)) {
-                result.push(sessionDir);
-            }
-        }
-        return result;
-    } catch {
-        return [];
-    }
+		const result: string[] = [];
+		for (const name of names) {
+			if (result.length >= max) break;
+			const sessionDir = path.join(logsRoot, name);
+			if (hasWindowLogs(sessionDir)) {
+				result.push(sessionDir);
+			}
+		}
+		return result;
+	} catch {
+		return [];
+	}
 }
 
 function getHostLogsDirs(): string[] {
-    const dirs: string[] = [];
+	const dirs: string[] = [];
 
-    // Primary: derive current session root from context.logUri
-    if (hostLogUri) {
-        const sessionRoot = findSessionRootFromLogUri(hostLogUri);
-        if (sessionRoot && fs.existsSync(sessionRoot)) {
-            dirs.push(sessionRoot);
-        }
-    }
+	// Primary: derive current session root from context.logUri
+	if (hostLogUri) {
+		const sessionRoot = findSessionRootFromLogUri(hostLogUri);
+		if (sessionRoot && fs.existsSync(sessionRoot)) {
+			dirs.push(sessionRoot);
+		}
+	}
 
-    // Secondary: scan userDataDir/logs for recent window sessions
-    const userDataDir = getUserDataDir();
-    if (userDataDir) {
-        for (const dir of getRecentSessionDirs(path.join(userDataDir, 'logs'))) {
-            if (!dirs.includes(dir)) {
-                dirs.push(dir);
-            }
-        }
-    }
+	// Secondary: scan userDataDir/logs for recent window sessions
+	const userDataDir = getUserDataDir();
+	if (userDataDir) {
+		for (const dir of getRecentSessionDirs(path.join(userDataDir, 'logs'))) {
+			if (!dirs.includes(dir)) {
+				dirs.push(dir);
+			}
+		}
+	}
 
-    return dirs;
+	return dirs;
 }
 
 function getClientLogsDirs(): string[] {
-    const {workspaceFolders} = vscode.workspace;
-    if (!workspaceFolders || workspaceFolders.length === 0) {
-        return [];
-    }
+	const { workspaceFolders } = vscode.workspace;
+	if (!workspaceFolders || workspaceFolders.length === 0) {
+		return [];
+	}
 
-    const root = workspaceFolders[0].uri.fsPath;
-    const candidates: string[] = [];
+	const root = workspaceFolders[0].uri.fsPath;
+	const candidates: string[] = [];
 
-    const storagePath = getClientLogsStoragePath();
-    if (storagePath) {
-        candidates.push(path.join(storagePath, 'user-data', 'logs'));
-    }
+	const storagePath = getClientLogsStoragePath();
+	if (storagePath) {
+		candidates.push(path.join(storagePath, 'user-data', 'logs'));
+	}
 
-    candidates.push(path.join(root, '.devtools', 'user-data', 'logs'));
+	candidates.push(path.join(root, '.devtools', 'user-data', 'logs'));
 
-    try {
-        const rootEntries = fs.readdirSync(root, { withFileTypes: true });
-        for (const entry of rootEntries) {
-            if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
-                candidates.push(
-                    path.join(root, entry.name, '.devtools', 'user-data', 'logs'),
-                );
-            }
-        }
-    } catch {
-        // Can't read root dir
-    }
+	try {
+		const rootEntries = fs.readdirSync(root, { withFileTypes: true });
+		for (const entry of rootEntries) {
+			if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
+				candidates.push(path.join(root, entry.name, '.devtools', 'user-data', 'logs'));
+			}
+		}
+	} catch {
+		// Can't read root dir
+	}
 
-    // Find the candidate root with the most recent session
-    let bestRoot: null | string = null;
-    let bestTimestamp = '';
+	// Find the candidate root with the most recent session
+	let bestRoot: null | string = null;
+	let bestTimestamp = '';
 
-    for (const candidate of candidates) {
-        if (!fs.existsSync(candidate)) {
-            continue;
-        }
-        try {
-            const sessions = fs
-                .readdirSync(candidate, { withFileTypes: true })
-                .filter(d => d.isDirectory())
-                .map(d => d.name)
-                .sort()
-                .reverse();
-            if (sessions.length > 0 && sessions[0] > bestTimestamp) {
-                bestTimestamp = sessions[0];
-                bestRoot = candidate;
-            }
-        } catch {
-            continue;
-        }
-    }
+	for (const candidate of candidates) {
+		if (!fs.existsSync(candidate)) {
+			continue;
+		}
+		try {
+			const sessions = fs
+				.readdirSync(candidate, { withFileTypes: true })
+				.filter((d) => d.isDirectory())
+				.map((d) => d.name)
+				.sort()
+				.reverse();
+			if (sessions.length > 0 && sessions[0] > bestTimestamp) {
+				bestTimestamp = sessions[0];
+				bestRoot = candidate;
+			}
+		} catch {
+			continue;
+		}
+	}
 
-    if (!bestRoot) {
-        return [];
-    }
-    return getRecentSessionDirs(bestRoot);
+	if (!bestRoot) {
+		return [];
+	}
+	return getRecentSessionDirs(bestRoot);
 }
 
 /**
@@ -296,34 +294,34 @@ function getClientLogsDirs(): string[] {
  * Deduplicates by channel name per session type, keeping the newest file.
  */
 function discoverAllLogFiles(sessionFilter?: SessionType): LogFileInfo[] {
-    const allFiles: LogFileInfo[] = [];
-    const seen = new Set<string>();
+	const allFiles: LogFileInfo[] = [];
+	const seen = new Set<string>();
 
-    if (!sessionFilter || sessionFilter === 'host') {
-        for (const dir of getHostLogsDirs()) {
-            for (const file of findLogFiles(dir, 'host')) {
-                const key = `host:${file.name}`;
-                if (!seen.has(key)) {
-                    seen.add(key);
-                    allFiles.push(file);
-                }
-            }
-        }
-    }
+	if (!sessionFilter || sessionFilter === 'host') {
+		for (const dir of getHostLogsDirs()) {
+			for (const file of findLogFiles(dir, 'host')) {
+				const key = `host:${file.name}`;
+				if (!seen.has(key)) {
+					seen.add(key);
+					allFiles.push(file);
+				}
+			}
+		}
+	}
 
-    if (!sessionFilter || sessionFilter === 'client') {
-        for (const dir of getClientLogsDirs()) {
-            for (const file of findLogFiles(dir, 'client')) {
-                const key = `client:${file.name}`;
-                if (!seen.has(key)) {
-                    seen.add(key);
-                    allFiles.push(file);
-                }
-            }
-        }
-    }
+	if (!sessionFilter || sessionFilter === 'client') {
+		for (const dir of getClientLogsDirs()) {
+			for (const file of findLogFiles(dir, 'client')) {
+				const key = `client:${file.name}`;
+				if (!seen.has(key)) {
+					seen.add(key);
+					allFiles.push(file);
+				}
+			}
+		}
+	}
 
-    return allFiles;
+	return allFiles;
 }
 
 // ============================================================================
@@ -331,255 +329,219 @@ function discoverAllLogFiles(sessionFilter?: SessionType): LogFileInfo[] {
 // ============================================================================
 
 export class OutputReadTool implements vscode.LanguageModelTool<IReadOutputChannelsParams> {
+	async prepareInvocation(options: vscode.LanguageModelToolInvocationPrepareOptions<IReadOutputChannelsParams>, _token: vscode.CancellationToken): Promise<undefined | vscode.PreparedToolInvocation> {
+		const params = options.input;
 
-    async prepareInvocation(
-        options: vscode.LanguageModelToolInvocationPrepareOptions<IReadOutputChannelsParams>,
-        _token: vscode.CancellationToken
-    ): Promise<undefined | vscode.PreparedToolInvocation> {
-        const params = options.input;
-        
-        let messageText: string;
-        if (params.channel) {
-            const filterParts: string[] = [];
-            if (params.session) filterParts.push(`session: ${params.session}`);
-            if (params.limit !== undefined) filterParts.push(`limit: ${params.limit}`);
-            if (params.pattern) filterParts.push(`pattern: "${params.pattern}"`);
-            if (params.afterLine !== undefined) filterParts.push(`afterLine: ${params.afterLine}`);
-            if (params.beforeLine !== undefined) filterParts.push(`beforeLine: ${params.beforeLine}`);
-            
-            const filterDesc = filterParts.length > 0 ? ` with filters: ${filterParts.join(', ')}` : '';
-            messageText = `Read output channel "${params.channel}"${filterDesc}?`;
-        } else {
-            const sessionDesc = params.session ? ` (${params.session} only)` : '';
-            messageText = `List all available VS Code output channels${sessionDesc}?`;
-        }
+		let messageText: string;
+		if (params.channel) {
+			const filterParts: string[] = [];
+			if (params.session) filterParts.push(`session: ${params.session}`);
+			if (params.limit !== undefined) filterParts.push(`limit: ${params.limit}`);
+			if (params.pattern) filterParts.push(`pattern: "${params.pattern}"`);
+			if (params.afterLine !== undefined) filterParts.push(`afterLine: ${params.afterLine}`);
+			if (params.beforeLine !== undefined) filterParts.push(`beforeLine: ${params.beforeLine}`);
 
-        return {
-            confirmationMessages: {
-                message: new vscode.MarkdownString(messageText),
-                title: 'Read Output Channels',
-            },
-            invocationMessage: params.channel 
-                ? `Reading output channel: ${params.channel}` 
-                : 'Listing output channels',
-        };
-    }
+			const filterDesc = filterParts.length > 0 ? ` with filters: ${filterParts.join(', ')}` : '';
+			messageText = `Read output channel "${params.channel}"${filterDesc}?`;
+		} else {
+			const sessionDesc = params.session ? ` (${params.session} only)` : '';
+			messageText = `List all available VS Code output channels${sessionDesc}?`;
+		}
 
-    async invoke(
-        options: vscode.LanguageModelToolInvocationOptions<IReadOutputChannelsParams>,
-        _token: vscode.CancellationToken
-    ): Promise<vscode.LanguageModelToolResult> {
-        const params = options.input;
-        const sessionFilter = params.session;
+		return {
+			confirmationMessages: {
+				message: new vscode.MarkdownString(messageText),
+				title: 'Read Output Channels'
+			},
+			invocationMessage: params.channel ? `Reading output channel: ${params.channel}` : 'Listing output channels'
+		};
+	}
 
-        const logFiles = discoverAllLogFiles(sessionFilter);
-        if (logFiles.length === 0) {
-            const sessionHint = sessionFilter
-                ? ` for session "${sessionFilter}"`
-                : '';
-            return new vscode.LanguageModelToolResult([
-                new vscode.LanguageModelTextPart(
-                    `No log files found${sessionHint}. Make sure VS Code has created log files.`
-                ),
-            ]);
-        }
+	async invoke(options: vscode.LanguageModelToolInvocationOptions<IReadOutputChannelsParams>, _token: vscode.CancellationToken): Promise<vscode.LanguageModelToolResult> {
+		const params = options.input;
+		const sessionFilter = params.session;
 
-        // If no channel specified, list all available channels
-        if (!params.channel) {
-            return this.listChannels(logFiles);
-        }
+		const logFiles = discoverAllLogFiles(sessionFilter);
+		if (logFiles.length === 0) {
+			const sessionHint = sessionFilter ? ` for session "${sessionFilter}"` : '';
+			return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(`No log files found${sessionHint}. Make sure VS Code has created log files.`)]);
+		}
 
-        // Find matching channels across sessions
-        const needle = params.channel.toLowerCase();
-        let matches = logFiles.filter(f => f.name.toLowerCase() === needle);
-        if (matches.length === 0) {
-            matches = logFiles.filter(f => f.name.toLowerCase().includes(needle));
-        }
+		// If no channel specified, list all available channels
+		if (!params.channel) {
+			return this.listChannels(logFiles);
+		}
 
-        if (matches.length === 0) {
-            const availableChannels = [...new Set(logFiles.map(f => f.name))].join(', ');
-            return new vscode.LanguageModelToolResult([
-                new vscode.LanguageModelTextPart(
-                    `Channel "${params.channel}" not found. Available channels: ${availableChannels}`
-                ),
-            ]);
-        }
+		// Find matching channels across sessions
+		const needle = params.channel.toLowerCase();
+		let matches = logFiles.filter((f) => f.name.toLowerCase() === needle);
+		if (matches.length === 0) {
+			matches = logFiles.filter((f) => f.name.toLowerCase().includes(needle));
+		}
 
-        // If the channel exists in multiple sessions, return all of them
-        const parts: vscode.LanguageModelTextPart[] = [];
-        for (const match of matches) {
-            const result = this.readChannel(match, params);
-            const textParts = result.content.filter(
-                (p): p is vscode.LanguageModelTextPart => p instanceof vscode.LanguageModelTextPart
-            );
-            for (const tp of textParts) {
-                parts.push(tp);
-            }
-        }
+		if (matches.length === 0) {
+			const availableChannels = [...new Set(logFiles.map((f) => f.name))].join(', ');
+			return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(`Channel "${params.channel}" not found. Available channels: ${availableChannels}`)]);
+		}
 
-        return new vscode.LanguageModelToolResult(parts);
-    }
+		// If the channel exists in multiple sessions, return all of them
+		const parts: vscode.LanguageModelTextPart[] = [];
+		for (const match of matches) {
+			const result = this.readChannel(match, params);
+			const textParts = result.content.filter((p): p is vscode.LanguageModelTextPart => p instanceof vscode.LanguageModelTextPart);
+			for (const tp of textParts) {
+				parts.push(tp);
+			}
+		}
 
-    private listChannels(logFiles: LogFileInfo[]): vscode.LanguageModelToolResult {
-        // Group files by session, then by category
-        const bySessions = new Map<SessionType, Map<string, LogFileInfo[]>>();
-        for (const file of logFiles) {
-            let sessionMap = bySessions.get(file.session);
-            if (!sessionMap) {
-                sessionMap = new Map();
-                bySessions.set(file.session, sessionMap);
-            }
-            const catFiles = sessionMap.get(file.category);
-            if (catFiles) {
-                catFiles.push(file);
-            } else {
-                sessionMap.set(file.category, [file]);
-            }
-        }
+		return new vscode.LanguageModelToolResult(parts);
+	}
 
-        const sessionLabels: Record<SessionType, string> = {
-            client: 'Client Session (Extension Development Host)',
-            host: 'Host Session',
-        };
+	private listChannels(logFiles: LogFileInfo[]): vscode.LanguageModelToolResult {
+		// Group files by session, then by category
+		const bySessions = new Map<SessionType, Map<string, LogFileInfo[]>>();
+		for (const file of logFiles) {
+			let sessionMap = bySessions.get(file.session);
+			if (!sessionMap) {
+				sessionMap = new Map();
+				bySessions.set(file.session, sessionMap);
+			}
+			const catFiles = sessionMap.get(file.category);
+			if (catFiles) {
+				catFiles.push(file);
+			} else {
+				sessionMap.set(file.category, [file]);
+			}
+		}
 
-        const lines: string[] = ['## Available Output Channels\n'];
+		const sessionLabels: Record<SessionType, string> = {
+			client: 'Client Session (Extension Development Host)',
+			host: 'Host Session'
+		};
 
-        for (const sessionType of ['host', 'client'] as const) {
-            const sessionMap = bySessions.get(sessionType);
-            if (!sessionMap) continue;
+		const lines: string[] = ['## Available Output Channels\n'];
 
-            lines.push(`### ${sessionLabels[sessionType]}\n`);
+		for (const sessionType of ['host', 'client'] as const) {
+			const sessionMap = bySessions.get(sessionType);
+			if (!sessionMap) continue;
 
-            for (const [category, files] of sessionMap) {
-                lines.push(`#### ${categoryLabels[category] ?? category}\n`);
-                for (const file of files) {
-                    const sizeKb = (file.size / 1024).toFixed(1);
-                    lines.push(`- **${file.name}** (${sizeKb} KB)`);
-                }
-                lines.push('');
-            }
-        }
+			lines.push(`### ${sessionLabels[sessionType]}\n`);
 
-        return new vscode.LanguageModelToolResult([
-            new vscode.LanguageModelTextPart(lines.join('\n')),
-        ]);
-    }
+			for (const [category, files] of sessionMap) {
+				lines.push(`#### ${categoryLabels[category] ?? category}\n`);
+				for (const file of files) {
+					const sizeKb = (file.size / 1024).toFixed(1);
+					lines.push(`- **${file.name}** (${sizeKb} KB)`);
+				}
+				lines.push('');
+			}
+		}
 
-    private readChannel(
-        targetFile: LogFileInfo,
-        params: IReadOutputChannelsParams
-    ): vscode.LanguageModelToolResult {
-        let content: string;
-        try {
-            content = fs.readFileSync(targetFile.path, 'utf-8');
-        } catch (err) {
-            return new vscode.LanguageModelToolResult([
-                new vscode.LanguageModelTextPart(
-                    `Error reading log file: ${(err as Error).message}`
-                ),
-            ]);
-        }
+		return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(lines.join('\n'))]);
+	}
 
-        const { afterLine, beforeLine, limit, lineLimit, pattern } = params;
+	private readChannel(targetFile: LogFileInfo, params: IReadOutputChannelsParams): vscode.LanguageModelToolResult {
+		let content: string;
+		try {
+			content = fs.readFileSync(targetFile.path, 'utf-8');
+		} catch (err) {
+			return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(`Error reading log file: ${(err as Error).message}`)]);
+		}
 
-        interface LineEntry {
-            line: number;
-            text: string;
-        }
+		const { afterLine, beforeLine, limit, lineLimit, pattern } = params;
 
-        const allLines = content.split('\n');
-        let indexedLines: LineEntry[] = allLines.map((text, idx) => ({
-            line: idx + 1,
-            text,
-        }));
+		interface LineEntry {
+			line: number;
+			text: string;
+		}
 
-        // Apply cursor filters (afterLine/beforeLine)
-        if (afterLine !== undefined) {
-            indexedLines = indexedLines.filter(l => l.line > afterLine);
-        }
-        if (beforeLine !== undefined) {
-            indexedLines = indexedLines.filter(l => l.line < beforeLine);
-        }
+		const allLines = content.split('\n');
+		let indexedLines: LineEntry[] = allLines.map((text, idx) => ({
+			line: idx + 1,
+			text
+		}));
 
-        // Apply pattern filter
-        if (pattern) {
-            try {
-                const regex = new RegExp(pattern, 'i');
-                indexedLines = indexedLines.filter(l => regex.test(l.text));
-            } catch (err) {
-                return new vscode.LanguageModelToolResult([
-                    new vscode.LanguageModelTextPart(
-                        `Invalid regex pattern "${pattern}": ${(err as Error).message}`
-                    ),
-                ]);
-            }
-        }
+		// Apply cursor filters (afterLine/beforeLine)
+		if (afterLine !== undefined) {
+			indexedLines = indexedLines.filter((l) => l.line > afterLine);
+		}
+		if (beforeLine !== undefined) {
+			indexedLines = indexedLines.filter((l) => l.line < beforeLine);
+		}
 
-        const totalMatching = indexedLines.length;
-        let hasMore = false;
+		// Apply pattern filter
+		if (pattern) {
+			try {
+				const regex = new RegExp(pattern, 'i');
+				indexedLines = indexedLines.filter((l) => regex.test(l.text));
+			} catch (err) {
+				return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(`Invalid regex pattern "${pattern}": ${(err as Error).message}`)]);
+			}
+		}
 
-        // Apply limit (tail-style: take last N)
-        if (limit !== undefined && indexedLines.length > limit) {
-            hasMore = true;
-            indexedLines = indexedLines.slice(-limit);
-        }
+		const totalMatching = indexedLines.length;
+		let hasMore = false;
 
-        // Apply lineLimit (truncate long lines)
-        if (lineLimit !== undefined) {
-            indexedLines = indexedLines.map(l => ({
-                line: l.line,
-                text: l.text.length > lineLimit ? `${l.text.slice(0, lineLimit)  }...` : l.text,
-            }));
-        }
+		// Apply limit (tail-style: take last N)
+		if (limit !== undefined && indexedLines.length > limit) {
+			hasMore = true;
+			indexedLines = indexedLines.slice(-limit);
+		}
 
-        // Build filter description for output
-        const filterParts: string[] = [];
-        if (pattern) filterParts.push(`pattern: ${pattern}`);
-        if (afterLine !== undefined) filterParts.push(`afterLine: ${afterLine}`);
-        if (beforeLine !== undefined) filterParts.push(`beforeLine: ${beforeLine}`);
-        if (limit !== undefined) filterParts.push(`limit: ${limit}`);
-        if (lineLimit !== undefined) filterParts.push(`lineLimit: ${lineLimit}`);
-        const filtersDesc = filterParts.length > 0 ? filterParts.join(' | ') : undefined;
+		// Apply lineLimit (truncate long lines)
+		if (lineLimit !== undefined) {
+			indexedLines = indexedLines.map((l) => ({
+				line: l.line,
+				text: l.text.length > lineLimit ? `${l.text.slice(0, lineLimit)}...` : l.text
+			}));
+		}
 
-        const oldestLine = indexedLines.length > 0 ? indexedLines[0].line : undefined;
-        const newestLine = indexedLines.length > 0 ? indexedLines[indexedLines.length - 1].line : undefined;
+		// Build filter description for output
+		const filterParts: string[] = [];
+		if (pattern) filterParts.push(`pattern: ${pattern}`);
+		if (afterLine !== undefined) filterParts.push(`afterLine: ${afterLine}`);
+		if (beforeLine !== undefined) filterParts.push(`beforeLine: ${beforeLine}`);
+		if (limit !== undefined) filterParts.push(`limit: ${limit}`);
+		if (lineLimit !== undefined) filterParts.push(`lineLimit: ${lineLimit}`);
+		const filtersDesc = filterParts.length > 0 ? filterParts.join(' | ') : undefined;
 
-        // Build markdown output
-        const sessionLabel = targetFile.session === 'host' ? 'Host' : 'Client';
-        const outputLines: string[] = [`## Output: ${targetFile.name} [${sessionLabel}]\n`];
+		const oldestLine = indexedLines.length > 0 ? indexedLines[0].line : undefined;
+		const newestLine = indexedLines.length > 0 ? indexedLines[indexedLines.length - 1].line : undefined;
 
-        let summary = `**Returned:** ${indexedLines.length} of ${totalMatching} total`;
-        if (hasMore) {
-            summary += ` (use \`afterLine: ${oldestLine !== undefined ? oldestLine - 1 : 0}\` or increase \`limit\` to see more)`;
-        }
-        outputLines.push(summary);
+		// Build markdown output
+		const sessionLabel = targetFile.session === 'host' ? 'Host' : 'Client';
+		const outputLines: string[] = [`## Output: ${targetFile.name} [${sessionLabel}]\n`];
 
-        if (oldestLine !== undefined && newestLine !== undefined) {
-            outputLines.push(`**Line range:** ${oldestLine} - ${newestLine}`);
-        }
+		let summary = `**Returned:** ${indexedLines.length} of ${totalMatching} total`;
+		if (hasMore) {
+			summary += ` (use \`afterLine: ${oldestLine !== undefined ? oldestLine - 1 : 0}\` or increase \`limit\` to see more)`;
+		}
+		outputLines.push(summary);
 
-        if (filtersDesc) {
-            outputLines.push(`**Filters:** ${filtersDesc}`);
-        }
+		if (oldestLine !== undefined && newestLine !== undefined) {
+			outputLines.push(`**Line range:** ${oldestLine} - ${newestLine}`);
+		}
 
-        if (indexedLines.length === 0) {
-            outputLines.push('\n(no matching lines)');
-        } else {
-            const rawText = indexedLines.map(l => l.text);
-            const drillDown: FilterOptions = {};
-            if (params.templateId) drillDown.templateId = params.templateId;
-            if (params.severity) drillDown.severity = params.severity as Severity;
-            if (params.timeRange) drillDown.timeRange = params.timeRange;
-            if (params.minDuration) drillDown.minDuration = params.minDuration;
-            if (params.correlationId) drillDown.correlationId = params.correlationId;
-            if (params.includeStackFrames !== undefined) drillDown.includeStackFrames = params.includeStackFrames;
+		if (filtersDesc) {
+			outputLines.push(`**Filters:** ${filtersDesc}`);
+		}
 
-            const compressed = compressLogs({ label: `${targetFile.name} [${sessionLabel}]`, lines: rawText }, drillDown);
-            outputLines.push(`\n${  compressed.formatted}`);
-        }
+		if (indexedLines.length === 0) {
+			outputLines.push('\n(no matching lines)');
+		} else {
+			const rawText = indexedLines.map((l) => l.text);
+			const drillDown: FilterOptions = {};
+			if (params.templateId) drillDown.templateId = params.templateId;
+			if (params.severity) drillDown.severity = params.severity as Severity;
+			if (params.timeRange) drillDown.timeRange = params.timeRange;
+			if (params.minDuration) drillDown.minDuration = params.minDuration;
+			if (params.correlationId) drillDown.correlationId = params.correlationId;
+			if (params.includeStackFrames !== undefined) drillDown.includeStackFrames = params.includeStackFrames;
 
-        return new vscode.LanguageModelToolResult([
-            new vscode.LanguageModelTextPart(outputLines.join('\n')),
-        ]);
-    }
+			const compressed = compressLogs({ label: `${targetFile.name} [${sessionLabel}]`, lines: rawText }, drillDown);
+			outputLines.push(`\n${compressed.formatted}`);
+		}
+
+		return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(outputLines.join('\n'))]);
+	}
 }

@@ -1,4 +1,4 @@
-const esbuild = require("esbuild");
+const esbuild = require('esbuild');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -23,7 +23,7 @@ const esbuildProblemMatcherPlugin = {
 			}
 			console.log('[watch] build finished');
 		});
-	},
+	}
 };
 
 /**
@@ -34,16 +34,15 @@ const packageAliasPlugin = {
 	name: 'package-alias',
 	setup(build) {
 		build.onResolve({ filter: /^@packages\/log-consolidation$/ }, () => ({
-			path: path.resolve(__dirname, 'packages/log-consolidation/src/index.ts'),
+			path: path.resolve(__dirname, 'packages/log-consolidation/src/index.ts')
 		}));
-	},
+	}
 };
 
 // Loader build: extension/extension.ts → dist/extension.js
 // The loader starts the bridge and dynamically loads the runtime.
 // It must NOT statically bundle runtime.js — the dynamic require(path.join(...))
 // pattern ensures esbuild leaves it as a runtime dependency.
-
 
 const loaderConfig = {
 	bundle: true,
@@ -60,7 +59,7 @@ const loaderConfig = {
 	// - koffi: native FFI library with prebuilt .node binaries
 	external: ['vscode', 'jsonc-parser', 'ts-morph', 'koffi'],
 	logLevel: 'silent',
-	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin],
+	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin]
 };
 
 // Runtime build: extension/runtime.ts → dist/runtime.js
@@ -81,7 +80,7 @@ const runtimeConfig = {
 	// - koffi: native FFI library with prebuilt .node binaries
 	external: ['vscode', 'jsonc-parser', 'ts-morph', 'koffi'],
 	logLevel: 'silent',
-	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin],
+	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin]
 };
 
 // Worker build: extension/codebase-worker.ts → dist/codebase-worker.js
@@ -98,7 +97,7 @@ const workerConfig = {
 	platform: 'node',
 	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin],
 	sourcemap: !production,
-	sourcesContent: false,
+	sourcesContent: false
 };
 
 async function main() {
@@ -125,7 +124,7 @@ async function main() {
 	}
 }
 
-main().catch(e => {
+main().catch((e) => {
 	console.error(e);
 	process.exit(1);
 });

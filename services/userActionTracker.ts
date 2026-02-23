@@ -23,16 +23,16 @@ const MAX_ACTIONS = 25;
 // ============================================================================
 
 interface UserAction {
-  details?: string;
-  id: number;
-  summary: string;
-  timestamp: number;
-  type: 'file-saved' | 'terminal-closed';
+	details?: string;
+	id: number;
+	summary: string;
+	timestamp: number;
+	type: 'file-saved' | 'terminal-closed';
 }
 
 interface WatchedFile {
-  filePath: string;
-  watchedSince: number;
+	filePath: string;
+	watchedSince: number;
 }
 
 // ============================================================================
@@ -42,17 +42,17 @@ interface WatchedFile {
 let instance: undefined | UserActionTracker;
 
 export function getUserActionTracker(): UserActionTracker {
-  if (!instance) {
-    instance = new UserActionTracker();
-  }
-  return instance;
+	if (!instance) {
+		instance = new UserActionTracker();
+	}
+	return instance;
 }
 
 export function disposeUserActionTracker(): void {
-  if (instance) {
-    instance.dispose();
-    instance = undefined;
-  }
+	if (instance) {
+		instance.dispose();
+		instance = undefined;
+	}
 }
 
 // ============================================================================
@@ -60,155 +60,152 @@ export function disposeUserActionTracker(): void {
 // ============================================================================
 
 export class UserActionTracker {
-  private readonly watchedFiles = new Map<string, WatchedFile>();
-  private actions: UserAction[] = [];
-  private nextId = 1;
-  private lastReportedId = 0;
-  private readonly disposables: vscode.Disposable[] = [];
+	private readonly watchedFiles = new Map<string, WatchedFile>();
+	private actions: UserAction[] = [];
+	private nextId = 1;
+	private lastReportedId = 0;
+	private readonly disposables: vscode.Disposable[] = [];
 
-  constructor() {
-    this.disposables.push(
-      vscode.workspace.onDidSaveTextDocument(doc => {
-        this.onFileSaved(doc);
-      }),
-    );
+	constructor() {
+		this.disposables.push(
+			vscode.workspace.onDidSaveTextDocument((doc) => {
+				this.onFileSaved(doc);
+			})
+		);
 
-    console.log('[UserActionTracker] Initialized — tracking file saves and terminal closures');
-  }
+		console.log('[UserActionTracker] Initialized — tracking file saves and terminal closures');
+	}
 
-  /**
-   * Mark a file as "recently accessed by a tool."
-   * Saves to this file within 5 minutes will generate a user action alert.
-   */
-  trackFileAccess(filePath: string): void {
-    const key = this.normalizePath(filePath);
-    this.watchedFiles.set(key, {
-      filePath,
-      watchedSince: Date.now(),
-    });
-    this.pruneExpiredWatches();
-  }
+	/**
+	 * Mark a file as "recently accessed by a tool."
+	 * Saves to this file within 5 minutes will generate a user action alert.
+	 */
+	trackFileAccess(filePath: string): void {
+		const key = this.normalizePath(filePath);
+		this.watchedFiles.set(key, {
+			filePath,
+			watchedSince: Date.now()
+		});
+		this.pruneExpiredWatches();
+	}
 
-  /**
-   * Record that a managed terminal was closed externally (by the user or VS Code).
-   * Called by the terminal controller when it detects a tracked terminal closing.
-   */
-  onManagedTerminalClosed(terminalName: string): void {
-    this.addAction({
-      details: 'Any running processes have been terminated. This terminal is no longer available.',
-      summary: `User closed terminal "${terminalName}"`,
-      type: 'terminal-closed',
-    });
-  }
+	/**
+	 * Record that a managed terminal was closed externally (by the user or VS Code).
+	 * Called by the terminal controller when it detects a tracked terminal closing.
+	 */
+	onManagedTerminalClosed(terminalName: string): void {
+		this.addAction({
+			details: 'Any running processes have been terminated. This terminal is no longer available.',
+			summary: `User closed terminal "${terminalName}"`,
+			type: 'terminal-closed'
+		});
+	}
 
-  /**
-   * Get all unreported actions and mark them as reported.
-   * Returns empty array if nothing new happened.
-   */
-  getUnreportedActions(): UserAction[] {
-    const unreported = this.actions.filter(a => a.id > this.lastReportedId);
-    if (unreported.length > 0) {
-      this.lastReportedId = unreported[unreported.length - 1].id;
-    }
-    // Prune old actions
-    this.actions = this.actions.slice(-MAX_ACTIONS);
-    return unreported;
-  }
+	/**
+	 * Get all unreported actions and mark them as reported.
+	 * Returns empty array if nothing new happened.
+	 */
+	getUnreportedActions(): UserAction[] {
+		const unreported = this.actions.filter((a) => a.id > this.lastReportedId);
+		if (unreported.length > 0) {
+			this.lastReportedId = unreported[unreported.length - 1].id;
+		}
+		// Prune old actions
+		this.actions = this.actions.slice(-MAX_ACTIONS);
+		return unreported;
+	}
 
-  /**
-   * Format unreported actions as a markdown block for injection into tool responses.
-   * Returns empty string if no unreported actions exist.
-   */
-  formatForInjection(): string {
-    const actions = this.getUnreportedActions();
-    if (actions.length === 0) return '';
+	/**
+	 * Format unreported actions as a markdown block for injection into tool responses.
+	 * Returns empty string if no unreported actions exist.
+	 */
+	formatForInjection(): string {
+		const actions = this.getUnreportedActions();
+		if (actions.length === 0) return '';
 
-    const lines = [
-      '⚠️ **USER ACTIONS DETECTED** since your last tool call:',
-      '',
-    ];
+		const lines = ['⚠️ **USER ACTIONS DETECTED** since your last tool call:', ''];
 
-    for (const action of actions) {
-      const ago = this.timeAgo(action.timestamp);
-      lines.push(`- **${action.type}** (${ago}): ${action.summary}`);
-      if (action.details) {
-        lines.push(`  ${action.details}`);
-      }
-    }
+		for (const action of actions) {
+			const ago = this.timeAgo(action.timestamp);
+			lines.push(`- **${action.type}** (${ago}): ${action.summary}`);
+			if (action.details) {
+				lines.push(`  ${action.details}`);
+			}
+		}
 
-    lines.push('');
-    lines.push('---');
-    lines.push('');
+		lines.push('');
+		lines.push('---');
+		lines.push('');
 
-    return lines.join('\n');
-  }
+		return lines.join('\n');
+	}
 
-  dispose(): void {
-    for (const d of this.disposables) {
-      d.dispose();
-    }
-    this.disposables.length = 0;
-    this.watchedFiles.clear();
-    this.actions = [];
-    console.log('[UserActionTracker] Disposed');
-  }
+	dispose(): void {
+		for (const d of this.disposables) {
+			d.dispose();
+		}
+		this.disposables.length = 0;
+		this.watchedFiles.clear();
+		this.actions = [];
+		console.log('[UserActionTracker] Disposed');
+	}
 
-  // ── Internal ─────────────────────────────────────────────────────────────
+	// ── Internal ─────────────────────────────────────────────────────────────
 
-  private onFileSaved(doc: vscode.TextDocument): void {
-    const key = this.normalizePath(doc.uri.fsPath);
-    const watched = this.watchedFiles.get(key);
+	private onFileSaved(doc: vscode.TextDocument): void {
+		const key = this.normalizePath(doc.uri.fsPath);
+		const watched = this.watchedFiles.get(key);
 
-    if (!watched) return;
+		if (!watched) return;
 
-    // Check if within the 5-minute watch window
-    if (Date.now() - watched.watchedSince > WATCH_WINDOW_MS) {
-      this.watchedFiles.delete(key);
-      return;
-    }
+		// Check if within the 5-minute watch window
+		if (Date.now() - watched.watchedSince > WATCH_WINDOW_MS) {
+			this.watchedFiles.delete(key);
+			return;
+		}
 
-    this.addAction({
-      details: 'This file was recently accessed by a tool. The user may have made manual changes. Consider re-reading the file to get the latest content.',
-      summary: `User saved changes to: ${doc.uri.fsPath}`,
-      type: 'file-saved',
-    });
+		this.addAction({
+			details: 'This file was recently accessed by a tool. The user may have made manual changes. Consider re-reading the file to get the latest content.',
+			summary: `User saved changes to: ${doc.uri.fsPath}`,
+			type: 'file-saved'
+		});
 
-    // Refresh the watch timer so subsequent saves are also caught
-    watched.watchedSince = Date.now();
-  }
+		// Refresh the watch timer so subsequent saves are also caught
+		watched.watchedSince = Date.now();
+	}
 
-  private addAction(action: Omit<UserAction, 'id' | 'timestamp'>): void {
-    this.actions.push({
-      ...action,
-      id: this.nextId++,
-      timestamp: Date.now(),
-    });
+	private addAction(action: Omit<UserAction, 'id' | 'timestamp'>): void {
+		this.actions.push({
+			...action,
+			id: this.nextId++,
+			timestamp: Date.now()
+		});
 
-    if (this.actions.length > MAX_ACTIONS * 2) {
-      this.actions = this.actions.slice(-MAX_ACTIONS);
-    }
+		if (this.actions.length > MAX_ACTIONS * 2) {
+			this.actions = this.actions.slice(-MAX_ACTIONS);
+		}
 
-    console.log(`[UserActionTracker] Action #${this.nextId - 1}: ${action.summary}`);
-  }
+		console.log(`[UserActionTracker] Action #${this.nextId - 1}: ${action.summary}`);
+	}
 
-  private normalizePath(p: string): string {
-    return p.toLowerCase().replaceAll('\\', '/');
-  }
+	private normalizePath(p: string): string {
+		return p.toLowerCase().replaceAll('\\', '/');
+	}
 
-  private timeAgo(timestamp: number): string {
-    const seconds = Math.floor((Date.now() - timestamp) / 1000);
-    if (seconds < 5) return 'just now';
-    if (seconds < 60) return `${seconds}s ago`;
-    const minutes = Math.floor(seconds / 60);
-    return `${minutes}m ago`;
-  }
+	private timeAgo(timestamp: number): string {
+		const seconds = Math.floor((Date.now() - timestamp) / 1000);
+		if (seconds < 5) return 'just now';
+		if (seconds < 60) return `${seconds}s ago`;
+		const minutes = Math.floor(seconds / 60);
+		return `${minutes}m ago`;
+	}
 
-  private pruneExpiredWatches(): void {
-    const now = Date.now();
-    for (const [key, watch] of this.watchedFiles) {
-      if (now - watch.watchedSince > WATCH_WINDOW_MS) {
-        this.watchedFiles.delete(key);
-      }
-    }
-  }
+	private pruneExpiredWatches(): void {
+		const now = Date.now();
+		for (const [key, watch] of this.watchedFiles) {
+			if (now - watch.watchedSince > WATCH_WINDOW_MS) {
+				this.watchedFiles.delete(key);
+			}
+		}
+	}
 }

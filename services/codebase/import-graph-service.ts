@@ -1,9 +1,4 @@
-import type {
-  CircularChain,
-  ImportGraphModule,
-  ImportGraphParams,
-  ImportGraphResult,
-} from './types';
+import type { CircularChain, ImportGraphModule, ImportGraphParams, ImportGraphResult } from './types';
 import type { SourceFile } from 'ts-morph';
 
 // IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
@@ -15,33 +10,29 @@ import { getWorkspaceProject } from './ts-project';
 
 type FileFilter = (absoluteFilePath: string) => boolean;
 
-function buildFileFilter(
-  rootDir: string,
-  includePatterns?: string[],
-  excludePatterns?: string[],
-): FileFilter {
-  const ignoreRules = parseIgnoreRules(rootDir);
+function buildFileFilter(rootDir: string, includePatterns?: string[], excludePatterns?: string[]): FileFilter {
+	const ignoreRules = parseIgnoreRules(rootDir);
 
-  const includeRegexps = includePatterns?.map(p => globToRegex(p));
-  const excludeRegexps = excludePatterns?.map(p => globToRegex(p));
+	const includeRegexps = includePatterns?.map((p) => globToRegex(p));
+	const excludeRegexps = excludePatterns?.map((p) => globToRegex(p));
 
-  return (absoluteFilePath: string) => {
-    const relativePath = path.relative(rootDir, absoluteFilePath).replaceAll('\\', '/');
+	return (absoluteFilePath: string) => {
+		const relativePath = path.relative(rootDir, absoluteFilePath).replaceAll('\\', '/');
 
-    if (includeRegexps && includeRegexps.length > 0) {
-      const matches = includeRegexps.some(r => r.test(relativePath));
-      if (!matches) return false;
-    }
+		if (includeRegexps && includeRegexps.length > 0) {
+			const matches = includeRegexps.some((r) => r.test(relativePath));
+			if (!matches) return false;
+		}
 
-    if (!applyIgnoreRules(relativePath, ignoreRules)) return false;
+		if (!applyIgnoreRules(relativePath, ignoreRules)) return false;
 
-    if (excludeRegexps && excludeRegexps.length > 0) {
-      const excluded = excludeRegexps.some(r => r.test(relativePath));
-      if (excluded) return false;
-    }
+		if (excludeRegexps && excludeRegexps.length > 0) {
+			const excluded = excludeRegexps.some((r) => r.test(relativePath));
+			if (excluded) return false;
+		}
 
-    return true;
-  };
+		return true;
+	};
 }
 
 /**
@@ -49,255 +40,239 @@ function buildFileFilter(
  * Uses ts-morph to extract import declarations and resolve module paths.
  */
 export async function getImportGraph(params: ImportGraphParams): Promise<ImportGraphResult> {
-  const {rootDir} = params;
-  if (!rootDir) {
-    return {
-      circular: [],
-      modules: {},
-      orphans: [],
-      stats: { circularCount: 0, orphanCount: 0, totalEdges: 0, totalModules: 0 },
-    };
-  }
+	const { rootDir } = params;
+	if (!rootDir) {
+		return {
+			circular: [],
+			modules: {},
+			orphans: [],
+			stats: { circularCount: 0, orphanCount: 0, totalEdges: 0, totalModules: 0 }
+		};
+	}
 
-  const project = getWorkspaceProject(rootDir);
-  const fileFilter = buildFileFilter(rootDir, params.includePatterns, params.excludePatterns);
+	const project = getWorkspaceProject(rootDir);
+	const fileFilter = buildFileFilter(rootDir, params.includePatterns, params.excludePatterns);
 
-  // Build adjacency list from source files
-  const importMap = new Map<string, Set<string>>();
-  const sourceFiles = project.getSourceFiles();
+	// Build adjacency list from source files
+	const importMap = new Map<string, Set<string>>();
+	const sourceFiles = project.getSourceFiles();
 
-  for (const sf of sourceFiles) {
-    const absPath = sf.getFilePath();
-    if (!fileFilter(absPath)) continue;
+	for (const sf of sourceFiles) {
+		const absPath = sf.getFilePath();
+		if (!fileFilter(absPath)) continue;
 
-    const relPath = path.relative(rootDir, absPath).replaceAll('\\', '/');
-    if (!importMap.has(relPath)) {
-      importMap.set(relPath, new Set());
-    }
+		const relPath = path.relative(rootDir, absPath).replaceAll('\\', '/');
+		if (!importMap.has(relPath)) {
+			importMap.set(relPath, new Set());
+		}
 
-    const imports = extractImports(sf, rootDir, project);
-    for (const imp of imports) {
-      if (fileFilter(path.resolve(rootDir, imp))) {
-        importMap.get(relPath)!.add(imp);
-        // Ensure the imported module exists in the map
-        if (!importMap.has(imp)) {
-          importMap.set(imp, new Set());
-        }
-      }
-    }
-  }
+		const imports = extractImports(sf, rootDir, project);
+		for (const imp of imports) {
+			if (fileFilter(path.resolve(rootDir, imp))) {
+				importMap.get(relPath)!.add(imp);
+				// Ensure the imported module exists in the map
+				if (!importMap.has(imp)) {
+					importMap.set(imp, new Set());
+				}
+			}
+		}
+	}
 
-  // Build reverse index (importedBy)
-  const importedByMap = new Map<string, Set<string>>();
-  for (const [mod] of importMap) {
-    importedByMap.set(mod, new Set());
-  }
-  for (const [mod, imports] of importMap) {
-    for (const imp of imports) {
-      importedByMap.get(imp)?.add(mod);
-    }
-  }
+	// Build reverse index (importedBy)
+	const importedByMap = new Map<string, Set<string>>();
+	for (const [mod] of importMap) {
+		importedByMap.set(mod, new Set());
+	}
+	for (const [mod, imports] of importMap) {
+		for (const imp of imports) {
+			importedByMap.get(imp)?.add(mod);
+		}
+	}
 
-  // Build modules record
-  const modules: Record<string, ImportGraphModule> = {};
-  let totalEdges = 0;
+	// Build modules record
+	const modules: Record<string, ImportGraphModule> = {};
+	let totalEdges = 0;
 
-  for (const [mod, imports] of importMap) {
-    const importsArr = [...imports];
-    const importedByArr = [...(importedByMap.get(mod) ?? [])];
-    modules[mod] = {
-      importedBy: importedByArr,
-      imports: importsArr,
-      path: mod,
-    };
-    totalEdges += importsArr.length;
-  }
+	for (const [mod, imports] of importMap) {
+		const importsArr = [...imports];
+		const importedByArr = [...(importedByMap.get(mod) ?? [])];
+		modules[mod] = {
+			importedBy: importedByArr,
+			imports: importsArr,
+			path: mod
+		};
+		totalEdges += importsArr.length;
+	}
 
-  // Detect circular dependencies using DFS
-  const circular = detectCircularDependencies(importMap);
+	// Detect circular dependencies using DFS
+	const circular = detectCircularDependencies(importMap);
 
-  // Find orphans (modules with no importers that aren't entry-point-like)
-  const orphans: string[] = [];
-  for (const [mod] of importMap) {
-    const importers = importedByMap.get(mod);
-    if (!importers || importers.size === 0) {
-      // Don't flag typical entry points as orphans
-      if (!isEntryPoint(mod)) {
-        orphans.push(mod);
-      }
-    }
-  }
+	// Find orphans (modules with no importers that aren't entry-point-like)
+	const orphans: string[] = [];
+	for (const [mod] of importMap) {
+		const importers = importedByMap.get(mod);
+		if (!importers || importers.size === 0) {
+			// Don't flag typical entry points as orphans
+			if (!isEntryPoint(mod)) {
+				orphans.push(mod);
+			}
+		}
+	}
 
-  return {
-    circular,
-    modules,
-    orphans: orphans.sort(),
-    stats: {
-      circularCount: circular.length,
-      orphanCount: orphans.length,
-      totalEdges,
-      totalModules: importMap.size,
-    },
-  };
+	return {
+		circular,
+		modules,
+		orphans: orphans.sort(),
+		stats: {
+			circularCount: circular.length,
+			orphanCount: orphans.length,
+			totalEdges,
+			totalModules: importMap.size
+		}
+	};
 }
 
 /**
  * Extract import paths from a source file and resolve to relative paths.
  */
-function extractImports(
-  sf: SourceFile,
-  rootDir: string,
-  project: ReturnType<typeof getWorkspaceProject>,
-): string[] {
-  const imports: string[] = [];
+function extractImports(sf: SourceFile, rootDir: string, project: ReturnType<typeof getWorkspaceProject>): string[] {
+	const imports: string[] = [];
 
-  // Import declarations: import X from './foo'
-  for (const decl of sf.getImportDeclarations()) {
-    const moduleSpecifier = decl.getModuleSpecifierValue();
-    const resolved = resolveModulePath(sf, moduleSpecifier, rootDir, project);
-    if (resolved) {
-      imports.push(resolved);
-    }
-  }
+	// Import declarations: import X from './foo'
+	for (const decl of sf.getImportDeclarations()) {
+		const moduleSpecifier = decl.getModuleSpecifierValue();
+		const resolved = resolveModulePath(sf, moduleSpecifier, rootDir, project);
+		if (resolved) {
+			imports.push(resolved);
+		}
+	}
 
-  // Export declarations with module specifier: export { X } from './foo'
-  for (const decl of sf.getExportDeclarations()) {
-    const moduleSpecifier = decl.getModuleSpecifierValue();
-    if (moduleSpecifier) {
-      const resolved = resolveModulePath(sf, moduleSpecifier, rootDir, project);
-      if (resolved) {
-        imports.push(resolved);
-      }
-    }
-  }
+	// Export declarations with module specifier: export { X } from './foo'
+	for (const decl of sf.getExportDeclarations()) {
+		const moduleSpecifier = decl.getModuleSpecifierValue();
+		if (moduleSpecifier) {
+			const resolved = resolveModulePath(sf, moduleSpecifier, rootDir, project);
+			if (resolved) {
+				imports.push(resolved);
+			}
+		}
+	}
 
-  return [...new Set(imports)];
+	return [...new Set(imports)];
 }
 
 /**
  * Resolve a module specifier to a relative path within the project.
  * Only resolves relative imports (not bare specifiers like 'lodash').
  */
-function resolveModulePath(
-  sf: SourceFile,
-  moduleSpecifier: string,
-  rootDir: string,
-  project: ReturnType<typeof getWorkspaceProject>,
-): string | undefined {
-  // Skip bare specifiers (external packages)
-  if (!moduleSpecifier.startsWith('.') && !moduleSpecifier.startsWith('/')) {
-    return undefined;
-  }
+function resolveModulePath(sf: SourceFile, moduleSpecifier: string, rootDir: string, project: ReturnType<typeof getWorkspaceProject>): string | undefined {
+	// Skip bare specifiers (external packages)
+	if (!moduleSpecifier.startsWith('.') && !moduleSpecifier.startsWith('/')) {
+		return undefined;
+	}
 
-  // Try to resolve via ts-morph's module resolution
-  const sfDir = path.dirname(sf.getFilePath());
-  const resolved = tryResolveFile(sfDir, moduleSpecifier, rootDir, project);
-  return resolved;
+	// Try to resolve via ts-morph's module resolution
+	const sfDir = path.dirname(sf.getFilePath());
+	const resolved = tryResolveFile(sfDir, moduleSpecifier, rootDir, project);
+	return resolved;
 }
 
 /**
  * Try to resolve a relative module specifier to an actual file path.
  */
-function tryResolveFile(
-  fromDir: string,
-  specifier: string,
-  rootDir: string,
-  project: ReturnType<typeof getWorkspaceProject>,
-): string | undefined {
-  const absoluteBase = path.resolve(fromDir, specifier);
+function tryResolveFile(fromDir: string, specifier: string, rootDir: string, project: ReturnType<typeof getWorkspaceProject>): string | undefined {
+	const absoluteBase = path.resolve(fromDir, specifier);
 
-  // Common extensions to try
-  const extensions = ['', '.ts', '.tsx', '.js', '.jsx', '.mts', '.mjs', '.cts', '.cjs'];
-  const indexFiles = ['/index.ts', '/index.tsx', '/index.js', '/index.jsx'];
+	// Common extensions to try
+	const extensions = ['', '.ts', '.tsx', '.js', '.jsx', '.mts', '.mjs', '.cts', '.cjs'];
+	const indexFiles = ['/index.ts', '/index.tsx', '/index.js', '/index.jsx'];
 
-  // Try direct match and with extensions
-  for (const ext of extensions) {
-    const candidate = absoluteBase + ext;
-    const sf = project.getSourceFile(candidate);
-    if (sf) {
-      return path.relative(rootDir, candidate).replaceAll('\\', '/');
-    }
-  }
+	// Try direct match and with extensions
+	for (const ext of extensions) {
+		const candidate = absoluteBase + ext;
+		const sf = project.getSourceFile(candidate);
+		if (sf) {
+			return path.relative(rootDir, candidate).replaceAll('\\', '/');
+		}
+	}
 
-  // Try as directory with index file
-  for (const indexFile of indexFiles) {
-    const candidate = absoluteBase + indexFile;
-    const sf = project.getSourceFile(candidate);
-    if (sf) {
-      return path.relative(rootDir, candidate).replaceAll('\\', '/');
-    }
-  }
+	// Try as directory with index file
+	for (const indexFile of indexFiles) {
+		const candidate = absoluteBase + indexFile;
+		const sf = project.getSourceFile(candidate);
+		if (sf) {
+			return path.relative(rootDir, candidate).replaceAll('\\', '/');
+		}
+	}
 
-  return undefined;
+	return undefined;
 }
 
 /**
  * Detect circular dependencies using iterative DFS with path tracking.
  */
-function detectCircularDependencies(
-  importMap: Map<string, Set<string>>,
-): CircularChain[] {
-  const cycles: CircularChain[] = [];
-  const visited = new Set<string>();
-  const inStack = new Set<string>();
-  const seenCycles = new Set<string>();
+function detectCircularDependencies(importMap: Map<string, Set<string>>): CircularChain[] {
+	const cycles: CircularChain[] = [];
+	const visited = new Set<string>();
+	const inStack = new Set<string>();
+	const seenCycles = new Set<string>();
 
-  for (const [startNode] of importMap) {
-    if (visited.has(startNode)) continue;
+	for (const [startNode] of importMap) {
+		if (visited.has(startNode)) continue;
 
-    // Iterative DFS with explicit stack
-    const stack: Array<{ node: string; path: string[]; importIterator: Iterator<string> }> = [];
-    const imports = importMap.get(startNode);
-    if (!imports) continue;
+		// Iterative DFS with explicit stack
+		const stack: Array<{ node: string; path: string[]; importIterator: Iterator<string> }> = [];
+		const imports = importMap.get(startNode);
+		if (!imports) continue;
 
-    stack.push({
-      importIterator: imports[Symbol.iterator](),
-      node: startNode,
-      path: [startNode],
-    });
-    inStack.add(startNode);
+		stack.push({
+			importIterator: imports[Symbol.iterator](),
+			node: startNode,
+			path: [startNode]
+		});
+		inStack.add(startNode);
 
-    while (stack.length > 0) {
-      const frame = stack[stack.length - 1];
-      const next = frame.importIterator.next();
+		while (stack.length > 0) {
+			const frame = stack[stack.length - 1];
+			const next = frame.importIterator.next();
 
-      if (next.done) {
-        // Backtrack
-        stack.pop();
-        inStack.delete(frame.node);
-        visited.add(frame.node);
-        continue;
-      }
+			if (next.done) {
+				// Backtrack
+				stack.pop();
+				inStack.delete(frame.node);
+				visited.add(frame.node);
+				continue;
+			}
 
-      const neighbor = next.value;
+			const neighbor = next.value;
 
-      if (inStack.has(neighbor)) {
-        // Found cycle — extract the cycle path
-        const cycleStart = frame.path.indexOf(neighbor);
-        if (cycleStart >= 0) {
-          const chain = [...frame.path.slice(cycleStart), neighbor];
-          const normalized = normalizeCycle(chain);
-          const key = normalized.join(' → ');
-          if (!seenCycles.has(key)) {
-            seenCycles.add(key);
-            cycles.push({ chain: normalized });
-          }
-        }
-      } else if (!visited.has(neighbor)) {
-        const neighborImports = importMap.get(neighbor);
-        if (neighborImports) {
-          stack.push({
-            importIterator: neighborImports[Symbol.iterator](),
-            node: neighbor,
-            path: [...frame.path, neighbor],
-          });
-          inStack.add(neighbor);
-        }
-      }
-    }
-  }
+			if (inStack.has(neighbor)) {
+				// Found cycle — extract the cycle path
+				const cycleStart = frame.path.indexOf(neighbor);
+				if (cycleStart >= 0) {
+					const chain = [...frame.path.slice(cycleStart), neighbor];
+					const normalized = normalizeCycle(chain);
+					const key = normalized.join(' → ');
+					if (!seenCycles.has(key)) {
+						seenCycles.add(key);
+						cycles.push({ chain: normalized });
+					}
+				}
+			} else if (!visited.has(neighbor)) {
+				const neighborImports = importMap.get(neighbor);
+				if (neighborImports) {
+					stack.push({
+						importIterator: neighborImports[Symbol.iterator](),
+						node: neighbor,
+						path: [...frame.path, neighbor]
+					});
+					inStack.add(neighbor);
+				}
+			}
+		}
+	}
 
-  return cycles;
+	return cycles;
 }
 
 /**
@@ -305,22 +280,22 @@ function detectCircularDependencies(
  * This ensures cycles like A→B→C→A and B→C→A→B are treated as the same.
  */
 function normalizeCycle(chain: string[]): string[] {
-  // Remove the trailing duplicate (cycle closer)
-  const path = chain.slice(0, -1);
-  if (path.length === 0) return chain;
+	// Remove the trailing duplicate (cycle closer)
+	const path = chain.slice(0, -1);
+	if (path.length === 0) return chain;
 
-  // Rotate so the lexicographically smallest element is first
-  let minIdx = 0;
-  for (let i = 1; i < path.length; i++) {
-    if (path[i] < path[minIdx]) {
-      minIdx = i;
-    }
-  }
+	// Rotate so the lexicographically smallest element is first
+	let minIdx = 0;
+	for (let i = 1; i < path.length; i++) {
+		if (path[i] < path[minIdx]) {
+			minIdx = i;
+		}
+	}
 
-  const rotated = [...path.slice(minIdx), ...path.slice(0, minIdx)];
-  // Add the cycle closer
-  rotated.push(rotated[0]);
-  return rotated;
+	const rotated = [...path.slice(minIdx), ...path.slice(0, minIdx)];
+	// Add the cycle closer
+	rotated.push(rotated[0]);
+	return rotated;
 }
 
 /**
@@ -328,10 +303,7 @@ function normalizeCycle(chain: string[]): string[] {
  * Entry points are expected to have no importers.
  */
 function isEntryPoint(modulePath: string): boolean {
-  const name = path.basename(modulePath, path.extname(modulePath));
-  const entryNames = new Set([
-    'index', 'main', 'app', 'server', 'cli', 'entry',
-    'extension', 'bootstrap', 'startup', 'init',
-  ]);
-  return entryNames.has(name.toLowerCase());
+	const name = path.basename(modulePath, path.extname(modulePath));
+	const entryNames = new Set(['index', 'main', 'app', 'server', 'cli', 'entry', 'extension', 'bootstrap', 'startup', 'init']);
+	return entryNames.has(name.toLowerCase());
 }

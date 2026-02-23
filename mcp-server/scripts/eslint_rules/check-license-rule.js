@@ -14,87 +14,76 @@ const licenseHeader = `
 `;
 
 export default {
-  create(context) {
-    const {sourceCode} = context;
-    const comments = sourceCode.getAllComments();
-    let insertAfter = [0, 0];
-    let header = null;
-    // Check only the first 2 comments
-    for (let index = 0; index < 2; index++) {
-      const comment = comments[index];
-      if (!comment) {
-        break;
-      }
-      // Shebang comments should be at the top
-      if (
-        comment.type === 'Shebang' ||
-        (comment.type === 'Line' && comment.value.startsWith('#!'))
-      ) {
-        insertAfter = comment.range;
-        continue;
-      }
-      if (comment.type === 'Block') {
-        header = comment;
-        break;
-      }
-    }
+	create(context) {
+		const { sourceCode } = context;
+		const comments = sourceCode.getAllComments();
+		let insertAfter = [0, 0];
+		let header = null;
+		// Check only the first 2 comments
+		for (let index = 0; index < 2; index++) {
+			const comment = comments[index];
+			if (!comment) {
+				break;
+			}
+			// Shebang comments should be at the top
+			if (comment.type === 'Shebang' || (comment.type === 'Line' && comment.value.startsWith('#!'))) {
+				insertAfter = comment.range;
+				continue;
+			}
+			if (comment.type === 'Block') {
+				header = comment;
+				break;
+			}
+		}
 
-    return {
-      Program(node) {
-        if (context.filename.endsWith('.json')) {
-          return;
-        }
+		return {
+			Program(node) {
+				if (context.filename.endsWith('.json')) {
+					return;
+				}
 
-        if (
-          header &&
-          (header.value.includes('@license') ||
-            header.value.includes('License') ||
-            header.value.includes('Copyright'))
-        ) {
-          const nextToken = sourceCode.getTokenAfter(header, {
-            includeComments: true,
-          });
-          if (
-            nextToken &&
-            nextToken.loc.start.line === header.loc.end.line + 1
-          ) {
-            context.report({
-              fix(fixer) {
-                return fixer.insertTextAfter(header, '\n');
-              },
-              loc: header.loc,
-              messageId: 'emptyLine',
-              node,
-            });
-          }
-          return;
-        }
+				if (header && (header.value.includes('@license') || header.value.includes('License') || header.value.includes('Copyright'))) {
+					const nextToken = sourceCode.getTokenAfter(header, {
+						includeComments: true
+					});
+					if (nextToken && nextToken.loc.start.line === header.loc.end.line + 1) {
+						context.report({
+							fix(fixer) {
+								return fixer.insertTextAfter(header, '\n');
+							},
+							loc: header.loc,
+							messageId: 'emptyLine',
+							node
+						});
+					}
+					return;
+				}
 
-        // Add header license
-        if (!header?.value.includes('@license')) {
-          context.report({
-            fix(fixer) {
-              return fixer.insertTextAfterRange(insertAfter, licenseHeader);
-            },
-            messageId: 'licenseRule',
-            node,
-          });
-        }
-      },
-    };
-  },
-  defaultOptions: [],
-  meta: {
-    docs: {
-      description: 'Validate existence of license header',
-    },
-    fixable: 'code',
-    messages: {
-      emptyLine: 'Add empty line after license header.',
-      licenseRule: 'Add license header.',
-    },
-    schema: [],
-    type: 'layout',
-  },
-  name: 'check-license',
+				// Add header license
+				if (!header?.value.includes('@license')) {
+					context.report({
+						fix(fixer) {
+							return fixer.insertTextAfterRange(insertAfter, licenseHeader);
+						},
+						messageId: 'licenseRule',
+						node
+					});
+				}
+			}
+		};
+	},
+	defaultOptions: [],
+	meta: {
+		docs: {
+			description: 'Validate existence of license header'
+		},
+		fixable: 'code',
+		messages: {
+			emptyLine: 'Add empty line after license header.',
+			licenseRule: 'Add license header.'
+		},
+		schema: [],
+		type: 'layout'
+	},
+	name: 'check-license'
 };

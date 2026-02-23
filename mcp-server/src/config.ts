@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {dirname} from 'node:path';
+import { dirname } from 'node:path';
 import process from 'node:process';
-import {fileURLToPath} from 'node:url';
+import { fileURLToPath } from 'node:url';
 
-import {logger} from './logger.js';
+import { logger } from './logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -20,147 +20,158 @@ const __dirname = dirname(__filename);
  * extensionDevelopmentPath, user-data-dir, target folder).
  */
 export interface LaunchFlags {
-  /** Disable GPU hardware acceleration (--disable-gpu). */
-  disableGpu: boolean;
-  /** Disable workspace-trust dialog (--disable-workspace-trust). */
-  disableWorkspaceTrust: boolean;
-  /** Arbitrary extra CLI flags forwarded verbatim. */
-  extraArgs: string[];
-  /** Suppress the release-notes tab (--skip-release-notes). */
-  skipReleaseNotes: boolean;
-  /** Suppress the welcome tab (--skip-welcome). */
-  skipWelcome: boolean;
-  /** Enable verbose logging (--verbose). */
-  verbose: boolean;
+	/** Disable GPU hardware acceleration (--disable-gpu). */
+	disableGpu: boolean;
+	/** Disable workspace-trust dialog (--disable-workspace-trust). */
+	disableWorkspaceTrust: boolean;
+	/** Arbitrary extra CLI flags forwarded verbatim. */
+	extraArgs: string[];
+	/** Suppress the release-notes tab (--skip-release-notes). */
+	skipReleaseNotes: boolean;
+	/** Suppress the welcome tab (--skip-welcome). */
+	skipWelcome: boolean;
+	/** Enable verbose logging (--verbose). */
+	verbose: boolean;
 }
 
 export const /**
- *
- */
-DEFAULT_LAUNCH_FLAGS: LaunchFlags = {
-  disableGpu: false,
-  disableWorkspaceTrust: false,
-  extraArgs: [],
-  skipReleaseNotes: true,
-  skipWelcome: true,
-  verbose: false,
-};
+	 *
+	 */
+	DEFAULT_LAUNCH_FLAGS: LaunchFlags = {
+		disableGpu: false,
+		disableWorkspaceTrust: false,
+		extraArgs: [],
+		skipReleaseNotes: true,
+		skipWelcome: true,
+		verbose: false
+	};
 
 /**
  * Hot-reload configuration for automatic change detection and rebuild.
  * All fields are optional with sensible defaults.
  */
 export interface HotReloadConfig {
-  /** Master switch — set false to disable all hot-reload checks. Default: true */
-  enabled: boolean;
-  /** The MCP server ID matching package.json mcpServerDefinitionProviders. Default: 'devtools' */
-  mcpServerName: string;
-  /** Max wait time (ms) for mcpStatus LM tool before timeout. Default: 60000 */
-  mcpStatusTimeout: number;
+	/** Master switch — set false to disable all hot-reload checks. Default: true */
+	enabled: boolean;
+	/** The MCP server ID matching package.json mcpServerDefinitionProviders. Default: 'devtools' */
+	mcpServerName: string;
+	/** Max wait time (ms) for mcpStatus LM tool before timeout. Default: 60000 */
+	mcpStatusTimeout: number;
 }
 
 const DEFAULT_HOT_RELOAD_CONFIG: HotReloadConfig = {
-  enabled: true,
-  mcpServerName: 'devtools',
-  mcpStatusTimeout: 60_000,
+	enabled: true,
+	mcpServerName: 'devtools',
+	mcpStatusTimeout: 60_000
 };
 
 /**
  * Resolved configuration with all paths made absolute
  */
 export interface ResolvedConfig {
-  /** The client workspace that the MCP server controls */
-  clientWorkspace: string;
-  /** True when extensionPath was explicitly set in host config */
-  explicitExtensionDevelopmentPath: boolean;
-  /** Path to the extension folder, or empty string when no extension is configured */
-  extensionBridgePath: string;
-  /** The host workspace where VS Code is running */
-  hostWorkspace: string;
-  /** Resolved hot-reload configuration with defaults applied */
-  hotReload: HotReloadConfig;
-  launch: LaunchFlags;
+	/** The client workspace that the MCP server controls */
+	clientWorkspace: string;
+	/** True when extensionPath was explicitly set in host config */
+	explicitExtensionDevelopmentPath: boolean;
+	/** Path to the extension folder, or empty string when no extension is configured */
+	extensionBridgePath: string;
+	/** The host workspace where VS Code is running */
+	hostWorkspace: string;
+	/** Resolved hot-reload configuration with defaults applied */
+	hotReload: HotReloadConfig;
+	launch: LaunchFlags;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function readOptionalBoolean(
-  obj: Record<string, unknown>,
-  key: string,
-): boolean | undefined {
-  const value = obj[key];
-  return typeof value === 'boolean' ? value : undefined;
+function readOptionalBoolean(obj: Record<string, unknown>, key: string): boolean | undefined {
+	const value = obj[key];
+	return typeof value === 'boolean' ? value : undefined;
 }
 
-function readOptionalNumber(
-  obj: Record<string, unknown>,
-  key: string,
-): number | undefined {
-  const value = obj[key];
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+function readOptionalNumber(obj: Record<string, unknown>, key: string): number | undefined {
+	const value = obj[key];
+	return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
-function readOptionalStringArray(
-  obj: Record<string, unknown>,
-  key: string,
-): string[] | undefined {
-  const value = obj[key];
-  if (!Array.isArray(value)) {return undefined;}
-  const strings: string[] = [];
-  for (const item of value) {
-    if (typeof item !== 'string') {return undefined;}
-    strings.push(item);
-  }
-  return strings;
+function readOptionalStringArray(obj: Record<string, unknown>, key: string): string[] | undefined {
+	const value = obj[key];
+	if (!Array.isArray(value)) {
+		return undefined;
+	}
+	const strings: string[] = [];
+	for (const item of value) {
+		if (typeof item !== 'string') {
+			return undefined;
+		}
+		strings.push(item);
+	}
+	return strings;
 }
 
 function coerceLaunchFlags(value: unknown): Partial<LaunchFlags> {
-  if (!isRecord(value)) {return {};}
+	if (!isRecord(value)) {
+		return {};
+	}
 
-  const launch: Partial<LaunchFlags> = {};
+	const launch: Partial<LaunchFlags> = {};
 
-  const skipReleaseNotes = readOptionalBoolean(value, 'skipReleaseNotes');
-  if (typeof skipReleaseNotes === 'boolean') {launch.skipReleaseNotes = skipReleaseNotes;}
+	const skipReleaseNotes = readOptionalBoolean(value, 'skipReleaseNotes');
+	if (typeof skipReleaseNotes === 'boolean') {
+		launch.skipReleaseNotes = skipReleaseNotes;
+	}
 
-  const skipWelcome = readOptionalBoolean(value, 'skipWelcome');
-  if (typeof skipWelcome === 'boolean') {launch.skipWelcome = skipWelcome;}
+	const skipWelcome = readOptionalBoolean(value, 'skipWelcome');
+	if (typeof skipWelcome === 'boolean') {
+		launch.skipWelcome = skipWelcome;
+	}
 
-  const disableGpu = readOptionalBoolean(value, 'disableGpu');
-  if (typeof disableGpu === 'boolean') {launch.disableGpu = disableGpu;}
+	const disableGpu = readOptionalBoolean(value, 'disableGpu');
+	if (typeof disableGpu === 'boolean') {
+		launch.disableGpu = disableGpu;
+	}
 
-  const disableWorkspaceTrust = readOptionalBoolean(value, 'disableWorkspaceTrust');
-  if (typeof disableWorkspaceTrust === 'boolean') {
-    launch.disableWorkspaceTrust = disableWorkspaceTrust;
-  }
+	const disableWorkspaceTrust = readOptionalBoolean(value, 'disableWorkspaceTrust');
+	if (typeof disableWorkspaceTrust === 'boolean') {
+		launch.disableWorkspaceTrust = disableWorkspaceTrust;
+	}
 
-  const verbose = readOptionalBoolean(value, 'verbose');
-  if (typeof verbose === 'boolean') {launch.verbose = verbose;}
+	const verbose = readOptionalBoolean(value, 'verbose');
+	if (typeof verbose === 'boolean') {
+		launch.verbose = verbose;
+	}
 
-  const extraArgs = readOptionalStringArray(value, 'extraArgs');
-  if (extraArgs) {launch.extraArgs = extraArgs;}
+	const extraArgs = readOptionalStringArray(value, 'extraArgs');
+	if (extraArgs) {
+		launch.extraArgs = extraArgs;
+	}
 
-  return launch;
+	return launch;
 }
 
 /** Merge partial launch flags over defaults. */
 function resolveLaunchFlags(partial?: Partial<LaunchFlags>): LaunchFlags {
-  if (!partial) {return {...DEFAULT_LAUNCH_FLAGS};}
-  return {
-    ...DEFAULT_LAUNCH_FLAGS,
-    ...partial,
-    extraArgs: partial.extraArgs ?? DEFAULT_LAUNCH_FLAGS.extraArgs,
-  };
+	if (!partial) {
+		return { ...DEFAULT_LAUNCH_FLAGS };
+	}
+	return {
+		...DEFAULT_LAUNCH_FLAGS,
+		...partial,
+		extraArgs: partial.extraArgs ?? DEFAULT_LAUNCH_FLAGS.extraArgs
+	};
 }
 
 /** Merge partial hot-reload config over defaults. */
 function resolveHotReloadConfig(partial?: Partial<HotReloadConfig>): HotReloadConfig {
-  if (!partial) {return {...DEFAULT_HOT_RELOAD_CONFIG};}
-  return {
-    ...DEFAULT_HOT_RELOAD_CONFIG,
-    ...partial,
-  };
+	if (!partial) {
+		return { ...DEFAULT_HOT_RELOAD_CONFIG };
+	}
+	return {
+		...DEFAULT_HOT_RELOAD_CONFIG,
+		...partial
+	};
 }
 
 /**
@@ -168,10 +179,10 @@ function resolveHotReloadConfig(partial?: Partial<HotReloadConfig>): HotReloadCo
  * This is the parent of the mcp-server package.
  */
 export function getHostWorkspace(): string {
-  // Build output is in mcp-server/build/src/
-  // Go up to mcp-server, then to parent (the host workspace)
-  const packageRoot = dirname(dirname(__dirname));
-  return dirname(packageRoot);
+	// Build output is in mcp-server/build/src/
+	// Go up to mcp-server, then to parent (the host workspace)
+	const packageRoot = dirname(dirname(__dirname));
+	return dirname(packageRoot);
 }
 
 /**
@@ -181,7 +192,7 @@ export function getHostWorkspace(): string {
  * Relocated from mcp-server-watcher.ts to consolidate path utilities.
  */
 export function getMcpServerRoot(): string {
-  return dirname(dirname(__dirname));
+	return dirname(dirname(__dirname));
 }
 
 // Module-level storage for the resolved client workspace path.
@@ -193,7 +204,7 @@ let _resolvedClientWorkspace: string | undefined;
  * Falls back to the host workspace if loadConfig() hasn't been called yet.
  */
 export function getClientWorkspace(): string {
-  return _resolvedClientWorkspace ?? getHostWorkspace();
+	return _resolvedClientWorkspace ?? getHostWorkspace();
 }
 
 /**
@@ -202,76 +213,78 @@ export function getClientWorkspace(): string {
  * via the env var when spawning the MCP server process.
  */
 export function loadConfig(): ResolvedConfig {
-  const envConfig = process.env.DEVTOOLS_CONFIG;
-  if (!envConfig) {
-    logger('DEVTOOLS_CONFIG not set — using defaults (host workspace as client workspace)');
-    const hostRoot = getHostWorkspace();
-    _resolvedClientWorkspace = hostRoot;
-    return {
-      clientWorkspace: hostRoot,
-      explicitExtensionDevelopmentPath: false,
-      extensionBridgePath: '',
-      hostWorkspace: hostRoot,
-      hotReload: {...DEFAULT_HOT_RELOAD_CONFIG},
-      launch: {...DEFAULT_LAUNCH_FLAGS},
-    };
-  }
+	const envConfig = process.env.DEVTOOLS_CONFIG;
+	if (!envConfig) {
+		logger('DEVTOOLS_CONFIG not set — using defaults (host workspace as client workspace)');
+		const hostRoot = getHostWorkspace();
+		_resolvedClientWorkspace = hostRoot;
+		return {
+			clientWorkspace: hostRoot,
+			explicitExtensionDevelopmentPath: false,
+			extensionBridgePath: '',
+			hostWorkspace: hostRoot,
+			hotReload: { ...DEFAULT_HOT_RELOAD_CONFIG },
+			launch: { ...DEFAULT_LAUNCH_FLAGS }
+		};
+	}
 
-  const hostRoot = getHostWorkspace();
+	const hostRoot = getHostWorkspace();
 
-  try {
-    const parsed: unknown = JSON.parse(envConfig);
-    if (!isRecord(parsed)) {
-      logger('DEVTOOLS_CONFIG is not a valid JSON object — using defaults');
-      _resolvedClientWorkspace = hostRoot;
-      return {
-        clientWorkspace: hostRoot,
-        explicitExtensionDevelopmentPath: false,
-        extensionBridgePath: '',
-        hostWorkspace: hostRoot,
-        hotReload: {...DEFAULT_HOT_RELOAD_CONFIG},
-        launch: {...DEFAULT_LAUNCH_FLAGS},
-      };
-    }
+	try {
+		const parsed: unknown = JSON.parse(envConfig);
+		if (!isRecord(parsed)) {
+			logger('DEVTOOLS_CONFIG is not a valid JSON object — using defaults');
+			_resolvedClientWorkspace = hostRoot;
+			return {
+				clientWorkspace: hostRoot,
+				explicitExtensionDevelopmentPath: false,
+				extensionBridgePath: '',
+				hostWorkspace: hostRoot,
+				hotReload: { ...DEFAULT_HOT_RELOAD_CONFIG },
+				launch: { ...DEFAULT_LAUNCH_FLAGS }
+			};
+		}
 
-    const clientWorkspace = (typeof parsed.clientWorkspace === 'string' && parsed.clientWorkspace)
-      ? parsed.clientWorkspace
-      : hostRoot;
-    _resolvedClientWorkspace = clientWorkspace;
+		const clientWorkspace = typeof parsed.clientWorkspace === 'string' && parsed.clientWorkspace ? parsed.clientWorkspace : hostRoot;
+		_resolvedClientWorkspace = clientWorkspace;
 
-    const extensionPath = typeof parsed.extensionPath === 'string' ? parsed.extensionPath : '';
-    const explicitExtensionDevelopmentPath = extensionPath.length > 0;
+		const extensionPath = typeof parsed.extensionPath === 'string' ? parsed.extensionPath : '';
+		const explicitExtensionDevelopmentPath = extensionPath.length > 0;
 
-    const launchPartial = coerceLaunchFlags(parsed.launch);
-    const hotReloadPartial: Partial<HotReloadConfig> = {};
-    const hrValue = parsed.hotReload;
-    if (isRecord(hrValue)) {
-      const enabled = readOptionalBoolean(hrValue, 'enabled');
-      if (typeof enabled === 'boolean') {hotReloadPartial.enabled = enabled;}
-      const mcpStatusTimeout = readOptionalNumber(hrValue, 'mcpStatusTimeout');
-      if (typeof mcpStatusTimeout === 'number') {hotReloadPartial.mcpStatusTimeout = mcpStatusTimeout;}
-    }
+		const launchPartial = coerceLaunchFlags(parsed.launch);
+		const hotReloadPartial: Partial<HotReloadConfig> = {};
+		const hrValue = parsed.hotReload;
+		if (isRecord(hrValue)) {
+			const enabled = readOptionalBoolean(hrValue, 'enabled');
+			if (typeof enabled === 'boolean') {
+				hotReloadPartial.enabled = enabled;
+			}
+			const mcpStatusTimeout = readOptionalNumber(hrValue, 'mcpStatusTimeout');
+			if (typeof mcpStatusTimeout === 'number') {
+				hotReloadPartial.mcpStatusTimeout = mcpStatusTimeout;
+			}
+		}
 
-    logger('Loaded config from DEVTOOLS_CONFIG environment variable');
+		logger('Loaded config from DEVTOOLS_CONFIG environment variable');
 
-    return {
-      clientWorkspace,
-      explicitExtensionDevelopmentPath,
-      extensionBridgePath: extensionPath,
-      hostWorkspace: hostRoot,
-      hotReload: resolveHotReloadConfig(hotReloadPartial),
-      launch: resolveLaunchFlags(launchPartial),
-    };
-  } catch (error) {
-    logger(`Failed to parse DEVTOOLS_CONFIG: ${error} — using defaults`);
-    _resolvedClientWorkspace = hostRoot;
-    return {
-      clientWorkspace: hostRoot,
-      explicitExtensionDevelopmentPath: false,
-      extensionBridgePath: '',
-      hostWorkspace: hostRoot,
-      hotReload: {...DEFAULT_HOT_RELOAD_CONFIG},
-      launch: {...DEFAULT_LAUNCH_FLAGS},
-    };
-  }
+		return {
+			clientWorkspace,
+			explicitExtensionDevelopmentPath,
+			extensionBridgePath: extensionPath,
+			hostWorkspace: hostRoot,
+			hotReload: resolveHotReloadConfig(hotReloadPartial),
+			launch: resolveLaunchFlags(launchPartial)
+		};
+	} catch (error) {
+		logger(`Failed to parse DEVTOOLS_CONFIG: ${error} — using defaults`);
+		_resolvedClientWorkspace = hostRoot;
+		return {
+			clientWorkspace: hostRoot,
+			explicitExtensionDevelopmentPath: false,
+			extensionBridgePath: '',
+			hostWorkspace: hostRoot,
+			hotReload: { ...DEFAULT_HOT_RELOAD_CONFIG },
+			launch: { ...DEFAULT_LAUNCH_FLAGS }
+		};
+	}
 }

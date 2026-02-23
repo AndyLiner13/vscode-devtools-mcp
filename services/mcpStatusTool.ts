@@ -36,46 +36,37 @@ The server may still be starting. You can:
 // ── Input Schema ─────────────────────────────────────────────────────────────
 
 interface IMcpStatusParams {
-  timeoutMs?: number;
+	timeoutMs?: number;
 }
 
 // ── LM Tool ──────────────────────────────────────────────────────────────────
 
 export class McpStatusTool implements vscode.LanguageModelTool<IMcpStatusParams> {
+	async prepareInvocation(_options: vscode.LanguageModelToolInvocationPrepareOptions<IMcpStatusParams>, _token: vscode.CancellationToken): Promise<undefined | vscode.PreparedToolInvocation> {
+		return {
+			invocationMessage: 'Waiting for MCP server to be ready…'
+		};
+	}
 
-  async prepareInvocation(
-    _options: vscode.LanguageModelToolInvocationPrepareOptions<IMcpStatusParams>,
-    _token: vscode.CancellationToken,
-  ): Promise<undefined | vscode.PreparedToolInvocation> {
-    return {
-      invocationMessage: 'Waiting for MCP server to be ready…',
-    };
-  }
+	async invoke(options: vscode.LanguageModelToolInvocationOptions<IMcpStatusParams>, token: vscode.CancellationToken): Promise<vscode.LanguageModelToolResult> {
+		const timeoutMs = options.input.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
-  async invoke(
-    options: vscode.LanguageModelToolInvocationOptions<IMcpStatusParams>,
-    token: vscode.CancellationToken,
-  ): Promise<vscode.LanguageModelToolResult> {
-    const timeoutMs = options.input.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+		// Race between MCP ready, timeout, and cancellation
+		const ready = await Promise.race([
+			waitForMcpReady(timeoutMs),
+			new Promise<boolean>((_, reject) => {
+				token.onCancellationRequested(() => {
+					reject(new Error('mcpStatus cancelled'));
+				});
+			})
+		]);
 
-    // Race between MCP ready, timeout, and cancellation
-    const ready = await Promise.race([
-      waitForMcpReady(timeoutMs),
-      new Promise<boolean>((_, reject) => {
-        token.onCancellationRequested(() => { reject(new Error('mcpStatus cancelled')); });
-      }),
-    ]);
+		const { LanguageModelTextPart, LanguageModelToolResult } = await import('vscode');
 
-    const { LanguageModelTextPart, LanguageModelToolResult } = await import('vscode');
+		if (ready) {
+			return new LanguageModelToolResult([new LanguageModelTextPart(READY_MESSAGE)]);
+		}
 
-    if (ready) {
-      return new LanguageModelToolResult([
-        new LanguageModelTextPart(READY_MESSAGE),
-      ]);
-    }
-
-    return new LanguageModelToolResult([
-      new LanguageModelTextPart(TIMEOUT_MESSAGE),
-    ]);
-  }
+		return new LanguageModelToolResult([new LanguageModelTextPart(TIMEOUT_MESSAGE)]);
+	}
 }

@@ -20,35 +20,35 @@ import type { BoundaryResult, LogEntry } from './types.js';
  * All other lines are "continuation lines" grouped with the preceding entry.
  */
 const ENTRY_HEADER_PATTERNS: RegExp[] = [
-  // ISO 8601 timestamps: 2026-02-22T05:47:04.194Z, 2026-02-22 05:47:04
-  /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}/,
+	// ISO 8601 timestamps: 2026-02-22T05:47:04.194Z, 2026-02-22 05:47:04
+	/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}/,
 
-  // Syslog-style timestamps: Feb 22 05:47:04, Jan  1 00:00:00
-  /^[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}/,
+	// Syslog-style timestamps: Feb 22 05:47:04, Jan  1 00:00:00
+	/^[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}/,
 
-  // Bracketed timestamps: [2026-02-22T05:47:04], [05:47:04]
-  /^\[\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}/,
-  /^\[\d{2}:\d{2}:\d{2}/,
+	// Bracketed timestamps: [2026-02-22T05:47:04], [05:47:04]
+	/^\[\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}/,
+	/^\[\d{2}:\d{2}:\d{2}/,
 
-  // Bracketed severity levels: [info], [ERROR], [WARNING], [debug], [WARN]
-  /^\[(info|INFO|error|ERROR|warn|WARN|warning|WARNING|debug|DEBUG|trace|TRACE|verbose|VERBOSE)\]/,
+	// Bracketed severity levels: [info], [ERROR], [WARNING], [debug], [WARN]
+	/^\[(info|INFO|error|ERROR|warn|WARN|warning|WARNING|debug|DEBUG|trace|TRACE|verbose|VERBOSE)\]/,
 
-  // Severity prefixes without brackets: INFO:, ERROR:, WARNING:, DEBUG:
-  /^(INFO|ERROR|WARN|WARNING|DEBUG|TRACE|VERBOSE)\s*[:\s]/,
+	// Severity prefixes without brackets: INFO:, ERROR:, WARNING:, DEBUG:
+	/^(INFO|ERROR|WARN|WARNING|DEBUG|TRACE|VERBOSE)\s*[:\s]/,
 
-  // Log level with timestamp: INFO 2026-02-22..., ERROR 05:47:04
-  /^(INFO|ERROR|WARN|WARNING|DEBUG|TRACE|VERBOSE)\s+\d/,
+	// Log level with timestamp: INFO 2026-02-22..., ERROR 05:47:04
+	/^(INFO|ERROR|WARN|WARNING|DEBUG|TRACE|VERBOSE)\s+\d/,
 
-  // Common log framework formats: 05:47:04.194 [main] INFO, 05:47:04 INFO
-  /^\d{2}:\d{2}:\d{2}[.,]\d{1,3}\s+\[/,
+	// Common log framework formats: 05:47:04.194 [main] INFO, 05:47:04 INFO
+	/^\d{2}:\d{2}:\d{2}[.,]\d{1,3}\s+\[/,
 
-  // VS Code extension host log: timestamps in square brackets
-  /^\[?\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3}\]?\s/,
+	// VS Code extension host log: timestamps in square brackets
+	/^\[?\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3}\]?\s/,
 
-  // Numeric-prefixed lines (line numbers in some log formats)
-  // Only match if followed by a timestamp or severity
-  /^\d+\s+\d{4}-\d{2}-\d{2}/,
-  /^\d+\s+(INFO|ERROR|WARN|DEBUG)/,
+	// Numeric-prefixed lines (line numbers in some log formats)
+	// Only match if followed by a timestamp or severity
+	/^\d+\s+\d{4}-\d{2}-\d{2}/,
+	/^\d+\s+(INFO|ERROR|WARN|DEBUG)/
 ];
 
 /**
@@ -58,22 +58,22 @@ const ENTRY_HEADER_PATTERNS: RegExp[] = [
 const STRUCTURAL_NOISE_PATTERN = /^\s*[{}[\],]*\s*$/;
 
 function isEntryHeader(line: string): boolean {
-  if (!line || line.length === 0) {
-    return false;
-  }
+	if (!line || line.length === 0) {
+		return false;
+	}
 
-  // Pure whitespace or structural JSON noise is always a continuation
-  if (STRUCTURAL_NOISE_PATTERN.test(line)) {
-    return false;
-  }
+	// Pure whitespace or structural JSON noise is always a continuation
+	if (STRUCTURAL_NOISE_PATTERN.test(line)) {
+		return false;
+	}
 
-  for (const pattern of ENTRY_HEADER_PATTERNS) {
-    if (pattern.test(line)) {
-      return true;
-    }
-  }
+	for (const pattern of ENTRY_HEADER_PATTERNS) {
+		if (pattern.test(line)) {
+			return true;
+		}
+	}
 
-  return false;
+	return false;
 }
 
 /**
@@ -81,79 +81,79 @@ function isEntryHeader(line: string): boolean {
  * Groups continuation lines with their preceding header line.
  */
 export function detectBoundaries(lines: string[]): BoundaryResult {
-  if (lines.length === 0) {
-    return { entries: [], groupedLineCount: 0, hasMultiLineEntries: false };
-  }
+	if (lines.length === 0) {
+		return { entries: [], groupedLineCount: 0, hasMultiLineEntries: false };
+	}
 
-  const entries: LogEntry[] = [];
-  let currentEntry: LogEntry | undefined;
-  let groupedLineCount = 0;
-  let hasMultiLineEntries = false;
+	const entries: LogEntry[] = [];
+	let currentEntry: LogEntry | undefined;
+	let groupedLineCount = 0;
+	let hasMultiLineEntries = false;
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i];
 
-    if (isEntryHeader(line)) {
-      // Finalize previous entry
-      if (currentEntry) {
-        entries.push(currentEntry);
-      }
-      // Start a new entry
-      currentEntry = {
-        continuationLines: [],
-        flattened: line,
-        header: line,
-        sourceLineIndex: i,
-      };
-    } else if (currentEntry) {
-      // Continuation line — belongs to current entry
-      currentEntry.continuationLines.push(line);
-      groupedLineCount++;
-    } else {
-      // No header seen yet — treat as a standalone entry
-      currentEntry = {
-        continuationLines: [],
-        flattened: line,
-        header: line,
-        sourceLineIndex: i,
-      };
-    }
-  }
+		if (isEntryHeader(line)) {
+			// Finalize previous entry
+			if (currentEntry) {
+				entries.push(currentEntry);
+			}
+			// Start a new entry
+			currentEntry = {
+				continuationLines: [],
+				flattened: line,
+				header: line,
+				sourceLineIndex: i
+			};
+		} else if (currentEntry) {
+			// Continuation line — belongs to current entry
+			currentEntry.continuationLines.push(line);
+			groupedLineCount++;
+		} else {
+			// No header seen yet — treat as a standalone entry
+			currentEntry = {
+				continuationLines: [],
+				flattened: line,
+				header: line,
+				sourceLineIndex: i
+			};
+		}
+	}
 
-  // Don't forget the last entry
-  if (currentEntry) {
-    entries.push(currentEntry);
-  }
+	// Don't forget the last entry
+	if (currentEntry) {
+		entries.push(currentEntry);
+	}
 
-  // Guard against degenerate case: if fewer than 10% of lines produced entries,
-  // the input lacks recognizable log headers (e.g., console messages formatted as
-  // "#ID [type] text"). Skip boundary grouping and let logpare see raw lines.
-  if (entries.length < lines.length * 0.1 && lines.length > 5) {
-    return { entries: [], groupedLineCount: 0, hasMultiLineEntries: false };
-  }
+	// Guard against degenerate case: if fewer than 10% of lines produced entries,
+	// the input lacks recognizable log headers (e.g., console messages formatted as
+	// "#ID [type] text"). Skip boundary grouping and let logpare see raw lines.
+	if (entries.length < lines.length * 0.1 && lines.length > 5) {
+		return { entries: [], groupedLineCount: 0, hasMultiLineEntries: false };
+	}
 
-  // Finalize: build flattened representations for multi-line entries
-  for (const entry of entries) {
-    if (entry.continuationLines.length > 0) {
-      hasMultiLineEntries = true;
-      // Join continuation lines into the header, collapsing whitespace
-      const continuationText = entry.continuationLines
-        .map(l => l.trim())
-        .filter(l => l.length > 0)
-        .join(' ');
+	// Finalize: build flattened representations for multi-line entries
+	for (const entry of entries) {
+		if (entry.continuationLines.length > 0) {
+			hasMultiLineEntries = true;
+			// Join continuation lines into the header, collapsing whitespace
+			const continuationText = entry.continuationLines
+				.map((l) => l.trim())
+				.filter((l) => l.length > 0)
+				.join(' ');
 
-      if (continuationText.length > 0) {
-        // Keep the flattened version concise: header + collapsed continuation
-        if (continuationText.length > 200) {
-          entry.flattened = `${entry.header} ${continuationText.slice(0, 200)} [+${entry.continuationLines.length} continuation lines]`;
-        } else {
-          entry.flattened = `${entry.header} ${continuationText}`;
-        }
-      }
-    }
-  }
+			if (continuationText.length > 0) {
+				// Keep the flattened version concise: header + collapsed continuation
+				if (continuationText.length > 200) {
+					entry.flattened = `${entry.header} ${continuationText.slice(0, 200)} [+${entry.continuationLines.length} continuation lines]`;
+				} else {
+					entry.flattened = `${entry.header} ${continuationText}`;
+				}
+			}
+		}
+	}
 
-  return { entries, groupedLineCount, hasMultiLineEntries };
+	return { entries, groupedLineCount, hasMultiLineEntries };
 }
 
 /**
@@ -161,5 +161,5 @@ export function detectBoundaries(lines: string[]): BoundaryResult {
  * suitable for logpare processing.
  */
 export function flattenEntries(entries: LogEntry[]): string[] {
-  return entries.map(e => e.flattened);
+	return entries.map((e) => e.flattened);
 }

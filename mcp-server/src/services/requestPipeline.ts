@@ -21,42 +21,32 @@
  * same batch skip the check. A batch ends when the queue drains to empty.
  */
 
-import type {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
-import {logger} from '../logger.js';
+import { logger } from '../logger.js';
 
 // ── Deterministic Messages ───────────────────────────────
 
 const RESTART_MESSAGE = [
-  '⚡ **MCP server source changed — rebuilt successfully.**',
-  '',
-  'The MCP server is restarting to apply the latest changes.',
-  'Use the `mcpStatus` tool with an empty input to wait for the server to be ready.',
-  'Do NOT retry any MCP tools until `mcpStatus` confirms the server is ready.',
+	'⚡ **MCP server source changed — rebuilt successfully.**',
+	'',
+	'The MCP server is restarting to apply the latest changes.',
+	'Use the `mcpStatus` tool with an empty input to wait for the server to be ready.',
+	'Do NOT retry any MCP tools until `mcpStatus` confirms the server is ready.'
 ].join('\n');
 
 const RESTARTING_QUEUED_MESSAGE = [
-  '⏳ MCP server is restarting to apply source changes.',
-  '',
-  'Use the `mcpStatus` tool with an empty input to wait for the server to be ready.',
-  'Do NOT retry any MCP tools until `mcpStatus` confirms the server is ready.',
+	'⏳ MCP server is restarting to apply source changes.',
+	'',
+	'Use the `mcpStatus` tool with an empty input to wait for the server to be ready.',
+	'Do NOT retry any MCP tools until `mcpStatus` confirms the server is ready.'
 ].join('\n');
 
 function formatBuildFailure(packageName: string, error: string): string {
-  return [
-    `❌ **${packageName} rebuild failed:**`,
-    '',
-    '```',
-    error,
-    '```',
-    '',
-    `The ${packageName} was NOT restarted because the build failed.`,
-    'Fix the error above and try calling a tool again to trigger a rebuild.',
-  ].join('\n');
+	return [`❌ **${packageName} rebuild failed:**`, '', '```', error, '```', '', `The ${packageName} was NOT restarted because the build failed.`, 'Fix the error above and try calling a tool again to trigger a rebuild.'].join('\n');
 }
 
-const EXT_REBUILT_BANNER =
-  '✅ **Extension was recently updated.** The Extension Development Host is now running the newest code.';
+const EXT_REBUILT_BANNER = '✅ **Extension was recently updated.** The Extension Development Host is now running the newest code.';
 
 // ── Types ────────────────────────────────────────────────
 
@@ -65,22 +55,22 @@ const EXT_REBUILT_BANNER =
  * The extension is the single authority for all change detection.
  */
 export interface ChangeCheckResult {
-  extBuildError: null | string;
-  extChanged: boolean;
-  extClientReloaded: boolean;
-  extRebuilt: boolean;
-  mcpBuildError: null | string;
-  mcpChanged: boolean;
-  mcpRebuilt: boolean;
-  newCdpPort?: number;
-  newClientStartedAt?: number;
+	extBuildError: null | string;
+	extChanged: boolean;
+	extClientReloaded: boolean;
+	extRebuilt: boolean;
+	mcpBuildError: null | string;
+	mcpChanged: boolean;
+	mcpRebuilt: boolean;
+	newCdpPort?: number;
+	newClientStartedAt?: number;
 }
 
 interface PipelineEntry {
-  execute: () => Promise<CallToolResult>;
-  reject: (error: Error) => void;
-  resolve: (result: CallToolResult) => void;
-  toolName: string;
+	execute: () => Promise<CallToolResult>;
+	reject: (error: Error) => void;
+	resolve: (result: CallToolResult) => void;
+	toolName: string;
 }
 
 /**
@@ -88,285 +78,277 @@ interface PipelineEntry {
  * Keeps the pipeline decoupled from host-pipe and main.ts specifics.
  */
 export interface PipelineDeps {
-  /** Call the extension's checkForChanges RPC. */
-  checkForChanges: (mcpServerRoot: string, extensionPath: string) => Promise<ChangeCheckResult>;
-  /** Extension root (absolute path), or empty string if no extension configured. */
-  extensionPath: string;
-  /** Master switch — when false, all hot-reload checks are skipped. */
-  hotReloadEnabled: boolean;
-  /** MCP server package root (absolute path). */
-  mcpServerRoot: string;
-  /** Restore CDP disconnect handling + reconnect CDP if extension reloaded Client. */
-  onAfterChangeCheck?: (result: ChangeCheckResult) => Promise<void>;
-  /** Suppress CDP disconnect handling before checkForChanges (extension may kill Client). */
-  onBeforeChangeCheck?: () => void;
-  /**
-   * Close the inspector HTTP server and any other transport-level resources.
-   * Called during graceful shutdown before process.exit().
-   */
-  onShutdown: () => Promise<void>;
-  /** Signal the extension that the MCP server is ready to be killed. */
-  readyToRestart: () => Promise<void>;
+	/** Call the extension's checkForChanges RPC. */
+	checkForChanges: (mcpServerRoot: string, extensionPath: string) => Promise<ChangeCheckResult>;
+	/** Extension root (absolute path), or empty string if no extension configured. */
+	extensionPath: string;
+	/** Master switch — when false, all hot-reload checks are skipped. */
+	hotReloadEnabled: boolean;
+	/** MCP server package root (absolute path). */
+	mcpServerRoot: string;
+	/** Restore CDP disconnect handling + reconnect CDP if extension reloaded Client. */
+	onAfterChangeCheck?: (result: ChangeCheckResult) => Promise<void>;
+	/** Suppress CDP disconnect handling before checkForChanges (extension may kill Client). */
+	onBeforeChangeCheck?: () => void;
+	/**
+	 * Close the inspector HTTP server and any other transport-level resources.
+	 * Called during graceful shutdown before process.exit().
+	 */
+	onShutdown: () => Promise<void>;
+	/** Signal the extension that the MCP server is ready to be killed. */
+	readyToRestart: () => Promise<void>;
 }
 
 // ── RequestPipeline ──────────────────────────────────────
 
 export class RequestPipeline {
-  private readonly queue: PipelineEntry[] = [];
-  private processing = false;
-  private restartScheduled = false;
-  private batchChecked = false;
-  private readonly deps: PipelineDeps;
+	private readonly queue: PipelineEntry[] = [];
+	private processing = false;
+	private restartScheduled = false;
+	private batchChecked = false;
+	private readonly deps: PipelineDeps;
 
-  constructor(deps: PipelineDeps) {
-    this.deps = deps;
-  }
+	constructor(deps: PipelineDeps) {
+		this.deps = deps;
+	}
 
-  /**
-   * Submit a tool call to the pipeline.
-   *
-   * The returned promise resolves with the tool's result when execution
-   * completes, or with a "server restarting" message if the pipeline
-   * determines a restart is needed before this tool runs.
-   *
-   * The execute() function is called AFTER queue wait and hot-reload
-   * checking, so tool timeouts should be applied inside execute().
-   */
-  async submit(toolName: string, execute: () => Promise<CallToolResult>): Promise<CallToolResult> {
-    if (this.restartScheduled) {
-      return Promise.resolve({
-        content: [{text: RESTARTING_QUEUED_MESSAGE, type: 'text'}],
-      });
-    }
+	/**
+	 * Submit a tool call to the pipeline.
+	 *
+	 * The returned promise resolves with the tool's result when execution
+	 * completes, or with a "server restarting" message if the pipeline
+	 * determines a restart is needed before this tool runs.
+	 *
+	 * The execute() function is called AFTER queue wait and hot-reload
+	 * checking, so tool timeouts should be applied inside execute().
+	 */
+	async submit(toolName: string, execute: () => Promise<CallToolResult>): Promise<CallToolResult> {
+		if (this.restartScheduled) {
+			return Promise.resolve({
+				content: [{ text: RESTARTING_QUEUED_MESSAGE, type: 'text' }]
+			});
+		}
 
-    return new Promise<CallToolResult>((resolve, reject) => {
-      this.queue.push({execute, reject, resolve, toolName});
+		return new Promise<CallToolResult>((resolve, reject) => {
+			this.queue.push({ execute, reject, resolve, toolName });
 
-      if (!this.processing) {
-        void this.processLoop();
-      }
-    });
-  }
+			if (!this.processing) {
+				void this.processLoop();
+			}
+		});
+	}
 
-  /**
-   * Process queued entries sequentially. Runs until the queue is empty,
-   * then resets batchChecked so the next batch re-checks for changes.
-   */
-  private async processLoop(): Promise<void> {
-    this.processing = true;
+	/**
+	 * Process queued entries sequentially. Runs until the queue is empty,
+	 * then resets batchChecked so the next batch re-checks for changes.
+	 */
+	private async processLoop(): Promise<void> {
+		this.processing = true;
 
-    while (this.queue.length > 0) {
-      if (this.restartScheduled) {
-        this.drainQueueWithRestartMessage();
-        break;
-      }
+		while (this.queue.length > 0) {
+			if (this.restartScheduled) {
+				this.drainQueueWithRestartMessage();
+				break;
+			}
 
-      const entry = this.queue.shift();
-      if (!entry) break;
+			const entry = this.queue.shift();
+			if (!entry) break;
 
-      try {
-        // Per-batch hot-reload check (first tool in batch only)
-        let extRebuiltThisTool = false;
+			try {
+				// Per-batch hot-reload check (first tool in batch only)
+				let extRebuiltThisTool = false;
 
-        if (!this.batchChecked && this.deps.hotReloadEnabled) {
-          const checkResult = await this.performChangeCheck(entry);
+				if (!this.batchChecked && this.deps.hotReloadEnabled) {
+					const checkResult = await this.performChangeCheck(entry);
 
-          // null = check was handled (entry already resolved/signaled restart)
-          if (checkResult === null) {
-            continue;
-          }
+					// null = check was handled (entry already resolved/signaled restart)
+					if (checkResult === null) {
+						continue;
+					}
 
-          extRebuiltThisTool = checkResult.extRebuilt;
-          this.batchChecked = true;
-        }
+					extRebuiltThisTool = checkResult.extRebuilt;
+					this.batchChecked = true;
+				}
 
-        // Execute the tool (timeout is inside execute())
-        const result = await entry.execute();
+				// Execute the tool (timeout is inside execute())
+				const result = await entry.execute();
 
-        if (extRebuiltThisTool) {
-          result.content.unshift({text: EXT_REBUILT_BANNER, type: 'text'});
-        }
+				if (extRebuiltThisTool) {
+					result.content.unshift({ text: EXT_REBUILT_BANNER, type: 'text' });
+				}
 
-        entry.resolve(result);
-      } catch (err) {
-        // Unexpected pipeline-level error (execute() should handle its own errors)
-        const message = err instanceof Error ? err.message : String(err);
-        logger(`[pipeline] Unexpected error for ${entry.toolName}: ${message}`);
-        entry.resolve({
-          content: [{text: message, type: 'text'}],
-          isError: true,
-        });
-      }
-    }
+				entry.resolve(result);
+			} catch (err) {
+				// Unexpected pipeline-level error (execute() should handle its own errors)
+				const message = err instanceof Error ? err.message : String(err);
+				logger(`[pipeline] Unexpected error for ${entry.toolName}: ${message}`);
+				entry.resolve({
+					content: [{ text: message, type: 'text' }],
+					isError: true
+				});
+			}
+		}
 
-    this.processing = false;
-    this.batchChecked = false;
-  }
+		this.processing = false;
+		this.batchChecked = false;
+	}
 
-  /**
-   * Run the per-batch change check. Returns the check result if the tool
-   * should proceed with execution, or null if the entry was already
-   * resolved (build error or restart signaled).
-   */
-  private async performChangeCheck(
-    entry: PipelineEntry,
-  ): Promise<ChangeCheckResult | null> {
-    let check: ChangeCheckResult;
+	/**
+	 * Run the per-batch change check. Returns the check result if the tool
+	 * should proceed with execution, or null if the entry was already
+	 * resolved (build error or restart signaled).
+	 */
+	private async performChangeCheck(entry: PipelineEntry): Promise<ChangeCheckResult | null> {
+		let check: ChangeCheckResult;
 
-    // Suppress CDP disconnect handling — extension may kill Client during rebuild
-    this.deps.onBeforeChangeCheck?.();
+		// Suppress CDP disconnect handling — extension may kill Client during rebuild
+		this.deps.onBeforeChangeCheck?.();
 
-    try {
-      check = await this.deps.checkForChanges(
-        this.deps.mcpServerRoot,
-        this.deps.extensionPath,
-      );
-    } catch (err) {
-      // checkForChanges RPC failed — proceed in degraded mode
-      const message = err instanceof Error ? err.message : String(err);
-      logger(`[pipeline] checkForChanges RPC failed: ${message} — proceeding without hot-reload check`);
-      check = {
-        extBuildError: null,
-        extChanged: false,
-        extClientReloaded: false,
-        extRebuilt: false,
-        mcpBuildError: null,
-        mcpChanged: false,
-        mcpRebuilt: false,
-      };
-    }
+		try {
+			check = await this.deps.checkForChanges(this.deps.mcpServerRoot, this.deps.extensionPath);
+		} catch (err) {
+			// checkForChanges RPC failed — proceed in degraded mode
+			const message = err instanceof Error ? err.message : String(err);
+			logger(`[pipeline] checkForChanges RPC failed: ${message} — proceeding without hot-reload check`);
+			check = {
+				extBuildError: null,
+				extChanged: false,
+				extClientReloaded: false,
+				extRebuilt: false,
+				mcpBuildError: null,
+				mcpChanged: false,
+				mcpRebuilt: false
+			};
+		}
 
-    // Restore CDP disconnect handling + reconnect if extension reloaded Client
-    try {
-      await this.deps.onAfterChangeCheck?.(check);
-    } catch (afterErr) {
-      const msg = afterErr instanceof Error ? afterErr.message : String(afterErr);
-      logger(`[pipeline] onAfterChangeCheck failed: ${msg}`);
-    }
+		// Restore CDP disconnect handling + reconnect if extension reloaded Client
+		try {
+			await this.deps.onAfterChangeCheck?.(check);
+		} catch (afterErr) {
+			const msg = afterErr instanceof Error ? afterErr.message : String(afterErr);
+			logger(`[pipeline] onAfterChangeCheck failed: ${msg}`);
+		}
 
-    // Extension build failure → return error, skip tool execution
-    if (check.extBuildError) {
-      entry.resolve({
-        content: [{text: formatBuildFailure('Extension', check.extBuildError), type: 'text'}],
-        isError: true,
-      });
-      return null;
-    }
+		// Extension build failure → return error, skip tool execution
+		if (check.extBuildError) {
+			entry.resolve({
+				content: [{ text: formatBuildFailure('Extension', check.extBuildError), type: 'text' }],
+				isError: true
+			});
+			return null;
+		}
 
-    // MCP build failure → return error, skip tool execution (no restart)
-    if (check.mcpBuildError) {
-      entry.resolve({
-        content: [{text: formatBuildFailure('MCP server', check.mcpBuildError), type: 'text'}],
-        isError: true,
-      });
-      return null;
-    }
+		// MCP build failure → return error, skip tool execution (no restart)
+		if (check.mcpBuildError) {
+			entry.resolve({
+				content: [{ text: formatBuildFailure('MCP server', check.mcpBuildError), type: 'text' }],
+				isError: true
+			});
+			return null;
+		}
 
-    // MCP rebuilt → signal restart, return restart message
-    if (check.mcpRebuilt) {
-      entry.resolve({
-        content: [{text: RESTART_MESSAGE, type: 'text'}],
-      });
-      this.signalRestart('MCP server source changed and rebuilt');
-      return null;
-    }
+		// MCP rebuilt → signal restart, return restart message
+		if (check.mcpRebuilt) {
+			entry.resolve({
+				content: [{ text: RESTART_MESSAGE, type: 'text' }]
+			});
+			this.signalRestart('MCP server source changed and rebuilt');
+			return null;
+		}
 
-    return check;
-  }
+		return check;
+	}
 
-  /**
-   * Signal that the MCP process needs to restart.
-   *
-   * Drains all queued entries with restart messages, then after a brief
-   * flush delay: sends readyToRestart RPC, closes HTTP server, and exits.
-   */
-  private signalRestart(reason: string): void {
-    if (this.restartScheduled) return;
-    this.restartScheduled = true;
-    logger(`[pipeline] Restart signaled: ${reason}`);
+	/**
+	 * Signal that the MCP process needs to restart.
+	 *
+	 * Drains all queued entries with restart messages, then after a brief
+	 * flush delay: sends readyToRestart RPC, closes HTTP server, and exits.
+	 */
+	private signalRestart(reason: string): void {
+		if (this.restartScheduled) return;
+		this.restartScheduled = true;
+		logger(`[pipeline] Restart signaled: ${reason}`);
 
-    this.drainQueueWithRestartMessage();
+		this.drainQueueWithRestartMessage();
 
-    // Brief delay to let the current tool's response flush through stdio
-    setTimeout(() => {
-      void this.performGracefulShutdown();
-    }, 200);
-  }
+		// Brief delay to let the current tool's response flush through stdio
+		setTimeout(() => {
+			void this.performGracefulShutdown();
+		}, 200);
+	}
 
-  private async performGracefulShutdown(): Promise<void> {
-    logger('[pipeline] Performing graceful shutdown…');
+	private async performGracefulShutdown(): Promise<void> {
+		logger('[pipeline] Performing graceful shutdown…');
 
-    try {
-      await this.deps.readyToRestart();
-      logger('[pipeline] readyToRestart RPC sent successfully');
-    } catch {
-      logger('[pipeline] readyToRestart RPC failed — proceeding with shutdown');
-    }
+		try {
+			await this.deps.readyToRestart();
+			logger('[pipeline] readyToRestart RPC sent successfully');
+		} catch {
+			logger('[pipeline] readyToRestart RPC failed — proceeding with shutdown');
+		}
 
-    try {
-      await this.deps.onShutdown();
-      logger('[pipeline] Server shutdown completed');
-    } catch {
-      logger('[pipeline] Server shutdown encountered errors — exiting anyway');
-    }
+		try {
+			await this.deps.onShutdown();
+			logger('[pipeline] Server shutdown completed');
+		} catch {
+			logger('[pipeline] Server shutdown encountered errors — exiting anyway');
+		}
 
-    logger('[pipeline] Exiting process for restart');
-    process.exit(0);
-  }
+		logger('[pipeline] Exiting process for restart');
+		process.exit(0);
+	}
 
-  private drainQueueWithRestartMessage(): void {
-    while (this.queue.length > 0) {
-      const entry = this.queue.shift();
-      if (!entry) break;
-      entry.resolve({
-        content: [{text: RESTARTING_QUEUED_MESSAGE, type: 'text'}],
-      });
-    }
-  }
+	private drainQueueWithRestartMessage(): void {
+		while (this.queue.length > 0) {
+			const entry = this.queue.shift();
+			if (!entry) break;
+			entry.resolve({
+				content: [{ text: RESTARTING_QUEUED_MESSAGE, type: 'text' }]
+			});
+		}
+	}
 
-  /**
-   * Run the hot-reload check outside of a tool call context.
-   * Used by the inspector HTTP handler to trigger rebuild+restart on
-   * session init — the same check that tool calls get for free.
-   *
-   * Returns 'ready' when the server is up-to-date, 'restarting' when
-   * the MCP source was rebuilt and the process is about to exit.
-   */
-  async runHotReloadCheck(): Promise<'ready' | 'restarting'> {
-    if (!this.deps.hotReloadEnabled || this.restartScheduled) {
-      return this.restartScheduled ? 'restarting' : 'ready';
-    }
+	/**
+	 * Run the hot-reload check outside of a tool call context.
+	 * Used by the inspector HTTP handler to trigger rebuild+restart on
+	 * session init — the same check that tool calls get for free.
+	 *
+	 * Returns 'ready' when the server is up-to-date, 'restarting' when
+	 * the MCP source was rebuilt and the process is about to exit.
+	 */
+	async runHotReloadCheck(): Promise<'ready' | 'restarting'> {
+		if (!this.deps.hotReloadEnabled || this.restartScheduled) {
+			return this.restartScheduled ? 'restarting' : 'ready';
+		}
 
-    this.deps.onBeforeChangeCheck?.();
+		this.deps.onBeforeChangeCheck?.();
 
-    let check: ChangeCheckResult;
-    try {
-      check = await this.deps.checkForChanges(
-        this.deps.mcpServerRoot,
-        this.deps.extensionPath,
-      );
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      logger(`[pipeline] runHotReloadCheck: checkForChanges failed: ${message}`);
-      return 'ready';
-    }
+		let check: ChangeCheckResult;
+		try {
+			check = await this.deps.checkForChanges(this.deps.mcpServerRoot, this.deps.extensionPath);
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			logger(`[pipeline] runHotReloadCheck: checkForChanges failed: ${message}`);
+			return 'ready';
+		}
 
-    try {
-      await this.deps.onAfterChangeCheck?.(check);
-    } catch (afterErr) {
-      const msg = afterErr instanceof Error ? afterErr.message : String(afterErr);
-      logger(`[pipeline] runHotReloadCheck: onAfterChangeCheck failed: ${msg}`);
-    }
+		try {
+			await this.deps.onAfterChangeCheck?.(check);
+		} catch (afterErr) {
+			const msg = afterErr instanceof Error ? afterErr.message : String(afterErr);
+			logger(`[pipeline] runHotReloadCheck: onAfterChangeCheck failed: ${msg}`);
+		}
 
-    if (check.mcpRebuilt) {
-      this.signalRestart('MCP server source changed (inspector session init)');
-      return 'restarting';
-    }
+		if (check.mcpRebuilt) {
+			this.signalRestart('MCP server source changed (inspector session init)');
+			return 'restarting';
+		}
 
-    // Reset batchChecked so the next tool call in the pipeline
-    // doesn't redundantly re-check after we just checked.
-    this.batchChecked = true;
+		// Reset batchChecked so the next tool call in the pipeline
+		// doesn't redundantly re-check after we just checked.
+		this.batchChecked = true;
 
-    return 'ready';
-  }
+		return 'ready';
+	}
 }

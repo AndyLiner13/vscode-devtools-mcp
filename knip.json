@@ -1,26 +1,15 @@
 {
-  "strict": true,
-  "ignoreExportsUsedInFile": false,
-  "workspaces": {
-    ".": {
-      "entry": [
-        "extension.ts",
-        "services/runtime.ts",
-        "services/codebase/codebase-worker.ts"
-      ],
-      "ignoreDependencies": [
-        "@vscode/codicons",
-        "@modelcontextprotocol/inspector"
-      ],
-      "ignoreBinaries": ["code", "tsc"]
-    },
-    "mcp-server": {
-      "entry": [
-        "src/index.ts",
-        "src/cli.ts",
-        "scripts/**/*.{ts,mts,mjs}"
-      ],
-      "ignoreDependencies": ["@types/filesystem"]
-    }
-  }
+	"strict": true,
+	"ignoreExportsUsedInFile": false,
+	"workspaces": {
+		".": {
+			"entry": ["extension.ts", "services/runtime.ts", "services/codebase/codebase-worker.ts"],
+			"ignoreDependencies": ["@vscode/codicons", "@modelcontextprotocol/inspector"],
+			"ignoreBinaries": ["code", "tsc"]
+		},
+		"mcp-server": {
+			"entry": ["src/index.ts", "src/cli.ts", "scripts/**/*.{ts,mts,mjs}"],
+			"ignoreDependencies": ["@types/filesystem"]
+		}
+	}
 }
