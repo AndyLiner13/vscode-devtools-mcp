@@ -322,5 +322,4 @@ code {
 .enum-inactive-options {
 	color: rgba(150, 150, 150, 0.45) !important;
 	font-style: italic;
-	letter-spacing: 0.02em;
 }
