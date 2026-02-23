@@ -221,6 +221,7 @@ interface InternalState {
 	lastExitTime: number;
 	lastOutputTime: number;
 	name: string;
+	onKilled?: () => void;
 	output: string;
 	outputSnapshotIndex: number;
 	pid?: number;
@@ -302,14 +303,17 @@ export class SingleTerminalController {
 			})
 		);
 
-		// Track terminal closure
+		// Track terminal closure — set 'killed' and notify any pending waitForResult
 		this.disposables.push(
 			vscode.window.onDidCloseTerminal((terminal) => {
 				const state = this.findStateByTerminal(terminal);
 				if (!state) return;
-				state.status = 'completed';
+				state.status = 'killed';
 				state.exitCode = terminal.exitStatus?.code;
-				console.log(`[MultiTerminalController] Terminal "${state.name}" closed`);
+				console.log(`[MultiTerminalController] Terminal "${state.name}" killed (closed by user)`);
+
+				// Signal waitForResult to resolve immediately
+				state.onKilled?.();
 
 				// Notify user action tracker so Copilot learns about the closure
 				getUserActionTracker().onManagedTerminalClosed(state.name);
@@ -866,9 +870,23 @@ export class SingleTerminalController {
 				resolved = true;
 				if (pollInterval) clearInterval(pollInterval);
 				if (timeoutTimer) clearTimeout(timeoutTimer);
+				state.onKilled = undefined;
 
 				result.durationMs = Date.now() - state.commandStartTime;
 				resolve(result);
+			};
+
+			// Resolve immediately if the terminal is closed/killed by the user
+			state.onKilled = () => {
+				const cleaned = cleanTerminalOutput(state.output);
+				console.log(`[MultiTerminalController] Terminal "${state.name}" killed during waitForResult — resolving immediately`);
+				resolveOnce({
+					exitCode: state.exitCode,
+					name: state.name,
+					output: cleaned,
+					pid: state.pid,
+					status: 'killed'
+				});
 			};
 
 			const pollInterval = setInterval(() => {

@@ -705,7 +705,11 @@ async function spawnClient(clientWorkspace: string, extensionPath: string, launc
 	const spawnTimestamp = clientStartedAt;
 
 	// Wait for Client to be ready (poll CDP and pipe — NOT PID)
+	hostLog?.(`[spawn] Waiting for client to be ready on CDP port ${allocatedCdpPort}...`);
+	const waitStart = Date.now();
 	await waitForClientReady(allocatedCdpPort);
+	const waitDuration = Date.now() - waitStart;
+	hostLog?.(`[spawn] Client ready after ${waitDuration}ms`);
 
 	// After CDP is ready, discover the REAL Electron PID from the port.
 	// On Windows, Code.exe (launcher) exits immediately — the real Electron
@@ -721,11 +725,14 @@ async function spawnClient(clientWorkspace: string, extensionPath: string, launc
 	// Attach debugger to the Client's Extension Host inspector.
 	// This lights up the full debug UI: orange status bar, floating toolbar, call stack.
 	try {
+		hostLog?.(`[debugger] Attaching debugger to inspector port ${allocatedInspectorPort}...`);
 		await attachDebuggerToInspector(allocatedInspectorPort);
 		console.log('[host] Debug session attached — full debug UI active');
+		hostLog?.('[debugger] Debug session attached successfully — full debug UI active');
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
 		console.log(`[host] Warning: debugger attach failed: ${msg}. Continuing without debug UI.`);
+		hostLog?.(`[debugger] WARNING: debugger attach failed: ${msg}. Continuing without debug UI.`);
 	}
 
 	// Persist session with REAL Electron PID (not launcher PID)
@@ -818,8 +825,12 @@ async function waitForPort(port: number, timeout = 30000): Promise<void> {
 }
 
 async function attachDebuggerToInspector(port: number): Promise<void> {
+	hostLog?.(`[debugger] waitForPort(${port}) starting...`);
 	await waitForPort(port);
-	await vscode.debug.startDebugging(undefined, {
+	hostLog?.(`[debugger] waitForPort(${port}) completed — port is responding`);
+
+	hostLog?.(`[debugger] Calling vscode.debug.startDebugging for port ${port}...`);
+	const success = await vscode.debug.startDebugging(undefined, {
 		autoAttachChildProcesses: false,
 		name: `Extension Host (port ${port})`,
 		port,
@@ -827,6 +838,13 @@ async function attachDebuggerToInspector(port: number): Promise<void> {
 		skipFiles: ['<node_internals>/**'],
 		type: 'node'
 	});
+
+	if (!success) {
+		hostLog?.(`[debugger] vscode.debug.startDebugging returned FALSE — debug session did not start`);
+		throw new Error('vscode.debug.startDebugging returned false — debug session failed to attach');
+	}
+
+	hostLog?.(`[debugger] vscode.debug.startDebugging returned TRUE — debug session should be active`);
 }
 
 async function reconnectToClient(maxWaitMs = 60_000): Promise<boolean> {
@@ -999,6 +1017,7 @@ async function connectCdpClient(port: number): Promise<void> {
 			onBrowserServiceChangedCallback?.(null);
 			activeCdpClient = null;
 			lastKnownClientState = false;
+			hostLog?.('[state-fire] connectCdpClient: firing connected=false (websocket closed)');
 			_onClientStateChanged.fire(false);
 		});
 
@@ -1008,6 +1027,7 @@ async function connectCdpClient(port: number): Promise<void> {
 		onBrowserServiceChangedCallback?.(service);
 
 		lastKnownClientState = true;
+		hostLog?.('[state-fire] connectCdpClient: firing connected=true');
 		_onClientStateChanged.fire(true);
 
 		const msg = `CDP client connected on port ${port} — browser LM tools active`;
@@ -1589,11 +1609,13 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 		vscode.debug.onDidStartDebugSession((session) => {
 			currentDebugSession = session;
 			console.log('[host] Debug session started:', session.name);
+			hostLog?.(`[debugger] onDidStartDebugSession fired — session: ${session.name}, id: ${session.id}`);
 		}),
 		vscode.debug.onDidTerminateDebugSession((session) => {
 			if (currentDebugSession?.id === session.id) {
 				currentDebugSession = null;
 				console.log('[host] Debug session ended:', session.name);
+				hostLog?.(`[debugger] onDidTerminateDebugSession fired — session: ${session.name}`);
 			}
 		})
 	);
@@ -1661,6 +1683,7 @@ export async function startClientWindow(): Promise<boolean> {
 				hostLog?.('Client window healthy but CDP connection failed — browser LM tools unavailable until reconnection');
 			}
 			lastKnownClientState = true;
+			hostLog?.('[state-fire] startClientWindow: firing connected=true (already-running path)');
 			_onClientStateChanged.fire(true);
 			return true;
 		}
@@ -1688,6 +1711,7 @@ export async function startClientWindow(): Promise<boolean> {
 				hostLog?.('Client session healthy but CDP connection failed — browser LM tools will retry on first use');
 			}
 			lastKnownClientState = true;
+			hostLog?.('[state-fire] startClientWindow: firing connected=true (persisted-session path)');
 			_onClientStateChanged.fire(true);
 			return true;
 		}
@@ -1713,6 +1737,7 @@ export async function startClientWindow(): Promise<boolean> {
 		hostLog?.(`startClientWindow: CDP connection attempt complete, activeCdpClient.connected=${activeCdpClient?.connected}`);
 		console.log(`[host] Client window auto-started successfully (cdpPort: ${result.cdpPort})`);
 		lastKnownClientState = true;
+		hostLog?.('[state-fire] startClientWindow: firing connected=true (spawn path)');
 		_onClientStateChanged.fire(true);
 		return true;
 	} catch (err) {
@@ -1730,6 +1755,7 @@ export function stopClientWindow(): void {
 	disconnectCdpClient();
 	stopClient();
 	lastKnownClientState = false;
+	hostLog?.('[state-fire] stopClientWindow: firing connected=false');
 	_onClientStateChanged.fire(false);
 }
 

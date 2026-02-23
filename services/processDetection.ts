@@ -8,7 +8,7 @@
  * signals the process is waiting for user input — no regex pattern matching needed.
  */
 
-export type TerminalStatus = 'completed' | 'idle' | 'running' | 'timeout' | 'waiting_for_input';
+export type TerminalStatus = 'completed' | 'idle' | 'killed' | 'running' | 'timeout' | 'waiting_for_input';
 
 /**
  * Clean ANSI escape sequences and control characters from terminal output.

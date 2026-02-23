@@ -134,12 +134,19 @@ export async function activate(context: vscode.ExtensionContext) {
 	statusBarItem.show();
 
 	/** Update the status bar to reflect MCP / connection state (Host only). */
-	function updateStatusBar(state: 'connected' | 'disconnected' | 'safe-mode', detail?: string): void {
+	function updateStatusBar(state: 'connected' | 'connecting' | 'disconnected' | 'safe-mode', detail?: string): void {
+		log(`[status-bar] Updating to: ${state}${detail ? ` (${detail})` : ''}`);
 		switch (state) {
 			case 'connected':
 				statusBarItem.text = '$(debug-connected) VS Code DevTools Host';
 				statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Host\nClient Window: Connected\nMCP Server: Enabled\nClick to toggle`;
 				statusBarItem.command = 'devtools.toggleMcpServer';
+				statusBarItem.backgroundColor = undefined;
+				break;
+			case 'connecting':
+				statusBarItem.text = '$(sync~spin) VS Code DevTools Host';
+				statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Host\nClient Window: Connecting...\nMCP Server: Starting...`;
+				statusBarItem.command = undefined;
 				statusBarItem.backgroundColor = undefined;
 				break;
 			case 'disconnected':
@@ -391,46 +398,25 @@ export async function activate(context: vscode.ExtensionContext) {
 				})
 			);
 
-			// Auto-start: spawn client window and MCP server together.
-			// They are a single tethered entity — one cannot exist without the other.
-			updateStatusBar('disconnected');
-			log('Auto-starting client window and MCP server...');
+			// Auto-start: Start MCP server only — the MCP server's ensureConnection()
+			// will spawn the client window via the Host handlers. This avoids a race
+			// condition where both extension.ts AND mcp-server/main.ts try to spawn
+			// the client simultaneously.
+			updateStatusBar('connecting');
+			log('Auto-starting MCP server (will spawn client via ensureConnection)...');
 
-			const startMcpServer = async (): Promise<void> => {
-				// Retry loop: VS Code may not have discovered the provider yet
-				const MAX_ATTEMPTS = 10;
-				const RETRY_DELAY_MS = 1000;
-
-				for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-					log(`[mcp-autostart] Attempt ${attempt}/${MAX_ATTEMPTS} — calling workbench.mcp.startServer...`);
-					try {
-						await vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true });
-						log(`[mcp-autostart] workbench.mcp.startServer resolved successfully on attempt ${attempt}`);
-						return;
-					} catch (err: unknown) {
-						const msg = err instanceof Error ? err.message : String(err);
-						log(`[mcp-autostart] workbench.mcp.startServer THREW on attempt ${attempt}: ${msg}`);
-						if (attempt < MAX_ATTEMPTS) {
-							log(`[mcp-autostart] Retrying in ${RETRY_DELAY_MS}ms...`);
-							await new Promise<void>((r) => setTimeout(r, RETRY_DELAY_MS));
-						} else {
-							log('[mcp-autostart] All attempts exhausted — MCP server did NOT start');
-						}
-					}
-				}
-			};
-
-			void Promise.all([
-				startClientWindow().then((ok: boolean) => {
-					if (ok) {
-						log('Client window auto-started successfully');
-					} else {
-						log('Client window auto-start failed');
-						updateStatusBar('disconnected');
-					}
-				}),
-				startMcpServer()
-			]);
+			void vscode.commands.executeCommand(
+				'workbench.mcp.startServer',
+				MCP_SERVER_DEF_ID,
+				{ waitForLiveTools: true },
+			).then(
+				() => log('[auto-start] MCP server started'),
+				(err: unknown) => {
+					const msg = err instanceof Error ? err.message : String(err);
+					log(`[auto-start] MCP server start failed: ${msg}`);
+					updateStatusBar('disconnected');
+				},
+			);
 		} else {
 			log('Loading client-handlers module...');
 			const { registerClientHandlers } = await import('./services/client-handlers');
