@@ -69,6 +69,18 @@
       {
         "command": "devtools.openSettings",
         "title": "VS Code DevTools: Settings"
+      },
+      {
+        "command": "devtools.startInspector",
+        "title": "DevTools: Start MCP Inspector"
+      },
+      {
+        "command": "devtools.stopInspector",
+        "title": "DevTools: Stop MCP Inspector"
+      },
+      {
+        "command": "devtools.restartInspector",
+        "title": "DevTools: Restart MCP Inspector"
       }
     ],
     "configuration": [

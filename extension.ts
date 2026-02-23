@@ -18,6 +18,7 @@ import net from 'node:net';
 import * as vscode from 'vscode';
 import pkg from './package.json';
 import { startWorker, stopWorker } from './services/codebase/codebase-worker-proxy';
+import { registerInspectorCommands, shutdownInspector } from './services/inspectorManager';
 import { registerMcpServerProvider } from './services/mcpServerProvider';
 
 // VS Code constructs server definition IDs as: ExtensionIdentifier.toKey(id) + '/' + label
@@ -261,6 +262,13 @@ export async function activate(context: vscode.ExtensionContext) {
       // Register the MCP server provider so Copilot discovers it automatically
       const mcpProvider = registerMcpServerProvider(context);
       log(`MCP server provider registered (enabled: ${mcpProvider.enabled})`);
+
+      // Register MCP Inspector lifecycle commands (start / stop / restart)
+      const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+      if (workspacePath) {
+        registerInspectorCommands(context, workspacePath, log);
+        log('Inspector commands registered');
+      }
 
       // Listen for settings changes and refresh MCP server definitions
       context.subscriptions.push(
@@ -526,6 +534,10 @@ export async function deactivate() {
     hostHandlersCleanup = undefined;
     log('Host cleanup completed (client window stopped)');
   }
+
+  // Stop the MCP Inspector if it was started by this extension
+  await shutdownInspector();
+  log('Inspector shutdown completed');
 
   if (currentRole === 'client') {
     try {
