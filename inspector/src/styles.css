@@ -304,6 +304,12 @@ code {
 	background-color: var(--vscode-inputOption-activeBackground, rgba(0, 122, 204, 0.3));
 }
 
+/* ── Interactive JSON: Clickable Value Cursors ───────────────────────── */
+
+.json-clickable-value {
+	cursor: pointer;
+}
+
 /* ── Interactive JSON: Enum Array Toggle ─────────────────────────────── */
 
 .enum-inactive-options {

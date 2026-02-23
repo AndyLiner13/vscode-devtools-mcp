@@ -32,6 +32,7 @@ monaco.editor.defineTheme('vscode-inspector', {
 const SHARED_EDITOR_OPTIONS: monaco.editor.IStandaloneEditorConstructionOptions = {
 	automaticLayout: true,
 	contextmenu: false,
+	fixedOverflowWidgets: true,
 	folding: false,
 	fontFamily: "'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace",
 	fontSize: 13,
