@@ -12,13 +12,53 @@ let activeExecuteBtn: HTMLButtonElement | null = null;
 let activeExecutionTime: HTMLElement | null = null;
 let activeOutputSection: HTMLElement | null = null;
 let activeToolName = '';
+let inputSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+const INPUT_STORAGE_PREFIX = 'mcp-inspector-input:';
+const OUTPUT_STORAGE_PREFIX = 'mcp-inspector-output:';
+
+interface SavedOutput {
+	isError: boolean;
+	languageId: string;
+	text: string;
+}
+
+function saveInputState(toolName: string, value: string): void {
+	localStorage.setItem(`${INPUT_STORAGE_PREFIX}${toolName}`, value);
+}
+
+function loadInputState(toolName: string): string | null {
+	return localStorage.getItem(`${INPUT_STORAGE_PREFIX}${toolName}`);
+}
+
+function saveOutputState(toolName: string, text: string, isError: boolean, languageId: string): void {
+	const data: SavedOutput = { isError, languageId, text };
+	localStorage.setItem(`${OUTPUT_STORAGE_PREFIX}${toolName}`, JSON.stringify(data));
+}
+
+function loadOutputState(toolName: string): SavedOutput | null {
+	const raw = localStorage.getItem(`${OUTPUT_STORAGE_PREFIX}${toolName}`);
+	if (!raw) return null;
+	try {
+		return JSON.parse(raw) as SavedOutput;
+	} catch {
+		return null;
+	}
+}
 
 export function onExecute(handler: (toolName: string, args: Record<string, unknown>) => Promise<CallToolResult>): void {
 	executeHandler = handler;
 }
 
 function disposeEditors(): void {
+	if (inputSaveTimer) {
+		clearTimeout(inputSaveTimer);
+		inputSaveTimer = null;
+	}
 	if (activeInputEditor) {
+		if (activeToolName) {
+			saveInputState(activeToolName, activeInputEditor.getValue());
+		}
 		activeInputEditor.dispose();
 		activeInputEditor = null;
 	}
@@ -134,9 +174,19 @@ export function renderToolDetail(tool: ToolDefinition): void {
 	const inputEditorWrapper = document.createElement('div');
 	inputEditorWrapper.className = 'tool-io-editor-wrapper';
 
-	const initialValue = buildInitialInput(tool.inputSchema);
+	const savedInput = loadInputState(tool.name);
+	const initialValue = savedInput ?? buildInitialInput(tool.inputSchema);
 
 	activeInputEditor = createInputEditor(inputEditorWrapper, initialValue);
+
+	activeInputEditor.onDidChangeModelContent(() => {
+		if (inputSaveTimer) clearTimeout(inputSaveTimer);
+		inputSaveTimer = setTimeout(() => {
+			if (activeInputEditor && activeToolName) {
+				saveInputState(activeToolName, activeInputEditor.getValue());
+			}
+		}, 500);
+	});
 
 	inputSection.appendChild(inputLabel);
 	inputSection.appendChild(inputEditorWrapper);
@@ -171,7 +221,17 @@ export function renderToolDetail(tool: ToolDefinition): void {
 
 	const outputWrapper = document.createElement('div');
 	outputWrapper.className = 'tool-io-editor-wrapper';
-	activeOutputEditor = createOutputEditor(outputWrapper, '', 'plaintext');
+
+	const savedOutput = loadOutputState(tool.name);
+	const initialOutputText = savedOutput?.text ?? '';
+	const initialOutputLang = savedOutput?.languageId ?? 'plaintext';
+
+	activeOutputEditor = createOutputEditor(outputWrapper, initialOutputText, initialOutputLang);
+
+	if (savedOutput) {
+		outputLabel.style.color = savedOutput.isError ? 'var(--vscode-editorError-foreground, #f44747)' : '';
+	}
+
 	activeOutputSection.appendChild(outputWrapper);
 
 	card.appendChild(activeOutputSection);
@@ -219,6 +279,10 @@ function renderLiveOutput(content: ContentBlock[], isError: boolean): void {
 	const label = document.getElementById('live-output-label');
 	if (label) {
 		label.style.color = isError ? 'var(--vscode-editorError-foreground, #f44747)' : '';
+	}
+
+	if (activeToolName) {
+		saveOutputState(activeToolName, outputText, isError, languageId);
 	}
 }
 

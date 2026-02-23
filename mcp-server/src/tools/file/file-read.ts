@@ -44,9 +44,18 @@ function getContentSlice(allLines: string[], startLine: number, endLine: number)
 }
 
 /**
- * Prefix each line in a content string with its 1-indexed line number.
+ * Format a single line with an optional line-number prefix.
  */
-function addLineNumbers(content: string, startLine1: number): string {
+function formatLine(lineNum: number, content: string, lineNumbers: boolean): string {
+	return lineNumbers ? `[${lineNum}] ${content}` : content;
+}
+
+/**
+ * Prefix each line in a content string with its 1-indexed line number.
+ * When lineNumbers is false, returns content unchanged.
+ */
+function addLineNumbers(content: string, startLine1: number, lineNumbers: boolean): string {
+	if (!lineNumbers) return content;
 	return content
 		.split('\n')
 		.map((line, i) => `[${startLine1 + i}] ${line}`)
@@ -141,13 +150,13 @@ function buildSkeletonPieces(structure: FileStructure): SkeletonPiece[] {
  * @param orphanMode 'full' = show single-line orphans as content, multi-line as stubs;
  *                   'stubs' = collapse all orphan blocks to category stubs
  */
-function renderSkeletonAtLevel(pieces: SkeletonPiece[], allLines: string[], maxNesting: number, orphanMode: 'full' | 'stubs'): string {
+function renderSkeletonAtLevel(pieces: SkeletonPiece[], allLines: string[], maxNesting: number, orphanMode: 'full' | 'stubs', lineNumbers: boolean): string {
 	const result: string[] = [];
 
 	for (const piece of pieces) {
 		if (piece.category === 'raw') {
 			for (let l = piece.startLine; l <= piece.endLine; l++) {
-				result.push(`[${l}] ${allLines[l - 1] ?? ''}`);
+				result.push(formatLine(l, allLines[l - 1] ?? '', lineNumbers));
 			}
 		} else if (piece.symbol) {
 			const entries = formatSkeletonEntry(piece.symbol, '', maxNesting);
@@ -156,7 +165,7 @@ function renderSkeletonAtLevel(pieces: SkeletonPiece[], allLines: string[], maxN
 			const range = piece.startLine === piece.endLine ? `${piece.startLine}` : `${piece.startLine}-${piece.endLine}`;
 			result.push(`[${range}] ${piece.category}`);
 		} else if (piece.startLine === piece.endLine) {
-			result.push(`[${piece.startLine}] ${allLines[piece.startLine - 1] ?? ''}`);
+			result.push(formatLine(piece.startLine, allLines[piece.startLine - 1] ?? '', lineNumbers));
 		} else {
 			result.push(`[${piece.startLine}-${piece.endLine}] ${piece.category}`);
 		}
@@ -193,12 +202,12 @@ interface CompressionResult {
  * If nesting=0 + orphans=stubs still exceeds the limit, it's returned anyway
  * as the guaranteed minimum (Copilot must be able to read at least the root structure).
  */
-function compressSkeletonOutput(structure: FileStructure, allLines: string[], requestedMaxNesting: number): CompressionResult {
+function compressSkeletonOutput(structure: FileStructure, allLines: string[], requestedMaxNesting: number, lineNumbers: boolean): CompressionResult {
 	const pieces = buildSkeletonPieces(structure);
 	const maxNesting = Math.min(requestedMaxNesting, getMaxSymbolNesting(structure.symbols));
 
 	// Quick check: does the full output fit?
-	const fullOutput = renderSkeletonAtLevel(pieces, allLines, maxNesting, 'full');
+	const fullOutput = renderSkeletonAtLevel(pieces, allLines, maxNesting, 'full', lineNumbers);
 	if (fullOutput.length <= OUTPUT_CHAR_LIMIT) {
 		return { compressed: false, label: null, output: fullOutput };
 	}
@@ -210,7 +219,7 @@ function compressSkeletonOutput(structure: FileStructure, allLines: string[], re
 
 	// Phase 1: Expand nesting depth with collapsed orphans
 	for (let nesting = 0; nesting <= maxNesting; nesting++) {
-		const candidate = renderSkeletonAtLevel(pieces, allLines, nesting, 'stubs');
+		const candidate = renderSkeletonAtLevel(pieces, allLines, nesting, 'stubs', lineNumbers);
 		if (candidate.length > OUTPUT_CHAR_LIMIT) {
 			if (nesting === 0) {
 				// Guaranteed minimum: return nesting=0 even if it exceeds
@@ -229,7 +238,7 @@ function compressSkeletonOutput(structure: FileStructure, allLines: string[], re
 	// Phase 2: Try expanding orphans at the current best nesting level
 	if (bestNesting === maxNesting) {
 		// Nesting is already at max; try adding full orphan content
-		const withOrphans = renderSkeletonAtLevel(pieces, allLines, maxNesting, 'full');
+		const withOrphans = renderSkeletonAtLevel(pieces, allLines, maxNesting, 'full', lineNumbers);
 		if (withOrphans.length <= OUTPUT_CHAR_LIMIT) {
 			return { compressed: false, label: null, output: withOrphans };
 		}
@@ -237,7 +246,7 @@ function compressSkeletonOutput(structure: FileStructure, allLines: string[], re
 	} else {
 		// Check if the next nesting level fits with full orphans
 		// (it won't since collapsed didn't fit, but try the current best with full orphans)
-		const withOrphans = renderSkeletonAtLevel(pieces, allLines, bestNesting, 'full');
+		const withOrphans = renderSkeletonAtLevel(pieces, allLines, bestNesting, 'full', lineNumbers);
 		if (withOrphans.length <= OUTPUT_CHAR_LIMIT) {
 			bestOutput = withOrphans;
 			orphansExpanded = true;
@@ -306,7 +315,7 @@ function compressTargetSkeleton(symbol: FileSymbol, requestedMaxNesting: number)
  *           recursive=true  → contentMaxNesting = max symbol nesting
  *           recursive=false → contentMaxNesting = 0 (children as stubs)
  */
-function compressTargetContent(symbol: FileSymbol, allLines: string[], structure: FileStructure, recursive: boolean): CompressionResult {
+function compressTargetContent(symbol: FileSymbol, allLines: string[], structure: FileStructure, recursive: boolean, lineNumbers: boolean): CompressionResult {
 	const { startLine } = symbol.range;
 	const { endLine } = symbol.range;
 	const hasChildren = symbol.children && symbol.children.length > 0;
@@ -315,7 +324,7 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 	const header = `[${startLine === endLine ? `${startLine}` : `${startLine}-${endLine}`}] ${symbol.kind} ${symbol.name}\n`;
 
 	// Quick check: does the maximum-detail output fit?
-	const maxContent = hasChildren ? formatContentAtNesting(allLines, symbol, startLine, endLine, contentMaxNesting) : addLineNumbers(getContentSlice(allLines, startLine, endLine), startLine);
+	const maxContent = hasChildren ? formatContentAtNesting(allLines, symbol, startLine, endLine, contentMaxNesting, 0, lineNumbers) : addLineNumbers(getContentSlice(allLines, startLine, endLine), startLine, lineNumbers);
 	const maxOutput = header + maxContent;
 	if (maxOutput.length <= OUTPUT_CHAR_LIMIT) {
 		return { compressed: false, label: null, output: maxOutput };
@@ -345,7 +354,7 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 	// Phase 2: Content nesting expansion (nesting 0 → contentMaxNesting)
 	if (!compressionLabel && hasChildren) {
 		for (let n = 0; n <= contentMaxNesting; n++) {
-			const content = formatContentAtNesting(allLines, symbol, startLine, endLine, n);
+			const content = formatContentAtNesting(allLines, symbol, startLine, endLine, n, 0, lineNumbers);
 			const candidate = header + content;
 			if (candidate.length > OUTPUT_CHAR_LIMIT) {
 				if (n === 0) {
@@ -374,9 +383,9 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 /**
  * Compress full-file output. Auto-switches to skeleton mode with incremental nesting.
  */
-function compressFullFileOutput(rawContent: string, structure: FileStructure | undefined, allLines: string[], startLine1: number): CompressionResult {
+function compressFullFileOutput(rawContent: string, structure: FileStructure | undefined, allLines: string[], startLine1: number, lineNumbers: boolean): CompressionResult {
 	// Try raw content first
-	const numbered = addLineNumbers(rawContent, startLine1);
+	const numbered = addLineNumbers(rawContent, startLine1, lineNumbers);
 	if (numbered.length <= OUTPUT_CHAR_LIMIT) {
 		return { compressed: false, label: null, output: numbered };
 	}
@@ -384,7 +393,7 @@ function compressFullFileOutput(rawContent: string, structure: FileStructure | u
 	// Auto-switch to skeleton if structure is available
 	if (structure) {
 		const maxNesting = getMaxSymbolNesting(structure.symbols);
-		const result = compressSkeletonOutput(structure, allLines, maxNesting);
+		const result = compressSkeletonOutput(structure, allLines, maxNesting, lineNumbers);
 		return {
 			compressed: true,
 			label: `auto-skeleton${result.label ? `, ${result.label}` : ''}`,
@@ -410,7 +419,8 @@ function compressStructuredRangeOutput(
 	allLines: string[],
 	reqStart: number,
 	reqEnd: number,
-	skeleton: boolean
+	skeleton: boolean,
+	lineNumbers: boolean
 ): CompressionResult & {
 	actualStart: number;
 	actualEnd: number;
@@ -418,14 +428,14 @@ function compressStructuredRangeOutput(
 	sourceRanges: Array<{ startLine: number; endLine: number }>;
 } {
 	// Level 1: Try with current skeleton setting
-	const result = renderStructuredRange(structure, allLines, reqStart, reqEnd, skeleton);
+	const result = renderStructuredRange(structure, allLines, reqStart, reqEnd, skeleton, lineNumbers);
 	if (result.output.length <= OUTPUT_CHAR_LIMIT) {
 		return { ...result, compressed: false, label: null };
 	}
 
 	// Level 2: Try with collapseSkeleton=true (collapse import/export/comment blocks)
 	if (!skeleton) {
-		const collapsed = renderStructuredRange(structure, allLines, reqStart, reqEnd, true);
+		const collapsed = renderStructuredRange(structure, allLines, reqStart, reqEnd, true, lineNumbers);
 		if (collapsed.output.length <= OUTPUT_CHAR_LIMIT) {
 			return { ...collapsed, compressed: true, label: 'auto-skeleton range' };
 		}
@@ -445,9 +455,9 @@ function compressStructuredRangeOutput(
  *
  * @param maxChildNesting 0=all children as stubs, 1=children expanded/grandchildren stubs, etc.
  */
-function formatContentAtNesting(allLines: string[], symbol: SymbolLike, startLine: number, endLine: number, maxChildNesting: number, currentDepth = 0): string {
+function formatContentAtNesting(allLines: string[], symbol: SymbolLike, startLine: number, endLine: number, maxChildNesting: number, currentDepth = 0, lineNumbers = true): string {
 	if (!symbol.children || symbol.children.length === 0) {
-		return addLineNumbers(getContentSlice(allLines, startLine, endLine), startLine);
+		return addLineNumbers(getContentSlice(allLines, startLine, endLine), startLine, lineNumbers);
 	}
 
 	const childMap = new Map<number, SymbolLike>();
@@ -466,14 +476,14 @@ function formatContentAtNesting(allLines: string[], symbol: SymbolLike, startLin
 			if (!emitted.has(child)) {
 				emitted.add(child);
 				if (currentDepth < maxChildNesting) {
-					result.push(formatContentAtNesting(allLines, child, child.range.startLine, child.range.endLine, maxChildNesting, currentDepth + 1));
+					result.push(formatContentAtNesting(allLines, child, child.range.startLine, child.range.endLine, maxChildNesting, currentDepth + 1, lineNumbers));
 				} else {
 					const childRange = child.range.startLine === child.range.endLine ? `${child.range.startLine}` : `${child.range.startLine}-${child.range.endLine}`;
 					result.push(`[${childRange}] ${child.kind} ${child.name}`);
 				}
 			}
 		} else {
-			result.push(`[${lineNum}] ${allLines[lineNum - 1] ?? ''}`);
+			result.push(formatLine(lineNum, allLines[lineNum - 1] ?? '', lineNumbers));
 		}
 	}
 
@@ -618,7 +628,8 @@ function renderStructuredRange(
 	allLines: string[],
 	requestedStart: number,
 	requestedEnd: number,
-	collapseSkeleton: boolean
+	collapseSkeleton: boolean,
+	lineNumbers: boolean
 ): {
 	output: string;
 	actualStart: number;
@@ -666,7 +677,7 @@ function renderStructuredRange(
 
 		if (!owner) {
 			// Unclassified line (shouldn't happen with complete coverage, but safe)
-			result.push(`[${line}] ${allLines[line - 1] ?? ''}`);
+			result.push(formatLine(line, allLines[line - 1] ?? '', lineNumbers));
 			trackSourceLine(line);
 			actualStart = Math.min(actualStart, line);
 			actualEnd = Math.max(actualEnd, line);
@@ -707,7 +718,7 @@ function renderStructuredRange(
 				// Single-line blocks show actual content
 				if (block.startLine === block.endLine) {
 					trackSourceLine(block.startLine);
-					result.push(`[${block.startLine}] ${allLines[block.startLine - 1] ?? ''}`);
+					result.push(formatLine(block.startLine, allLines[block.startLine - 1] ?? '', lineNumbers));
 				} else {
 					flushSourceRange();
 					collapsedRanges.push({ endLine: block.endLine, startLine: block.startLine });
@@ -717,7 +728,7 @@ function renderStructuredRange(
 				// Emit raw source for the block
 				for (let l = blockStart; l <= blockEnd; l++) {
 					trackSourceLine(l);
-					result.push(`[${l}] ${allLines[l - 1] ?? ''}`);
+					result.push(formatLine(l, allLines[l - 1] ?? '', lineNumbers));
 				}
 			}
 		}
@@ -752,11 +763,13 @@ export const /**
 		},
 		description:
 			'Read file content with flexible targeting and output modes.\n\n' +
-			'**Two Simple Questions:**\n' +
-			'1. Do I want code or just structure? → `skeleton`\n' +
-			'2. Do I want to see children content? → `recursive`\n\n' +
+			'**Two Required Choices:**\n' +
+			'1. Do I want code or just structure? → `rawContent` (true = source code, false = skeleton)\n' +
+			'2. Do I want line number prefixes? → `lineNumbers` (true = `[N]` prefix on each line, false = plain)\n\n' +
 			'**Parameters:**\n' +
 			'- `file` (required) — Path to file (relative or absolute)\n' +
+			'- `rawContent` (required) — true = source code, false = skeleton (names + line ranges)\n' +
+			'- `lineNumbers` (required) — true = prefix each line with `[N]`, false = plain content\n' +
 			'- `target` — What to read: symbol names, or special keywords:\n' +
 			'  - `"#imports"` — All import declarations\n' +
 			'  - `"#exports"` — All export declarations\n' +
@@ -764,7 +777,6 @@ export const /**
 			'  - `"UserService"` — Symbol by name\n' +
 			'  - `"UserService.findById"` — Nested symbol\n' +
 			'  - Can be array: `["#imports", "UserService"]`\n' +
-			'- `skeleton` — true = structure only (names + ranges), false = content (default)\n' +
 			'- `recursive` — true = expand children, false = placeholders (default)\n' +
 			'- `startLine` / `endLine` — Read a structured range (1-indexed). ' +
 			'Shows raw source for non-symbols, collapsed stubs for symbols. ' +
@@ -773,14 +785,15 @@ export const /**
 			'For supported file types (TS/JS, Markdown, JSON/JSONC), shows non-symbol content as raw source ' +
 			'and collapses symbols into stubs. Use `target` to read a specific symbol. ' +
 			'Non-symbol blocks are atomic: if the range touches any line of a block, the full block is included. ' +
-			'Add `skeleton: true` to also collapse import/export/comment blocks into stubs.\n\n' +
+			'Set `rawContent: false` to also collapse import/export/comment blocks into stubs.\n\n' +
 			'**EXAMPLES:**\n' +
-			'- File skeleton: `{ file: "src/service.ts", skeleton: true }`\n' +
-			'- Read a function: `{ file: "src/utils.ts", target: "calculateTotal" }`\n' +
-			'- Structured range: `{ file: "src/service.ts", startLine: 1, endLine: 50 }`\n' +
-			'- Compact range: `{ file: "src/service.ts", startLine: 1, endLine: 50, skeleton: true }`\n' +
-			'- Only imports: `{ file: "src/service.ts", target: "#imports" }`\n' +
-			'- Import + symbol: `{ file: "src/service.ts", target: ["#imports", "UserService"] }`\n\n' +
+			'- File skeleton: `{ file: "src/service.ts", rawContent: false, lineNumbers: false }`\n' +
+			'- Read a function with line numbers: `{ file: "src/utils.ts", rawContent: true, lineNumbers: true, target: "calculateTotal" }`\n' +
+			'- Read plain content: `{ file: "src/utils.ts", rawContent: true, lineNumbers: false, target: "calculateTotal" }`\n' +
+			'- Structured range: `{ file: "src/service.ts", rawContent: true, lineNumbers: true, startLine: 1, endLine: 50 }`\n' +
+			'- Compact range: `{ file: "src/service.ts", rawContent: false, lineNumbers: false, startLine: 1, endLine: 50 }`\n' +
+			'- Only imports: `{ file: "src/service.ts", rawContent: true, lineNumbers: true, target: "#imports" }`\n' +
+			'- Import + symbol: `{ file: "src/service.ts", rawContent: true, lineNumbers: true, target: ["#imports", "UserService"] }`\n\n' +
 			'**Log Files:**\n' +
 			'Log file extensions (.log, .out, .err, .trace, .jsonl, etc.) must be read with `logFile_read` instead. ' +
 			'This tool will show a redirect notice for those file types.',
@@ -814,7 +827,28 @@ export const /**
 				return;
 			}
 
-			const skeleton = params.skeleton ?? false;
+			// ── Validate required parameters ──────────────────────────
+			if (params.rawContent === undefined) {
+				response.appendResponseLine(
+					'**Error:** `rawContent` is a required parameter.\n\n' +
+						'- `rawContent: true` — Returns source code content\n' +
+						'- `rawContent: false` — Returns skeleton (symbol names + line ranges)\n\n' +
+						'Example: `{ file: "src/service.ts", rawContent: true, lineNumbers: true }`'
+				);
+				return;
+			}
+			if (params.lineNumbers === undefined) {
+				response.appendResponseLine(
+					'**Error:** `lineNumbers` is a required parameter.\n\n' +
+						'- `lineNumbers: true` — Prefix each line with `[N]` (e.g. `[42] const x = 5`)\n' +
+						'- `lineNumbers: false` — Plain content without line number prefixes\n\n' +
+						'Example: `{ file: "src/service.ts", rawContent: true, lineNumbers: true }`'
+				);
+				return;
+			}
+
+			const rawContent = params.rawContent;
+			const lineNumbers = params.lineNumbers;
 			const recursive = params.recursive ?? false;
 
 			// Normalize target to array
@@ -839,7 +873,8 @@ export const /**
 			const relativePath = path.relative(getClientWorkspace(), filePath).replaceAll('\\', '/');
 
 			// ── Mutual exclusivity: target + startLine/endLine ─────
-			const hasLineRange = params.startLine !== undefined || params.endLine !== undefined;
+			// Treat 0 as "not specified" since lines are 1-indexed
+			const hasLineRange = (params.startLine !== undefined && params.startLine !== 0) || (params.endLine !== undefined && params.endLine !== 0);
 			if (targets.length > 0 && hasLineRange) {
 				response.appendResponseLine('**Error:** `target` and `startLine`/`endLine` cannot be used together. ' + 'Use `target` to read specific symbols, or `startLine`/`endLine` to read a structured range.');
 				return;
@@ -873,7 +908,7 @@ export const /**
 						response.appendResponseLine(`ℹ️ endLine was adjusted from ${params.endLine} to ${content.endLine + 1} (file has ${totalLines} lines)`);
 					}
 
-					const numbered = addLineNumbers(content.content, content.startLine + 1);
+					const numbered = addLineNumbers(content.content, content.startLine + 1, lineNumbers);
 					if (numbered.length > OUTPUT_CHAR_LIMIT) {
 						response.appendResponseLine(`Output compressed: file too large for token budget. Use startLine/endLine to read specific ranges.`);
 					}
@@ -902,7 +937,7 @@ export const /**
 					return;
 				}
 
-				const compressed = compressStructuredRangeOutput(structure, allLines, reqStart, reqEnd, skeleton);
+				const compressed = compressStructuredRangeOutput(structure, allLines, reqStart, reqEnd, !rawContent, lineNumbers);
 
 				// Highlight source (yellow) and collapsed (grey + fold) ranges
 				fileHighlightReadRange(filePath, compressed.actualStart - 1, compressed.actualEnd - 1, compressed.collapsedRanges, compressed.sourceRanges);
@@ -915,9 +950,9 @@ export const /**
 			}
 
 			// ── Skeleton mode (no targets, no line range) ─────────────
-			if (targets.length === 0 && skeleton) {
+			if (targets.length === 0 && !rawContent) {
 				if (!structure) {
-					response.appendResponseLine(`This file type does not support structured reading (skeleton mode). ` + `Use \`startLine\`/\`endLine\` for line-range reading, or omit all parameters to read the full file.`);
+					response.appendResponseLine(`This file type does not support structured reading (skeleton mode). ` + `Use \`startLine\`/\`endLine\` for line-range reading, or set \`rawContent: true\` to read the full file.`);
 					return;
 				}
 
@@ -925,7 +960,7 @@ export const /**
 				fileHighlightReadRange(filePath, 0, structure.totalLines - 1);
 
 				const maxNesting = recursive ? getMaxSymbolNesting(structure.symbols) : 0;
-				const result = compressSkeletonOutput(structure, allLines, maxNesting);
+				const result = compressSkeletonOutput(structure, allLines, maxNesting, lineNumbers);
 
 				if (result.compressed && result.label) {
 					response.appendResponseLine(`Output compressed: ${result.label}.\n`);
@@ -934,12 +969,12 @@ export const /**
 				return;
 			}
 
-			// ── Full file mode (no targets, no skeleton, no line range) ──
+			// ── Full file mode (no targets, rawContent, no line range) ──
 			if (targets.length === 0) {
 				const content = await fileReadContent(filePath);
 				fileHighlightReadRange(filePath, content.startLine, content.endLine);
 
-				const result = compressFullFileOutput(content.content, structure, allLines, content.startLine + 1);
+				const result = compressFullFileOutput(content.content, structure, allLines, content.startLine + 1, lineNumbers);
 
 				if (result.compressed && result.label) {
 					response.appendResponseLine(`Output compressed: ${result.label}.\n`);
@@ -969,7 +1004,7 @@ export const /**
 						fileHighlightReadRange(filePath, firstStart, lastEnd);
 					}
 
-					if (skeleton) {
+					if (!rawContent) {
 						for (const item of items) {
 							const entries = formatSkeletonEntry(item, '', 0);
 							for (const entry of entries) response.appendResponseLine(entry);
@@ -980,7 +1015,7 @@ export const /**
 							// declaration header line rather than dumping the entire body
 							const isInlineExport = item.kind === 'inline-export';
 							const displayEnd = isInlineExport ? item.range.start : item.range.end;
-							const numbered = addLineNumbers(getContentSlice(allLines, item.range.start, displayEnd), item.range.start);
+							const numbered = addLineNumbers(getContentSlice(allLines, item.range.start, displayEnd), item.range.start, lineNumbers);
 							response.appendResponseLine(numbered);
 						}
 					}
@@ -1005,7 +1040,7 @@ export const /**
 					const { startLine } = symbol.range;
 					const { endLine } = symbol.range;
 
-					if (skeleton) {
+					if (!rawContent) {
 						// Focus the symbol range in the client editor (convert 1-indexed to 0-indexed)
 						fileHighlightReadRange(filePath, startLine - 1, endLine - 1);
 
@@ -1019,7 +1054,7 @@ export const /**
 						// Highlight in editor (convert 1-indexed to 0-indexed for VS Code)
 						fileHighlightReadRange(filePath, startLine - 1, endLine - 1);
 
-						const result = compressTargetContent(symbol, allLines, structure, recursive);
+						const result = compressTargetContent(symbol, allLines, structure, recursive, lineNumbers);
 						if (result.compressed && result.label) {
 							response.appendResponseLine(`Output compressed: ${result.label}.\n`);
 						}
@@ -1031,8 +1066,9 @@ export const /**
 		name: 'file_read',
 		schema: {
 			file: zod.string().describe('Path to file (relative to workspace root or absolute).'),
+			lineNumbers: zod.boolean().describe('true = prefix each content line with [N], false = plain content. REQUIRED.'),
+			rawContent: zod.boolean().describe('true = source code content, false = skeleton (names + line ranges). REQUIRED.'),
 			recursive: zod.boolean().optional().describe('true = expand children, false = show placeholders (default).'),
-			skeleton: zod.boolean().optional().describe('true = structure only (names + ranges), false = content (default).'),
 			target: zod
 				.string()
 				.optional()
