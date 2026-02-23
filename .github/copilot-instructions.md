@@ -2,6 +2,37 @@
 
 Use the #tool:vscode/askQuestions tool often. Even for simple yes or no questions. If you want to ask how we should proceed, or if we should continue, please use the #tool:vscode/askQuestions tool.
 
+## Monorepo Structure
+
+This is an npm workspaces monorepo with the following structure:
+- **Root** (`./`) — VS Code extension
+- **mcp-server** — MCP server package  
+- **packages/log-consolidation** — Shared log compression library
+- **inspector** — Vite webapp for debugging
+
+### TypeScript Configuration Rules
+
+- ALL workspace `tsconfig.json` files MUST extend `tsconfig.base.json`
+- Example: `"extends": "../tsconfig.base.json"` (for subfolders)
+- Shared compiler options belong in `tsconfig.base.json`, NOT individual configs
+- Workspace-specific options (target, lib, paths) go in that workspace's tsconfig
+- DO NOT duplicate compiler options that are already in `tsconfig.base.json`
+
+### Dependency Management Rules
+
+- **Shared dependencies** (typescript, eslint, prettier, etc.) belong in ROOT `package.json`
+- **Workspace-specific dependencies** stay in that workspace's `package.json`
+- DO NOT add a dependency to a workspace if it already exists in root
+- When adding a new shared dependency, add it to ROOT, not individual workspaces
+- npm workspaces hoists dependencies automatically — duplicates cause version conflicts
+
+### Workspace-Specific Dependencies
+
+Only add dependencies to workspaces when they are:
+1. Unique to that workspace (e.g., `@modelcontextprotocol/sdk` for mcp-server)
+2. A different version than root (rare, avoid if possible)
+3. A runtime dependency for a published package
+
 ## Rules for TypeScript
 
 - Do not use `any` type.

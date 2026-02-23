@@ -80,3 +80,4 @@ Copilot-Processing.md
 .dynamodb/
 .tern-port
 *.db**
+.knip-cache/

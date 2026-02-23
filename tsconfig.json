@@ -1,22 +1,14 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "module": "ESNext",
     "target": "ES2022",
     "lib": ["ES2022"],
-    "moduleResolution": "Bundler",
     "outDir": "dist",
     "rootDir": ".",
-    "strict": true,
-    "esModuleInterop": true,
     "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitReturns": true,
-    "noImplicitOverride": true,
-    "noFallthroughCasesInSwitch": true,
     "declaration": false,
     "sourceMap": true,
-    "noEmit": true,
     "paths": {
       "@packages/log-consolidation": ["./packages/log-consolidation/src/index.ts"]
     }
@@ -30,7 +22,6 @@
     "mcp-server",
     "tests",
     "resources",
-    "client-workspace",
     "client-workspace"
   ]
 }

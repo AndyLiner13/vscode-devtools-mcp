@@ -1,15 +1,13 @@
 {
-  "ignoreExportsUsedInFile": true,
-  "ignoreWorkspaces": ["."],
+  "strict": true,
+  "ignoreExportsUsedInFile": false,
   "workspaces": {
-    ".":{
+    ".": {
       "entry": [
         "extension.ts",
         "services/runtime.ts",
-        "services/codebase/codebase-worker.ts",
-        "services/codebase/codebase-worker-proxy.ts"
+        "services/codebase/codebase-worker.ts"
       ],
-      "project": ["**/*.ts", "**/*.js"],
       "ignoreDependencies": [
         "@vscode/codicons",
         "@modelcontextprotocol/inspector"
@@ -22,8 +20,6 @@
         "src/cli.ts",
         "scripts/**/*.{ts,mts,mjs}"
       ],
-      "project": ["src/**/*.ts", "scripts/**/*.{ts,mts,mjs}"],
-      "ignore": ["src/third_party/**"],
       "ignoreDependencies": ["@types/filesystem"]
     }
   }

@@ -1,5 +1,10 @@
 {
   "name": "vscode-devtools",
+  "workspaces": [
+    "packages/*",
+    "mcp-server",
+    "inspector"
+  ],
   "displayName": "VS Code DevTools",
   "description": "VS Code DevTools with Git workspace picker, LM tool management, and MCP integration",
   "version": "0.1.0",
@@ -899,7 +904,8 @@
     "check-types": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "format": "eslint --cache --fix . && prettier --write --cache ."
+    "format": "eslint --cache --fix . && prettier --write --cache .",
+    "knip": "knip"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -909,16 +915,20 @@
     "@types/node": "22.x",
     "@types/vscode": "^1.100.0",
     "@typescript-eslint/eslint-plugin": "^8.43.0",
-    "@typescript-eslint/parser": "^8.43.0",
-    "@vscode/codicons": "^0.0.44",
     "@vscode/vsce": "^3.7.1",
     "esbuild": "^0.25.8",
     "eslint": "^10.0.0",
+    "eslint-config-prettier": "^10.1.0",
+    "eslint-plugin-jsdoc": "^62.0.0",
+    "eslint-plugin-no-secrets": "^2.1.0",
     "eslint-plugin-perfectionist": "^4.0.0",
+    "eslint-plugin-promise": "^7.2.0",
+    "eslint-plugin-unicorn": "^56.0.0",
     "globals": "^17.0.0",
     "mdast-util-directive": "^3.1.0",
     "mdast-util-math": "^3.0.0",
     "prettier": "^3.6.2",
+    "prettier-plugin-packagejson": "^2.5.0",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.43.0",
     "vitest": "^3.2.4"
@@ -930,6 +940,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@types/ws": "^8.18.1",
+    "@vscode/codicons": "^0.0.44",
     "jsonc-parser": "^3.3.1",
     "koffi": "^2.15.1",
     "logpare": "^0.1.0",

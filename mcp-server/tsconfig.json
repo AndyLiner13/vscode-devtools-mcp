@@ -1,24 +1,16 @@
 {
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "target": "es2023",
+    "module": "esnext",
     "lib": [
       "ES2023",
       "ES2024.Promise",
       "ESNext.Iterator",
       "ESNext.Collection"
     ],
-    "module": "esnext",
-    "moduleResolution": "bundler",
     "outDir": "./build",
     "rootDir": ".",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitReturns": true,
-    "noImplicitOverride": true,
-    "noFallthroughCasesInSwitch": true,
-    "noEmit": true,
     "paths": {
       "@packages/log-consolidation": ["../packages/log-consolidation/src/index.ts"]
     }

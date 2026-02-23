@@ -8,11 +8,17 @@
  * @type {import('prettier').Config}
  */
 module.exports = {
-  bracketSpacing: false,
+  printWidth: 256,
+  tabWidth: 2,
+  useTabs: true,
+  semi: true,
   singleQuote: true,
-  trailingComma: 'all',
-  arrowParens: 'avoid',
+  trailingComma: 'none',
+  bracketSpacing: true,
+  bracketSameLine: true,
+  arrowParens: 'always',
   singleAttributePerLine: true,
-  htmlWhitespaceSensitivity: 'strict',
-  endOfLine: 'lf',
+  htmlWhitespaceSensitivity: 'css',
+  endOfLine: 'crlf',
+  plugins: ['prettier-plugin-packagejson'],
 };
