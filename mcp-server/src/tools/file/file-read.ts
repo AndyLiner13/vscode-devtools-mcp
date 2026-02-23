@@ -290,7 +290,7 @@ function compressSkeletonOutput(
 
   const parts: string[] = [];
   if (bestNesting < maxNesting) {
-    parts.push(`symbol nesting ${bestNesting}`);
+    parts.push(`symbol depth ${bestNesting} of ${maxNesting}`);
   }
   if (!orphansExpanded) {
     parts.push('collapsed orphaned items');
@@ -339,7 +339,7 @@ function compressTargetSkeleton(
   return {
     output: bestOutput,
     compressed: true,
-    label: `symbol nesting ${bestNesting}`,
+    label: `symbol depth ${bestNesting} of ${maxNesting}`,
   };
 }
 
@@ -390,7 +390,7 @@ function compressTargetContent(
           label: `top-level only (${symbol.children?.length ?? 0} children)`,
         };
       }
-      compressionLabel = `symbol nesting ${n - 1}`;
+      compressionLabel = `symbol depth ${n - 1} of ${maxNesting}`;
       break;
     }
     bestOutput = candidate;
@@ -405,7 +405,7 @@ function compressTargetContent(
         if (n === 0) {
           compressionLabel = 'auto-skeleton';
         } else {
-          compressionLabel = `content nesting ${n - 1}`;
+          compressionLabel = `content depth ${n - 1} of ${contentMaxNesting}`;
         }
         break;
       }

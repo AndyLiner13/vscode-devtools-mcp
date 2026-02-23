@@ -334,7 +334,7 @@ export const map = defineTool({
           return;
         }
         folderLimit = fd - 1;
-        compressionLabel = `folder depth ${folderLimit}/${maxFD}`;
+        compressionLabel = `folder depth ${folderLimit} of ${maxFD}`;
         break;
       }
       folderLimit = fd;
@@ -359,7 +359,7 @@ export const map = defineTool({
               showFiles: true, showSymbols: false, metadata: metaMode,
               maxFolderDepth: folderLimit, maxFileFolderDepth: fileLimit,
             });
-            compressionLabel = `files to depth ${fileLimit}`;
+            compressionLabel = `files depth ${fileLimit} of ${folderLimit}`;
           }
           break;
         }
@@ -388,7 +388,7 @@ export const map = defineTool({
               maxFolderDepth: folderLimit, maxFileFolderDepth: fileLimit,
               maxSymbolFolderDepth: symbolFolderLimit, maxSymbolNesting: 0,
             });
-            compressionLabel = `symbols to folder depth ${symbolFolderLimit}`;
+            compressionLabel = `symbols folder depth ${symbolFolderLimit} of ${fileLimit}`;
           }
           break;
         }
@@ -417,7 +417,7 @@ export const map = defineTool({
             if (candidate.length > OUTPUT_CHAR_LIMIT) {
               nestingFailed = true;
               if (fd === 0) {
-                compressionLabel = `symbol nesting ${nesting - 1}`;
+                compressionLabel = `symbol depth ${nesting - 1} of ${maxSN}`;
               } else {
                 bestOutput = formatTree(tree, {
                   showFiles: true, showSymbols: true, metadata: metaMode,
@@ -427,7 +427,7 @@ export const map = defineTool({
                   baseSymbolNesting: nesting - 1,
                   deepNestingUpTo: fd - 1,
                 });
-                compressionLabel = `symbol nesting ${nesting} to depth ${fd - 1}`;
+                compressionLabel = `symbol depth ${nesting} of ${maxSN} (deep up to folder depth ${fd - 1} of ${symbolFolderLimit})`;
               }
               break;
             }
