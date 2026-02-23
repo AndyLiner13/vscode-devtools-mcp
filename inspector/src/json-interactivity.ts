@@ -1648,19 +1648,31 @@ function setupTabToggle(
 							text: newArrayText
 						}]);
 
-						// After the edit, find all items on the updated line and select
-						// the one at targetIndex. Using setTimeout(0) ensures this runs
-						// after Monaco's internal handlers complete.
+						// After the edit, re-expand (so inactive items stay visible) then
+						// select the target item. setTimeout(0) lets Monaco finish its
+						// internal handlers before we mutate again.
 						setTimeout(() => {
+							// Re-expand so all inactive items remain visible in the array.
+							// This also handles the case where the array just became empty:
+							// placing the cursor inside [] triggers the cursor-position
+							// listener which calls showInlineEnums for us.
 							const updatedLine = model.getLineContent(currentBounds.openLine);
 							const items = findArrayItemsOnLine(updatedLine);
-							const targetRange = items[Math.min(targetIndex, items.length - 1)];
-							if (targetRange) {
-								editor.setSelection(new monacoNs.Selection(
-									currentBounds.openLine, targetRange.start,
-									currentBounds.openLine, targetRange.end
-								));
+							if (items.length === 0) {
+								// Array is empty after toggle — place cursor inside brackets.
+								// The cursor-position listener will call showInlineEnums for us.
+								const colonIdx2 = updatedLine.indexOf(':');
+								const bracketIdx2 = updatedLine.indexOf('[', colonIdx2);
+								if (bracketIdx2 !== -1) {
+									editor.setPosition(new monacoNs.Position(currentBounds.openLine, bracketIdx2 + 2));
+								}
+								return;
 							}
+							const targetRange = items[Math.min(targetIndex, items.length - 1)];
+							editor.setSelection(new monacoNs.Selection(
+								currentBounds.openLine, targetRange.start,
+								currentBounds.openLine, targetRange.end
+							));
 						}, 0);
 
 						return;
