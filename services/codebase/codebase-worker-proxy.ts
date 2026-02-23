@@ -269,11 +269,11 @@ export async function findDuplicates(params: DuplicateDetectionParams): Promise<
 	return sendRequest<DuplicateDetectionResult>('findDuplicates', params);
 }
 
-export async function chunkFile(params: ChunkFileParams): Promise<ChunkFileResult> {
+async function chunkFile(params: ChunkFileParams): Promise<ChunkFileResult> {
 	return sendRequest<ChunkFileResult>('chunkFile', params);
 }
 
-export async function invalidateProject(rootDir?: string): Promise<void> {
+async function invalidateProject(rootDir?: string): Promise<void> {
 	return sendRequest<void>('invalidateProject', { rootDir });
 }
 

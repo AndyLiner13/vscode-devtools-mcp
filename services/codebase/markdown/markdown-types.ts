@@ -24,7 +24,7 @@ export const /**
 type MdKind = (typeof MD_KINDS)[keyof typeof MD_KINDS];
 
 /** GitHub callout types recognized by the parser. */
-export const /**
+const /**
 	 *
 	 */
 	CALLOUT_TYPES = new Set(['NOTE', 'TIP', 'IMPORTANT', 'WARNING', 'CAUTION']);

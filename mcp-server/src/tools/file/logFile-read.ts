@@ -26,7 +26,7 @@ function resolveFilePath(file: string): string {
  * All extensions supported by the log file reader.
  * Includes both definitive log extensions and experimental ones (.txt, .csv).
  */
-export function isLogCompatible(filePath: string): boolean {
+function isLogCompatible(filePath: string): boolean {
 	const ext = path.extname(filePath).toLowerCase();
 	return LOG_FILE_EXTENSIONS.has(ext) || EXPERIMENTAL_LOG_EXTENSIONS.has(ext);
 }

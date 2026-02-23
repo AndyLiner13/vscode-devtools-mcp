@@ -27,7 +27,7 @@ export default defineConfig([
 			parser: tseslint.parser,
 			parserOptions: {
 				projectService: {
-					allowDefaultProject: ['esbuild.js', 'eslint.config.mjs', '.prettierrc.cjs', 'mcp-server/rollup.config.mjs']
+					allowDefaultProject: ['esbuild.mjs', 'eslint.config.mjs', '.prettierrc.cjs', 'mcp-server/rollup.config.mjs']
 				}
 			},
 			sourceType: 'module'
@@ -70,13 +70,7 @@ export default defineConfig([
 				}
 			],
 			'@typescript-eslint/no-floating-promises': 'error',
-			'@typescript-eslint/no-require-imports': [
-				'error',
-				{
-					// Allowed for esbuild bundle separation (host/client/runtime) and native modules
-					allow: ['/bootstrap$', '/host-handlers$', '/client-handlers$', 'runtime\\.js$', 'koffi', 'better-sqlite3']
-				}
-			],
+			'@typescript-eslint/no-require-imports': 'error',
 			'@typescript-eslint/no-unused-vars': [
 				'error',
 				{

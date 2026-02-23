@@ -1,6 +1,8 @@
-const esbuild = require('esbuild');
-const fs = require('node:fs');
-const path = require('node:path');
+import esbuild from 'esbuild';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const __dirname = import.meta.dirname;
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
@@ -41,8 +43,8 @@ const packageAliasPlugin = {
 
 // Loader build: extension/extension.ts → dist/extension.js
 // The loader starts the bridge and dynamically loads the runtime.
-// It must NOT statically bundle runtime.js — the dynamic require(path.join(...))
-// pattern ensures esbuild leaves it as a runtime dependency.
+// The dynamic import(path.join(...)) pattern in extension.ts
+// ensures esbuild leaves it as a runtime dependency.
 
 const loaderConfig = {
 	bundle: true,

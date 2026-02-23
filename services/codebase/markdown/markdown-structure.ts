@@ -21,7 +21,7 @@ export function extractMarkdownStructure(filePath: string): FileStructure {
 /**
  * Extract FileStructure from Markdown text (for testing or in-memory usage).
  */
-export function extractMarkdownStructureFromText(text: string): FileStructure {
+function extractMarkdownStructureFromText(text: string): FileStructure {
 	const allSymbols = parseMarkdown(text);
 	const lines = text.split('\n');
 	const totalLines = lines.length;

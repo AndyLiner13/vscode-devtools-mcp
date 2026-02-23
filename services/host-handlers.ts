@@ -1600,9 +1600,9 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 }
 
 /**
- * Export for extension.ts to check hot-reload state
+ * Check hot-reload state
  */
-export function isHotReloadInProgress(): boolean {
+function isHotReloadInProgress(): boolean {
 	return hotReloadInProgress;
 }
 
@@ -1736,7 +1736,7 @@ export function stopClientWindow(): void {
 /**
  * Returns whether the client window is currently connected (fast, no I/O).
  */
-export function isClientWindowConnected(): boolean {
+function isClientWindowConnected(): boolean {
 	return lastKnownClientState;
 }
 

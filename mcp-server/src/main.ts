@@ -167,7 +167,7 @@ const VERSION = '0.16.0';
 // x-release-please-end
 
 // Load config from .devtools/ config files (no CLI args — config files are the source of truth)
-export const /**
+const /**
 	 *
 	 */
 	config: ResolvedConfig = loadConfig();

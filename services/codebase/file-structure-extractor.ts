@@ -592,7 +592,7 @@ function extractStatementsAsSymbols(statements: readonly Node[], sourceFile: Sou
  * Returns a tree of ExtractedSymbol nodes with 1-indexed line numbers.
  * This function has ZERO VS Code API dependencies.
  */
-export function extractSymbols(sourceFile: SourceFile): ExtractedSymbol[] {
+function extractSymbols(sourceFile: SourceFile): ExtractedSymbol[] {
 	return extractStatementsAsSymbols(sourceFile.getStatements(), sourceFile);
 }
 

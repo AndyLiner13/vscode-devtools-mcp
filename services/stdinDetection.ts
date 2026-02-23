@@ -137,8 +137,7 @@ async function initializeKoffi(): Promise<void> {
 	}
 
 	try {
-		// Dynamic import of koffi - using require to avoid TypeScript module issues
-		const koffi = require('koffi') as KoffiModule;
+		const koffi = (await import('koffi')) as unknown as KoffiModule;
 		koffiModule = koffi;
 
 		// Load ntdll.dll
@@ -303,7 +302,7 @@ function checkThreadsForStdin(entry: ProcessEntry): { waitingCount: number; reas
  * Check if a process is waiting for stdin input.
  * Uses NtQuerySystemInformation to inspect thread wait states.
  */
-export async function isProcessWaitingForStdin(pid: number): Promise<StdinDetectionResult> {
+async function isProcessWaitingForStdin(pid: number): Promise<StdinDetectionResult> {
 	await initializeKoffi();
 
 	if (initError) {
@@ -473,7 +472,7 @@ export async function isTreeWaitingForStdin(shellPid: number): Promise<StdinDete
 /**
  * Get human-readable wait reason name
  */
-export function getWaitReasonName(reason: number): string {
+function getWaitReasonName(reason: number): string {
 	const names: Record<number, string> = {
 		[KWAIT_REASON.DelayExecution]: 'DelayExecution',
 		[KWAIT_REASON.Executive]: 'Executive',
@@ -513,6 +512,6 @@ export async function isStdinDetectionAvailable(): Promise<boolean> {
 /**
  * Get initialization error if any
  */
-export function getInitError(): null | string {
+function getInitError(): null | string {
 	return initError;
 }

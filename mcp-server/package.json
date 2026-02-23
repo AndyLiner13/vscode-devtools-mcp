@@ -4,7 +4,7 @@
 	"description": "MCP server for VS Code DevTools",
 	"license": "Apache-2.0",
 	"type": "module",
-	"main": "index.js",
+	"main": "build/src/index.js",
 	"bin": "./build/src/index.js",
 	"files": [
 		"build/src",

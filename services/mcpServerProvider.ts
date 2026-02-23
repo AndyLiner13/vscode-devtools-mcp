@@ -51,7 +51,7 @@ function buildConfigEnv(workspacePath: string): Record<string, string> {
 	};
 }
 
-export class McpServerProvider implements vscode.McpServerDefinitionProvider<vscode.McpStdioServerDefinition> {
+class McpServerProvider implements vscode.McpServerDefinitionProvider<vscode.McpStdioServerDefinition> {
 	private readonly _onDidChange = new vscode.EventEmitter<void>();
 	readonly onDidChangeMcpServerDefinitions = this._onDidChange.event;
 

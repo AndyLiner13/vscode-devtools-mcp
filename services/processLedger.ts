@@ -89,7 +89,7 @@ const MAX_TREE_ITERATIONS = 200; // BFS limit to prevent runaway queries
 
 // ── Process Ledger Service ───────────────────────────────────────────────────
 
-export class ProcessLedger {
+class ProcessLedger {
 	private readonly workspaceState: undefined | vscode.Memento;
 	private readonly sessionId: string;
 	private readonly activeProcesses = new Map<number, ProcessEntry>();

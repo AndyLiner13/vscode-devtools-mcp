@@ -1,15 +1,24 @@
 {
-	"strict": true,
 	"ignoreExportsUsedInFile": false,
 	"workspaces": {
 		".": {
-			"entry": ["extension.ts", "services/runtime.ts", "services/codebase/codebase-worker.ts"],
-			"ignoreDependencies": ["@vscode/codicons", "@modelcontextprotocol/inspector"],
-			"ignoreBinaries": ["code", "tsc"]
+			"entry": [
+				"extension.ts",
+				"bootstrap.js",
+				"services/runtime.ts",
+				"services/client-handlers.ts",
+				"services/codebase/codebase-worker.ts",
+				"mcp-server/scripts/eslint_rules/*.js"
+			],
+			"ignoreDependencies": ["@modelcontextprotocol/inspector", "@packages/log-consolidation"],
+			"ignoreBinaries": ["code", "knip"]
 		},
 		"mcp-server": {
-			"entry": ["src/index.ts", "src/cli.ts", "scripts/**/*.{ts,mts,mjs}"],
-			"ignoreDependencies": ["@types/filesystem"]
+			"entry": ["src/index.ts", "scripts/**/*.{ts,mts,mjs}"],
+			"ignoreDependencies": ["@types/filesystem", "@packages/log-consolidation"]
+		},
+		"inspector": {
+			"ignoreDependencies": ["better-sqlite3", "@types/better-sqlite3"]
 		}
 	}
 }

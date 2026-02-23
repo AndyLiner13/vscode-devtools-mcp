@@ -16,7 +16,7 @@ import type { ToolCategory } from './categories.js';
 /**
  * Maximum response size in characters to prevent overwhelming context windows.
  */
-export const /**
+const /**
 	 *
 	 */
 	CHARACTER_LIMIT = 25000;
@@ -109,7 +109,7 @@ export function defineTool<Schema extends zod.ZodRawShape>(definition: ToolDefin
 	return definition;
 }
 
-export const /**
+const /**
 	 *
 	 */
 	responseFormatSchema = zod.nativeEnum(ResponseFormat).optional().default(ResponseFormat.MARKDOWN).describe('Output format: "markdown" for human-readable or "json" for machine-readable structured data.');
@@ -128,7 +128,7 @@ const timeoutSchema = {
 /**
  * Check if content exceeds CHARACTER_LIMIT and throw an error with available params.
  */
-export function checkCharacterLimit(content: string, toolName: string, availableParams: Record<string, string>): void {
+function checkCharacterLimit(content: string, toolName: string, availableParams: Record<string, string>): void {
 	if (content.length > CHARACTER_LIMIT) {
 		const paramList = Object.entries(availableParams)
 			.map(([name, desc]) => `  - ${name}: ${desc}`)

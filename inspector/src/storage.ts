@@ -58,10 +58,6 @@ export async function getRecords(toolName: string): Promise<ExecutionRecord[]> {
 	return apiGet<ExecutionRecord[]>(`/api/records?tool=${encodeURIComponent(toolName)}`);
 }
 
-export async function getAllRecords(): Promise<Record<string, ExecutionRecord[]>> {
-	return apiGet<Record<string, ExecutionRecord[]>>('/api/records');
-}
-
 export async function addRecord(toolName: string, input: string, output: ContentBlock[], isError: boolean, durationMs: number): Promise<ExecutionRecord> {
 	return apiPost<ExecutionRecord>('/api/records', {
 		durationMs,
@@ -97,8 +93,4 @@ export async function updateRecordOutput(toolName: string, recordId: string, out
 
 export async function deleteRecord(toolName: string, recordId: string): Promise<void> {
 	await apiDelete(`/api/records/${encodeURIComponent(recordId)}?tool=${encodeURIComponent(toolName)}`);
-}
-
-export async function reorderRecords(toolName: string, orderedIds: string[]): Promise<void> {
-	await apiPost('/api/records/reorder', { orderedIds, toolName });
 }

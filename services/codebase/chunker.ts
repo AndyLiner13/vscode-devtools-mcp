@@ -61,7 +61,7 @@ export function chunkFile(params: ChunkFileParams): ChunkFileResult {
  * Chunk pre-parsed FileSymbol[] from any language service.
  * Converts FileSymbol → SymbolNode format and delegates to the core chunking algorithm.
  */
-export function chunkSymbols(params: { symbols: FileSymbol[]; content: string; filePath: string; rootDir: string; maxDepth?: number; tokenBudget?: number }): ChunkFileResult {
+function chunkSymbols(params: { symbols: FileSymbol[]; content: string; filePath: string; rootDir: string; maxDepth?: number; tokenBudget?: number }): ChunkFileResult {
 	const { content, filePath, maxDepth = DEFAULT_MAX_DEPTH, rootDir, symbols, tokenBudget = DEFAULT_TOKEN_BUDGET } = params;
 	const lines = content.split('\n');
 	const relativePath = path.relative(rootDir, filePath).replaceAll('\\', '/');

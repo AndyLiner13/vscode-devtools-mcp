@@ -14,7 +14,7 @@ export enum ToolCategory {
 	UI_CONTEXT = 'ui_context'
 }
 
-export const /**
+const /**
 	 *
 	 */
 	labels = {

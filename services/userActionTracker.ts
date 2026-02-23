@@ -59,7 +59,7 @@ export function disposeUserActionTracker(): void {
 // Tracker Implementation
 // ============================================================================
 
-export class UserActionTracker {
+class UserActionTracker {
 	private readonly watchedFiles = new Map<string, WatchedFile>();
 	private actions: UserAction[] = [];
 	private nextId = 1;

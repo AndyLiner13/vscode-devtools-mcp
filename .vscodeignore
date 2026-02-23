@@ -2,7 +2,7 @@
 **/*.ts
 
 # Config files not needed at runtime
-esbuild.js
+esbuild.mjs
 tsconfig.json
 eslint.config.mjs
 knip.json

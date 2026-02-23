@@ -34,7 +34,7 @@ export interface LaunchFlags {
 	verbose: boolean;
 }
 
-export const /**
+const /**
 	 *
 	 */
 	DEFAULT_LAUNCH_FLAGS: LaunchFlags = {
@@ -178,7 +178,7 @@ function resolveHotReloadConfig(partial?: Partial<HotReloadConfig>): HotReloadCo
  * Get the host workspace where VS Code is running.
  * This is the parent of the mcp-server package.
  */
-export function getHostWorkspace(): string {
+function getHostWorkspace(): string {
 	// Build output is in mcp-server/build/src/
 	// Go up to mcp-server, then to parent (the host workspace)
 	const packageRoot = dirname(dirname(__dirname));

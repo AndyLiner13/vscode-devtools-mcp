@@ -51,7 +51,7 @@ function clearWatchRestartPending(): void {
  * Windows: \\.\pipe\vscode-devtools-mcp-<8-char-hash>
  * Unix:    <workspacePath>/.vscode/vscode-devtools-mcp.sock
  */
-export function computeMcpSocketPath(workspacePath: string): string {
+function computeMcpSocketPath(workspacePath: string): string {
 	if (IS_WINDOWS) {
 		const resolved = path.resolve(workspacePath);
 		const hash = crypto.createHash('sha256').update(resolved.toLowerCase()).digest('hex').slice(0, 8);

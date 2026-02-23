@@ -15,8 +15,10 @@
 
 import net from 'node:net';
 import * as path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import * as vscode from 'vscode';
 
+import * as bootstrap from './bootstrap';
 import pkg from './package.json';
 import { startWorker, stopWorker } from './services/codebase/codebase-worker-proxy';
 import { registerInspectorCommands, shutdownInspector } from './services/inspectorManager';
@@ -25,16 +27,6 @@ import { registerMcpServerProvider } from './services/mcpServerProvider';
 // VS Code constructs server definition IDs as: ExtensionIdentifier.toKey(id) + '/' + label
 const MCP_SERVER_DEF_ID = 'andyliner.vscode-devtools/Experimental DevTools';
 const MCP_PROVIDER_ID = 'devtools.mcp-server';
-
-// ── Bootstrap (Plain JS, always loads) ───────────────────────────────────────
-
-const bootstrap: {
-	registerHandler: (method: string, fn: (params: Record<string, unknown>) => Promise<unknown> | unknown) => void;
-	unregisterHandler: (method: string) => void;
-	startServer: (socketPath: string) => Promise<{ socketPath: string }>;
-	stopServer: () => void;
-	getSocketPath: () => null | string;
-} = require('./bootstrap');
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -223,9 +215,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	try {
 		if (currentRole === 'host') {
-			// Dynamic import to ensure esbuild doesn't bundle host-handlers into client builds
+			// Dynamic import keeps host-handlers out of the static dependency graph.
+			// If it fails to compile, the extension still works in Safe Mode.
 			log('Loading host-handlers module...');
-			const { cleanup, createReconnectCdpCallback, onBrowserServiceChanged, onClientStateChanged, registerHostHandlers, startClientWindow, stopClientWindow } = require('./services/host-handlers');
+			const { cleanup, createReconnectCdpCallback, onBrowserServiceChanged, onClientStateChanged, registerHostHandlers, startClientWindow, stopClientWindow } = await import('./services/host-handlers');
 			log('host-handlers module loaded, registering handlers...');
 			registerHostHandlers(bootstrap.registerHandler, context, log);
 			hostHandlersCleanup = cleanup;
@@ -274,6 +267,44 @@ export async function activate(context: vscode.ExtensionContext) {
 					}
 				})
 			);
+
+			// ── MCP Server Lifecycle Commands ──────────────────────────────────
+			context.subscriptions.push(
+				vscode.commands.registerCommand('devtools.startMcpServer', async () => {
+					if (mcpProvider.enabled) {
+						log('Start MCP Server: already enabled — ensuring server is running');
+						vscode.window.showInformationMessage('MCP Server is already running.');
+						// Re-fire start in case the server crashed while enabled
+						void startClientWindow();
+						void vscode.commands.executeCommand(
+							'workbench.mcp.startServer',
+							MCP_SERVER_DEF_ID,
+							{ waitForLiveTools: true },
+						);
+						return;
+					}
+					log('Start MCP Server: enabling provider (triggers tethered lifecycle)');
+					mcpProvider.setEnabled(true);
+				}),
+				vscode.commands.registerCommand('devtools.stopMcpServer', () => {
+					if (!mcpProvider.enabled) {
+						log('Stop MCP Server: already stopped');
+						vscode.window.showInformationMessage('MCP Server is already stopped.');
+						return;
+					}
+					log('Stop MCP Server: disabling provider (triggers tethered lifecycle)');
+					mcpProvider.setEnabled(false);
+				}),
+				vscode.commands.registerCommand('devtools.restartMcpServer', async () => {
+					log('Restart MCP Server invoked');
+					if (mcpProvider.enabled) {
+						mcpProvider.setEnabled(false);
+						await new Promise<void>((r) => setTimeout(r, 2000));
+					}
+					mcpProvider.setEnabled(true);
+				}),
+			);
+			log('MCP Server lifecycle commands registered');
 
 			// ── Tethered Lifecycle: Client Window ↔ MCP Server ──────────────────
 			// The client window and MCP server are a single entity:
@@ -402,7 +433,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			]);
 		} else {
 			log('Loading client-handlers module...');
-			const { registerClientHandlers } = require('./services/client-handlers');
+			const { registerClientHandlers } = await import('./services/client-handlers');
 			log('client-handlers module loaded, registering handlers...');
 			const disposable = registerClientHandlers(bootstrap.registerHandler, context.workspaceState);
 			clientHandlersCleanup = disposable;
@@ -438,7 +469,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	try {
 		const runtimePath = path.join(__dirname, 'runtime.js');
-		const runtime: RuntimeModule = require(runtimePath);
+		const runtimeUrl = pathToFileURL(runtimePath).href;
+		const runtime = (await import(runtimeUrl)) as RuntimeModule;
 
 		await runtime.activate(context);
 		runtimeModule = runtime;

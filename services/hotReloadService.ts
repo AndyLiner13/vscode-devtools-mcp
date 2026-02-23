@@ -286,4 +286,4 @@ function getHotReloadService(): HotReloadService | undefined {
 }
 
 export type { ChangeCheckResult, PackageCheckResult };
-export { HotReloadService, createHotReloadService, getHotReloadService };
+export { createHotReloadService, getHotReloadService };

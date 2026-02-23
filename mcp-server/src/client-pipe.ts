@@ -863,7 +863,7 @@ export function registerClientRecoveryHandler(handler: () => Promise<void>): voi
 /**
  * Check if the Client pipe is reachable via a system.ping.
  */
-export async function pingClient(): Promise<boolean> {
+async function pingClient(): Promise<boolean> {
 	try {
 		await sendClientRequest('system.ping', {}, 3_000);
 		return true;

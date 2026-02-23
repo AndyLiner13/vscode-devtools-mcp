@@ -27,10 +27,10 @@
 	"scripts": {
 		"build": "vsce package --allow-star-activation",
 		"check-types": "tsc --noEmit",
-		"compile": "node esbuild.js",
+		"compile": "node esbuild.mjs",
 		"format": "eslint --cache --fix . && prettier --write --cache .",
-		"install:vsix": "node -e \"var p=require('./package.json');require('child_process').execSync('code --install-extension '+p.name+'-'+p.version+'.vsix --force',{stdio:'inherit'})\"",
-		"knip": "knip",
+		"install:vsix": "node --input-type=module -e \"import{readFileSync}from'node:fs';import{execSync}from'node:child_process';const p=JSON.parse(readFileSync('./package.json','utf8'));execSync('code --install-extension '+p.name+'-'+p.version+'.vsix --force',{stdio:'inherit'})\"",
+		"knip": "knip --strict",
 		"lint": "eslint .",
 		"lint:fix": "eslint --fix .",
 		"mcp:build": "cd mcp-server && npm run build && tsc --noEmit",
@@ -59,6 +59,18 @@
 			{
 				"command": "devtools.restartInspector",
 				"title": "DevTools: Restart MCP Inspector"
+			},
+			{
+				"command": "devtools.startMcpServer",
+				"title": "DevTools: Start MCP Server"
+			},
+			{
+				"command": "devtools.stopMcpServer",
+				"title": "DevTools: Stop MCP Server"
+			},
+			{
+				"command": "devtools.restartMcpServer",
+				"title": "DevTools: Restart MCP Server"
 			}
 		],
 		"configuration": [
@@ -931,7 +943,6 @@
 		"@types/mdast": "^4.0.4",
 		"@types/node": "22.x",
 		"@types/vscode": "^1.100.0",
-		"@typescript-eslint/eslint-plugin": "^8.43.0",
 		"@vscode/vsce": "^3.7.1",
 		"esbuild": "^0.25.8",
 		"eslint": "^10.0.0",
@@ -947,8 +958,7 @@
 		"prettier": "^3.6.2",
 		"prettier-plugin-packagejson": "^2.5.0",
 		"typescript": "^5.9.2",
-		"typescript-eslint": "^8.43.0",
-		"vitest": "^3.2.4"
+		"typescript-eslint": "^8.43.0"
 	},
 	"engines": {
 		"vscode": "^1.100.0"

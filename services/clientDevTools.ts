@@ -29,7 +29,7 @@ export function setBrowserService(service: BrowserService | null): void {
 	activeBrowserService = service;
 }
 
-export function getBrowserService(): BrowserService | null {
+function getBrowserService(): BrowserService | null {
 	return activeBrowserService;
 }
 
