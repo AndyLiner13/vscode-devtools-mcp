@@ -21,12 +21,7 @@ import {ToolCategory} from '../categories.js';
 import {defineTool} from '../ToolDefinition.js';
 import {resolveSymbolTarget, findQualifiedPaths} from './symbol-resolver.js';
 import type {SymbolLike} from './symbol-resolver.js';
-import {
-  compressLogs,
-  LOG_FILE_EXTENSIONS,
-  EXPERIMENTAL_LOG_EXTENSIONS,
-} from '@packages/log-consolidation';
-import type { FilterOptions, Severity } from '@packages/log-consolidation';
+import {isStrictLogFile} from './logFile-read.js';
 
 // ── Output Compression Constants ─────────────────────────
 // Same 3,000 token budget used by codebase_map and codebase_trace
@@ -43,14 +38,7 @@ function resolveFilePath(file: string): string {
 const SPECIAL_TARGETS = ['#imports', '#exports', '#comments'] as const;
 type SpecialTarget = typeof SPECIAL_TARGETS[number];
 
-/**
- * Check if a file should use log compression instead of symbolic extraction.
- * Returns true for known log file extensions and experimental extensions.
- */
-function isLogFile(filePath: string): boolean {
-  const ext = path.extname(filePath).toLowerCase();
-  return LOG_FILE_EXTENSIONS.has(ext) || EXPERIMENTAL_LOG_EXTENSIONS.has(ext);
-}
+
 
 function isSpecialTarget(target: string): target is SpecialTarget {
   return SPECIAL_TARGETS.includes(target as SpecialTarget);
@@ -863,16 +851,9 @@ export const read = defineTool({
     '- Compact range: `{ file: "src/service.ts", startLine: 1, endLine: 50, skeleton: true }`\n' +
     '- Only imports: `{ file: "src/service.ts", target: "#imports" }`\n' +
     '- Import + symbol: `{ file: "src/service.ts", target: ["#imports", "UserService"] }`\n\n' +
-    '**Log File Compression:**\n' +
-    'Files with log extensions (.log, .out, .err, .trace, .jsonl, etc.) are automatically compressed ' +
-    'using log pattern detection instead of symbolic parsing. Use drill-down parameters to explore:\n' +
-    '- `templateId` — Expand a specific pattern from the overview\n' +
-    '- `severity` — Filter by error, warning, or info\n' +
-    '- `timeRange` — Filter by time window (HH:MM-HH:MM)\n' +
-    '- `pattern` — Regex filter on raw content\n' +
-    '- `minDuration` — Show slow operations (e.g. "1s", "500ms")\n' +
-    '- `correlationId` — Trace a specific request UUID\n' +
-    '- `includeStackFrames` — Show/hide stack frames (default: true)',
+    '**Log Files:**\n' +
+    'Log file extensions (.log, .out, .err, .trace, .jsonl, etc.) must be read with `logFile_read` instead. ' +
+    'This tool will show a redirect notice for those file types.',
   annotations: {
     title: 'File Read',
     category: ToolCategory.CODEBASE_ANALYSIS,
@@ -903,28 +884,7 @@ export const read = defineTool({
     endLine: zod.number().int().optional().describe(
       'End line (1-indexed) for structured range reading. If omitted with startLine, reads to end of file.',
     ),
-    // Log compression drill-down parameters
-    templateId: zod.string().optional().describe(
-      'Show raw lines matching this template ID from the compressed log overview.',
-    ),
-    severity: zod.enum(['error', 'warning', 'info']).optional().describe(
-      'Filter compressed logs by severity level.',
-    ),
-    timeRange: zod.string().optional().describe(
-      'Time window filter for compressed logs: \'HH:MM-HH:MM\' or \'HH:MM:SS-HH:MM:SS\'.',
-    ),
-    pattern: zod.string().optional().describe(
-      'Regex pattern to filter log content (case-insensitive).',
-    ),
-    minDuration: zod.string().optional().describe(
-      'Show log templates with durations >= threshold: \'1s\', \'500ms\', \'100ms\'.',
-    ),
-    correlationId: zod.string().optional().describe(
-      'Trace a specific request by UUID/correlation ID.',
-    ),
-    includeStackFrames: zod.boolean().optional().describe(
-      'Show/hide stack frame templates in compressed logs. Default: true.',
-    ),
+
   },
   handler: async (request, response) => {
     const {params} = request;
@@ -943,37 +903,21 @@ export const read = defineTool({
       return;
     }
 
-    // ── Log file detection — route to compression engine ──────
-    if (isLogFile(filePath)) {
-      const rawContent = fs.readFileSync(filePath, 'utf-8');
-      let lines = rawContent.split('\n');
-
-      // Apply line-range windowing if specified
-      if (params.startLine !== undefined || params.endLine !== undefined) {
-        const start = Math.max(0, (params.startLine ?? 1) - 1);
-        const end = Math.min(lines.length, params.endLine ?? lines.length);
-        lines = lines.slice(start, end);
-      }
-
-      // Build filter options from drill-down params
-      const filters: FilterOptions = {};
-      if (params.templateId) filters.templateId = params.templateId;
-      if (params.severity) filters.severity = params.severity as Severity;
-      if (params.timeRange) filters.timeRange = params.timeRange;
-      if (params.pattern) filters.pattern = params.pattern;
-      if (params.minDuration) filters.minDuration = params.minDuration;
-      if (params.correlationId) filters.correlationId = params.correlationId;
-      if (params.includeStackFrames !== undefined) filters.includeStackFrames = params.includeStackFrames;
-
-      const hasFilters = Object.keys(filters).length > 0;
+    // ── Log file redirect — strict log extensions use logFile_read ──────
+    if (isStrictLogFile(filePath)) {
       const fileName = path.basename(filePath);
-
-      const result = compressLogs(
-        { lines, label: fileName },
-        hasFilters ? filters : undefined,
+      const ext = path.extname(filePath).toLowerCase();
+      response.appendResponseLine(
+        `**Log file detected:** \`${fileName}\` (\`${ext}\`)\n\n` +
+        'Use the **logFile_read** tool to read and analyze log files. ' +
+        'It provides automatic pattern compression, severity filtering, and drill-down capabilities.\n\n' +
+        '**Example:**\n' +
+        '```json\n' +
+        `{ "file": "${params.file}", "severity": "error" }\n` +
+        '```\n\n' +
+        '**Available parameters:** `templateId`, `severity`, `timeRange`, `pattern`, ' +
+        '`minDuration`, `correlationId`, `includeStackFrames`',
       );
-
-      response.appendResponseLine(result.formatted);
       return;
     }
 

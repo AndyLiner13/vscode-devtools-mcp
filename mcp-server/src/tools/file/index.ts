@@ -5,4 +5,5 @@
  */
 
 export {read} from './file-read.js';
+export {logFileRead} from './logFile-read.js';
 export {edit} from './file-edit.js';
