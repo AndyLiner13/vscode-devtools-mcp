@@ -18,6 +18,7 @@ function log(message: string): void {
 
 const IS_WINDOWS = process.platform === 'win32';
 const HOST_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-host' : '/tmp/vscode-devtools-host.sock';
+const CLIENT_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-client' : '/tmp/vscode-devtools-client.sock';
 const MCP_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-mcp' : '/tmp/vscode-devtools-mcp.sock';
 
 interface DbRow {
@@ -219,6 +220,48 @@ export function inspectorDbPlugin(): Plugin {
 					socket.on('error', (err) => {
 						clearTimeout(timeout);
 						reject(new Error(`Host pipe connection failed: ${err.message}`));
+					});
+				});
+			}
+
+			// Send a JSON-RPC 2.0 request to the Client extension pipe
+			function sendClientRpc(method: string, params: Record<string, unknown>): Promise<Record<string, unknown>> {
+				return new Promise((resolve, reject) => {
+					const socket = net.createConnection(CLIENT_PIPE_PATH);
+					let acc = '';
+					const timeout = setTimeout(() => {
+						socket.destroy();
+						reject(new Error('Client pipe timeout'));
+					}, 5000);
+
+					socket.on('connect', () => {
+						const payload = { id: 1, jsonrpc: '2.0', method, params };
+						socket.write(`${JSON.stringify(payload)}\n`);
+					});
+
+					socket.setEncoding('utf8');
+					socket.on('data', (chunk: string) => {
+						acc += chunk;
+						const idx = acc.indexOf('\n');
+						if (idx !== -1) {
+							clearTimeout(timeout);
+							try {
+								const resp = JSON.parse(acc.slice(0, idx)) as { error?: { message: string }; result?: Record<string, unknown> };
+								if (resp.error) {
+									reject(new Error(resp.error.message));
+								} else {
+									resolve(resp.result ?? {});
+								}
+							} catch {
+								reject(new Error('Invalid response from Client pipe'));
+							}
+							socket.end();
+						}
+					});
+
+					socket.on('error', (err) => {
+						clearTimeout(timeout);
+						reject(new Error(`Client pipe connection failed: ${err.message}`));
 					});
 				});
 			}
@@ -512,14 +555,18 @@ export function inspectorDbPlugin(): Plugin {
 							: resolve(workspaceRoot, requestedFile))
 						: '';
 
+					log(`[symbols] requestedFile=${JSON.stringify(requestedFile)} resolved=${JSON.stringify(filePath)} cwd=${process.cwd()} root=${workspaceRoot}`);
+
 					if (!filePath) {
 						json(res, { symbols: [] });
 						return;
 					}
 
 					try {
-						const result = await sendHostRpc('file.getSymbols', { filePath }) as { symbols?: Array<{ children?: unknown[]; kind?: string; name?: string }> };
+						const result = await sendClientRpc('file.getSymbols', { filePath }) as { symbols?: Array<{ children?: unknown[]; kind?: string; name?: string }> };
+						log(`[symbols] raw result has ${result.symbols?.length ?? 0} symbols`);
 						const symbols = flattenDocumentSymbols(result.symbols ?? []);
+						log(`[symbols] flattened to ${symbols.length} symbols`);
 						json(res, { symbols });
 					} catch (err) {
 						log(`[symbols] ERROR for ${filePath}: ${String(err)}`);

@@ -25,6 +25,7 @@ const LOG_ENDPOINT = '/api/log';
  * Fire-and-forget, non-blocking. Falls back silently if server unavailable.
  */
 function log(message: string): void {
+	console.log(`[json-interactivity] ${message}`);
 	fetch(LOG_ENDPOINT, {
 		body: JSON.stringify({ message }),
 		headers: { 'Content-Type': 'application/json' },
@@ -301,12 +302,14 @@ function findStringValueRange(
 		log(`[findStringValueRange]   openQuoteIdx: ${openQuoteIdx} closeQuoteIdx: ${closeQuoteIdx}`);
 		log(`[findStringValueRange]   contentStart: ${contentStart} contentEnd: ${contentEnd}`);
 
-		// For empty strings contentStart === contentEnd — cursor exactly between quotes matches
-		const cursorInQuotes = contentStart === contentEnd
-			? column === contentStart
-			: column >= contentStart && column <= contentEnd;
+		// Match when cursor is on the opening quote, inside content, or on the closing quote.
+		// This makes Tab-to-suggest work reliably regardless of whether the cursor lands
+		// exactly between the quotes or on one of the quote characters.
+		const openQuoteCol = openQuoteIdx + 1;   // 1-based column of opening quote
+		const closeQuoteCol = closeQuoteIdx + 1;  // 1-based column of closing quote
+		const cursorInQuotes = column >= openQuoteCol && column <= closeQuoteCol;
 
-		log(`[findStringValueRange]   cursorInQuotes: ${cursorInQuotes} (column ${column} in range ${contentStart}-${contentEnd})`);
+		log(`[findStringValueRange]   cursorInQuotes: ${cursorInQuotes} (column ${column} in range ${openQuoteCol}-${closeQuoteCol})`);
 
 		if (cursorInQuotes) {
 			log(`[findStringValueRange]   → MATCH!`);
@@ -1977,8 +1980,10 @@ function setupTabToggle(
 
 		// Tab in a file-path field → open IntelliSense
 		const fileProps = findFilePathProperties(schema);
+		log(`[tab] fileProps: ${[...fileProps]} (size=${fileProps.size})`);
 		if (fileProps.size > 0) {
 			const fileRange = findStringValueRange(line, position.column, fileProps);
+			log(`[tab] fileRange: ${fileRange ? JSON.stringify(fileRange) : 'null'}`);
 			if (fileRange) {
 				e.preventDefault();
 				e.stopPropagation();
@@ -1991,16 +1996,23 @@ function setupTabToggle(
 
 		// Tab in a symbol field (when its linked file path is set) → open IntelliSense
 		const symbolPropMap = findSymbolProperties(schema);
+		log(`[tab] symbolPropMap: ${JSON.stringify([...symbolPropMap.entries()])} (size=${symbolPropMap.size})`);
 		if (symbolPropMap.size > 0) {
 			const symbolPropNames = new Set(symbolPropMap.keys());
+			log(`[tab] symbolPropNames: ${[...symbolPropNames]}`);
+			log(`[tab] calling findStringValueRange for symbol, line=${JSON.stringify(line)} col=${position.column}`);
 			const symRange = findStringValueRange(line, position.column, symbolPropNames);
+			log(`[tab] symRange: ${symRange ? JSON.stringify(symRange) : 'null'}`);
 			if (symRange) {
 				const fileProp = symbolPropMap.get(symRange.propertyName);
+				log(`[tab] fileProp for ${symRange.propertyName}: ${fileProp ?? 'null'}`);
 				if (fileProp) {
 					const filePath = readStringPropertyValue(model, fileProp);
+					log(`[tab] filePath from model: ${filePath ?? 'null'}`);
 					if (filePath) {
 						e.preventDefault();
 						e.stopPropagation();
+						log(`[tab] → triggering symbol suggest!`);
 						queueMicrotask(() => {
 							editor.trigger('tab-intellisense', 'editor.action.triggerSuggest', {});
 						});
@@ -2011,6 +2023,7 @@ function setupTabToggle(
 		}
 
 		// Block Tab from doing anything else (no field jump, no indent)
+		log(`[tab] → no match, blocking Tab`);
 		e.preventDefault();
 		e.stopPropagation();
 	});
