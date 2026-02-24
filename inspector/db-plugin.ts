@@ -18,6 +18,7 @@ function log(message: string): void {
 
 const IS_WINDOWS = process.platform === 'win32';
 const HOST_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-host' : '/tmp/vscode-devtools-host.sock';
+const MCP_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-mcp' : '/tmp/vscode-devtools-mcp.sock';
 
 interface DbRow {
 	comment: string;
@@ -222,6 +223,48 @@ export function inspectorDbPlugin(): Plugin {
 				});
 			}
 
+			// Send a JSON-RPC 2.0 request to the MCP server pipe
+			function sendMcpRpc(method: string, params: Record<string, unknown>, timeoutMs = 60_000): Promise<Record<string, unknown>> {
+				return new Promise((resolve, reject) => {
+					const socket = net.createConnection(MCP_PIPE_PATH);
+					let acc = '';
+					const timeout = setTimeout(() => {
+						socket.destroy();
+						reject(new Error('MCP pipe timeout'));
+					}, timeoutMs);
+
+					socket.on('connect', () => {
+						const payload = { id: 1, jsonrpc: '2.0', method, params };
+						socket.write(`${JSON.stringify(payload)}\n`);
+					});
+
+					socket.setEncoding('utf8');
+					socket.on('data', (chunk: string) => {
+						acc += chunk;
+						const idx = acc.indexOf('\n');
+						if (idx !== -1) {
+							clearTimeout(timeout);
+							try {
+								const resp = JSON.parse(acc.slice(0, idx)) as { error?: { code: number; message: string }; result?: Record<string, unknown> };
+								if (resp.error) {
+									reject(new Error(resp.error.message));
+								} else {
+									resolve(resp.result ?? {});
+								}
+							} catch {
+								reject(new Error('Invalid response from MCP pipe'));
+							}
+							socket.end();
+						}
+					});
+
+					socket.on('error', (err) => {
+						clearTimeout(timeout);
+						reject(new Error(`MCP pipe connection failed: ${err.message}`));
+					});
+				});
+			}
+
 			async function handleApi(req: IncomingMessage, res: ServerResponse): Promise<void> {
 				const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
 				const { pathname } = url;
@@ -240,14 +283,39 @@ export function inspectorDbPlugin(): Plugin {
 					return;
 				}
 
-				// POST /api/ensure-mcp — tell Host extension to start MCP server if not running
-				if (pathname === '/api/ensure-mcp' && method === 'POST') {
+				// POST /api/mcp/tools — list all MCP tools via the MCP server pipe.
+				// Ensures MCP server is running first via the Host pipe.
+				if (pathname === '/api/mcp/tools' && method === 'POST') {
 					try {
 						await sendHostRpc('ensureMcpServer', {});
-						json(res, { ok: true });
+					} catch {
+						// MCP server may already be running — continue to pipe
+					}
+					try {
+						const result = await sendMcpRpc('listTools', {}, 10_000);
+						json(res, result);
 					} catch (err) {
 						const message = err instanceof Error ? err.message : String(err);
-						json(res, { error: message, ok: false }, 502);
+						json(res, { error: message }, 502);
+					}
+					return;
+				}
+
+				// POST /api/mcp/call — execute an MCP tool via the MCP server pipe
+				if (pathname === '/api/mcp/call' && method === 'POST') {
+					try {
+						const body = await parseBody(req);
+						const toolName = body.name as string;
+						const args = (body.arguments ?? {}) as Record<string, unknown>;
+						if (!toolName) {
+							json(res, { error: 'Missing required field: name' }, 400);
+							return;
+						}
+						const result = await sendMcpRpc('callTool', { arguments: args, name: toolName }, 120_000);
+						json(res, result);
+					} catch (err) {
+						const message = err instanceof Error ? err.message : String(err);
+						json(res, { error: message }, 502);
 					}
 					return;
 				}

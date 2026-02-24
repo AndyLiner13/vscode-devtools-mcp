@@ -163,11 +163,9 @@ async function handleTerminalRun(params: Record<string, unknown>) {
 
 	const timeout = paramNum(params, 'timeout');
 	const name = paramStr(params, 'name');
-	const waitModeRaw = paramStr(params, 'waitMode');
-	const waitMode: 'background' | 'completion' = waitModeRaw === 'background' ? 'background' : 'completion';
 
-	console.log(`[client] terminal.run — cwd: ${cwd}, command: ${command}, name: ${name ?? 'default'}, waitMode: ${waitMode}`);
-	return terminalController.run(command, cwd, timeout, name, waitMode);
+	console.log(`[client] terminal.run — cwd: ${cwd}, command: ${command}, name: ${name ?? 'default'}`);
+	return terminalController.run(command, cwd, timeout, name);
 }
 
 /**

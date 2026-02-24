@@ -67,7 +67,6 @@ export interface ITerminalRunParams {
 	templateId?: string;
 	timeout?: number;
 	timeRange?: string;
-	waitMode?: 'background' | 'completion';
 }
 
 // ============================================================================
@@ -226,14 +225,12 @@ export class TerminalExecuteTool implements vscode.LanguageModelTool<ITerminalRu
 			};
 		}
 
-		const waitMode = params.waitMode ?? 'completion';
 		return {
 			confirmationMessages: {
 				message: new vscode.MarkdownString(
 					`Execute PowerShell command in terminal "${terminalName}"?\n\n` +
 						`**Command:**\n\`\`\`powershell\n${params.command}\n\`\`\`\n\n` +
-						`**Working Directory:** \`${params.cwd}\`\n\n` +
-						`**Wait Mode:** ${waitMode}${params.force ? '\n\n⚠️ **Force:** Will kill any running process first' : ''}`
+						`**Working Directory:** \`${params.cwd}\`${params.force ? '\n\n⚠️ **Force:** Will kill any running process first' : ''}`
 				),
 				title: 'Run Command'
 			},
@@ -277,7 +274,7 @@ export class TerminalExecuteTool implements vscode.LanguageModelTool<ITerminalRu
 				result = await controller.sendInput(command, params.addNewline !== false, params.timeout, params.name);
 			} else if (params.cwd) {
 				// Run mode: execute command in terminal with cwd
-				result = await controller.run(command, params.cwd, params.timeout, params.name, params.waitMode ?? 'completion', params.force ?? false);
+				result = await controller.run(command, params.cwd, params.timeout, params.name, params.force ?? false);
 			} else {
 				// This shouldn't happen due to isInputMode logic, but TypeScript needs it
 				return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart('Error: cwd is required in run mode')]);

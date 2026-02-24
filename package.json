@@ -952,6 +952,7 @@
 		"eslint-plugin-perfectionist": "^4.0.0",
 		"eslint-plugin-promise": "^7.2.0",
 		"eslint-plugin-unicorn": "^56.0.0",
+		"get-port": "^7.1.0",
 		"globals": "^17.0.0",
 		"mdast-util-directive": "^3.1.0",
 		"mdast-util-math": "^3.0.0",

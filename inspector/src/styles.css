@@ -33,13 +33,13 @@ body {
 	-webkit-font-smoothing: antialiased;
 }
 
-/* Hide the Monaco suggest widget entirely when it has no items to show.
- * Monaco may use different selectors for empty states depending on version.
- * Use multiple selectors to ensure the widget is hidden. */
+/* Hide the Monaco suggest widget when no suggestions or just showing a message */
 .suggest-widget.empty,
-.suggest-widget .message,
-.suggest-widget .suggest-status-bar,
-.monaco-editor .suggest-widget:has(.message) {
+.suggest-widget .suggest-status-bar {
+	display: none !important;
+}
+/* Hide widget when it only contains a message (no items) */
+.monaco-editor .suggest-widget:has(.message:not(:empty)):not(:has(.monaco-list-row)) {
 	display: none !important;
 }
 

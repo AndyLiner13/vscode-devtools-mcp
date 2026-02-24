@@ -11,8 +11,12 @@
  */
 
 import * as vscode from 'vscode';
+import { getInspectorPort } from './inspectorManager.js';
 
-const INSPECTOR_BASE_URL = 'http://localhost:6275';
+function getInspectorBaseUrl(): string {
+	const port = getInspectorPort() ?? 6275;
+	return `http://localhost:${port}`;
+}
 
 // ── Input Schema ─────────────────────────────────────────────────────────────
 
@@ -41,7 +45,7 @@ interface InspectorRecord {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 async function fetchInspectorRecords(toolName: string): Promise<InspectorRecord[]> {
-	const url = `${INSPECTOR_BASE_URL}/api/records?tool=${encodeURIComponent(toolName)}`;
+	const url = `${getInspectorBaseUrl()}/api/records?tool=${encodeURIComponent(toolName)}`;
 	const res = await fetch(url);
 	if (!res.ok) {
 		throw new Error(`Inspector API returned ${res.status}`);
@@ -50,7 +54,7 @@ async function fetchInspectorRecords(toolName: string): Promise<InspectorRecord[
 }
 
 async function fetchInspectorRecord(recordId: string): Promise<InspectorRecord | null> {
-	const url = `${INSPECTOR_BASE_URL}/api/records/${encodeURIComponent(recordId)}`;
+	const url = `${getInspectorBaseUrl()}/api/records/${encodeURIComponent(recordId)}`;
 	const res = await fetch(url);
 	if (res.status === 404) {
 		return null;

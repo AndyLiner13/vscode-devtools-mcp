@@ -21,7 +21,8 @@ import * as vscode from 'vscode';
 import * as bootstrap from './bootstrap';
 import pkg from './package.json';
 import { startWorker, stopWorker } from './services/codebase/codebase-worker-proxy';
-import { ensureInspectorRunning, registerInspectorCommands, shutdownInspector } from './services/inspectorManager';
+import { ensureInspectorRunning, getInspectorPort, registerInspectorCommands, shutdownInspector } from './services/inspectorManager';
+import { getMcpInspectorHttpPort } from './services/host-handlers';
 import { registerMcpServerProvider } from './services/mcpServerProvider';
 
 // VS Code constructs server definition IDs as: ExtensionIdentifier.toKey(id) + '/' + label
@@ -137,12 +138,22 @@ export async function activate(context: vscode.ExtensionContext) {
 	function updateStatusBar(state: 'connected' | 'connecting' | 'disconnected' | 'safe-mode', detail?: string): void {
 		log(`[status-bar] Updating to: ${state}${detail ? ` (${detail})` : ''}`);
 		switch (state) {
-			case 'connected':
+			case 'connected': {
 				statusBarItem.text = '$(debug-connected) VS Code DevTools Host';
-				statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Host\nClient Window: Connected\nMCP Server: Enabled\nClick to toggle`;
+				const mcpHttpPort = getMcpInspectorHttpPort();
+				const inspectorVitePort = getInspectorPort();
+				let portInfo = '';
+				if (mcpHttpPort) {
+					portInfo += `\nMCP HTTP: http://localhost:${mcpHttpPort}/mcp`;
+				}
+				if (inspectorVitePort) {
+					portInfo += `\nInspector: http://localhost:${inspectorVitePort}/`;
+				}
+				statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Host\nClient Window: Connected\nMCP Server: Enabled${portInfo}\nClick to toggle`;
 				statusBarItem.command = 'devtools.toggleMcpServer';
 				statusBarItem.backgroundColor = undefined;
 				break;
+			}
 			case 'connecting':
 				statusBarItem.text = '$(debug-disconnect) VS Code DevTools Host';
 				statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Host\nClient Window: Connecting...\nMCP Server: Starting...`;

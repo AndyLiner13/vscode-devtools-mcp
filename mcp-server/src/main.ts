@@ -8,17 +8,16 @@ import type { ToolDefinition } from './tools/ToolDefinition.js';
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { type CallToolResult, SetLevelRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { randomUUID } from 'node:crypto';
-import { createServer } from 'node:http';
 import process from 'node:process';
+import { toJSONSchema } from 'zod/v4-mini';
+import { z as zod } from 'zod';
 
 import { ensureClientAvailable, getProcessLedger, type ProcessEntry, type ProcessLedgerSummary, registerClientRecoveryHandler } from './client-pipe.js';
 import { getMcpServerRoot, loadConfig, type ResolvedConfig } from './config.js';
 import { checkForChanges, readyToRestart } from './host-pipe.js';
 import { logger } from './logger.js';
-import { startMcpSocketServer } from './mcp-socket-server.js';
+import { startMcpSocketServer, stopMcpSocketServer } from './mcp-socket-server.js';
 import { McpResponse } from './McpResponse.js';
 import { lifecycleService } from './services/index.js';
 import { RequestPipeline } from './services/requestPipeline.js';
@@ -180,8 +179,10 @@ lifecycleService.init({
 	wasHotReloaded: false
 });
 
-// Start MCP socket server so the extension can send commands (e.g. detach-gracefully)
-startMcpSocketServer();
+// Start MCP socket server with tool dispatch so the Inspector and
+// extension can send commands (listTools, callTool, detach-gracefully)
+// The actual tool deps are wired after the pipeline is created below.
+let socketDepsReady = false;
 
 // Register process-level shutdown handlers (stdin end, SIGINT, etc.)
 lifecycleService.registerShutdownHandlers();
@@ -227,10 +228,7 @@ Avoid sharing sensitive or personal information that you do not want to share wi
 };
 
 // ── Request Pipeline ─────────────────────────────────────
-// Single unified FIFO queue for all tool calls (replaces all 4 old mutexes).
-// Both the stdio server (Copilot) and inspector HTTP server share this instance.
-// Closure set by startInspectorServer() so pipeline can close HTTP on restart.
-let inspectorShutdownFn: (() => Promise<void>) | null = null;
+// Single unified FIFO queue for all tool calls (stdio + pipe).
 
 const pipeline = new RequestPipeline({
 	checkForChanges: async (mcpRoot, extPath) => checkForChanges(mcpRoot, extPath),
@@ -238,12 +236,93 @@ const pipeline = new RequestPipeline({
 	hotReloadEnabled: config.hotReload.enabled && config.explicitExtensionDevelopmentPath,
 	mcpServerRoot: mcpServerDir,
 	onShutdown: async () => {
-		if (inspectorShutdownFn) {
-			await inspectorShutdownFn();
-		}
+		stopMcpSocketServer();
 	},
 	readyToRestart: async () => readyToRestart()
 });
+
+/**
+ * Execute a tool by name through the pipeline. Used by both MCP SDK
+ * registrations (stdio) and the named-pipe socket server (Inspector).
+ */
+async function executeTool(toolName: string, args: Record<string, unknown>): Promise<CallToolResult> {
+	const tool = tools.find(t => t.name === toolName);
+	if (!tool) {
+		throw new Error(`Unknown tool: ${toolName}`);
+	}
+
+	const timeoutMs = tool.timeoutMs ?? DEFAULT_TOOL_TIMEOUT_MS;
+
+	return pipeline.submit(tool.name, async () => {
+		try {
+			const executeBody = async (): Promise<CallToolResult> => {
+				logger(`${tool.name} request: ${JSON.stringify(args, null, '  ')}`);
+
+				const isStandalone = tool.annotations.conditions?.includes('standalone');
+
+				if (!isStandalone) {
+					await ensureConnection();
+				}
+
+				const needsClientPipe = tool.annotations.conditions?.includes('client-pipe');
+				if (needsClientPipe) {
+					await ensureClientAvailable();
+				}
+
+				const response = new McpResponse();
+				await tool.handler({ params: args }, response, {} as never);
+
+				const content: CallToolResult['content'] = [];
+				for (const line of response.responseLines) {
+					content.push({ text: line, type: 'text' });
+				}
+				for (const img of response.images) {
+					content.push({ data: img.data, mimeType: img.mimeType, type: 'image' });
+				}
+				if (content.length === 0) {
+					content.push({ text: '(no output)', type: 'text' });
+				}
+
+				if (!response.skipLedger) {
+					const ledger = await getProcessLedger();
+					const ledgerText = formatProcessLedger(ledger);
+					if (ledgerText) {
+						content.push({ text: ledgerText, type: 'text' });
+					}
+				}
+
+				return { content };
+			};
+
+			const isCodebaseTool = tool.annotations.conditions?.includes('codebase-sequential');
+			if (isCodebaseTool) {
+				return await executeBody();
+			}
+			return await withTimeout(executeBody(), timeoutMs, tool.name);
+		} catch (err) {
+			const typedErr = err instanceof Error ? err : new Error(String(err));
+			logger(`[tool:${tool.name}] ERROR: ${typedErr.message}`);
+			if (typedErr.stack) {
+				logger(`[tool:${tool.name}] Stack: ${typedErr.stack}`);
+			}
+			let errorText = typedErr.message;
+			if ('cause' in typedErr && typedErr.cause instanceof Error) {
+				errorText += `\nCause: ${typedErr.cause.message}`;
+			}
+
+			const buildFailureMatch = errorText.match(/Build failed:\n?([\s\S]*)/);
+			if (buildFailureMatch) {
+				const buildLogs = buildFailureMatch[1].trim();
+				return {
+					content: [{ text: `❌ **Extension build failed.** Full build output:\n\n\`\`\`\n${buildLogs}\n\`\`\``, type: 'text' }],
+					isError: true
+				};
+			}
+
+			return { content: [{ text: errorText, type: 'text' }], isError: true };
+		}
+	});
+}
 
 function registerTool(targetServer: McpServer, tool: ToolDefinition): void {
 	targetServer.registerTool(
@@ -253,90 +332,30 @@ function registerTool(targetServer: McpServer, tool: ToolDefinition): void {
 			description: tool.description,
 			inputSchema: tool.schema
 		},
-		async (params, extra): Promise<CallToolResult> => {
-			const timeoutMs = tool.timeoutMs ?? DEFAULT_TOOL_TIMEOUT_MS;
-
-			return pipeline.submit(tool.name, async () => {
-				try {
-					const executeBody = async (): Promise<CallToolResult> => {
-						logger(`${tool.name} request: ${JSON.stringify(params, null, '  ')}`);
-
-						const isStandalone = tool.annotations.conditions?.includes('standalone');
-
-						// Ensure VS Code connection is alive
-						if (!isStandalone) {
-							await ensureConnection();
-						}
-
-						// Ensure Client pipe is alive for tools that need it
-						const needsClientPipe = tool.annotations.conditions?.includes('client-pipe');
-						if (needsClientPipe) {
-							await ensureClientAvailable();
-						}
-
-						const response = new McpResponse();
-						await tool.handler({ params }, response, extra);
-
-						const content: CallToolResult['content'] = [];
-						for (const line of response.responseLines) {
-							content.push({ text: line, type: 'text' });
-						}
-						for (const img of response.images) {
-							content.push({ data: img.data, mimeType: img.mimeType, type: 'image' });
-						}
-						if (content.length === 0) {
-							content.push({ text: '(no output)', type: 'text' });
-						}
-
-						// Append process ledger summary unless tool opted out
-						if (!response.skipLedger) {
-							const ledger = await getProcessLedger();
-							const ledgerText = formatProcessLedger(ledger);
-							if (ledgerText) {
-								content.push({ text: ledgerText, type: 'text' });
-							}
-						}
-
-						return { content };
-					};
-
-					// Apply timeout — starts AFTER pipeline dequeue + hot-reload check
-					const isCodebaseTool = tool.annotations.conditions?.includes('codebase-sequential');
-					if (isCodebaseTool) {
-						return await executeBody();
-					}
-					return await withTimeout(executeBody(), timeoutMs, tool.name);
-				} catch (err) {
-					const typedErr = err instanceof Error ? err : new Error(String(err));
-					logger(`[tool:${tool.name}] ERROR: ${typedErr.message}`);
-					if (typedErr.stack) {
-						logger(`[tool:${tool.name}] Stack: ${typedErr.stack}`);
-					}
-					let errorText = typedErr.message;
-					if ('cause' in typedErr && typedErr.cause instanceof Error) {
-						errorText += `\nCause: ${typedErr.cause.message}`;
-					}
-
-					// Detect build failures and format them with full logs
-					const buildFailureMatch = errorText.match(/Build failed:\n?([\s\S]*)/);
-					if (buildFailureMatch) {
-						const buildLogs = buildFailureMatch[1].trim();
-						return {
-							content: [{ text: `❌ **Extension build failed.** Full build output:\n\n\`\`\`\n${buildLogs}\n\`\`\``, type: 'text' }],
-							isError: true
-						};
-					}
-
-					return { content: [{ text: errorText, type: 'text' }], isError: true };
-				}
-			});
-		}
+		async (params): Promise<CallToolResult> => executeTool(tool.name, params)
 	);
+}
+
+// Build pre-converted JSON Schema list for the socket server
+function getToolList(): Array<{ annotations?: Record<string, unknown>; description: string; inputSchema: Record<string, unknown>; name: string }> {
+	return tools.map(tool => ({
+		annotations: tool.annotations as unknown as Record<string, unknown>,
+		description: tool.description,
+		inputSchema: toJSONSchema(zod.object(tool.schema)) as Record<string, unknown>,
+		name: tool.name
+	}));
 }
 
 for (const tool of tools) {
 	registerTool(server, tool);
 }
+
+// Wire up socket server with tool dispatch deps
+startMcpSocketServer({
+	executeTool,
+	getToolList,
+	version: VERSION
+});
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
@@ -355,135 +374,3 @@ try {
 }
 
 logDisclaimers();
-
-// ── Inspector HTTP Server (Streamable HTTP transport) ────────────────
-// Exposes the same tools on a separate Streamable HTTP endpoint so
-// MCP Inspector (browser-based) can connect to this running server
-// instance without spawning a second process. Each Inspector browser
-// session gets its own McpServer + StreamableHTTPServerTransport that
-// share the same module-level state (connection, pipeline, etc.).
-const INSPECTOR_HTTP_PORT = 6274;
-
-function startInspectorServer(): void {
-	const sessions = new Map<string, { transport: StreamableHTTPServerTransport; mcpServer: McpServer }>();
-
-	const httpServer = createServer(async (req, res) => {
-		// CORS headers — Inspector runs in a browser on a different origin
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-		res.setHeader('Access-Control-Allow-Headers', 'Content-Type, mcp-session-id, mcp-protocol-version');
-		res.setHeader('Access-Control-Expose-Headers', 'mcp-session-id');
-
-		if (req.method === 'OPTIONS') {
-			res.writeHead(204);
-			res.end();
-			return;
-		}
-
-		const url = new URL(req.url ?? '/', `http://localhost:${INSPECTOR_HTTP_PORT}`);
-		if (url.pathname !== '/mcp') {
-			res.writeHead(404);
-			res.end('Not Found');
-			return;
-		}
-
-		try {
-			const sessionId = typeof req.headers['mcp-session-id'] === 'string' ? req.headers['mcp-session-id'] : undefined;
-
-			// Route to existing session
-			if (sessionId) {
-				const entry = sessions.get(sessionId);
-				if (entry) {
-					await entry.transport.handleRequest(req, res);
-					return;
-				}
-				// Unknown session — per spec, 404
-				res.writeHead(404, { 'Content-Type': 'application/json' });
-				res.end(
-					JSON.stringify({
-						error: { code: -32000, message: 'Session not found' },
-						jsonrpc: '2.0'
-					})
-				);
-				return;
-			}
-
-			// Hot-reload check before creating a new session.
-			// This gives inspector refreshes the same rebuild+restart
-			// behavior that tool calls get via the request pipeline.
-			const hotReloadStatus = await pipeline.runHotReloadCheck();
-			if (hotReloadStatus === 'restarting') {
-				res.writeHead(503, { 'Content-Type': 'application/json' });
-				res.end(
-					JSON.stringify({
-						error: { code: -32000, message: 'Server restarting after rebuild' },
-						jsonrpc: '2.0'
-					})
-				);
-				return;
-			}
-
-			// New session: create a dedicated McpServer + transport pair
-			const inspectorTransport = new StreamableHTTPServerTransport({
-				onsessionclosed: (sid: string) => {
-					sessions.delete(sid);
-					logger(`[inspector] Session ${sid.substring(0, 8)}… closed`);
-				},
-				onsessioninitialized: (sid: string) => {
-					sessions.set(sid, { mcpServer: inspectorMcp, transport: inspectorTransport });
-					logger(`[inspector] New session: ${sid.substring(0, 8)}…`);
-				},
-				sessionIdGenerator: () => randomUUID()
-			});
-			const inspectorMcp = new McpServer({ name: 'vscode_devtools', title: 'VS Code DevTools MCP server', version: VERSION }, { capabilities: { logging: {} } });
-			inspectorMcp.server.setRequestHandler(SetLevelRequestSchema, () => ({}));
-
-			for (const tool of tools) {
-				registerTool(inspectorMcp, tool);
-			}
-
-			await inspectorMcp.connect(inspectorTransport);
-			await inspectorTransport.handleRequest(req, res);
-		} catch (err) {
-			logger(`[inspector] Request error: ${err instanceof Error ? err.message : String(err)}`);
-			if (!res.headersSent) {
-				res.writeHead(500, { 'Content-Type': 'application/json' });
-				res.end(
-					JSON.stringify({
-						error: { code: -32603, message: 'Internal error' },
-						jsonrpc: '2.0'
-					})
-				);
-			}
-		}
-	});
-
-	httpServer.listen(INSPECTOR_HTTP_PORT, () => {
-		logger(`[inspector] MCP Inspector endpoint ready at http://localhost:${INSPECTOR_HTTP_PORT}/mcp`);
-	});
-
-	// Wire HTTP server shutdown so the pipeline can close it before process.exit()
-	inspectorShutdownFn = async () =>
-		new Promise<void>((resolve) => {
-			for (const [sid, entry] of sessions) {
-				entry.transport.close?.();
-				sessions.delete(sid);
-			}
-			httpServer.close(() => {
-				logger('[inspector] HTTP server closed for restart');
-				resolve();
-			});
-			// If close hangs, force-resolve after 3s
-			setTimeout(resolve, 3000);
-		});
-
-	httpServer.on('error', (err: NodeJS.ErrnoException) => {
-		if (err.code === 'EADDRINUSE') {
-			logger(`[inspector] ⚠ Port ${INSPECTOR_HTTP_PORT} in use — Inspector HTTP endpoint not available`);
-		} else {
-			logger(`[inspector] HTTP server error: ${err.message}`);
-		}
-	});
-}
-
-startInspectorServer();

@@ -1,10 +1,8 @@
-import type { CallToolResult, ConnectionState, ServerCapabilities, ServerInfo, ToolDefinition } from './types';
+import type { CallToolResult, ConnectionState, ServerInfo, ToolDefinition } from './types';
 
 type StateChangeHandler = (state: ConnectionState, error?: string) => void;
 
 const LOG_ENDPOINT = '/api/log';
-const MCP_ENDPOINT = 'http://localhost:6274/mcp';
-const PROTOCOL_VERSION = '2025-03-26';
 
 /**
  * Send log messages to the server to appear in VS Code output panel.
@@ -20,24 +18,16 @@ function log(message: string): void {
 	});
 }
 
-interface JsonRpcResponse {
-	error?: { code: number; message: string; data?: unknown };
-	id?: number | string;
-	jsonrpc: '2.0';
-	result?: Record<string, unknown>;
-}
-
 /**
- * Lightweight MCP client using raw fetch + JSON-RPC over Streamable HTTP.
- * Connects directly to the MCP server's HTTP endpoint — no proxy needed.
+ * MCP Inspector client that talks to the Vite backend REST API.
+ * The backend proxies requests to the MCP server via its named pipe —
+ * no direct browser → MCP HTTP connection, no CORS, no port discovery.
  */
 export class McpInspectorClient {
-	private sessionId: null | string = null;
-	private requestId = 0;
 	private readonly onStateChange: StateChangeHandler;
+	private connected = false;
 
 	serverInfo: null | ServerInfo = null;
-	capabilities: null | ServerCapabilities = null;
 	tools: ToolDefinition[] = [];
 
 	constructor(onStateChange: StateChangeHandler) {
@@ -45,54 +35,44 @@ export class McpInspectorClient {
 	}
 
 	get isConnected(): boolean {
-		return this.sessionId !== null;
+		return this.connected;
 	}
 
 	/**
-	 * Connect to the MCP server with automatic retries.
-	 * First asks the Host extension to ensure the MCP server is running,
-	 * then retries the MCP handshake until it comes up or max attempts are hit.
+	 * Connect by loading the tool list from the backend.
+	 * The backend ensures the MCP server is running and talks to it via pipe.
 	 */
 	async connect(maxAttempts = 15, retryDelayMs = 2000): Promise<void> {
-		// Ask Host extension to start MCP server if not running
-		try {
-			await fetch('/api/ensure-mcp', { method: 'POST' });
-		} catch {
-			log('[mcp-client] /api/ensure-mcp unavailable — continuing with direct connect');
-		}
-
 		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 			this.onStateChange('connecting');
 
 			try {
-				const initResult = await this.sendRequest('initialize', {
-					capabilities: {},
-					clientInfo: {
-						name: 'devtools-inspector',
-						version: '1.0.0'
-					},
-					protocolVersion: PROTOCOL_VERSION
-				});
+				const response = await fetch('/api/mcp/tools', { method: 'POST' });
+				if (!response.ok) {
+					const text = await response.text();
+					throw new Error(`HTTP ${response.status}: ${text}`);
+				}
 
-				this.serverInfo = (initResult.serverInfo as ServerInfo) ?? null;
-				this.capabilities = (initResult.capabilities as ServerCapabilities) ?? null;
+				const result = await response.json() as { error?: string; serverInfo?: ServerInfo; tools?: ToolDefinition[] };
 
-				await this.sendNotification('notifications/initialized');
-				await this.refreshTools();
+				if (result.error) {
+					throw new Error(result.error);
+				}
 
+				this.serverInfo = result.serverInfo ?? null;
+				this.tools = result.tools ?? [];
+				this.connected = true;
 				this.onStateChange('connected');
+				log(`[mcp-client] Connected — ${this.tools.length} tools available`);
 				return;
 			} catch (err) {
 				const message = err instanceof Error ? err.message : String(err);
-				this.sessionId = null;
 
-				// Last attempt — give up
 				if (attempt >= maxAttempts) {
 					this.onStateChange('error', message);
 					throw err;
 				}
 
-				// Server is restarting or not yet up — retry after delay
 				log(`[mcp-client] Connect attempt ${attempt}/${maxAttempts} failed: ${message} — retrying in ${retryDelayMs}ms`);
 				this.onStateChange('connecting');
 				await this.delay(retryDelayMs);
@@ -105,124 +85,34 @@ export class McpInspectorClient {
 	}
 
 	async refreshTools(): Promise<ToolDefinition[]> {
-		const result = await this.sendRequest('tools/list', {});
-		this.tools = (result.tools as ToolDefinition[]) ?? [];
+		const response = await fetch('/api/mcp/tools', { method: 'POST' });
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+		}
+		const result = await response.json() as { tools?: ToolDefinition[] };
+		this.tools = result.tools ?? [];
 		return this.tools;
 	}
 
 	async callTool(name: string, args: Record<string, unknown>): Promise<CallToolResult> {
-		const result = await this.sendRequest('tools/call', { arguments: args, name });
-		return result as unknown as CallToolResult;
-	}
-
-	async disconnect(): Promise<void> {
-		if (this.sessionId) {
-			try {
-				await fetch(MCP_ENDPOINT, {
-					headers: { 'mcp-session-id': this.sessionId },
-					method: 'DELETE'
-				});
-			} catch {
-				// Best effort — server may already be gone
-			}
-		}
-
-		this.sessionId = null;
-		this.serverInfo = null;
-		this.capabilities = null;
-		this.tools = [];
-		this.onStateChange('disconnected');
-	}
-
-	private async sendRequest(method: string, params: Record<string, unknown>): Promise<Record<string, unknown>> {
-		const id = ++this.requestId;
-		const body = JSON.stringify({ id, jsonrpc: '2.0', method, params });
-
-		const headers: Record<string, string> = {
-			Accept: 'application/json, text/event-stream',
-			'Content-Type': 'application/json'
-		};
-
-		if (this.sessionId) {
-			headers['mcp-session-id'] = this.sessionId;
-		}
-
-		const response = await fetch(MCP_ENDPOINT, { body, headers, method: 'POST' });
-
-		const responseSessionId = response.headers.get('mcp-session-id');
-		if (responseSessionId) {
-			this.sessionId = responseSessionId;
-		}
+		const response = await fetch('/api/mcp/call', {
+			body: JSON.stringify({ arguments: args, name }),
+			headers: { 'Content-Type': 'application/json' },
+			method: 'POST'
+		});
 
 		if (!response.ok) {
 			const text = await response.text();
 			throw new Error(`HTTP ${response.status}: ${text}`);
 		}
 
-		const contentType = response.headers.get('content-type') ?? '';
-
-		if (contentType.includes('text/event-stream')) {
-			return this.parseSSEResponse(response);
-		}
-
-		const json: JsonRpcResponse = await response.json();
-
-		if (json.error) {
-			throw new Error(`MCP Error [${json.error.code}]: ${json.error.message}`);
-		}
-
-		return json.result ?? {};
+		return await response.json() as CallToolResult;
 	}
 
-	private async sendNotification(method: string, params?: Record<string, unknown>): Promise<void> {
-		const body = JSON.stringify({
-			jsonrpc: '2.0',
-			method,
-			...(params ? { params } : {})
-		});
-
-		const headers: Record<string, string> = {
-			Accept: 'application/json, text/event-stream',
-			'Content-Type': 'application/json'
-		};
-
-		if (this.sessionId) {
-			headers['mcp-session-id'] = this.sessionId;
-		}
-
-		await fetch(MCP_ENDPOINT, { body, headers, method: 'POST' });
-	}
-
-	private async parseSSEResponse(response: Response): Promise<Record<string, unknown>> {
-		const text = await response.text();
-		const lines = text.split('\n');
-
-		for (const line of lines) {
-			if (line.startsWith('data: ')) {
-				const data = line.slice(6).trim();
-				if (!data) {
-					continue;
-				}
-
-				try {
-					const json: JsonRpcResponse = JSON.parse(data);
-
-					if (json.result !== undefined) {
-						return json.result;
-					}
-
-					if (json.error) {
-						throw new Error(`MCP Error [${json.error.code}]: ${json.error.message}`);
-					}
-				} catch (e) {
-					if (e instanceof SyntaxError) {
-						continue;
-					}
-					throw e;
-				}
-			}
-		}
-
-		throw new Error('No valid JSON-RPC response found in SSE stream');
+	async disconnect(): Promise<void> {
+		this.connected = false;
+		this.serverInfo = null;
+		this.tools = [];
+		this.onStateChange('disconnected');
 	}
 }

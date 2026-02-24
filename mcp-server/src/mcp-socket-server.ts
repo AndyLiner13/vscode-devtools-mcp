@@ -18,9 +18,12 @@
  *
  * Protocol: JSON-RPC 2.0 over newline-delimited JSON.
  *
- * Currently supported methods:
+ * Supported methods:
  *  - `detach-gracefully`: Sets a flag so the MCP server detaches from the
  *    debug window on shutdown instead of tearing it down.
+ *  - `client-reconnected`: Notification from Host about a client reconnect.
+ *  - `listTools`: Returns all registered tool definitions (name, description, inputSchema).
+ *  - `callTool`: Executes a tool by name with the given arguments.
  */
 
 import net from 'node:net';
@@ -30,10 +33,31 @@ import { logger } from './logger.js';
 const IS_WINDOWS = process.platform === 'win32';
 const MCP_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-mcp' : '/tmp/vscode-devtools-mcp.sock';
 
+// ── Types ───────────────────────────────────────────────
+
+interface ToolInfo {
+	annotations?: Record<string, unknown>;
+	description: string;
+	inputSchema: Record<string, unknown>;
+	name: string;
+}
+
+interface ToolCallResult {
+	content: Array<{ data?: string; mimeType?: string; text?: string; type: string }>;
+	isError?: boolean;
+}
+
+export interface McpSocketDeps {
+	executeTool: (name: string, args: Record<string, unknown>) => Promise<ToolCallResult>;
+	getToolList: () => ToolInfo[];
+	version: string;
+}
+
 // ── State ───────────────────────────────────────────────
 
 let server: net.Server | undefined;
 let pipePath: string | undefined;
+let deps: McpSocketDeps | undefined;
 
 // When true, the next shutdown will detach gracefully instead of tearing down.
 let watchRestartPending = false;
@@ -48,18 +72,17 @@ function clearWatchRestartPending(): void {
 	watchRestartPending = false;
 }
 
-
-
 /**
  * Start the MCP socket server on the static pipe path.
  * Idempotent — calling when already running is a no-op.
  */
-export function startMcpSocketServer(): void {
+export function startMcpSocketServer(options: McpSocketDeps): void {
 	if (server) {
 		logger('MCP socket server already running');
 		return;
 	}
 
+	deps = options;
 	pipePath = MCP_PIPE_PATH;
 
 	const srv = net.createServer(handleConnection);
@@ -88,6 +111,7 @@ export function stopMcpSocketServer(): void {
 	}
 	server = undefined;
 	pipePath = undefined;
+	deps = undefined;
 	logger('MCP socket server stopped');
 }
 
@@ -108,6 +132,7 @@ interface JsonRpcResponse {
 }
 
 // Standard JSON-RPC 2.0 error codes
+const INTERNAL_ERROR = -32603;
 const METHOD_NOT_FOUND = -32601;
 const PARSE_ERROR = -32700;
 
@@ -138,8 +163,11 @@ function handleConnection(conn: net.Socket): void {
 				continue;
 			}
 
-			const response = dispatch(req);
-			conn.write(`${JSON.stringify(response)}\n`);
+			dispatch(req).then((response) => {
+				conn.write(`${JSON.stringify(response)}\n`);
+			}).catch(() => {
+				// Connection may have closed before we could write
+			});
 		}
 	});
 
@@ -150,7 +178,7 @@ function handleConnection(conn: net.Socket): void {
 
 // ── Method Dispatch ─────────────────────────────────────
 
-function dispatch(req: JsonRpcRequest): JsonRpcResponse {
+async function dispatch(req: JsonRpcRequest): Promise<JsonRpcResponse> {
 	const id = req.id ?? null;
 
 	switch (req.method) {
@@ -166,6 +194,34 @@ function dispatch(req: JsonRpcRequest): JsonRpcResponse {
 			const { inspectorPort } = params;
 			logger(`MCP socket: client-reconnected received — pid=${String(electronPid)}, cdp=${String(cdpPort)}, inspector=${String(inspectorPort)}`);
 			return { id, jsonrpc: '2.0', result: { ok: true } };
+		}
+
+		case 'listTools': {
+			if (!deps) {
+				return { error: { code: INTERNAL_ERROR, message: 'Socket server not initialized' }, id, jsonrpc: '2.0' };
+			}
+			const tools = deps.getToolList();
+			return { id, jsonrpc: '2.0', result: { serverInfo: { name: 'vscode_devtools', version: deps.version }, tools } };
+		}
+
+		case 'callTool': {
+			if (!deps) {
+				return { error: { code: INTERNAL_ERROR, message: 'Socket server not initialized' }, id, jsonrpc: '2.0' };
+			}
+			const params = req.params ?? {};
+			const toolName = params.name as string | undefined;
+			const args = (params.arguments ?? {}) as Record<string, unknown>;
+			if (!toolName) {
+				return { error: { code: INTERNAL_ERROR, message: 'Missing required parameter: name' }, id, jsonrpc: '2.0' };
+			}
+			try {
+				const result = await deps.executeTool(toolName, args);
+				return { id, jsonrpc: '2.0', result };
+			} catch (err) {
+				const message = err instanceof Error ? err.message : String(err);
+				logger(`MCP socket: callTool(${toolName}) error: ${message}`);
+				return { error: { code: INTERNAL_ERROR, message }, id, jsonrpc: '2.0' };
+			}
 		}
 
 		default:

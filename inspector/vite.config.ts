@@ -33,6 +33,6 @@ export default defineConfig({
 	plugins: [tailwindcss(), inspectorDbPlugin(), noAutoReload()],
 	server: {
 		open: false,
-		port: 6275
+		port: 9500
 	}
 });

@@ -514,11 +514,14 @@ function setupSymbolIntellisense(
 	schema: JsonSchema
 ): monacoNs.IDisposable {
 	const symbolProps = findSymbolProperties(schema);
+	log(`[setupSymbolIntellisense] symbolProps size: ${symbolProps.size}`);
+	log(`[setupSymbolIntellisense] symbolProps entries: ${[...symbolProps.entries()].map(e => `${e[0]}→${e[1]}`).join(', ')}`);
 	if (symbolProps.size === 0) {
 		return { dispose: noop };
 	}
 
 	const symbolPropNames = new Set(symbolProps.keys());
+	log(`[setupSymbolIntellisense] symbolPropNames: ${[...symbolPropNames]}`);
 
 	// In-memory cache so we don't re-fetch on every keystroke
 	let cachedFilePath: null | string = null;
@@ -526,20 +529,26 @@ function setupSymbolIntellisense(
 
 	return monacoNs.languages.registerCompletionItemProvider('json', {
 		provideCompletionItems: async (model, position) => {
+			log(`[symbolIntellisense] provideCompletionItems called at line ${position.lineNumber} col ${position.column}`);
 			const empty: monacoNs.languages.CompletionList = { suggestions: [] };
 
 			const line = model.getLineContent(position.lineNumber);
+			log(`[symbolIntellisense] line content: ${JSON.stringify(line)}`);
 			const valueRange = findStringValueRange(line, position.column, symbolPropNames);
+			log(`[symbolIntellisense] valueRange: ${valueRange ? JSON.stringify(valueRange) : 'null'}`);
 			if (!valueRange) return empty;
 
 			const fileProp = symbolProps.get(valueRange.propertyName);
+			log(`[symbolIntellisense] fileProp: ${fileProp ?? 'null'}`);
 			if (!fileProp) return empty;
 
 			const filePath = readStringPropertyValue(model, fileProp);
+			log(`[symbolIntellisense] filePath: ${filePath ?? 'null'}`);
 			if (!filePath) {
 				// File field is empty, clear cache to avoid stale suggestions
 				cachedFilePath = null;
 				cachedSymbols = [];
+				log(`[symbolIntellisense] → returning empty (no filePath)`);
 				return empty;
 			}
 
@@ -549,17 +558,24 @@ function setupSymbolIntellisense(
 				cachedSymbols = [];
 
 				try {
+					log(`[symbolIntellisense] fetching symbols for: ${filePath}`);
 					const resp = await fetch(`${SYMBOLS_ENDPOINT}?file=${encodeURIComponent(filePath)}`);
+					log(`[symbolIntellisense] fetch response ok: ${resp.ok}`);
 					if (!resp.ok) return empty;
 					const data = await resp.json() as SymbolsResponse;
 					cachedFilePath = filePath;
 					cachedSymbols = data.symbols ?? [];
-				} catch {
+					log(`[symbolIntellisense] fetched ${cachedSymbols.length} symbols`);
+				} catch (e) {
+					log(`[symbolIntellisense] fetch error: ${e}`);
 					return empty;
 				}
 			}
 
-			if (cachedSymbols.length === 0) return empty;
+			if (cachedSymbols.length === 0) {
+				log(`[symbolIntellisense] → returning empty (no symbols)`);
+				return empty;
+			}
 
 			const replaceRange = new monacoNs.Range(
 				position.lineNumber, valueRange.contentStart,
@@ -569,6 +585,7 @@ function setupSymbolIntellisense(
 			// Don't offer a suggestion for the value that is already fully typed
 			const currentValue = line.substring(valueRange.contentStart - 1, valueRange.contentEnd - 1);
 			const visibleSymbols = cachedSymbols.filter((sym) => sym.name !== currentValue);
+			log(`[symbolIntellisense] returning ${visibleSymbols.length} suggestions`);
 
 			const suggestions: monacoNs.languages.CompletionItem[] = visibleSymbols.map((sym, idx) => ({
 				detail: sym.kind,
@@ -991,8 +1008,77 @@ function setupValueAutoSelect(
 	// Range the user escaped from — won't be re-selected until a different range is reached
 	let escapedRange: { end: number; line: number; start: number } | null = null;
 	let suppressAutoSelect = false;
+	// When true, auto-select is disabled until Up/Down arrow or mouse click
+	let editMode = false;
 
 	const disposables: monacoNs.IDisposable[] = [];
+
+	// Track Left/Right arrow presses to enter edit mode and constrain to value zone
+	disposables.push(editor.onKeyDown((e) => {
+		if (e.keyCode === monacoNs.KeyCode.LeftArrow || e.keyCode === monacoNs.KeyCode.RightArrow) {
+			// Skip if Ctrl is held — that's handled separately for zone boundary jumps
+			if (e.ctrlKey || e.metaKey) return;
+
+			const model = editor.getModel();
+			const pos = editor.getPosition();
+			if (!model || !pos) return;
+
+			const line = model.getLineContent(pos.lineNumber);
+
+			// Enum arrays: Left/Right navigates between items, not character editing
+			// Don't enter edit mode for enum arrays
+			if (isCursorInEnumArraySimple(model, pos, enumArrayProps)) {
+				return; // Let the enum array navigation handler handle this
+			}
+
+			const valueRange = findJsonValueRange(line, pos.column);
+
+			// If there's a selection, collapse it to the appropriate edge and enter edit mode
+			const sel = editor.getSelection();
+			if (sel && !sel.isEmpty()) {
+				e.preventDefault();
+				e.stopPropagation();
+				const isLeft = e.keyCode === monacoNs.KeyCode.LeftArrow;
+				// Collapse to start (left) or end (right) of selection, but within value range
+				let targetCol = isLeft ? sel.startColumn : sel.endColumn;
+				if (valueRange) {
+					targetCol = Math.max(valueRange.start, Math.min(valueRange.end, targetCol));
+				}
+				settingSelection = true;
+				queueMicrotask(() => {
+					editor.setPosition(new monacoNs.Position(pos.lineNumber, targetCol));
+					settingSelection = false;
+				});
+				editMode = true;
+				return;
+			}
+
+			if (valueRange) {
+				const isLeft = e.keyCode === monacoNs.KeyCode.LeftArrow;
+				const atBoundary = isLeft
+					? pos.column <= valueRange.start
+					: pos.column >= valueRange.end;
+
+				if (atBoundary) {
+					// Block movement past the zone boundary
+					e.preventDefault();
+					e.stopPropagation();
+					return;
+				}
+			}
+
+			// Entering edit mode — disable auto-select until Up/Down
+			editMode = true;
+		} else if (e.keyCode === monacoNs.KeyCode.UpArrow || e.keyCode === monacoNs.KeyCode.DownArrow) {
+			// Exiting edit mode — re-enable auto-select
+			editMode = false;
+		}
+	}));
+
+	// Track mouse clicks to exit edit mode
+	disposables.push(editor.onMouseDown(() => {
+		editMode = false;
+	}));
 
 	disposables.push(editor.onDidChangeCursorSelection(() => {
 		if (settingSelection) return;
@@ -1011,6 +1097,11 @@ function setupValueAutoSelect(
 
 		if (suppressAutoSelect) {
 			suppressAutoSelect = false;
+			return;
+		}
+
+		// Edit mode: Left/Right was pressed, skip auto-select until Up/Down or click
+		if (editMode) {
 			return;
 		}
 
@@ -1055,13 +1146,11 @@ function setupValueAutoSelect(
 
 		// First check if we're inside a value range
 		const valueRange = findJsonValueRange(line, col);
-		console.log('[autoSelect] col:', col, 'valueRange:', valueRange);
 
 		let targetRange: { end: number; start: number } | null = null;
 
 		if (valueRange) {
 			const isInside = col >= valueRange.start && col <= valueRange.end;
-			console.log('[autoSelect] isInside:', isInside, 'start:', valueRange.start, 'end:', valueRange.end);
 			if (isInside) {
 				targetRange = valueRange;
 			}
@@ -1070,7 +1159,6 @@ function setupValueAutoSelect(
 		// If not inside any value, snap to the nearest value on this line
 		if (!targetRange) {
 			const nearest = findNearestValueRange(line, col);
-			console.log('[autoSelect] snapping to nearest:', nearest);
 			if (nearest) {
 				targetRange = nearest;
 			}
@@ -1690,6 +1778,74 @@ function setupTabToggle(
 			}
 		}
 
+		// Check if on a number value — Tab toggles to null
+		for (const pos of checkPositions) {
+			const word = model.getWordAtPosition(pos);
+			if (word && /^-?\d+$/.test(word.word)) {
+				const prefix = line.substring(0, word.startColumn - 1);
+				const quoteCount = (prefix.match(/(?<!\\)"/g) ?? []).length;
+				if (quoteCount % 2 === 0) {
+					const beforeValue = prefix.trimEnd();
+					if (beforeValue.endsWith(':')) {
+						e.preventDefault();
+						e.stopPropagation();
+
+						const range = new monacoNs.Range(
+							position.lineNumber, word.startColumn,
+							position.lineNumber, word.endColumn
+						);
+						editor.executeEdits('tab-toggle', [{
+							forceMoveMarkers: true,
+							range,
+							text: 'null'
+						}]);
+
+						queueMicrotask(() => {
+							editor.setSelection(new monacoNs.Selection(
+								position.lineNumber, word.startColumn,
+								position.lineNumber, word.startColumn + 4
+							));
+						});
+						return;
+					}
+				}
+			}
+		}
+
+		// Check if on null — Tab toggles to 0 (default number)
+		for (const pos of checkPositions) {
+			const word = model.getWordAtPosition(pos);
+			if (word?.word === 'null') {
+				const prefix = line.substring(0, word.startColumn - 1);
+				const quoteCount = (prefix.match(/(?<!\\)"/g) ?? []).length;
+				if (quoteCount % 2 === 0) {
+					const beforeValue = prefix.trimEnd();
+					if (beforeValue.endsWith(':')) {
+						e.preventDefault();
+						e.stopPropagation();
+
+						const range = new monacoNs.Range(
+							position.lineNumber, word.startColumn,
+							position.lineNumber, word.endColumn
+						);
+						editor.executeEdits('tab-toggle', [{
+							forceMoveMarkers: true,
+							range,
+							text: '0'
+						}]);
+
+						queueMicrotask(() => {
+							editor.setSelection(new monacoNs.Selection(
+								position.lineNumber, word.startColumn,
+								position.lineNumber, word.startColumn + 1
+							));
+						});
+						return;
+					}
+				}
+			}
+		}
+
 		// Check if cursor/selection is inside an enum array on a value
 		for (const info of enumArrays) {
 			const bounds = findArrayBounds(model, info.propertyName);
@@ -2129,17 +2285,11 @@ export function setupLockedEditing(
 	// ── Snap cursor to the nearest zone when it lands outside all zones ──────
 	const cursorDisposable = editor.onDidChangeCursorPosition((e) => {
 		if (isSnapping) return;
-		// Don't fight IntelliSense cursor movement (suggest widget navigates by moving cursor)
 		if (isSuggestWidgetVisible(editor)) return;
-		// Programmatic setPosition / setSelection calls (reason = Explicit) come from our
-		// own navigation code (setupFieldNavigation) which already placed the cursor/selection
-		// exactly where it should be. Snapping those would collapse the selection to a cursor.
-		if (e.reason === monacoNs.editor.CursorChangeReason.Explicit) {
-			lastPos = e.position;
-			return;
-		}
+
 		const pos = e.position;
-		if (findZoneAt(pos, zones)) {
+		const currentZone = findZoneAt(pos, zones);
+		if (currentZone) {
 			lastPos = pos;
 			return;
 		}
@@ -2220,6 +2370,28 @@ export function setupLockedEditing(
 				return;
 			}
 
+			// Ctrl+Backspace: Delete from cursor to zone start (not for booleans)
+			if (e.code === 'Backspace') {
+				e.preventDefault();
+				e.stopPropagation();
+				if (zone && zone.type !== 'boolean' && pos.column > zone.startCol) {
+					const deleteRange = new monacoNs.Range(pos.lineNumber, zone.startCol, pos.lineNumber, pos.column);
+					editor.executeEdits('ctrl-backspace', [{ range: deleteRange, text: '' }]);
+				}
+				return;
+			}
+
+			// Ctrl+Delete: Delete from cursor to zone end (not for booleans)
+			if (e.code === 'Delete') {
+				e.preventDefault();
+				e.stopPropagation();
+				if (zone && zone.type !== 'boolean' && pos.column < zone.endCol) {
+					const deleteRange = new monacoNs.Range(pos.lineNumber, pos.column, pos.lineNumber, zone.endCol);
+					editor.executeEdits('ctrl-delete', [{ range: deleteRange, text: '' }]);
+				}
+				return;
+			}
+
 			// Allow other Ctrl shortcuts (undo, redo, copy, paste, etc.)
 			return;
 		}
@@ -2256,18 +2428,15 @@ export function setupLockedEditing(
 			return;
 		}
 
+		// Boolean zones: block ALL editing (toggle with Tab only)
+		if (zone.type === 'boolean') {
+			e.preventDefault();
+			e.stopPropagation();
+			return;
+		}
+
 		// Prevent Backspace from eating the opening quote / structural character
 		if (e.code === 'Backspace') {
-			// Ctrl+Backspace (word delete) — delete to zone start, not past it
-			if (e.ctrlKey || e.metaKey) {
-				e.preventDefault();
-				e.stopPropagation();
-				if (pos.column > zone.startCol) {
-					const deleteRange = new monacoNs.Range(pos.lineNumber, zone.startCol, pos.lineNumber, pos.column);
-					editor.executeEdits('ctrl-backspace', [{ range: deleteRange, text: '' }]);
-				}
-				return;
-			}
 			// Regular Backspace at zone start — block
 			if (pos.column <= zone.startCol) {
 				e.preventDefault();
@@ -2278,16 +2447,6 @@ export function setupLockedEditing(
 
 		// Prevent Delete from eating the closing quote / structural character
 		if (e.code === 'Delete') {
-			// Ctrl+Delete (word delete) — delete to zone end, not past it
-			if (e.ctrlKey || e.metaKey) {
-				e.preventDefault();
-				e.stopPropagation();
-				if (pos.column < zone.endCol) {
-					const deleteRange = new monacoNs.Range(pos.lineNumber, pos.column, pos.lineNumber, zone.endCol);
-					editor.executeEdits('ctrl-delete', [{ range: deleteRange, text: '' }]);
-				}
-				return;
-			}
 			// Regular Delete at zone end — block
 			if (pos.column >= zone.endCol) {
 				e.preventDefault();

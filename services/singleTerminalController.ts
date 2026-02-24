@@ -183,8 +183,6 @@ const KEY_SEQUENCES: Record<string, string> = {
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type WaitMode = 'background' | 'completion';
-
 export interface ActiveProcess {
 	command: string;
 	durationMs: number;
@@ -218,6 +216,8 @@ interface InternalState {
 	cwd?: string;
 	executionCount: number;
 	exitCode?: number;
+	killedPromise?: Promise<void>;
+	killedResolve?: () => void;
 	lastExitTime: number;
 	lastOutputTime: number;
 	name: string;
@@ -312,7 +312,8 @@ export class SingleTerminalController {
 				state.exitCode = terminal.exitStatus?.code;
 				console.log(`[MultiTerminalController] Terminal "${state.name}" killed (closed by user)`);
 
-				// Signal waitForResult to resolve immediately
+				// Signal waitForResult to resolve immediately (both mechanisms)
+				state.killedResolve?.();
 				state.onKilled?.();
 
 				// Notify user action tracker so Copilot learns about the closure
@@ -334,10 +335,9 @@ export class SingleTerminalController {
 	 * @param cwd Absolute path to the working directory for command execution
 	 * @param timeoutMs Max wait time (default: 120000ms)
 	 * @param name Terminal name (default: 'default')
-	 * @param waitMode 'completion' blocks until done; 'background' returns immediately
 	 * @param force Kill running process and start new command (default: false)
 	 */
-	async run(command: string, cwd: string, timeoutMs?: number, name?: string, waitMode: WaitMode = 'completion', force = false): Promise<TerminalRunResult> {
+	async run(command: string, cwd: string, timeoutMs?: number, name?: string, force = false): Promise<TerminalRunResult> {
 		const shellType: ShellType = 'powershell';
 		const terminalName = name ?? DEFAULT_TERMINAL_NAME;
 		const timeout = timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -363,7 +363,7 @@ export class SingleTerminalController {
 		// Build wrapped command that changes to cwd first
 		const wrappedCommand = this.buildCwdCommand(cwd, command);
 
-		// Reset state for new command
+// Reset state for new command
 		state.output = '';
 		state.exitCode = undefined;
 		state.status = 'running';
@@ -374,6 +374,12 @@ export class SingleTerminalController {
 		state.executionCount = 0;
 		state.lastExitTime = 0;
 		state.commandStartTime = Date.now();
+
+		// Set up kill detection promise BEFORE sending command
+		// This ensures kills are detected even between sendText and waitForResult
+		state.killedPromise = new Promise<void>((resolve) => {
+			state.killedResolve = resolve;
+		});
 
 		// Send the wrapped command (cd + original command)
 		state.terminal.sendText(wrappedCommand, true);
@@ -395,19 +401,7 @@ export class SingleTerminalController {
 			});
 		}
 
-		// Background mode: return immediately without waiting
-		if (waitMode === 'background') {
-			return this.withProcessSummary({
-				cwd,
-				name: terminalName,
-				output: '',
-				pid: state.pid,
-				shell: shellType,
-				status: 'running'
-			});
-		}
-
-		// Completion mode: wait for one of: completion, prompt, or timeout
+		// Wait for completion, prompt, or timeout
 		const result = await this.waitForResult(state, timeout);
 		return this.withProcessSummary({ ...result, cwd, shell: shellType });
 	}
@@ -861,9 +855,25 @@ export class SingleTerminalController {
 	 * 4. Timeout fallback
 	 */
 	private async waitForResult(state: InternalState, timeoutMs: number): Promise<TerminalRunResult> {
+		// Early exit: if terminal was already killed before we got here, resolve immediately
+		if (state.status === 'killed') {
+			const cleaned = cleanTerminalOutput(state.output);
+			console.log(`[MultiTerminalController] Terminal "${state.name}" already killed before waitForResult — resolving immediately`);
+			return {
+				durationMs: Date.now() - state.commandStartTime,
+				exitCode: state.exitCode,
+				name: state.name,
+				output: cleaned,
+				pid: state.pid,
+				status: 'killed'
+			};
+		}
+
 		return new Promise((resolve) => {
 			let resolved = false;
 			let completedAt: null | number = null;
+			let pollInterval: ReturnType<typeof setInterval> | undefined;
+			let timeoutTimer: ReturnType<typeof setTimeout> | undefined;
 
 			const resolveOnce = (result: TerminalRunResult) => {
 				if (resolved) return;
@@ -871,10 +881,28 @@ export class SingleTerminalController {
 				if (pollInterval) clearInterval(pollInterval);
 				if (timeoutTimer) clearTimeout(timeoutTimer);
 				state.onKilled = undefined;
+				state.killedPromise = undefined;
+				state.killedResolve = undefined;
 
 				result.durationMs = Date.now() - state.commandStartTime;
 				resolve(result);
 			};
+
+			// Race with killedPromise if it exists (catches kills during sendText → waitForResult gap)
+			if (state.killedPromise) {
+				state.killedPromise.then(() => {
+					if (resolved) return;
+					const cleaned = cleanTerminalOutput(state.output);
+					console.log(`[MultiTerminalController] Terminal "${state.name}" killed via killedPromise — resolving immediately`);
+					resolveOnce({
+						exitCode: state.exitCode,
+						name: state.name,
+						output: cleaned,
+						pid: state.pid,
+						status: 'killed'
+					});
+				});
+			}
 
 			// Resolve immediately if the terminal is closed/killed by the user
 			state.onKilled = () => {
@@ -889,7 +917,7 @@ export class SingleTerminalController {
 				});
 			};
 
-			const pollInterval = setInterval(() => {
+			pollInterval = setInterval(() => {
 				// Use async IIFE to handle native stdin detection
 				void (async () => {
 					if (resolved) return; // Already resolved, skip
@@ -993,7 +1021,7 @@ export class SingleTerminalController {
 			}, POLL_INTERVAL_MS);
 
 			// Timeout fallback
-			const timeoutTimer = setTimeout(() => {
+			timeoutTimer = setTimeout(() => {
 				// Use async IIFE for native detection
 				void (async () => {
 					const cleaned = cleanTerminalOutput(state.output);

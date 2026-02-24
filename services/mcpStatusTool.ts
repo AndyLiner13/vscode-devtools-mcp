@@ -11,13 +11,26 @@
 
 import type * as vscode from 'vscode';
 
-import { waitForMcpReady } from './host-handlers';
+import { getMcpInspectorHttpPort, waitForMcpReady } from './host-handlers';
+import { getInspectorPort } from './inspectorManager';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const DEFAULT_TIMEOUT_MS = 60_000;
 
-const READY_MESSAGE = `✅ MCP server is ready.
+function getReadyMessage(): string {
+	const mcpHttpPort = getMcpInspectorHttpPort();
+	const inspectorVitePort = getInspectorPort();
+
+	let portInfo = '';
+	if (mcpHttpPort) {
+		portInfo += `\n- MCP HTTP endpoint: http://localhost:${mcpHttpPort}/mcp`;
+	}
+	if (inspectorVitePort) {
+		portInfo += `\n- Inspector UI: http://localhost:${inspectorVitePort}/`;
+	}
+
+	return `✅ MCP server is ready.${portInfo}
 
 The MCP tool cache was already cleared during the restart.
 Do NOT call mcpStatus again — proceed directly to using MCP tools.
@@ -25,6 +38,7 @@ Do NOT call mcpStatus again — proceed directly to using MCP tools.
 If tools are not visible or changes are not working as expected:
 1. Check the MCP server's output via the output_read tool
 2. Review the MCP server's source code to determine the cause`;
+}
 
 const TIMEOUT_MESSAGE = `⏳ MCP server did not become ready within the timeout period.
 
@@ -64,7 +78,7 @@ export class McpStatusTool implements vscode.LanguageModelTool<IMcpStatusParams>
 		const { LanguageModelTextPart, LanguageModelToolResult } = await import('vscode');
 
 		if (ready) {
-			return new LanguageModelToolResult([new LanguageModelTextPart(READY_MESSAGE)]);
+			return new LanguageModelToolResult([new LanguageModelTextPart(getReadyMessage())]);
 		}
 
 		return new LanguageModelToolResult([new LanguageModelTextPart(TIMEOUT_MESSAGE)]);
