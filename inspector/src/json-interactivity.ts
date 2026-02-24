@@ -536,9 +536,18 @@ function setupSymbolIntellisense(
 			if (!fileProp) return empty;
 
 			const filePath = readStringPropertyValue(model, fileProp);
-			if (!filePath) return empty;
+			if (!filePath) {
+				// File field is empty, clear cache to avoid stale suggestions
+				cachedFilePath = null;
+				cachedSymbols = [];
+				return empty;
+			}
 
 			if (filePath !== cachedFilePath) {
+				// Clear cache immediately so stale symbols aren't shown if fetch fails
+				cachedFilePath = null;
+				cachedSymbols = [];
+
 				try {
 					const resp = await fetch(`${SYMBOLS_ENDPOINT}?file=${encodeURIComponent(filePath)}`);
 					if (!resp.ok) return empty;
@@ -1681,11 +1690,11 @@ function setupTabToggle(
 			}
 		}
 
-		// Tab in an empty file-path field → open IntelliSense
+		// Tab in a file-path field → open IntelliSense
 		const fileProps = findFilePathProperties(schema);
 		if (fileProps.size > 0) {
 			const fileRange = findStringValueRange(line, position.column, fileProps);
-			if (fileRange && fileRange.contentStart === fileRange.contentEnd) {
+			if (fileRange) {
 				e.preventDefault();
 				e.stopPropagation();
 				queueMicrotask(() => {
@@ -1695,12 +1704,12 @@ function setupTabToggle(
 			}
 		}
 
-		// Tab in an empty symbol field (when its linked file path is set) → open IntelliSense
+		// Tab in a symbol field (when its linked file path is set) → open IntelliSense
 		const symbolPropMap = findSymbolProperties(schema);
 		if (symbolPropMap.size > 0) {
 			const symbolPropNames = new Set(symbolPropMap.keys());
 			const symRange = findStringValueRange(line, position.column, symbolPropNames);
-			if (symRange && symRange.contentStart === symRange.contentEnd) {
+			if (symRange) {
 				const fileProp = symbolPropMap.get(symRange.propertyName);
 				if (fileProp) {
 					const filePath = readStringPropertyValue(model, fileProp);

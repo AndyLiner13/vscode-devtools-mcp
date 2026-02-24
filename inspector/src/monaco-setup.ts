@@ -11,6 +11,20 @@ window.MonacoEnvironment = {
 	}
 };
 
+// Disable Monaco's built-in JSON completion suggestions — we provide our own
+// targeted completions for file paths and symbols only.
+monaco.languages.json.jsonDefaults.setModeConfiguration({
+	completionItems: false,
+	diagnostics: true,
+	documentFormattingEdits: true,
+	documentRangeFormattingEdits: true,
+	documentSymbols: true,
+	foldingRanges: true,
+	hovers: true,
+	selectionRanges: true,
+	tokens: true
+});
+
 // Custom theme that matches our VS Code dark UI colors exactly
 monaco.editor.defineTheme('vscode-inspector', {
 	base: 'vs-dark',
@@ -61,6 +75,8 @@ const SHARED_EDITOR_OPTIONS: monaco.editor.IStandaloneEditorConstructionOptions 
 	scrollBeyondLastLine: false,
 	selectionHighlight: false,
 	stickyScroll: { enabled: false },
+	// Disable word-based suggestions to prevent editor suggesting tokens from doc
+	wordBasedSuggestions: 'off',
 	tabSize: 2,
 	theme: 'vscode-inspector',
 	wordWrap: 'on'

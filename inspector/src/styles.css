@@ -34,9 +34,12 @@ body {
 }
 
 /* Hide the Monaco suggest widget entirely when it has no items to show.
- * Monaco adds the "empty" class when the suggestion list is empty, which
- * is what produces the "No suggestions." label. */
-.suggest-widget.empty {
+ * Monaco may use different selectors for empty states depending on version.
+ * Use multiple selectors to ensure the widget is hidden. */
+.suggest-widget.empty,
+.suggest-widget .message,
+.suggest-widget .suggest-status-bar,
+.monaco-editor .suggest-widget:has(.message) {
 	display: none !important;
 }
 

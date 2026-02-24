@@ -93,6 +93,14 @@ interface FlatSymbol {
 // relative ("UserService.findById" instead of "MyFile.UserService.findById").
 const FILE_WRAPPER_KINDS = new Set(['module', 'file', 'namespace']);
 
+/** Returns true when a top-level symbol name looks like a file path or filename wrapper. */
+function isFileWrapperName(name: string): boolean {
+	// Contains path separators → absolute or relative file path
+	if (name.includes('/') || name.includes('\\')) return true;
+	// Ends with a known source-file extension → basename wrapper (e.g. "foo.ts")
+	return /\.[a-z]{1,5}$/i.test(name);
+}
+
 /**
  * Flatten a nested NativeDocumentSymbol tree into dot-notation paths.
  * e.g. class UserService { findById() {} } → ["UserService", "UserService.findById"]
@@ -107,7 +115,7 @@ function flattenDocumentSymbols(
 	for (const sym of symbols) {
 		if (!sym.name) continue;
 		const kind = sym.kind ?? 'Unknown';
-		const isFileWrapper = prefix === '' && FILE_WRAPPER_KINDS.has(kind.toLowerCase());
+		const isFileWrapper = prefix === '' && (FILE_WRAPPER_KINDS.has(kind.toLowerCase()) || isFileWrapperName(sym.name));
 		const fullName = isFileWrapper ? '' : (prefix ? `${prefix}.${sym.name}` : sym.name);
 		if (!isFileWrapper) {
 			out.push({ kind, name: fullName });
