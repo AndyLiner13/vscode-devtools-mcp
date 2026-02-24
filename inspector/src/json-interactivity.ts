@@ -1050,19 +1050,42 @@ function setupValueAutoSelect(
 			return;
 		}
 
-		if (isCursorOnPropertyKey(line, col)) return;
+		// Note: We intentionally don't return early when on a property key.
+		// Instead, we'll snap to the nearest value on this line.
 
+		// First check if we're inside a value range
 		const valueRange = findJsonValueRange(line, col);
-		if (!valueRange) return;
+		console.log('[autoSelect] col:', col, 'valueRange:', valueRange);
 
-		if (isEscapedRange(escapedRange, e.position.lineNumber, valueRange)) return;
+		let targetRange: { end: number; start: number } | null = null;
+
+		if (valueRange) {
+			const isInside = col >= valueRange.start && col <= valueRange.end;
+			console.log('[autoSelect] isInside:', isInside, 'start:', valueRange.start, 'end:', valueRange.end);
+			if (isInside) {
+				targetRange = valueRange;
+			}
+		}
+
+		// If not inside any value, snap to the nearest value on this line
+		if (!targetRange) {
+			const nearest = findNearestValueRange(line, col);
+			console.log('[autoSelect] snapping to nearest:', nearest);
+			if (nearest) {
+				targetRange = nearest;
+			}
+		}
+
+		if (!targetRange) return;
+
+		if (isEscapedRange(escapedRange, e.position.lineNumber, targetRange)) return;
 
 		escapedRange = null;
 		settingSelection = true;
 		queueMicrotask(() => {
 			editor.setSelection(new monacoNs.Selection(
-				e.position.lineNumber, valueRange.start,
-				e.position.lineNumber, valueRange.end
+				e.position.lineNumber, targetRange.start,
+				e.position.lineNumber, targetRange.end
 			));
 			settingSelection = false;
 		});
@@ -1365,12 +1388,109 @@ function findArrayItemsOnLine(line: string): Array<{ end: number; start: number 
 }
 
 /**
+ * Find ALL value ranges on a line (strings, numbers, keywords).
+ * Returns array of 1-based { start, end } ranges.
+ */
+function findAllValueRangesOnLine(line: string): Array<{ end: number; start: number }> {
+	const ranges: Array<{ end: number; start: number }> = [];
+
+	// Find all string values (right side of colon, or inside arrays)
+	const stringRegex = /"([^"\\]*)"/g;
+	let match;
+	while ((match = stringRegex.exec(line)) !== null) {
+		const matchStart = match.index;
+		const prefix = line.substring(0, matchStart).trimEnd();
+		// Accept strings after colon (object value), comma (array item), or opening bracket (first array item)
+		if (!prefix.endsWith(':') && !prefix.endsWith(',') && !prefix.endsWith('[')) continue;
+
+		const contentStart0 = matchStart + 1;
+		const contentEnd0 = matchStart + match[0].length - 1;
+		ranges.push({
+			end: contentEnd0 + 1,
+			start: contentStart0 + 1
+		});
+	}
+
+	// Find all keyword values (true, false, null)
+	const keywords = ['true', 'false', 'null'];
+	for (const keyword of keywords) {
+		const regex = new RegExp(`\\b${keyword}\\b`, 'g');
+		while ((match = regex.exec(line)) !== null) {
+			const matchStart = match.index;
+			const matchEnd = matchStart + keyword.length;
+
+			const prefix = line.substring(0, matchStart);
+			const quoteCount = (prefix.match(/(?<!\\)"/g) ?? []).length;
+			if (quoteCount % 2 !== 0) continue;
+
+			const beforeValue = prefix.trimEnd();
+			if (!beforeValue.endsWith(':') && !beforeValue.endsWith(',') && !beforeValue.endsWith('[')) continue;
+
+			ranges.push({
+				end: matchEnd + 1,
+				start: matchStart + 1
+			});
+		}
+	}
+
+	// Find all number values
+	const numRegex = /-?\d+/g;
+	while ((match = numRegex.exec(line)) !== null) {
+		const matchStart = match.index;
+		const matchEnd = matchStart + match[0].length;
+
+		const prefix = line.substring(0, matchStart);
+		const quoteCount = (prefix.match(/(?<!\\)"/g) ?? []).length;
+		if (quoteCount % 2 !== 0) continue;
+
+		ranges.push({
+			end: matchEnd + 1,
+			start: matchStart + 1
+		});
+	}
+
+	return ranges;
+}
+
+/**
+ * Find the nearest value range on a line to a given column.
+ * Returns the range with minimum distance, or null if no values on line.
+ */
+function findNearestValueRange(line: string, column: number): null | { end: number; start: number } {
+	const ranges = findAllValueRangesOnLine(line);
+	if (ranges.length === 0) return null;
+
+	let nearest: { end: number; start: number } | null = null;
+	let minDistance = Infinity;
+
+	for (const range of ranges) {
+		// If column is inside range, distance is 0
+		if (column >= range.start && column <= range.end) {
+			return range;
+		}
+
+		// Distance to the closest edge of the range
+		const distToStart = Math.abs(column - range.start);
+		const distToEnd = Math.abs(column - range.end);
+		const distance = Math.min(distToStart, distToEnd);
+
+		if (distance < minDistance) {
+			minDistance = distance;
+			nearest = range;
+		}
+	}
+
+	return nearest;
+}
+
+/**
  * Find the full range of a JSON value at or adjacent to a column position.
  * Handles: strings ("value"), numbers (123, -5), booleans (true, false), null.
  * Returns 1-based { start, end } range (end is exclusive) or null.
  */
 function findJsonValueRange(line: string, column: number): null | { end: number; start: number } {
-	// Check the current position and one position to each side
+	// Check the current position and one position to each side for better click targeting.
+	// The underlying findStringLiteralRange only matches if cursor is INSIDE content (not on quotes).
 	const positions = [column, column - 1, column + 1];
 	for (const col of positions) {
 		if (col < 1 || col > line.length + 1) continue;
@@ -1393,6 +1513,7 @@ function findJsonValueRange(line: string, column: number): null | { end: number;
  * Only matches value strings (right side of colon), not property keys.
  * Returns 1-based { start, end } range excluding quotes (content only), or null.
  * For empty strings, start === end (cursor position between quotes).
+ * Only matches if cursor is INSIDE the content (not on the quotes).
  */
 function findStringLiteralRange(line: string, column: number): null | { end: number; start: number } {
 	const idx = column - 1; // 0-based
@@ -1403,20 +1524,28 @@ function findStringLiteralRange(line: string, column: number): null | { end: num
 		const matchStart = match.index; // 0-based, opening quote
 		const matchEnd = match.index + match[0].length; // 0-based, after closing quote
 
-		if (idx >= matchStart && idx < matchEnd) {
-			// Make sure this is a value (right of colon), not a key
-			const prefix = line.substring(0, matchStart).trimEnd();
-			if (!prefix.endsWith(':')) continue;
+		// Content boundaries (0-based): after opening quote to before closing quote
+		const contentStart0 = matchStart + 1;
+		const contentEnd0 = matchEnd - 1;
 
-			// Content range: after opening quote, before closing quote
-			const contentStart = matchStart + 2; // 1-based, after opening quote
-			const contentEnd = matchEnd; // 1-based, at closing quote (exclusive)
+		// For empty strings (contentStart0 === contentEnd0), the cursor can be exactly at that position.
+		// For non-empty strings, cursor must be within [contentStart0, contentEnd0).
+		const isEmptyString = contentStart0 === contentEnd0;
+		const cursorInContent = isEmptyString
+			? idx === contentStart0
+			: idx >= contentStart0 && idx < contentEnd0;
 
-			return {
-				end: contentEnd,
-				start: contentStart
-			};
-		}
+		if (!cursorInContent) continue;
+
+		// Make sure this is a value (right of colon), not a key
+		const prefix = line.substring(0, matchStart).trimEnd();
+		if (!prefix.endsWith(':')) continue;
+
+		// Content range (1-based)
+		return {
+			end: contentEnd0 + 1, // 1-based exclusive end
+			start: contentStart0 + 1 // 1-based start
+		};
 	}
 	return null;
 }
@@ -2077,17 +2206,43 @@ export function setupLockedEditing(
 		}
 
 		// Prevent Backspace from eating the opening quote / structural character
-		if (e.code === 'Backspace' && pos.column <= zone.startCol) {
-			e.preventDefault();
-			e.stopPropagation();
-			return;
+		if (e.code === 'Backspace') {
+			// Ctrl+Backspace (word delete) — delete to zone start, not past it
+			if (e.ctrlKey || e.metaKey) {
+				e.preventDefault();
+				e.stopPropagation();
+				if (pos.column > zone.startCol) {
+					const deleteRange = new monacoNs.Range(pos.lineNumber, zone.startCol, pos.lineNumber, pos.column);
+					editor.executeEdits('ctrl-backspace', [{ range: deleteRange, text: '' }]);
+				}
+				return;
+			}
+			// Regular Backspace at zone start — block
+			if (pos.column <= zone.startCol) {
+				e.preventDefault();
+				e.stopPropagation();
+				return;
+			}
 		}
 
 		// Prevent Delete from eating the closing quote / structural character
-		if (e.code === 'Delete' && pos.column >= zone.endCol) {
-			e.preventDefault();
-			e.stopPropagation();
-			return;
+		if (e.code === 'Delete') {
+			// Ctrl+Delete (word delete) — delete to zone end, not past it
+			if (e.ctrlKey || e.metaKey) {
+				e.preventDefault();
+				e.stopPropagation();
+				if (pos.column < zone.endCol) {
+					const deleteRange = new monacoNs.Range(pos.lineNumber, pos.column, pos.lineNumber, zone.endCol);
+					editor.executeEdits('ctrl-delete', [{ range: deleteRange, text: '' }]);
+				}
+				return;
+			}
+			// Regular Delete at zone end — block
+			if (pos.column >= zone.endCol) {
+				e.preventDefault();
+				e.stopPropagation();
+				return;
+			}
 		}
 
 		// Number zones: reject non-numeric characters
