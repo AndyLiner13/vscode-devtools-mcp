@@ -2170,8 +2170,59 @@ export function setupLockedEditing(
 			return;
 		}
 
-		// Allow Ctrl / Meta shortcuts (undo, redo, copy, paste, select-all, etc.)
-		if (e.ctrlKey || e.metaKey) return;
+		// Handle Ctrl/Meta shortcuts that need value zone restrictions
+		if (e.ctrlKey || e.metaKey) {
+			const pos = editor.getPosition();
+			if (!pos) return;
+
+			const zone = findZoneAt(pos, zones);
+
+			// Ctrl+A: Select only current value zone instead of all
+			if (e.code === 'KeyA') {
+				e.preventDefault();
+				e.stopPropagation();
+				if (zone) {
+					queueMicrotask(() => {
+						editor.setSelection(new monacoNs.Selection(
+							zone.startLine, zone.startCol,
+							zone.endLine, zone.endCol
+						));
+					});
+				}
+				return;
+			}
+
+			// Ctrl+Left/Right: Move to zone boundary, not word boundary
+			if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+				e.preventDefault();
+				e.stopPropagation();
+				if (zone) {
+					const targetCol = e.code === 'ArrowLeft' ? zone.startCol : zone.endCol;
+					if (e.shiftKey) {
+						// Ctrl+Shift+Arrow: Select to zone boundary
+						const sel = editor.getSelection();
+						const anchor = sel && !sel.isEmpty() 
+							? new monacoNs.Position(sel.selectionStartLineNumber, sel.selectionStartColumn)
+							: pos;
+						queueMicrotask(() => {
+							editor.setSelection(new monacoNs.Selection(
+								anchor.lineNumber, anchor.column,
+								zone.startLine, targetCol
+							));
+						});
+					} else {
+						// Ctrl+Arrow: Move cursor to zone boundary
+						queueMicrotask(() => {
+							editor.setPosition(new monacoNs.Position(zone.startLine, targetCol));
+						});
+					}
+				}
+				return;
+			}
+
+			// Allow other Ctrl shortcuts (undo, redo, copy, paste, etc.)
+			return;
+		}
 
 		if (!isEditingCode(e.code)) return;
 
