@@ -19,7 +19,6 @@
 import process from 'node:process';
 
 import { teardown as hostTeardown, hotReloadRequired, mcpReady } from '../host-pipe.js';
-import { getInspectorHttpPort } from '../inspectorState.js';
 import { logger } from '../logger.js';
 import { stopMcpSocketServer } from '../mcp-socket-server.js';
 
@@ -111,7 +110,6 @@ class LifecycleService {
 			const result = await hotReloadRequired({
 				clientWorkspace: this._clientWorkspace,
 				extensionPath: this._extensionPath,
-				inspectorHttpPort: getInspectorHttpPort(),
 				launch: this._launchFlags
 			});
 			clientStartedAt = result.clientStartedAt;
@@ -122,7 +120,6 @@ class LifecycleService {
 			const fallbackResult = await mcpReady({
 				clientWorkspace: this._clientWorkspace,
 				extensionPath: this._extensionPath,
-				inspectorHttpPort: getInspectorHttpPort(),
 				launch: this._launchFlags
 			});
 			clientStartedAt = fallbackResult.clientStartedAt;
@@ -267,7 +264,6 @@ class LifecycleService {
 			clientWorkspace: this._clientWorkspace,
 			extensionPath: this._extensionPath,
 			forceRestart: options?.forceRestart,
-			inspectorHttpPort: getInspectorHttpPort(),
 			launch: this._launchFlags
 		});
 

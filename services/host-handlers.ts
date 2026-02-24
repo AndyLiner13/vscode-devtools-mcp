@@ -105,9 +105,6 @@ let currentExtensionPath: null | string = null;
 /** Last client workspace used for Client launch */
 let currentClientWorkspace: null | string = null;
 
-/** MCP server's Inspector HTTP endpoint port (for browser-based MCP Inspector) */
-let mcpInspectorHttpPort: null | number = null;
-
 /** True while reconnecting after a Client window reload */
 let clientReconnecting = false;
 
@@ -1091,12 +1088,6 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 		const launchFlags = typeof params.launch === 'object' && params.launch !== null ? (params.launch as Record<string, unknown>) : undefined;
 		const forceRestart = typeof params.forceRestart === 'boolean' ? params.forceRestart : false;
 
-		// Store the MCP server's Inspector HTTP endpoint port
-		if (typeof params.inspectorHttpPort === 'number') {
-			mcpInspectorHttpPort = params.inspectorHttpPort;
-			console.log(`[host] MCP Inspector HTTP port: ${mcpInspectorHttpPort}`);
-		}
-
 		if (!clientWorkspace) {
 			throw new Error('mcpReady: clientWorkspace is required');
 		}
@@ -1602,33 +1593,14 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 	});
 
 	/**
-	 * notifyInspectorPort — MCP server tells us its Inspector HTTP endpoint port.
-	 * Called after the Inspector HTTP server starts, regardless of startup order.
-	 */
-	register('notifyInspectorPort', async (params) => {
-		const port = typeof params.port === 'number' ? params.port : undefined;
-		if (port) {
-			mcpInspectorHttpPort = port;
-			hostLog?.(`[host] MCP Inspector HTTP port updated via pipe: ${port}`);
-		}
-		return { ok: true };
-	});
-
-	/**
 	 * ensureMcpServer — Inspector requests that the MCP server is running.
 	 * Executes the startMcpServer command (idempotent — no-op if already running).
-	 * Returns the MCP endpoint URL so the Inspector can connect.
+	 * The Inspector then connects to the MCP server via its named pipe.
 	 */
 	register('ensureMcpServer', async () => {
 		console.log('[host] ensureMcpServer called from Inspector');
 		await vscode.commands.executeCommand('devtools.startMcpServer', { silent: true });
-
-		// Return the MCP endpoint URL for the Inspector to connect to
-		const port = mcpInspectorHttpPort;
-		const mcpEndpoint = port ? `http://localhost:${port}/mcp` : null;
-		console.log(`[host] ensureMcpServer returning mcpEndpoint: ${mcpEndpoint}`);
-
-		return { mcpEndpoint, ok: true };
+		return { ok: true };
 	});
 
 	// Track debug session lifecycle
@@ -1784,14 +1756,6 @@ export function stopClientWindow(): void {
 	lastKnownClientState = false;
 	hostLog?.('[state-fire] stopClientWindow: firing connected=false');
 	_onClientStateChanged.fire(false);
-}
-
-/**
- * Get the MCP server's Inspector HTTP endpoint port.
- * Returns null if no MCP server has announced itself yet.
- */
-export function getMcpInspectorHttpPort(): null | number {
-	return mcpInspectorHttpPort;
 }
 
 /**

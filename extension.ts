@@ -22,7 +22,6 @@ import * as bootstrap from './bootstrap';
 import pkg from './package.json';
 import { startWorker, stopWorker } from './services/codebase/codebase-worker-proxy';
 import { ensureInspectorRunning, getInspectorPort, registerInspectorCommands, shutdownInspector } from './services/inspectorManager';
-import { getMcpInspectorHttpPort } from './services/host-handlers';
 import { registerMcpServerProvider } from './services/mcpServerProvider';
 
 // VS Code constructs server definition IDs as: ExtensionIdentifier.toKey(id) + '/' + label
@@ -140,12 +139,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		switch (state) {
 			case 'connected': {
 				statusBarItem.text = '$(debug-connected) VS Code DevTools Host';
-				const mcpHttpPort = getMcpInspectorHttpPort();
 				const inspectorVitePort = getInspectorPort();
 				let portInfo = '';
-				if (mcpHttpPort) {
-					portInfo += `\nMCP HTTP: http://localhost:${mcpHttpPort}/mcp`;
-				}
 				if (inspectorVitePort) {
 					portInfo += `\nInspector: http://localhost:${inspectorVitePort}/`;
 				}

@@ -42,7 +42,6 @@ export interface McpReadyParams {
 	clientWorkspace: string;
 	extensionPath: string;
 	forceRestart?: boolean;
-	inspectorHttpPort?: number;
 	launch?: Record<string, unknown>;
 }
 
@@ -240,18 +239,6 @@ export async function readyToRestart(): Promise<void> {
 		await sendHostRequest('readyToRestart', {}, 15_000);
 	} catch {
 		// Expected — the server may be killed before the response arrives
-	}
-}
-
-/**
- * Notify the Host of the Inspector HTTP endpoint port.
- * The Host stores this so the Inspector frontend can discover it.
- */
-export async function notifyInspectorPort(port: number): Promise<void> {
-	try {
-		await sendHostRequest('notifyInspectorPort', { port });
-	} catch {
-		logger('[host-pipe] notifyInspectorPort failed — host may not be listening yet');
 	}
 }
 

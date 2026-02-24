@@ -11,7 +11,7 @@
 
 import type * as vscode from 'vscode';
 
-import { getMcpInspectorHttpPort, waitForMcpReady } from './host-handlers';
+import { waitForMcpReady } from './host-handlers';
 import { getInspectorPort } from './inspectorManager';
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -19,13 +19,9 @@ import { getInspectorPort } from './inspectorManager';
 const DEFAULT_TIMEOUT_MS = 60_000;
 
 function getReadyMessage(): string {
-	const mcpHttpPort = getMcpInspectorHttpPort();
 	const inspectorVitePort = getInspectorPort();
 
 	let portInfo = '';
-	if (mcpHttpPort) {
-		portInfo += `\n- MCP HTTP endpoint: http://localhost:${mcpHttpPort}/mcp`;
-	}
 	if (inspectorVitePort) {
 		portInfo += `\n- Inspector UI: http://localhost:${inspectorVitePort}/`;
 	}
