@@ -5,10 +5,31 @@ import type { ExtractedSymbol, ExtractedSymbolRange } from '../file-structure-ex
 import type { LanguageService } from '../language-service-registry';
 import type { FileStructure, FileSymbol, FileSymbolRange } from '../types';
 import type { SymbolNode } from '../types';
+import type { CommentNode } from '@packages/tfidf';
 
+import { getIdentifiers } from '@packages/tfidf';
 import { extractFileStructure as extractTsMorphStructure } from '../file-structure-extractor';
 
 const TS_EXTENSIONS = ['ts', 'tsx', 'js', 'jsx', 'mts', 'mjs', 'cts', 'cjs'] as const;
+
+/**
+ * Extract raw text from file content by 1-indexed line range.
+ */
+function extractTextFromRange(content: string, startLine: number, endLine: number): string {
+	const lines = content.split('\n');
+	return lines.slice(startLine - 1, endLine).join('\n');
+}
+
+/**
+ * Convert FileSymbol containers into CommentNode inputs for TF-IDF scoring.
+ */
+function toCommentNodes(containers: FileSymbol[], content: string): CommentNode[] {
+	return containers.map((c) => ({
+		kind: c.kind,
+		range: { startLine: c.range.startLine, endLine: c.range.endLine },
+		text: extractTextFromRange(content, c.range.startLine, c.range.endLine)
+	}));
+}
 
 function convertRange(range: ExtractedSymbolRange): FileSymbolRange {
 	return {
@@ -110,7 +131,20 @@ export class TypeScriptLanguageService implements LanguageService {
 
 		maybeAdd('imports', 'imports', result.imports);
 		maybeAdd('exports', 'exports', result.exports);
-		containerSymbols.push(...buildContainerGroups('comments', 'comments', result.orphanComments));
+
+		// Build comment containers and assign TF-IDF semantic identifiers
+		const commentContainers = buildContainerGroups('comments', 'comments', result.orphanComments);
+		if (commentContainers.length > 0) {
+			const commentNodes = toCommentNodes(commentContainers, result.content);
+			const identifiers = getIdentifiers(filePath, result.content, commentNodes);
+			for (let i = 0; i < commentContainers.length; i++) {
+				if (identifiers[i]?.slug) {
+					commentContainers[i] = { ...commentContainers[i], name: identifiers[i].slug };
+				}
+			}
+		}
+		containerSymbols.push(...commentContainers);
+
 		maybeAdd('directives', 'directives', result.directives);
 
 		const codeSymbols = result.symbols.map(convertSymbol);

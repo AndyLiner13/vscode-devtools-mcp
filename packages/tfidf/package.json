@@ -1,0 +1,11 @@
+{
+	"name": "@packages/tfidf",
+	"version": "1.0.0",
+	"private": true,
+	"description": "TF-IDF semantic identifier service for anonymous AST nodes",
+	"main": "src/index.ts",
+	"types": "src/index.ts",
+	"dependencies": {
+		"natural": "^8.0.1"
+	}
+}
