@@ -466,7 +466,7 @@ function readStringPropertyValue(model: monacoNs.editor.ITextModel, propertyName
 	return null;
 }
 
-/** Map a VS Code DocumentSymbol kind string to a Monaco CompletionItemKind. */
+/** Map a symbol kind to a Monaco CompletionItemKind. */
 function symbolKindToCompletionKind(kind: string): monacoNs.languages.CompletionItemKind {
 	switch (kind.toLowerCase()) {
 		case 'class': return monacoNs.languages.CompletionItemKind.Class;
@@ -479,11 +479,15 @@ function symbolKindToCompletionKind(kind: string): monacoNs.languages.Completion
 		case 'interface': return monacoNs.languages.CompletionItemKind.Interface;
 		case 'enum': return monacoNs.languages.CompletionItemKind.Enum;
 		case 'enummember': return monacoNs.languages.CompletionItemKind.EnumMember;
-		case 'namespace':
-		case 'module': return monacoNs.languages.CompletionItemKind.Module;
 		case 'constructor': return monacoNs.languages.CompletionItemKind.Constructor;
-		case 'struct': return monacoNs.languages.CompletionItemKind.Struct;
-		case 'typeparameter': return monacoNs.languages.CompletionItemKind.TypeParameter;
+		case 'getter':
+		case 'setter': return monacoNs.languages.CompletionItemKind.Property;
+		case 'imports':
+		case 'exports':
+		case 'directives': return monacoNs.languages.CompletionItemKind.Module;
+		case 'comment':
+		case 'jsdoc':
+		case 'tsdoc': return monacoNs.languages.CompletionItemKind.Text;
 		default: return monacoNs.languages.CompletionItemKind.Text;
 	}
 }

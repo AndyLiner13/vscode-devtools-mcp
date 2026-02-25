@@ -12,6 +12,8 @@ import type { RegisterHandler } from './client-handlers';
 
 import { readdirSync } from 'node:fs';
 
+import { extractStructure } from './codebase/codebase-worker-proxy';
+import type { FileSymbol } from './codebase/types';
 import { inspectorLog } from './logger';
 import net from 'node:net';
 import { resolve as resolvePath } from 'node:path';
@@ -45,7 +47,14 @@ const IS_WINDOWS = process.platform === 'win32';
 const MCP_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-mcp' : '/tmp/vscode-devtools-mcp.sock';
 const HOST_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-host' : '/tmp/vscode-devtools-host.sock';
 const STORAGE_KEY = 'inspector.records';
-const FILE_WRAPPER_KINDS = new Set(['module', 'file', 'namespace']);
+
+// Symbol kinds that are valid targets for the file_read `symbol` parameter.
+// Body-bearing kinds (functions, classes, etc.) and container kinds (imports, comments, etc.)
+const BODY_BEARING_KINDS = new Set([
+	'function', 'method', 'constructor', 'getter', 'setter',
+	'class', 'interface', 'enum',
+]);
+const CONTAINER_KINDS = new Set(['imports', 'exports', 'comment', 'jsdoc', 'tsdoc', 'directives']);
 
 // Detect MCP restart messages (matches pipeline restart indicators)
 const RESTART_INDICATORS = [
@@ -155,46 +164,31 @@ async function sendPipeRpc(
 
 // ── Symbol Flattening ──
 
-interface RawSymbol {
-	children?: RawSymbol[];
-	kind?: vscode.SymbolKind;
-	name?: string;
+/**
+ * Check if a symbol is a valid target for file_read's `symbol` parameter.
+ * Valid targets are body-bearing symbols (function, class, etc.) and
+ * container kinds (imports, exports, comments, etc.).
+ */
+function isValidTarget(sym: FileSymbol): boolean {
+	return BODY_BEARING_KINDS.has(sym.kind) || CONTAINER_KINDS.has(sym.kind) || sym.children.length > 0;
 }
 
-function symbolKindToString(kind: vscode.SymbolKind | undefined): string {
-	if (kind === undefined) return 'Unknown';
-	return vscode.SymbolKind[kind] ?? 'Unknown';
-}
-
-function isFileWrapperName(name: string): boolean {
-	return /^['"<]/.test(name) || /\.(ts|js|tsx|jsx|mjs|cjs)$/i.test(name);
-}
-
-function flattenDocumentSymbols(
-	symbols: RawSymbol[],
+/**
+ * Flatten a FileSymbol tree into name+kind entries, keeping only valid targets.
+ * Uses dot-qualified names for nested symbols (e.g. "MyClass.myMethod").
+ */
+function flattenFileSymbols(
+	symbols: FileSymbol[],
 	prefix = ''
 ): Array<{ kind: string; name: string }> {
 	const out: Array<{ kind: string; name: string }> = [];
 	for (const sym of symbols) {
-		const kind = symbolKindToString(sym.kind);
-		const isFileWrapper = prefix === '' && (
-			FILE_WRAPPER_KINDS.has(kind.toLowerCase()) || isFileWrapperName(sym.name ?? '')
-		);
-
-		let fullName: string;
-		if (isFileWrapper) {
-			fullName = '';
-		} else if (prefix) {
-			fullName = `${prefix}.${sym.name ?? ''}`;
-		} else {
-			fullName = sym.name ?? '';
+		const fullName = prefix ? `${prefix}.${sym.name}` : sym.name;
+		if (isValidTarget(sym)) {
+			out.push({ kind: sym.kind, name: fullName });
 		}
-
-		if (fullName) {
-			out.push({ kind, name: fullName });
-		}
-		if (sym.children?.length) {
-			out.push(...flattenDocumentSymbols(sym.children, fullName));
+		if (sym.children.length > 0) {
+			out.push(...flattenFileSymbols(sym.children, fullName));
 		}
 	}
 	return out;
@@ -485,37 +479,14 @@ export function registerInspectorHandlers(
 		}
 
 		try {
-			const uri = vscode.Uri.file(filePath);
-			log(`[editor/symbols] uri: ${uri.toString()}`);
-
-			// Open the document so the language server loads it before requesting symbols.
-			// executeDocumentSymbolProvider returns null/empty for files that haven't been
-			// processed by the language server yet.
-			await vscode.workspace.openTextDocument(uri);
-
-			const rawSymbols = await vscode.commands.executeCommand<RawSymbol[]>(
-				'vscode.executeDocumentSymbolProvider',
-				uri
-			);
-
-			log(`[editor/symbols] rawSymbols count: ${rawSymbols?.length ?? 0}`);
-
-			if (!rawSymbols || rawSymbols.length === 0) {
-				// Language server may need a moment to initialize symbols.
-				// Retry once after a short delay.
-				log(`[editor/symbols] No symbols, retrying after 500ms...`);
-				await new Promise((r) => setTimeout(r, 500));
-				const retrySymbols = await vscode.commands.executeCommand<RawSymbol[]>(
-					'vscode.executeDocumentSymbolProvider',
-					uri
-				);
-				log(`[editor/symbols] retrySymbols count: ${retrySymbols?.length ?? 0}`);
-				const symbols = flattenDocumentSymbols(retrySymbols ?? []);
-				return { symbols };
+			const structure = await extractStructure(filePath);
+			if (!structure) {
+				log(`[editor/symbols] no structure returned for: ${filePath}`);
+				return { symbols: [] };
 			}
 
-			const symbols = flattenDocumentSymbols(rawSymbols);
-			log(`[editor/symbols] returning ${symbols.length} symbols`);
+			const symbols = flattenFileSymbols(structure.symbols);
+			log(`[editor/symbols] returning ${symbols.length} valid targets`);
 			return { symbols };
 		} catch (err) {
 			log(`[editor/symbols] ERROR: ${err}`);
