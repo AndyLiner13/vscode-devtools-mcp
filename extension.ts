@@ -114,6 +114,11 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(outputChannel);
 	initMainChannel(outputChannel);
 
+	// Inspector output channel — separate from main to avoid noise
+	const inspectorChannel = vscode.window.createOutputChannel('DevTools Inspector');
+	context.subscriptions.push(inspectorChannel);
+	initInspectorChannel(inspectorChannel);
+
 	log('VS Code DevTools extension activating...');
 
 	// Register the Inspector WebView serializer synchronously — MUST happen
@@ -467,9 +472,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			}, 10_000);
 		} else {
 			log('Loading client-handlers module...');
-			const inspectorChannel = vscode.window.createOutputChannel('DevTools Inspector');
-			context.subscriptions.push(inspectorChannel);
-			initInspectorChannel(inspectorChannel);
 
 			const { registerClientHandlers } = await import('./services/client-handlers');
 			log('client-handlers module loaded, registering handlers...');

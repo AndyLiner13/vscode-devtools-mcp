@@ -14,7 +14,7 @@ import { isAbsolute, join, resolve } from 'node:path';
 import * as vscode from 'vscode';
 
 import { getHotReloadService } from './hotReloadService';
-import { log } from './logger';
+import { inspectorLog as log } from './logger';
 
 // ── Types ──
 
@@ -629,10 +629,16 @@ export function registerInspectorPanel(
 
 						progress.report({ message: 'Restarting client window…' });
 						try {
-							const { startClientWindow, stopClientWindow } = await import('./host-handlers');
-							stopClientWindow();
-							await startClientWindow();
-							vscode.window.showInformationMessage('✅ Extension rebuilt — client reconnected');
+							const { setHotReloadInProgress, startClientWindow, stopClientWindow } = await import('./host-handlers');
+							// Suppress tethered lifecycle during stop/start to prevent MCP server kill
+							setHotReloadInProgress(true);
+							try {
+								stopClientWindow();
+								await startClientWindow();
+								vscode.window.showInformationMessage('✅ Extension rebuilt — client reconnected');
+							} finally {
+								setHotReloadInProgress(false);
+							}
 						} catch (err) {
 							const msg = err instanceof Error ? err.message : String(err);
 							log(`[smartRefresh] Client restart failed: ${msg}`);

@@ -84,6 +84,11 @@ export function isHotReloadInProgress(): boolean {
 	return hotReloadInProgress;
 }
 
+/** Exported setter so smartRefresh can suppress tethered lifecycle during client restart. */
+export function setHotReloadInProgress(value: boolean): void {
+	hotReloadInProgress = value;
+}
+
 // ── Inspector Staleness ──────────────────────────────────────────────────
 
 function markInspectorRecordsStale(): void {
@@ -1510,6 +1515,9 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 							result.newCdpPort = spawnResult.cdpPort;
 							result.newClientStartedAt = spawnResult.clientStartedAt;
 							log(`[host] Client restarted with fresh extension code (cdpPort: ${spawnResult.cdpPort})`);
+
+							// Reconnect CDP so Host knows client is alive and browser LM tools work
+							await connectCdpClient(spawnResult.cdpPort);
 
 							vscode.window.showInformationMessage('✅ Extension rebuilt — client reconnected');
 						}
