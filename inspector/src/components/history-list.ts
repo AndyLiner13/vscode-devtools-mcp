@@ -325,6 +325,7 @@ function renderEntry(record: ExecutionRecord): HTMLElement {
 
 	let saveTimer: ReturnType<typeof setTimeout> | undefined;
 	commentField.addEventListener('input', () => {
+		record.comment = commentField.value;
 		clearTimeout(saveTimer);
 		saveTimer = setTimeout(() => {
 			updateComment(currentTool, record.id, commentField.value).catch(() => { /* error sent via RPC */ });
