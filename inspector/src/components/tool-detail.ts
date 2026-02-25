@@ -9,7 +9,6 @@ let executeHandler: ((toolName: string, args: Record<string, unknown>) => Promis
 
 let activeInputEditor: monaco.editor.IStandaloneCodeEditor | null = null;
 let activeOutputEditor: monaco.editor.IStandaloneCodeEditor | null = null;
-let activeExecutionTime: HTMLElement | null = null;
 let isExecuting = false;
 let activeOutputSection: HTMLElement | null = null;
 let activeToolName = '';
@@ -73,14 +72,13 @@ function disposeEditors(): void {
 		activeOutputEditor = null;
 	}
 	isExecuting = false;
-	activeExecutionTime = null;
 	activeOutputSection = null;
 }
 
 let pendingRerunRecordId: null | string = null;
 
 async function executeCurrentInput(): Promise<void> {
-	if (!executeHandler || !activeInputEditor || isExecuting || !activeExecutionTime) {
+	if (!executeHandler || !activeInputEditor || isExecuting) {
 		return;
 	}
 
@@ -98,14 +96,12 @@ async function executeCurrentInput(): Promise<void> {
 	pendingRerunRecordId = null;
 
 	isExecuting = true;
-	activeExecutionTime.textContent = 'Running…';
 
 	const startTime = performance.now();
 
 	try {
 		const result = await executeHandler(activeToolName, args);
 		const elapsed = performance.now() - startTime;
-		activeExecutionTime.textContent = `${elapsed.toFixed(0)}ms`;
 		renderLiveOutput(result.content, result.isError ?? false);
 		if (rerunId) {
 			await updateExecution(activeToolName, rerunId, result, Math.round(elapsed));
@@ -114,7 +110,6 @@ async function executeCurrentInput(): Promise<void> {
 		}
 	} catch (err) {
 		const elapsed = performance.now() - startTime;
-		activeExecutionTime.textContent = `${elapsed.toFixed(0)}ms`;
 		const message = err instanceof Error ? err.message : String(err);
 		const errorResult = { content: [{ text: `Error: ${message}`, type: 'text' as const }], isError: true };
 		renderLiveOutput(errorResult.content, true);
@@ -219,11 +214,7 @@ export function renderToolDetail(tool: ToolDefinition): void {
 	outputLabel.id = 'live-output-label';
 	outputLabel.textContent = 'Output';
 
-	activeExecutionTime = document.createElement('span');
-	activeExecutionTime.className = 'tool-execution-time';
-
 	outputHeader.appendChild(outputLabel);
-	outputHeader.appendChild(activeExecutionTime);
 	activeOutputSection.appendChild(outputHeader);
 
 	const outputWrapper = document.createElement('div');
