@@ -181,24 +181,15 @@ function buildCommentsContainers(comments: CommentRange[]): FileSymbol[] {
 	}
 	groups.push(current);
 
-	return groups.map((group) => {
-		const children: FileSymbol[] = group.map((c) => ({
-			children: [],
-			kind: classifyJsonComment(c.text),
-			name: extractJsonCommentTitle(c.text),
-			range: { endLine: c.endLine, startLine: c.startLine }
-		}));
-
-		return {
-			children,
-			kind: 'comments' as const,
-			name: 'comments' as const,
-			range: {
-				endLine: group[group.length - 1].endLine,
-				startLine: group[0].startLine
-			}
-		};
-	});
+	return groups.map((group) => ({
+		children: [],
+		kind: 'comments' as const,
+		name: 'comments' as const,
+		range: {
+			endLine: group[group.length - 1].endLine,
+			startLine: group[0].startLine
+		}
+	}));
 }
 
 export class JsonLanguageService implements LanguageService {

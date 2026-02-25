@@ -62,8 +62,9 @@ function buildContainerSymbol(containerName: string, containerKind: string, node
 }
 
 /**
- * Build multiple container symbols by splitting nodes into contiguous groups.
+ * Build multiple leaf container symbols by splitting nodes into contiguous groups.
  * Nodes on consecutive lines belong to the same group; any gap starts a new container.
+ * Containers are childless stubs — use startLine/endLine to read the actual content.
  */
 function buildContainerGroups(containerName: string, containerKind: string, nodes: SymbolNode[]): FileSymbol[] {
 	if (nodes.length === 0) return [];
@@ -82,12 +83,15 @@ function buildContainerGroups(containerName: string, containerKind: string, node
 	}
 	groups.push(current);
 
-	const containers: FileSymbol[] = [];
-	for (const group of groups) {
-		const container = buildContainerSymbol(containerName, containerKind, group);
-		if (container) containers.push(container);
-	}
-	return containers;
+	return groups.map((group) => ({
+		children: [],
+		kind: containerKind,
+		name: containerName,
+		range: {
+			endLine: group[group.length - 1].range.end,
+			startLine: group[0].range.start
+		}
+	}));
 }
 
 export class TypeScriptLanguageService implements LanguageService {
