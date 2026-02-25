@@ -88,10 +88,6 @@ export interface TerminalSessionInfo {
 	status: string;
 }
 
-export interface CommandExecuteResult {
-	result: unknown;
-}
-
 // ── JSON-RPC Transport ───────────────────────────────────
 
 /**
@@ -107,7 +103,7 @@ async function sendClientRequest(method: string, params: Record<string, unknown>
 		let settled = false;
 		client.setEncoding('utf8');
 
-		const settle = (fn: typeof reject | typeof resolve, value: unknown) => {
+		const settle = (fn: typeof reject | typeof resolve, value: unknown): void => {
 			if (settled) return;
 			settled = true;
 			clearTimeout(timer);
@@ -165,17 +161,6 @@ async function sendClientRequest(method: string, params: Record<string, unknown>
 	});
 }
 
-// ── Command Methods ──────────────────────────────────────
-
-/**
- * Execute a VS Code command in the Client window.
- */
-async function commandExecute(command: string, args?: unknown[]): Promise<CommandExecuteResult> {
-	const result = await sendClientRequest('command.execute', { args, command });
-	assertResult<CommandExecuteResult>(result, 'command.execute');
-	return result;
-}
-
 // ── Codebase Types ───────────────────────────────────────
 
 export interface CodebaseSymbolNode {
@@ -201,7 +186,7 @@ export interface CodebaseTreeNode {
 	type: 'directory' | 'file';
 }
 
-export interface CodebaseOverviewResult {
+interface CodebaseOverviewResult {
 	projectRoot: string;
 	summary: {
 		totalFiles: number;
@@ -212,7 +197,7 @@ export interface CodebaseOverviewResult {
 	tree: CodebaseTreeNode[];
 }
 
-export interface CodebaseExportInfo {
+interface CodebaseExportInfo {
 	isDefault: boolean;
 	isReExport: boolean;
 	jsdoc?: string;
@@ -223,7 +208,7 @@ export interface CodebaseExportInfo {
 	signature?: string;
 }
 
-export interface CodebaseExportsResult {
+interface CodebaseExportsResult {
 	exports: CodebaseExportInfo[];
 	module: string;
 	reExports: Array<{ name: string; from: string }>;
@@ -359,15 +344,6 @@ export async function codebaseGetOverview(rootDir: string, dir: string, recursiv
 }
 
 /**
- * Get detailed exports from a module/file/directory.
- */
-async function codebaseGetExports(path: string, rootDir?: string, includeTypes?: boolean, includeJSDoc?: boolean, kind?: string, includePatterns?: string[], excludePatterns?: string[]): Promise<CodebaseExportsResult> {
-	const result = await sendClientRequest('codebase.getExports', { excludePatterns, includeJSDoc, includePatterns, includeTypes, kind, path, rootDir }, 30_000);
-	assertResult<CodebaseExportsResult>(result, 'codebase.getExports');
-	return result;
-}
-
-/**
  * Trace a symbol through the codebase: definitions, references, re-exports,
  * call hierarchy, type flows, and optional impact analysis.
  */
@@ -471,7 +447,7 @@ export async function codebaseGetImportGraph(rootDir?: string, includePatterns?:
 
 // ── Duplicate Detection Types ────────────────────────────
 
-export interface DuplicateInstance {
+interface DuplicateInstance {
 	endLine: number;
 	file: string;
 	line: number;
@@ -556,23 +532,23 @@ export interface NativeDocumentSymbol {
 	selectionRange: NativeDocumentSymbolRange;
 }
 
-export interface FileGetSymbolsResult {
+interface FileGetSymbolsResult {
 	symbols: NativeDocumentSymbol[];
 }
 
-export interface FileReadContentResult {
+interface FileReadContentResult {
 	content: string;
 	endLine: number;
 	startLine: number;
 	totalLines: number;
 }
 
-export interface FileApplyEditResult {
+interface FileApplyEditResult {
 	file: string;
 	success: boolean;
 }
 
-export interface FileDiagnosticItem {
+interface FileDiagnosticItem {
 	code: string;
 	column: number;
 	endColumn: number;
@@ -583,11 +559,11 @@ export interface FileDiagnosticItem {
 	source: string;
 }
 
-export interface FileGetDiagnosticsResult {
+interface FileGetDiagnosticsResult {
 	diagnostics: FileDiagnosticItem[];
 }
 
-export interface FileExecuteRenameResult {
+interface FileExecuteRenameResult {
 	error?: string;
 	filesAffected: string[];
 	success: boolean;
@@ -596,7 +572,7 @@ export interface FileExecuteRenameResult {
 
 // ── Orphaned Content Types ─────────────────────────────────
 
-export interface OrphanedSymbolNode {
+interface OrphanedSymbolNode {
 	children?: OrphanedSymbolNode[];
 	detail?: string;
 	kind: string;
@@ -604,7 +580,7 @@ export interface OrphanedSymbolNode {
 	range: { start: number; end: number };
 }
 
-export interface OrphanedContentResult {
+interface OrphanedContentResult {
 	directives: OrphanedSymbolNode[];
 	exports: OrphanedSymbolNode[];
 	gaps: Array<{ start: number; end: number; type: 'blank' | 'unknown' }>;
@@ -622,14 +598,14 @@ export interface OrphanedContentResult {
 
 // ── Unified File Structure Types ─────────────────────────
 
-export interface UnifiedFileSymbolRange {
+interface UnifiedFileSymbolRange {
 	endChar: number; // 0-indexed (column)
 	endLine: number; // 1-indexed
 	startChar: number; // 0-indexed (column)
 	startLine: number; // 1-indexed
 }
 
-export interface UnifiedFileSymbol {
+interface UnifiedFileSymbol {
 	children: UnifiedFileSymbol[];
 	detail?: string;
 	exported?: boolean;
@@ -637,29 +613,6 @@ export interface UnifiedFileSymbol {
 	modifiers?: string[];
 	name: string;
 	range: UnifiedFileSymbolRange;
-}
-
-interface UnifiedFileResult {
-	content: string;
-	directives: OrphanedSymbolNode[];
-	exports: OrphanedSymbolNode[];
-	gaps: Array<{ start: number; end: number; type: 'blank' | 'unknown' }>;
-	imports: OrphanedSymbolNode[];
-	orphanComments: OrphanedSymbolNode[];
-	stats: {
-		totalImports: number;
-		totalExports: number;
-		totalOrphanComments: number;
-		totalDirectives: number;
-		totalBlankLines: number;
-		coveragePercent: number;
-	};
-	symbols: UnifiedFileSymbol[];
-	totalLines: number;
-}
-
-export interface FileFindReferencesResult {
-	references: Array<{ file: string; line: number; character: number }>;
 }
 
 // ── Shared File Structure Types (Multi-Language) ─────────
@@ -709,7 +662,7 @@ export interface FileStructure {
 	totalLines: number;
 }
 
-export interface FileCodeActionItem {
+interface FileCodeActionItem {
 	hasCommand: boolean;
 	hasEdit: boolean;
 	index: number;
@@ -718,11 +671,11 @@ export interface FileCodeActionItem {
 	title: string;
 }
 
-export interface FileGetCodeActionsResult {
+interface FileGetCodeActionsResult {
 	actions: FileCodeActionItem[];
 }
 
-export interface FileApplyCodeActionResult {
+interface FileApplyCodeActionResult {
 	error?: string;
 	success: boolean;
 	title?: string;
@@ -752,10 +705,12 @@ export async function fileReadContent(filePath: string, startLine?: number, endL
  * Open a file in the client editor and highlight the range that was just read.
  * Fire-and-forget — does not block the tool response.
  */
-export function fileHighlightReadRange(filePath: string, startLine: number, endLine: number, collapsedRanges?: Array<{ startLine: number; endLine: number }>, sourceRanges?: Array<{ startLine: number; endLine: number }>): void {
-	sendClientRequest('file.highlightReadRange', { collapsedRanges, endLine, filePath, sourceRanges, startLine }, 5_000).catch(() => {
+export async function fileHighlightReadRange(filePath: string, startLine: number, endLine: number, collapsedRanges?: Array<{ startLine: number; endLine: number }>, sourceRanges?: Array<{ startLine: number; endLine: number }>): Promise<void> {
+	try {
+		await sendClientRequest('file.highlightReadRange', { collapsedRanges, endLine, filePath, sourceRanges, startLine }, 5_000);
+	} catch {
 		// Best-effort — don't let highlight failures affect tool responses
-	});
+	}
 }
 
 /**
@@ -763,10 +718,12 @@ export function fileHighlightReadRange(filePath: string, startLine: number, endL
  * Old content was pre-captured by the extension's handleFileApplyEdit.
  * Fire-and-forget — does not block the tool response.
  */
-export function fileShowEditDiff(filePath: string, editStartLine: number): void {
-	sendClientRequest('file.showEditDiff', { editStartLine, filePath }, 10_000).catch(() => {
+export async function fileShowEditDiff(filePath: string, editStartLine: number): Promise<void> {
+	try {
+		await sendClientRequest('file.showEditDiff', { editStartLine, filePath }, 10_000);
+	} catch {
 		// Best-effort — don't let diff viewer failures affect tool responses
-	});
+	}
 }
 
 /**
@@ -820,16 +777,6 @@ export async function fileGetCodeActions(filePath: string, startLine: number, en
 export async function fileApplyCodeAction(filePath: string, startLine: number, endLine: number, actionIndex: number): Promise<FileApplyCodeActionResult> {
 	const result = await sendClientRequest('file.applyCodeAction', { actionIndex, endLine, filePath, startLine }, 10_000);
 	assertResult<FileApplyCodeActionResult>(result, 'file.applyCodeAction');
-	return result;
-}
-
-/**
- * Extract orphaned content (imports, exports, comments) from TypeScript/JavaScript files.
- * Supplements VS Code's DocumentSymbol API which doesn't include these constructs.
- */
-async function fileExtractOrphanedContent(filePath: string, includeSymbols = true): Promise<OrphanedContentResult> {
-	const result = await sendClientRequest('file.extractOrphanedContent', { filePath, includeSymbols }, 30_000);
-	assertResult<OrphanedContentResult>(result, 'file.extractOrphanedContent');
 	return result;
 }
 
@@ -933,13 +880,6 @@ export async function ensureClientAvailable(): Promise<void> {
 	} finally {
 		clientRecoveryInProgress = undefined;
 	}
-}
-
-/**
- * Returns the fixed Client pipe path for this platform.
- */
-function getClientPipePath(): string {
-	return CLIENT_PIPE_PATH;
 }
 
 // ── Process Ledger Methods ─────────────────────────────────────

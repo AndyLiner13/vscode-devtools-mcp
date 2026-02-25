@@ -13,6 +13,8 @@ import { exec } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
+import { log } from './logger';
+
 
 const PROVIDER_ID = 'devtools.mcp-server';
 const TOGGLE_COMMAND = 'devtools.toggleMcpServer';
@@ -76,15 +78,15 @@ class McpServerProvider implements vscode.McpServerDefinitionProvider<vscode.Mcp
 	}
 
 	provideMcpServerDefinitions(_token: vscode.CancellationToken): vscode.McpStdioServerDefinition[] {
-		console.log(`[mcpServerProvider] provideMcpServerDefinitions called (enabled=${this._enabled}, workspace=${this._workspacePath ? 'YES' : 'NO'})`);
+		log(`[mcpServerProvider] provideMcpServerDefinitions called (enabled=${this._enabled}, workspace=${this._workspacePath ? 'YES' : 'NO'})`);
 		if (!this._enabled || !this._workspacePath) {
-			console.log('[mcpServerProvider] Returning empty — provider disabled or no workspace');
+			log('[mcpServerProvider] Returning empty — provider disabled or no workspace');
 			return [];
 		}
 
 		const initScript = path.join(this._workspacePath, 'mcp-server', 'scripts', 'init.mjs');
 
-		console.log(`[mcpServerProvider] Returning definition: command=node, args=[${initScript}]`);
+		log(`[mcpServerProvider] Returning definition: command=node, args=[${initScript}]`);
 		const env = buildConfigEnv(this._workspacePath);
 
 		return [new vscode.McpStdioServerDefinition('Experimental DevTools', 'node', [initScript], env)];
@@ -102,9 +104,9 @@ class McpServerProvider implements vscode.McpServerDefinitionProvider<vscode.Mcp
 	 * an error so VS Code surfaces it to Copilot instead of starting a broken server.
 	 */
 	async resolveMcpServerDefinition(server: vscode.McpStdioServerDefinition, token: vscode.CancellationToken): Promise<vscode.McpStdioServerDefinition> {
-		console.log('[mcpServerProvider] resolveMcpServerDefinition called — building MCP server...');
+		log('[mcpServerProvider] resolveMcpServerDefinition called — building MCP server...');
 		if (!this._workspacePath) {
-			console.log('[mcpServerProvider] No workspace path — skipping build');
+			log('[mcpServerProvider] No workspace path — skipping build');
 			return server;
 		}
 
@@ -114,11 +116,11 @@ class McpServerProvider implements vscode.McpServerDefinitionProvider<vscode.Mcp
 		const buildDuration = Date.now() - buildStart;
 
 		if (buildError) {
-			console.log(`[mcpServerProvider] Build FAILED after ${buildDuration}ms: ${buildError.substring(0, 200)}`);
+			log(`[mcpServerProvider] Build FAILED after ${buildDuration}ms: ${buildError.substring(0, 200)}`);
 			throw new Error(`MCP server build failed:\n${buildError}`);
 		}
 
-		console.log(`[mcpServerProvider] Build succeeded in ${buildDuration}ms — server ready to start`);
+		log(`[mcpServerProvider] Build succeeded in ${buildDuration}ms — server ready to start`);
 		return server;
 	}
 
@@ -127,7 +129,7 @@ class McpServerProvider implements vscode.McpServerDefinitionProvider<vscode.Mcp
 			const pm = this._detectPackageManager(packageRoot);
 			const cmd = `${pm} run build`;
 
-			console.log(`[mcpServerProvider] Pre-start build: ${cmd} in ${packageRoot}`);
+			log(`[mcpServerProvider] Pre-start build: ${cmd} in ${packageRoot}`);
 
 			const child = exec(cmd, { cwd: packageRoot, timeout: 300_000 }, (error, stdout, stderr) => {
 				if (token.isCancellationRequested) {

@@ -20,6 +20,8 @@ import { OutputReadTool, setClientLogsStoragePath, setHostLogUri } from './readH
 import { TerminalExecuteTool, TerminalReadTool } from './terminalLmTools';
 import { disposeUserActionTracker, getUserActionTracker } from './userActionTracker';
 import { WaitTool } from './waitLmTool';
+import { log } from './logger';
+
 
 // ============================================================================
 // Runtime Activation
@@ -44,7 +46,7 @@ export function wireBrowserService(service: BrowserService | null): void {
 }
 
 export async function activate(context: vscode.ExtensionContext) {
-	console.log('[devtools:runtime] Runtime module loading...');
+	log('[devtools:runtime] Runtime module loading...');
 
 	const trackedDisposables: vscode.Disposable[] = [];
 	const track = <T extends vscode.Disposable>(disposable: T): T => {
@@ -108,7 +110,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		track(vscode.lm.registerTool(entry.name, entry.tool));
 	}
 
-	console.log('[devtools:runtime] All LM tools registered');
+	log('[devtools:runtime] All LM tools registered');
 
 	// ========================================================================
 	// User Action Tracker (detect user interventions)
@@ -120,11 +122,11 @@ export async function activate(context: vscode.ExtensionContext) {
 			disposeUserActionTracker();
 		}
 	});
-	console.log('[devtools:runtime] User action tracker initialized');
+	log('[devtools:runtime] User action tracker initialized');
 
-	console.log('[devtools:runtime] Runtime activation complete');
+	log('[devtools:runtime] Runtime activation complete');
 }
 
 export async function deactivate() {
-	console.log('[devtools:runtime] Runtime deactivating...');
+	log('[devtools:runtime] Runtime deactivating...');
 }

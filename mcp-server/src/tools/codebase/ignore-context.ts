@@ -9,7 +9,7 @@ import { join } from 'node:path';
 
 const DEVTOOLS_IGNORE_FILENAME = '.devtoolsignore';
 
-export interface IgnoreContext {
+interface IgnoreContext {
 	/** Active glob patterns (non-comment, non-blank lines). */
 	activePatterns: string[];
 	ignoreFileExists: boolean;

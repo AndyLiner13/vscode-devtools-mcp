@@ -24,6 +24,8 @@ import { cleanTerminalOutput, type TerminalStatus } from './processDetection';
 import { getProcessLedger, type TerminalSessionInfo } from './processLedger';
 import { getProcessTree, isStdinDetectionAvailable, isTreeWaitingForStdin, type ProcessTreeResult, type StdinDetectionResult } from './stdinDetection';
 import { getUserActionTracker } from './userActionTracker';
+import { log } from './logger';
+
 
 // ── Configuration ────────────────────────────────────────────────────────────
 
@@ -45,7 +47,7 @@ let lastNativeTreeResult: null | ProcessTreeResult = null;
 async function ensureNativeDetection(): Promise<boolean> {
 	if (nativeDetectionAvailable === null) {
 		nativeDetectionAvailable = await isStdinDetectionAvailable();
-		console.log(`[NativeDetection] Available: ${nativeDetectionAvailable}`);
+		log(`[NativeDetection] Available: ${nativeDetectionAvailable}`);
 	}
 	return nativeDetectionAvailable;
 }
@@ -75,14 +77,14 @@ async function isWaitingForInputDetection(pid: number | undefined, executionCoun
 
 				if (!lastNativeStdinResult.error) {
 					if (lastNativeStdinResult.isWaitingForStdin) {
-						console.log(`[NativeDetection] Tree under PID ${pid} waiting for stdin (reasons: ${lastNativeStdinResult.detectedWaitReasons.join(', ')})`);
+						log(`[NativeDetection] Tree under PID ${pid} waiting for stdin (reasons: ${lastNativeStdinResult.detectedWaitReasons.join(', ')})`);
 						return { method: 'native', waiting: true };
 					} else if (msSinceLastOutput >= NATIVE_STDIN_SETTLE_MS) {
 						return { method: 'native', waiting: false };
 					}
 				}
 			} catch (err) {
-				console.log(`[NativeDetection] stdin check threw: ${err}`);
+				log(`[NativeDetection] stdin check threw: ${err}`);
 			}
 		} else if (lastNativeStdinResult && !lastNativeStdinResult.error && lastNativeStdinResult.isWaitingForStdin) {
 			return { method: 'native', waiting: true };
@@ -194,7 +196,7 @@ export interface ActiveProcess {
 }
 
 // PowerShell-only: All terminals use PowerShell
-export type ShellType = 'powershell';
+type ShellType = 'powershell';
 
 export interface TerminalRunResult {
 	activeProcesses?: ActiveProcess[];
@@ -253,7 +255,7 @@ export class SingleTerminalController {
 
 				// Track that a new execution started (for cascading detection)
 				state.executionCount++;
-				console.log(`[MultiTerminalController] Execution started for "${state.name}" (count: ${state.executionCount})`);
+				log(`[MultiTerminalController] Execution started for "${state.name}" (count: ${state.executionCount})`);
 
 				try {
 					for await (const data of event.execution.read()) {
@@ -289,7 +291,7 @@ export class SingleTerminalController {
 					}
 				}
 
-				console.log(`[MultiTerminalController] Execution ended for "${state.name}" (count: ${state.executionCount}, exitCode: ${event.exitCode})`);
+				log(`[MultiTerminalController] Execution ended for "${state.name}" (count: ${state.executionCount}, exitCode: ${event.exitCode})`);
 			})
 		);
 
@@ -299,7 +301,7 @@ export class SingleTerminalController {
 				const state = this.findStateByTerminal(event.terminal);
 				if (!state) return;
 				state.shellIntegration = event.shellIntegration;
-				console.log(`[MultiTerminalController] Shell integration activated for "${state.name}"`);
+				log(`[MultiTerminalController] Shell integration activated for "${state.name}"`);
 			})
 		);
 
@@ -310,7 +312,7 @@ export class SingleTerminalController {
 				if (!state) return;
 				state.status = 'killed';
 				state.exitCode = terminal.exitStatus?.code;
-				console.log(`[MultiTerminalController] Terminal "${state.name}" killed (closed by user)`);
+				log(`[MultiTerminalController] Terminal "${state.name}" killed (closed by user)`);
 
 				// Signal waitForResult to resolve immediately (both mechanisms)
 				state.killedResolve?.();
@@ -347,7 +349,7 @@ export class SingleTerminalController {
 		// Busy guard: reject if this terminal is already running (unless force=true)
 		if (state?.status === 'running') {
 			if (force) {
-				console.log(`[MultiTerminalController] Force-killing terminal "${terminalName}"`);
+				log(`[MultiTerminalController] Force-killing terminal "${terminalName}"`);
 				await this.kill(terminalName);
 				state = undefined;
 			} else {
@@ -684,7 +686,7 @@ export class SingleTerminalController {
 			/* ignore */
 		}
 		this.terminals.delete(terminalName);
-		console.log(`[MultiTerminalController] Ephemeral terminal "${terminalName}" destroyed`);
+		log(`[MultiTerminalController] Ephemeral terminal "${terminalName}" destroyed`);
 	}
 
 	/**
@@ -782,7 +784,7 @@ export class SingleTerminalController {
 			await this.waitForShellIntegration(state, 5_000);
 		}
 
-		console.log(`[MultiTerminalController] Terminal "${name}" created`);
+		log(`[MultiTerminalController] Terminal "${name}" created`);
 		return state;
 	}
 
@@ -858,7 +860,7 @@ export class SingleTerminalController {
 		// Early exit: if terminal was already killed before we got here, resolve immediately
 		if (state.status === 'killed') {
 			const cleaned = cleanTerminalOutput(state.output);
-			console.log(`[MultiTerminalController] Terminal "${state.name}" already killed before waitForResult — resolving immediately`);
+			log(`[MultiTerminalController] Terminal "${state.name}" already killed before waitForResult — resolving immediately`);
 			return {
 				durationMs: Date.now() - state.commandStartTime,
 				exitCode: state.exitCode,
@@ -893,7 +895,7 @@ export class SingleTerminalController {
 				state.killedPromise.then(() => {
 					if (resolved) return;
 					const cleaned = cleanTerminalOutput(state.output);
-					console.log(`[MultiTerminalController] Terminal "${state.name}" killed via killedPromise — resolving immediately`);
+					log(`[MultiTerminalController] Terminal "${state.name}" killed via killedPromise — resolving immediately`);
 					resolveOnce({
 						exitCode: state.exitCode,
 						name: state.name,
@@ -907,7 +909,7 @@ export class SingleTerminalController {
 			// Resolve immediately if the terminal is closed/killed by the user
 			state.onKilled = () => {
 				const cleaned = cleanTerminalOutput(state.output);
-				console.log(`[MultiTerminalController] Terminal "${state.name}" killed during waitForResult — resolving immediately`);
+				log(`[MultiTerminalController] Terminal "${state.name}" killed during waitForResult — resolving immediately`);
 				resolveOnce({
 					exitCode: state.exitCode,
 					name: state.name,
@@ -937,7 +939,7 @@ export class SingleTerminalController {
 									.filter((l) => l.trim())
 									.pop() ?? '';
 							state.status = 'waiting_for_input';
-							console.log(`[MultiTerminalController] Detected waiting_for_input via ${detection.method} for "${state.name}"`);
+							log(`[MultiTerminalController] Detected waiting_for_input via ${detection.method} for "${state.name}"`);
 							resolveOnce({
 								name: state.name,
 								output: cleaned,
@@ -956,7 +958,7 @@ export class SingleTerminalController {
 						const completion = await isCommandComplete(state.pid);
 
 						if (completion.method === 'native' && completion.done) {
-							console.log(`[MultiTerminalController] Native: no children alive for "${state.name}" — resolving as completed`);
+							log(`[MultiTerminalController] Native: no children alive for "${state.name}" — resolving as completed`);
 							resolveOnce({
 								exitCode: state.exitCode,
 								name: state.name,
@@ -975,12 +977,12 @@ export class SingleTerminalController {
 						// Heuristic fallback: wait for output to settle
 						if (completedAt === null) {
 							completedAt = Date.now();
-							console.log(`[MultiTerminalController] Execution count 0 for "${state.name}", waiting for output to settle...`);
+							log(`[MultiTerminalController] Execution count 0 for "${state.name}", waiting for output to settle...`);
 							return;
 						}
 
 						if (msSinceLastOutput >= OUTPUT_SETTLE_MS) {
-							console.log(`[MultiTerminalController] Output settled for "${state.name}" — resolving`);
+							log(`[MultiTerminalController] Output settled for "${state.name}" — resolving`);
 							resolveOnce({
 								exitCode: state.exitCode,
 								name: state.name,
@@ -1002,7 +1004,7 @@ export class SingleTerminalController {
 								return;
 							}
 							if (Date.now() - completedAt >= NATIVE_STDIN_SETTLE_MS) {
-								console.log(`[MultiTerminalController] Native: tree empty for "${state.name}" (shell integration lagging) — resolving`);
+								log(`[MultiTerminalController] Native: tree empty for "${state.name}" (shell integration lagging) — resolving`);
 								resolveOnce({
 									exitCode: state.exitCode,
 									name: state.name,
@@ -1030,7 +1032,7 @@ export class SingleTerminalController {
 					// Check for waiting_for_input using native detection with fallback
 					const detection = await isWaitingForInputDetection(state.pid, state.executionCount, msSinceLastOutput, state.output.length > 0);
 
-					console.log(`[MultiTerminalController] Timeout for "${state.name}" after ${timeoutMs}ms (waitingForInput: ${detection.waiting} via ${detection.method})`);
+					log(`[MultiTerminalController] Timeout for "${state.name}" after ${timeoutMs}ms (waitingForInput: ${detection.waiting} via ${detection.method})`);
 
 					resolveOnce({
 						exitCode: state.exitCode,
@@ -1058,7 +1060,7 @@ export class SingleTerminalController {
 			}
 
 			const timer = setTimeout(() => {
-				console.log(`[MultiTerminalController] Shell integration timeout for "${state.name}" — using sendText fallback`);
+				log(`[MultiTerminalController] Shell integration timeout for "${state.name}" — using sendText fallback`);
 				resolve();
 			}, timeoutMs);
 

@@ -11,6 +11,8 @@
  */
 
 import * as vscode from 'vscode';
+import { log } from './logger';
+
 
 // Time window: only track files accessed in the last 5 minutes
 const WATCH_WINDOW_MS = 5 * 60 * 1000;
@@ -73,7 +75,7 @@ class UserActionTracker {
 			})
 		);
 
-		console.log('[UserActionTracker] Initialized — tracking file saves and terminal closures');
+		log('[UserActionTracker] Initialized — tracking file saves and terminal closures');
 	}
 
 	/**
@@ -147,7 +149,7 @@ class UserActionTracker {
 		this.disposables.length = 0;
 		this.watchedFiles.clear();
 		this.actions = [];
-		console.log('[UserActionTracker] Disposed');
+		log('[UserActionTracker] Disposed');
 	}
 
 	// ── Internal ─────────────────────────────────────────────────────────────
@@ -185,7 +187,7 @@ class UserActionTracker {
 			this.actions = this.actions.slice(-MAX_ACTIONS);
 		}
 
-		console.log(`[UserActionTracker] Action #${this.nextId - 1}: ${action.summary}`);
+		log(`[UserActionTracker] Action #${this.nextId - 1}: ${action.summary}`);
 	}
 
 	private normalizePath(p: string): string {

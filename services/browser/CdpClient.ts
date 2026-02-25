@@ -11,6 +11,8 @@ import type { CdpTarget } from './types';
 
 import http from 'node:http';
 import WebSocket from 'ws';
+import { log } from '../logger';
+
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -257,7 +259,7 @@ export class CdpClient {
 
 			ws.on('close', () => {
 				if (this.ws === ws) {
-					console.log('[CdpClient] WebSocket closed');
+					log('[CdpClient] WebSocket closed');
 					this.ws = null;
 					// Fire disconnect callback only for unexpected closes
 					// (not when we called disconnect() or dispose() ourselves)

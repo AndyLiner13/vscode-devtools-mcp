@@ -7,17 +7,18 @@
 				"bootstrap.js",
 				"services/runtime.ts",
 				"services/client-handlers.ts",
-				"services/codebase/codebase-worker.ts",
-				"mcp-server/scripts/eslint_rules/*.js"
+				"services/host-handlers.ts",
+				"services/codebase/codebase-worker.ts"
 			],
-			"ignoreDependencies": ["@modelcontextprotocol/inspector", "@packages/log-consolidation"],
+			"ignoreDependencies": ["@modelcontextprotocol/inspector", "@packages/log-consolidation", "@vscode/codicons"],
 			"ignoreBinaries": ["code", "knip"]
 		},
 		"mcp-server": {
-			"entry": ["src/index.ts", "scripts/**/*.{ts,mts,mjs}"],
+			"entry": ["src/index.ts", "src/main.ts", "scripts/**/*.{ts,mts,mjs}"],
 			"ignoreDependencies": ["@types/filesystem", "@packages/log-consolidation"]
 		},
 		"inspector": {
+			"entry": ["src/main.ts"],
 			"ignoreDependencies": ["better-sqlite3", "@types/better-sqlite3"]
 		}
 	}

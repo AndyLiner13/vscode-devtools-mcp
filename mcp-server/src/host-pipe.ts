@@ -38,41 +38,27 @@ interface JsonRpcResponse {
 	result?: unknown;
 }
 
-export interface McpReadyParams {
+interface McpReadyParams {
 	clientWorkspace: string;
 	extensionPath: string;
 	forceRestart?: boolean;
 	launch?: Record<string, unknown>;
 }
 
-export interface McpReadyResult {
+interface McpReadyResult {
 	cdpPort: number;
 	clientStartedAt?: number;
 	userDataDir?: string;
 }
 
-export interface HotReloadResult {
+interface HotReloadResult {
 	cdpPort: number;
 	clientStartedAt?: number;
 	userDataDir?: string;
 }
 
-export interface HostStatus {
-	cdpPort: null | number;
-	clientHealthy: boolean;
-	clientPid: null | number;
-	clientStartedAt: null | string;
-	hotReloadInProgress: boolean;
-	role: 'host';
-}
-
-export interface TeardownResult {
+interface TeardownResult {
 	stopped: boolean;
-}
-
-export interface TakeoverResult {
-	accepted: boolean;
-	previousClientPid?: number;
 }
 
 // ── JSON-RPC Transport ───────────────────────────────────
@@ -168,29 +154,12 @@ export async function hotReloadRequired(params: McpReadyParams): Promise<HotRelo
 }
 
 /**
- * Query the current state of the Host and Client.
- */
-async function getStatus(): Promise<HostStatus> {
-	const result = await sendHostRequest('getStatus', {});
-	return result as HostStatus;
-}
-
-/**
  * Signal that the MCP server is shutting down.
  * The Host will stop the Client, clean up debug sessions, and release resources.
  */
 export async function teardown(): Promise<TeardownResult> {
 	const result = await sendHostRequest('teardown', {});
 	return result as TeardownResult;
-}
-
-/**
- * Request a session takeover from the existing Host.
- * Used when a new MCP instance wants to control the session.
- */
-async function requestTakeover(): Promise<TakeoverResult> {
-	const result = await sendHostRequest('takeover', {});
-	return result as TakeoverResult;
 }
 
 /**
@@ -211,7 +180,7 @@ export async function checkForChanges(mcpServerRoot: string, extensionPath: stri
 	return result as CheckForChangesResult;
 }
 
-export interface CheckForChangesResult {
+interface CheckForChangesResult {
 	extBuildError: null | string;
 	extChanged: boolean;
 	extClientReloaded: boolean;
@@ -240,23 +209,4 @@ export async function readyToRestart(): Promise<void> {
 	} catch {
 		// Expected — the server may be killed before the response arrives
 	}
-}
-
-/**
- * Check if the Host pipe is reachable via a system.ping.
- */
-async function pingHost(): Promise<boolean> {
-	try {
-		await sendHostRequest('system.ping', {}, 3_000);
-		return true;
-	} catch {
-		return false;
-	}
-}
-
-/**
- * Returns the fixed Host pipe path for this platform.
- */
-function getHostPipePath(): string {
-	return HOST_PIPE_PATH;
 }

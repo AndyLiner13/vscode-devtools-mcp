@@ -8,6 +8,8 @@ import { Node, SyntaxKind } from 'ts-morph';
 
 import { applyIgnoreRules, globToRegex, parseIgnoreRules } from './ignore-rules';
 import { getWorkspaceProject } from './ts-project';
+import { warn } from '../logger';
+
 
 type FileFilter = (absoluteFilePath: string) => boolean;
 
@@ -162,7 +164,7 @@ export async function findDuplicates(params: DuplicateDetectionParams): Promise<
 			}
 		};
 	} catch (err: unknown) {
-		console.warn('[findDuplicates] Error:', err);
+		warn('[findDuplicates] Error:', err);
 		return {
 			errorMessage: err instanceof Error ? err.message : String(err),
 			groups: [],

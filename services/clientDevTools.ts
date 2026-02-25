@@ -540,7 +540,7 @@ const readConsoleTool = createClientTool<ReadConsoleInput>({
 
 // ── Registry ─────────────────────────────────────────────────────────────────
 
-export interface ClientToolEntry {
+interface ClientToolEntry {
 	name: string;
 	tool: vscode.LanguageModelTool<unknown>;
 }

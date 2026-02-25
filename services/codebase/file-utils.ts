@@ -5,7 +5,7 @@ import * as path from 'node:path';
 
 import { applyIgnoreRules, globToRegex, parseIgnoreRules } from './ignore-rules';
 
-export interface DiscoverFilesOptions {
+interface DiscoverFilesOptions {
 	excludeGlob?: string;
 	excludePatterns?: string[];
 	/** File extensions to include (e.g., Set(['.ts', '.md'])). undefined = all extensions. */

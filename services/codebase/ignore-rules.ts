@@ -2,7 +2,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-export interface IgnoreRule {
+interface IgnoreRule {
 	negated: boolean;
 	pattern: string;
 	scope: null | string;

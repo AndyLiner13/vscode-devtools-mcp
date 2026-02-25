@@ -24,6 +24,8 @@ import { Node, type Project, type SourceFile, SyntaxKind, ts, type Symbol as TsS
 
 import { applyIgnoreRules, globToRegex, parseIgnoreRules } from './ignore-rules';
 import { getWorkspaceProject, invalidateWorkspaceProject } from './ts-project';
+import { warn } from '../logger';
+
 
 // ── File Filter ────────────────────────────────────────
 
@@ -355,7 +357,7 @@ export async function traceSymbol(params: TraceSymbolParams): Promise<TraceSymbo
 
 		return result;
 	} catch (err: unknown) {
-		console.warn('[traceSymbol] Error:', err);
+		warn('[traceSymbol] Error:', err);
 		const errorResult = emptyTraceResult(params.symbol);
 		errorResult.elapsedMs = elapsed();
 		errorResult.partial = true;
@@ -421,7 +423,7 @@ function findSymbolNode(project: Project, params: TraceSymbolParams, rootDir: st
 				}
 				lineColFailed = true;
 			} catch (err: unknown) {
-				console.warn(`[findSymbolNode] Line/col error for '${symbolName}':`, err);
+				warn(`[findSymbolNode] Line/col error for '${symbolName}':`, err);
 				lineColFailed = true;
 			}
 		}
@@ -443,7 +445,7 @@ function findSymbolNode(project: Project, params: TraceSymbolParams, rootDir: st
 				};
 			}
 		} catch (err: unknown) {
-			console.warn(`[findSymbolNode] findNamedDeclaration error for '${symbolName}' in ${sourceFile.getFilePath()}:`, err);
+			warn(`[findSymbolNode] findNamedDeclaration error for '${symbolName}' in ${sourceFile.getFilePath()}:`, err);
 		}
 	}
 
@@ -458,7 +460,7 @@ function findSymbolNode(project: Project, params: TraceSymbolParams, rootDir: st
 				return { node: found, sourceFile: actualSourceFile, symbol: found.getSymbol() };
 			}
 		} catch (err: unknown) {
-			console.warn(`[findSymbolNode] Error searching '${symbolName}' in ${sourceFile.getFilePath()}:`, err);
+			warn(`[findSymbolNode] Error searching '${symbolName}' in ${sourceFile.getFilePath()}:`, err);
 		}
 	}
 
@@ -767,7 +769,7 @@ function traceDefinition(node: Node, sourceFile: SourceFile, rootDir: string): S
 			signature
 		};
 	} catch (err: unknown) {
-		console.warn('[traceSymbol:traceDefinition]', err);
+		warn('[traceSymbol:traceDefinition]', err);
 		return undefined;
 	}
 }
@@ -826,7 +828,7 @@ function traceReferences(node: Node, symbol: TsSymbol | undefined, project: Proj
 
 		return { references: results, truncated };
 	} catch (err: unknown) {
-		console.warn('[traceSymbol:traceReferences]', err);
+		warn('[traceSymbol:traceReferences]', err);
 		return { references: [], truncated: false };
 	}
 }
@@ -970,7 +972,7 @@ function traceReExports(symbolName: string, definitionSourceFile: SourceFile, pr
 
 		return reExports;
 	} catch (err: unknown) {
-		console.warn('[traceSymbol:traceReExports]', err);
+		warn('[traceSymbol:traceReExports]', err);
 		return [];
 	}
 }
@@ -1004,7 +1006,7 @@ function traceCallHierarchy(node: Node, symbol: TsSymbol | undefined, project: P
 			result.actualIncomingDepth = incomingResult.actualDepth;
 		}
 	} catch (err: unknown) {
-		console.warn('[traceSymbol:traceCallHierarchy]', err);
+		warn('[traceSymbol:traceCallHierarchy]', err);
 	}
 
 	return result;
@@ -1582,7 +1584,7 @@ function traceTypeFlows(node: Node, project: Project, isIgnored: FileFilter): Ty
 
 		return flows;
 	} catch (err: unknown) {
-		console.warn('[traceSymbol:traceTypeFlows]', err);
+		warn('[traceSymbol:traceTypeFlows]', err);
 		return [];
 	}
 }
@@ -1678,7 +1680,7 @@ function traceTypeHierarchy(node: Node, project: Project, maxDepth: number, root
 			}
 		}
 	} catch (err) {
-		console.warn('[traceTypeHierarchy] Error:', err);
+		warn('[traceTypeHierarchy] Error:', err);
 	}
 
 	return {
@@ -1978,7 +1980,7 @@ function computeImpact(node: Node, project: Project, depth: number, rootDir: str
 			}
 		}
 	} catch (err: unknown) {
-		console.warn('[traceSymbol:computeImpact]', err);
+		warn('[traceSymbol:computeImpact]', err);
 	}
 
 	const directFileSet = new Set(directDependents.map((d) => d.file));
@@ -2478,7 +2480,7 @@ export async function findDeadCode(params: DeadCodeParams): Promise<DeadCodeResu
 			}
 		};
 	} catch (err: unknown) {
-		console.warn('[findDeadCode] Error:', err);
+		warn('[findDeadCode] Error:', err);
 		return {
 			deadCode: [],
 			errorMessage: err instanceof Error ? err.message : String(err),

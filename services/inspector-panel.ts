@@ -8,12 +8,13 @@
  *   WebView postMessage → this relay → Client pipe JSON-RPC → response → WebView postMessage
  */
 
-import net from 'node:net';
 import { existsSync } from 'node:fs';
+import net from 'node:net';
 import { join } from 'node:path';
 import * as vscode from 'vscode';
 
 import { getHotReloadService } from './hotReloadService';
+import { log } from './logger';
 
 // ── Types ──
 
@@ -122,14 +123,13 @@ function getNonce(): string {
 
 // ── Panel Provider ──
 
-export class InspectorPanelProvider {
+class InspectorPanelProvider {
 	private panel: undefined | vscode.WebviewPanel;
 	private readonly workspaceState: vscode.Memento;
 
 	constructor(
 		private readonly extensionUri: vscode.Uri,
 		private readonly inspectorUri: vscode.Uri,
-		private readonly logger: (msg: string) => void,
 		workspaceState: vscode.Memento
 	) {
 		this.workspaceState = workspaceState;
@@ -141,7 +141,7 @@ export class InspectorPanelProvider {
 			return;
 		}
 
-		this.logger('Creating Inspector WebView panel');
+		log('Creating Inspector WebView panel');
 
 		const panel = vscode.window.createWebviewPanel(
 			PANEL_VIEW_TYPE,
@@ -151,7 +151,7 @@ export class InspectorPanelProvider {
 		);
 
 		this.attachPanel(panel);
-		this.logger('Inspector WebView panel created');
+		log('Inspector WebView panel created');
 	}
 
 	/**
@@ -161,6 +161,9 @@ export class InspectorPanelProvider {
 	attachPanel(panel: vscode.WebviewPanel): void {
 		this.panel = panel;
 		this.panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'icon.png');
+		// Ensure localResourceRoots include the workspace inspector path
+		// (restored panels may have stale roots from a previous session)
+		this.panel.webview.options = this.getWebviewOptions();
 		this.panel.webview.html = this.getHtml();
 
 		this.panel.webview.onDidReceiveMessage(
@@ -168,7 +171,7 @@ export class InspectorPanelProvider {
 		);
 
 		this.panel.onDidDispose(() => {
-			this.logger('Inspector WebView panel disposed');
+			log('Inspector WebView panel disposed');
 			this.panel = undefined;
 			void this.workspaceState.update(STATE_KEY_PANEL_OPEN, false);
 		});
@@ -182,7 +185,7 @@ export class InspectorPanelProvider {
 	 */
 	refresh(): void {
 		if (!this.panel) return;
-		this.logger('Refreshing Inspector WebView');
+		log('Refreshing Inspector WebView');
 		this.panel.webview.html = this.getHtml();
 	}
 
@@ -219,13 +222,18 @@ export class InspectorPanelProvider {
 	// ── Private ──
 
 	private getWebviewOptions(): vscode.WebviewOptions & vscode.WebviewPanelOptions {
+		const roots = [
+			vscode.Uri.joinPath(this.extensionUri, 'inspector'),
+			vscode.Uri.joinPath(this.extensionUri, 'inspector', 'dist')
+		];
+		// When serving from workspace source, also allow the workspace inspector paths
+		if (this.inspectorUri.toString() !== vscode.Uri.joinPath(this.extensionUri, 'inspector').toString()) {
+			roots.push(this.inspectorUri);
+			roots.push(vscode.Uri.joinPath(this.inspectorUri, 'dist'));
+		}
 		return {
 			enableScripts: true,
-			localResourceRoots: [
-				vscode.Uri.joinPath(this.extensionUri, 'inspector'),
-				vscode.Uri.joinPath(this.extensionUri, 'inspector', 'dist'),
-				vscode.Uri.joinPath(this.inspectorUri, 'dist')
-			],
+			localResourceRoots: roots,
 			retainContextWhenHidden: true
 		};
 	}
@@ -234,9 +242,9 @@ export class InspectorPanelProvider {
 	 * Thin relay: forward every request to Client pipe, return response to WebView.
 	 */
 	private async relayToClient(msg: InspectorMessage): Promise<void> {
-		if (msg.type !== 'request') return;
+		if (msg.type !== 'request' || !msg.method) return;
 
-		this.logger(`Inspector RPC: ${msg.method}`);
+		log(`Inspector RPC: ${msg.method}`);
 
 		try {
 			const result = await sendClientRpc(msg.method, msg.params);
@@ -247,7 +255,7 @@ export class InspectorPanelProvider {
 			} satisfies InspectorMessage);
 		} catch (err) {
 			const errorMsg = err instanceof Error ? err.message : String(err);
-			this.logger(`Inspector RPC error (${msg.method}): ${errorMsg}`);
+			log(`Inspector RPC error (${msg.method}): ${errorMsg}`);
 			this.panel?.webview.postMessage({
 				error: errorMsg,
 				id: msg.id,
@@ -300,8 +308,7 @@ export class InspectorPanelProvider {
  * Returns the panel provider for use by the smart refresh orchestrator.
  */
 export function registerInspectorPanel(
-	context: vscode.ExtensionContext,
-	logger: (msg: string) => void
+	context: vscode.ExtensionContext
 ): InspectorPanelProvider {
 	// Prefer workspace inspector source for hot-reload + asset serving (development).
 	// Fall back to the installed extension path (production).
@@ -317,12 +324,12 @@ export function registerInspectorPanel(
 		: vscode.Uri.joinPath(context.extensionUri, 'inspector');
 
 	if (hasWorkspaceSource) {
-		logger(`Inspector using workspace source: ${inspectorRoot}`);
+		log(`Inspector using workspace source: ${inspectorRoot}`);
 	} else {
-		logger(`Inspector using installed extension: ${inspectorRoot}`);
+		log(`Inspector using installed extension: ${inspectorRoot}`);
 	}
 
-	const provider = new InspectorPanelProvider(context.extensionUri, inspectorUri, logger, context.workspaceState);
+	const provider = new InspectorPanelProvider(context.extensionUri, inspectorUri, context.workspaceState);
 
 	const rebuildIfNeeded = async (): Promise<boolean> => {
 		const hotReload = getHotReloadService();
@@ -330,11 +337,11 @@ export function registerInspectorPanel(
 
 		const result = await hotReload.checkInspector(inspectorRoot);
 		if (result.rebuilt) {
-			logger('Inspector frontend rebuilt — refreshing WebView');
+			log('Inspector frontend rebuilt — refreshing WebView');
 			return true;
 		}
 		if (result.changed && result.buildError) {
-			logger(`Inspector build failed: ${result.buildError}`);
+			log(`Inspector build failed: ${result.buildError}`);
 			vscode.window.showErrorMessage(`Inspector build failed: ${result.buildError}`);
 		}
 		return false;
@@ -345,7 +352,7 @@ export function registerInspectorPanel(
 	context.subscriptions.push(
 		vscode.window.registerWebviewPanelSerializer(PANEL_VIEW_TYPE, {
 			async deserializeWebviewPanel(panel: vscode.WebviewPanel) {
-				logger('Restoring Inspector panel from previous session');
+				log('Restoring Inspector panel from previous session');
 				provider.attachPanel(panel);
 			}
 		})
@@ -366,6 +373,6 @@ export function registerInspectorPanel(
 		{ dispose: () => { provider.dispose(); } }
 	);
 
-	logger('Inspector panel commands registered');
+	log('Inspector panel commands registered');
 	return provider;
 }

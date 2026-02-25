@@ -11,7 +11,7 @@
 
 // ── Types ──
 
-export interface InspectorMessage {
+interface InspectorMessage {
 	error?: string;
 	id: string;
 	method: string;
@@ -126,10 +126,10 @@ export function onEvent(method: string, handler: EventHandler): () => void {
 /**
  * Get the VS Code API for state persistence.
  */
-export function getState<T = unknown>(): T | undefined {
+function getState<T = unknown>(): T | undefined {
 	return getVsCodeApi().getState() as T | undefined;
 }
 
-export function setState<T = unknown>(state: T): void {
+function setState<T = unknown>(state: T): void {
 	getVsCodeApi().setState(state);
 }

@@ -21,6 +21,8 @@ import * as vscode from 'vscode';
 
 import { SingleTerminalController, type TerminalRunResult } from './singleTerminalController';
 import { getUserActionTracker } from './userActionTracker';
+import { log } from './logger';
+
 
 // ============================================================================
 // Local Controller (lazy initialization)
@@ -30,7 +32,7 @@ let localController: null | SingleTerminalController = null;
 
 function getController(): SingleTerminalController {
 	if (!localController) {
-		console.log('[devtools:LM-tools] Initializing local terminal controller');
+		log('[devtools:LM-tools] Initializing local terminal controller');
 		localController = new SingleTerminalController();
 	}
 	return localController;
@@ -40,7 +42,7 @@ function getController(): SingleTerminalController {
 // Input Interfaces
 // ============================================================================
 
-export interface IReadTerminalParams {
+interface IReadTerminalParams {
 	correlationId?: string;
 	includeStackFrames?: boolean;
 	limit?: number;
@@ -52,7 +54,7 @@ export interface IReadTerminalParams {
 	timeRange?: string;
 }
 
-export interface ITerminalRunParams {
+interface ITerminalRunParams {
 	addNewline?: boolean;
 	command?: string;
 	correlationId?: string;

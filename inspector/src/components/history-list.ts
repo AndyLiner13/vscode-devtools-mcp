@@ -46,7 +46,7 @@ export function onRerun(handler: (input: string, recordId: string) => void): voi
 // Cross-tab sync: re-render when another tab mutates
 onStorageChange((toolName) => {
 	if (toolName === currentTool || toolName === '*') {
-		renderHistory().catch(console.error);
+		renderHistory().catch(() => { /* error sent via RPC */ });
 	}
 });
 
@@ -194,7 +194,7 @@ function createRatingButton(record: ExecutionRecord, direction: 'bad' | 'good'):
 		const newRating: RecordRating = record.rating === direction ? null : direction;
 		updateRating(currentTool, record.id, newRating)
 			.then(async () => renderHistory())
-			.catch(console.error);
+			.catch(() => { /* error sent via RPC */ });
 	});
 
 	return btn;
@@ -225,7 +225,7 @@ function createDeleteButton(record: ExecutionRecord): HTMLElement {
 		expandedEntries.delete(record.id);
 		deleteRecord(currentTool, record.id)
 			.then(async () => renderHistory())
-			.catch(console.error);
+			.catch(() => { /* error sent via RPC */ });
 	});
 
 	return btn;
@@ -268,7 +268,7 @@ function renderEntry(record: ExecutionRecord): HTMLElement {
 	commentField.addEventListener('input', () => {
 		clearTimeout(saveTimer);
 		saveTimer = setTimeout(() => {
-			updateComment(currentTool, record.id, commentField.value).catch(console.error);
+			updateComment(currentTool, record.id, commentField.value).catch(() => { /* error sent via RPC */ });
 		}, 400);
 	});
 
@@ -305,7 +305,7 @@ function renderEntry(record: ExecutionRecord): HTMLElement {
 		} else {
 			expandedEntries.add(record.id);
 		}
-		renderHistory().catch(console.error);
+		renderHistory().catch(() => { /* error sent via RPC */ });
 	});
 
 	entry.appendChild(row);

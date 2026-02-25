@@ -39,7 +39,7 @@ function getClientLogsStoragePath(): null | string {
 // Input Schema Interface
 // ============================================================================
 
-export interface IReadOutputChannelsParams {
+interface IReadOutputChannelsParams {
 	afterLine?: number;
 	beforeLine?: number;
 	channel?: string;

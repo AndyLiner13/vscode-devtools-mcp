@@ -81,7 +81,7 @@ export interface ConsoleMessage {
 	type: string;
 }
 
-export interface ConsoleFilterOptions {
+interface ConsoleFilterOptions {
 	afterId?: number;
 	beforeId?: number;
 	fields?: string[];

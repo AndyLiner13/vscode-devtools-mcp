@@ -43,7 +43,7 @@ export interface ServerInfo {
 	version: string;
 }
 
-export interface ServerCapabilities {
+interface ServerCapabilities {
 	logging?: Record<string, unknown>;
 	prompts?: Record<string, unknown>;
 	resources?: Record<string, unknown>;
@@ -52,7 +52,7 @@ export interface ServerCapabilities {
 
 export type ConnectionState = 'connected' | 'connecting' | 'disconnected' | 'error';
 
-export interface ConnectionStatus {
+interface ConnectionStatus {
 	error?: string;
 	serverInfo?: ServerInfo;
 	state: ConnectionState;
@@ -78,7 +78,7 @@ export interface ExecutionRecord {
 	toolName: string;
 }
 
-export interface InspectorStorage {
+interface InspectorStorage {
 	records: Record<string, ExecutionRecord[]>;
 	version: number;
 }

@@ -16,6 +16,8 @@ import type { FileStructure } from './types';
 
 import * as path from 'node:path';
 import { Worker } from 'node:worker_threads';
+import { error, warn } from '../logger';
+
 
 // ── Configuration ────────────────────────────────────────
 
@@ -138,7 +140,7 @@ function spawnWorker(): void {
 	});
 
 	worker.on('error', (err) => {
-		console.error('[codebase-worker] Worker error:', err.message);
+		error('[codebase-worker] Worker error:', err.message);
 		rejectAllPending(err);
 	});
 
@@ -152,7 +154,7 @@ function spawnWorker(): void {
 		}
 
 		if (code !== 0 && !intentionallyStopped) {
-			console.warn(`[codebase-worker] Worker exited with code ${code} — will auto-restart on next request`);
+			warn(`[codebase-worker] Worker exited with code ${code} — will auto-restart on next request`);
 			crashTimestamps.push(Date.now());
 		}
 
@@ -277,7 +279,7 @@ async function invalidateProject(rootDir?: string): Promise<void> {
 	return sendRequest<void>('invalidateProject', { rootDir });
 }
 
-export interface ExtractOrphanedContentParams {
+interface ExtractOrphanedContentParams {
 	filePath: string;
 	symbolRanges?: Array<{ start: number; end: number }>;
 }

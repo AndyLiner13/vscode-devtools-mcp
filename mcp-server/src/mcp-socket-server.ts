@@ -47,7 +47,7 @@ interface ToolCallResult {
 	isError?: boolean;
 }
 
-export interface McpSocketDeps {
+interface McpSocketDeps {
 	executeTool: (name: string, args: Record<string, unknown>) => Promise<ToolCallResult>;
 	getToolList: () => ToolInfo[];
 	version: string;
@@ -163,11 +163,14 @@ function handleConnection(conn: net.Socket): void {
 				continue;
 			}
 
-			dispatch(req).then((response) => {
-				conn.write(`${JSON.stringify(response)}\n`);
-			}).catch(() => {
-				// Connection may have closed before we could write
-			});
+			void (async () => {
+				try {
+					const response = await dispatch(req);
+					conn.write(`${JSON.stringify(response)}\n`);
+				} catch {
+					// Connection may have closed before we could write
+				}
+			})();
 		}
 	});
 

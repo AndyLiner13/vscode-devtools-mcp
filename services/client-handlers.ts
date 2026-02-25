@@ -26,6 +26,8 @@ import { registerInspectorHandlers } from './inspector-backend';
 import { disposeProcessLedger, getProcessLedger, initProcessLedger, type ProcessLedgerSummary } from './processLedger';
 import { SingleTerminalController } from './singleTerminalController';
 import { getUserActionTracker } from './userActionTracker';
+import { error, log, warn } from './logger';
+
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -165,7 +167,7 @@ async function handleTerminalRun(params: Record<string, unknown>) {
 	const timeout = paramNum(params, 'timeout');
 	const name = paramStr(params, 'name');
 
-	console.log(`[client] terminal.run — cwd: ${cwd}, command: ${command}, name: ${name ?? 'default'}`);
+	log(`[client] terminal.run — cwd: ${cwd}, command: ${command}, name: ${name ?? 'default'}`);
 	return terminalController.run(command, cwd, timeout, name);
 }
 
@@ -185,7 +187,7 @@ async function handleTerminalInput(params: Record<string, unknown>) {
 	const timeout = paramNum(params, 'timeout');
 	const name = paramStr(params, 'name');
 
-	console.log(`[client] terminal.input — text: ${text}, name: ${name ?? 'default'}`);
+	log(`[client] terminal.input — text: ${text}, name: ${name ?? 'default'}`);
 	return terminalController.sendInput(text, addNewline, timeout, name);
 }
 
@@ -206,7 +208,7 @@ function handleTerminalKill(params: Record<string, unknown>) {
 	if (!terminalController) throw new Error('Terminal controller not initialized');
 
 	const name = paramStr(params, 'name');
-	console.log(`[client] terminal.kill — name: ${name ?? 'default'}`);
+	log(`[client] terminal.kill — name: ${name ?? 'default'}`);
 	return terminalController.kill(name);
 }
 
@@ -239,7 +241,7 @@ async function handleKillProcess(params: Record<string, unknown>): Promise<{ suc
 		throw new Error('pid is required and must be a positive number');
 	}
 
-	console.log(`[client] process.kill — PID: ${pid}`);
+	log(`[client] process.kill — PID: ${pid}`);
 	const ledger = getProcessLedger();
 	return ledger.killProcess(pid);
 }
@@ -248,7 +250,7 @@ async function handleKillProcess(params: Record<string, unknown>): Promise<{ suc
  * Kill all orphaned processes from previous sessions.
  */
 async function handleKillOrphans(_params: Record<string, unknown>): Promise<{ killed: number[]; failed: Array<{ pid: number; error: string }> }> {
-	console.log('[client] process.killOrphans');
+	log('[client] process.killOrphans');
 	const ledger = getProcessLedger();
 	return ledger.killAllOrphans();
 }
@@ -370,7 +372,7 @@ async function handleCodebaseTraceSymbol(params: Record<string, unknown>) {
 			timeout: paramNum(params, 'timeout')
 		});
 	} catch (err: unknown) {
-		console.warn('[client] traceSymbol error:', errorMessage(err));
+		warn('[client] traceSymbol error:', errorMessage(err));
 		return {
 			callChain: { incomingCalls: [], outgoingCalls: [] },
 			partial: true,
@@ -396,7 +398,7 @@ async function handleCodebaseFindDeadCode(params: Record<string, unknown>) {
 			rootDir: resolveRootDir(params)
 		});
 	} catch (err: unknown) {
-		console.warn('[client] findDeadCode error:', errorMessage(err));
+		warn('[client] findDeadCode error:', errorMessage(err));
 		return {
 			deadCode: [],
 			errorMessage: errorMessage(err),
@@ -413,7 +415,7 @@ async function handleCodebaseGetImportGraph(params: Record<string, unknown>) {
 			rootDir: resolveRootDir(params)
 		});
 	} catch (err: unknown) {
-		console.warn('[client] getImportGraph error:', errorMessage(err));
+		warn('[client] getImportGraph error:', errorMessage(err));
 		return {
 			circular: [],
 			errorMessage: errorMessage(err),
@@ -434,7 +436,7 @@ async function handleCodebaseFindDuplicates(params: Record<string, unknown>) {
 			rootDir: resolveRootDir(params)
 		});
 	} catch (err: unknown) {
-		console.warn('[client] findDuplicates error:', errorMessage(err));
+		warn('[client] findDuplicates error:', errorMessage(err));
 		return {
 			errorMessage: errorMessage(err),
 			groups: [],
@@ -521,7 +523,7 @@ async function handleCodebaseGetDiagnostics(params: Record<string, unknown>) {
 			}
 		};
 	} catch (err: unknown) {
-		console.warn('[client] getDiagnostics error:', errorMessage(err));
+		warn('[client] getDiagnostics error:', errorMessage(err));
 		return {
 			diagnostics: [],
 			errorMessage: errorMessage(err),
@@ -1077,12 +1079,12 @@ async function handleExtractOrphanedContent(params: Record<string, unknown>) {
  * Register all Client RPC handlers with the bootstrap.
  */
 export function registerClientHandlers(register: RegisterHandler, workspaceState: vscode.Memento): vscode.Disposable {
-	console.log('[client] Registering Client RPC handlers');
+	log('[client] Registering Client RPC handlers');
 
 	// Initialize the process ledger with VS Code's workspace state for persistence
 	const processLedger = initProcessLedger(workspaceState);
 	processLedger.initialize().catch((err) => {
-		console.error('[client] Process ledger initialization failed:', err);
+		error('[client] Process ledger initialization failed:', err);
 	});
 
 	// Initialize the single terminal controller (for MCP tools)
@@ -1129,11 +1131,11 @@ export function registerClientHandlers(register: RegisterHandler, workspaceState
 	// Inspector backend handlers (storage CRUD, MCP proxy, file browsing, symbols)
 	registerInspectorHandlers(register, workspaceState);
 
-	console.log('[client] Client RPC handlers registered');
+	log('[client] Client RPC handlers registered');
 
 	// Return disposable for cleanup
 	return new vscode.Disposable(() => {
-		console.log('[client] Cleaning up Client handlers');
+		log('[client] Cleaning up Client handlers');
 
 		if (terminalController) {
 			terminalController.dispose();

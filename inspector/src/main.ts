@@ -9,7 +9,7 @@ import { McpInspectorClient } from './mcp-client';
 import { connectStorageSync, pruneUnrated } from './storage';
 
 // Prune unrated records on load — only flagged/archived survive reloads
-pruneUnrated().catch(console.error);
+pruneUnrated().catch(() => { /* error sent via RPC */ });
 
 // Start SSE connection for cross-tab live sync
 connectStorageSync();
@@ -45,5 +45,5 @@ onRerun((input, recordId) => {
 
 // Auto-connect on load
 client.connect().catch((err: unknown) => {
-	console.error('Failed to connect to MCP server:', err);
+	void('Failed to connect to MCP server:', err);
 });

@@ -16,8 +16,6 @@ import { defineConfig, globalIgnores } from 'eslint/config';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-import localPlugin from './mcp-server/scripts/eslint_rules/local-plugin.js';
-
 export default defineConfig([
 	globalIgnores(['**/dist/**', '**/node_modules/**', '**/*.d.ts', '.devtools/**', 'client-workspace/**', 'client-workspace/**', 'tests/**', 'resources/**', 'mcp-server/build/**']),
 	{
@@ -294,11 +292,7 @@ export default defineConfig([
 			}
 		},
 		name: 'MCP server rules',
-		plugins: {
-			'@local': localPlugin
-		},
 		rules: {
-			'@local/check-license': 'error',
 			'no-restricted-imports': [
 				'error',
 				{

@@ -21,6 +21,8 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { ts } from 'ts-morph';
+import { log } from './logger';
+
 
 // ── Storage Keys ─────────────────────────────────────────────────────────────
 
@@ -69,14 +71,14 @@ class HotReloadService {
 		const configPath = existsSync(buildConfigPath) ? buildConfigPath : defaultConfigPath;
 
 		if (!existsSync(configPath)) {
-			console.log(`[hotReload] No tsconfig found in ${packageRoot}`);
+			log(`[hotReload] No tsconfig found in ${packageRoot}`);
 			return [];
 		}
 
 		const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
 		if (configFile.error) {
 			const msg = ts.flattenDiagnosticMessageText(configFile.error.messageText, '\n');
-			console.log(`[hotReload] Failed to read ${configPath}: ${msg}`);
+			log(`[hotReload] Failed to read ${configPath}: ${msg}`);
 			return [];
 		}
 
@@ -85,7 +87,7 @@ class HotReloadService {
 		if (parsed.errors.length > 0) {
 			for (const diag of parsed.errors) {
 				const msg = ts.flattenDiagnosticMessageText(diag.messageText, '\n');
-				console.log(`[hotReload] tsconfig warning: ${msg}`);
+				log(`[hotReload] tsconfig warning: ${msg}`);
 			}
 		}
 
@@ -193,7 +195,7 @@ class HotReloadService {
 			const pm = this.detectPackageManager(packageRoot);
 			const cmd = `${pm} run ${scriptName}`;
 
-			console.log(`[hotReload] Running build: ${cmd} in ${packageRoot}`);
+			log(`[hotReload] Running build: ${cmd} in ${packageRoot}`);
 
 			exec(cmd, { cwd: packageRoot, timeout: 300_000 }, (error, stdout, stderr) => {
 				if (error) {
@@ -251,7 +253,7 @@ class HotReloadService {
 
 		const storedPrefix = storedHash ? `${storedHash.slice(0, 12)}...` : 'none';
 		const currentPrefix = `${currentHash.slice(0, 12)}...`;
-		console.log(`[hotReload] Content changed (${key}): ${storedPrefix} -> ${currentPrefix}`);
+		log(`[hotReload] Content changed (${key}): ${storedPrefix} -> ${currentPrefix}`);
 		return { changed: true, currentHash };
 	}
 
@@ -262,7 +264,7 @@ class HotReloadService {
 	async commitHash(hashKey: 'ext' | 'inspector' | 'mcp', hash: string): Promise<void> {
 		const key = hashKey === 'mcp' ? HASH_KEY_MCP : hashKey === 'inspector' ? HASH_KEY_INSPECTOR : HASH_KEY_EXT;
 		await this.setStoredHash(key, hash);
-		console.log(`[hotReload] Hash committed (${key}): ${hash.slice(0, 12)}...`);
+		log(`[hotReload] Hash committed (${key}): ${hash.slice(0, 12)}...`);
 	}
 
 	/**
@@ -285,16 +287,16 @@ class HotReloadService {
 
 		const storedPrefix = storedHash ? `${storedHash.slice(0, 12)}...` : 'none';
 		const currentPrefix = `${currentHash.slice(0, 12)}...`;
-		console.log(`[hotReload] Content changed (${hashKey}): ${storedPrefix} -> ${currentPrefix}`);
+		log(`[hotReload] Content changed (${hashKey}): ${storedPrefix} -> ${currentPrefix}`);
 
 		const buildError = await this.runBuild(packageRoot, buildScript);
 		if (buildError) {
-			console.log(`[hotReload] Build failed (${hashKey}): ${buildError}`);
+			log(`[hotReload] Build failed (${hashKey}): ${buildError}`);
 			return { buildError, changed: true, rebuilt: false };
 		}
 
 		await this.setStoredHash(hashKey, currentHash);
-		console.log(`[hotReload] Build succeeded, hash stored: ${currentPrefix}`);
+		log(`[hotReload] Build succeeded, hash stored: ${currentPrefix}`);
 		return { buildError: null, changed: true, rebuilt: true };
 	}
 
@@ -347,5 +349,5 @@ function getHotReloadService(): HotReloadService | undefined {
 	return serviceInstance;
 }
 
-export type { ChangeCheckResult, PackageCheckResult };
+export type { ChangeCheckResult };
 export { createHotReloadService, getHotReloadService };

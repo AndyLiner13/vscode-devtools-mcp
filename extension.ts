@@ -22,6 +22,7 @@ import * as bootstrap from './bootstrap';
 import pkg from './package.json';
 import { startWorker, stopWorker } from './services/codebase/codebase-worker-proxy';
 import { registerInspectorPanel } from './services/inspector-panel';
+import { initInspectorChannel, initMainChannel, log } from './services/logger';
 import { registerMcpServerProvider } from './services/mcpServerProvider';
 
 // VS Code constructs server definition IDs as: ExtensionIdentifier.toKey(id) + '/' + label
@@ -49,13 +50,6 @@ let currentRole: 'client' | 'host' | undefined;
 let hostHandlersCleanup: (() => void) | undefined;
 let clientHandlersCleanup: undefined | vscode.Disposable;
 let reconnectCdpCallbackForRuntime: (() => Promise<boolean>) | undefined;
-
-function log(message: string): void {
-	const timestamp = new Date().toISOString();
-	const line = `[${timestamp}] ${message}`;
-	outputChannel?.appendLine(line);
-	console.log(`[devtools] ${message}`);
-}
 
 async function notifyHostOfShutdown(reason: string): Promise<void> {
 	await new Promise<void>((resolve) => {
@@ -118,12 +112,13 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Output channel for all logging
 	outputChannel = vscode.window.createOutputChannel('devtools');
 	context.subscriptions.push(outputChannel);
+	initMainChannel(outputChannel);
 
 	log('VS Code DevTools extension activating...');
 
 	// Register the Inspector WebView serializer synchronously — MUST happen
 	// before any `await` so VS Code can restore the panel across reloads.
-	const inspectorPanel = registerInspectorPanel(context, log);
+	const inspectorPanel = registerInspectorPanel(context);
 	log('Inspector WebView panel registered (serializer active)');
 
 	// ========================================================================
@@ -233,7 +228,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			log('Loading host-handlers module...');
 			const { cleanup, createReconnectCdpCallback, onBrowserServiceChanged, onClientStateChanged, registerHostHandlers, startClientWindow, stopClientWindow } = await import('./services/host-handlers');
 			log('host-handlers module loaded, registering handlers...');
-			registerHostHandlers(bootstrap.registerHandler, context, log);
+			registerHostHandlers(bootstrap.registerHandler, context);
 			hostHandlersCleanup = cleanup;
 
 			// Safety net: kill spawned processes if the extension host exits without
@@ -456,6 +451,10 @@ export async function activate(context: vscode.ExtensionContext) {
 			});
 		} else {
 			log('Loading client-handlers module...');
+			const inspectorChannel = vscode.window.createOutputChannel('DevTools Inspector');
+			context.subscriptions.push(inspectorChannel);
+			initInspectorChannel(inspectorChannel);
+
 			const { registerClientHandlers } = await import('./services/client-handlers');
 			log('client-handlers module loaded, registering handlers...');
 			const disposable = registerClientHandlers(bootstrap.registerHandler, context.workspaceState);

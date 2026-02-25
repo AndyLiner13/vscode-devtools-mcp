@@ -24,21 +24,23 @@ import type * as vscode from 'vscode';
 
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
+import { error, log } from './logger';
+
 
 const execAsync = promisify(exec);
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type ProcessStatus = 'completed' | 'killed' | 'orphaned' | 'running';
+type ProcessStatus = 'completed' | 'killed' | 'orphaned' | 'running';
 
-export interface ChildProcessInfo {
+interface ChildProcessInfo {
 	commandLine: string;
 	name: string;
 	parentPid: number;
 	pid: number;
 }
 
-export interface ProcessEntry {
+interface ProcessEntry {
 	children?: ChildProcessInfo[];
 	command: string;
 	endedAt?: string; // ISO timestamp when completed/killed
@@ -50,7 +52,7 @@ export interface ProcessEntry {
 	terminalName: string;
 }
 
-export interface ProcessEvent {
+interface ProcessEvent {
 	command?: string;
 	event: 'completed' | 'killed' | 'started';
 	exitCode?: number;
@@ -102,7 +104,7 @@ class ProcessLedger {
 	constructor(workspaceState?: vscode.Memento) {
 		this.workspaceState = workspaceState;
 		this.sessionId = this.generateSessionId();
-		console.log(`[ProcessLedger] Created with sessionId: ${this.sessionId}`);
+		log(`[ProcessLedger] Created with sessionId: ${this.sessionId}`);
 	}
 
 	// ── Initialization ─────────────────────────────────────────────────────────
@@ -115,7 +117,7 @@ class ProcessLedger {
 		if (this.initialized) return;
 
 		if (!this.workspaceState) {
-			console.log('[ProcessLedger] No workspaceState — persistence disabled');
+			log('[ProcessLedger] No workspaceState — persistence disabled');
 			this.initialized = true;
 			return;
 		}
@@ -124,9 +126,9 @@ class ProcessLedger {
 			this.loadActiveProcesses();
 			await this.detectOrphans();
 			this.initialized = true;
-			console.log(`[ProcessLedger] Initialized — ${this.activeProcesses.size} active, ${this.orphanedProcesses.size} orphaned`);
+			log(`[ProcessLedger] Initialized — ${this.activeProcesses.size} active, ${this.orphanedProcesses.size} orphaned`);
 		} catch (err) {
-			console.error('[ProcessLedger] Initialization error:', err);
+			error('[ProcessLedger] Initialization error:', err);
 			this.initialized = true; // Continue without persistence
 		}
 	}
@@ -158,7 +160,7 @@ class ProcessLedger {
 		});
 
 		await this.saveActiveProcesses();
-		console.log(`[ProcessLedger] Started: PID ${pid} — ${command}`);
+		log(`[ProcessLedger] Started: PID ${pid} — ${command}`);
 	}
 
 	/**
@@ -167,7 +169,7 @@ class ProcessLedger {
 	async logCompleted(pid: number, exitCode?: number): Promise<void> {
 		const entry = this.activeProcesses.get(pid);
 		if (!entry) {
-			console.log(`[ProcessLedger] Completed: PID ${pid} not tracked (already completed?)`);
+			log(`[ProcessLedger] Completed: PID ${pid} not tracked (already completed?)`);
 			return;
 		}
 
@@ -187,7 +189,7 @@ class ProcessLedger {
 		});
 
 		await this.saveActiveProcesses();
-		console.log(`[ProcessLedger] Completed: PID ${pid} — exit ${exitCode ?? 'unknown'}`);
+		log(`[ProcessLedger] Completed: PID ${pid} — exit ${exitCode ?? 'unknown'}`);
 	}
 
 	/**
@@ -202,7 +204,7 @@ class ProcessLedger {
 		}
 
 		if (!entry) {
-			console.log(`[ProcessLedger] Killed: PID ${pid} not tracked`);
+			log(`[ProcessLedger] Killed: PID ${pid} not tracked`);
 			return;
 		}
 
@@ -221,7 +223,7 @@ class ProcessLedger {
 		});
 
 		await this.saveActiveProcesses();
-		console.log(`[ProcessLedger] Killed: PID ${pid}${wasOrphaned ? ' (was orphaned)' : ''}`);
+		log(`[ProcessLedger] Killed: PID ${pid}${wasOrphaned ? ' (was orphaned)' : ''}`);
 	}
 
 	// ── Query Methods ──────────────────────────────────────────────────────────
@@ -351,7 +353,7 @@ class ProcessLedger {
 		this.childCacheTimestamp = now;
 		const totalChildren = allChildren.length;
 		if (totalChildren > 0) {
-			console.log(`[ProcessLedger] Child cache refreshed — ${totalChildren} children across ${this.childCache.size} roots`);
+			log(`[ProcessLedger] Child cache refreshed — ${totalChildren} children across ${this.childCache.size} roots`);
 		}
 	}
 
@@ -424,7 +426,7 @@ class ProcessLedger {
 				pid: item.Pid as number
 			}));
 		} catch (err) {
-			console.error('[ProcessLedger] Child process tree query failed:', err);
+			error('[ProcessLedger] Child process tree query failed:', err);
 			return [];
 		}
 	}
@@ -442,7 +444,7 @@ class ProcessLedger {
 			const capped = log.length > MAX_LOG_ENTRIES ? log.slice(-MAX_LOG_ENTRIES) : log;
 			await this.workspaceState.update(PROCESS_LOG_KEY, capped);
 		} catch (err) {
-			console.error('[ProcessLedger] Failed to append event:', err);
+			error('[ProcessLedger] Failed to append event:', err);
 		}
 	}
 
@@ -458,7 +460,7 @@ class ProcessLedger {
 		try {
 			await this.workspaceState.update(ACTIVE_PROCESSES_KEY, data);
 		} catch (err) {
-			console.error('[ProcessLedger] Failed to save active processes:', err);
+			error('[ProcessLedger] Failed to save active processes:', err);
 		}
 	}
 
@@ -473,7 +475,7 @@ class ProcessLedger {
 			}>(ACTIVE_PROCESSES_KEY);
 
 			if (!data) {
-				console.log('[ProcessLedger] No previous active processes');
+				log('[ProcessLedger] No previous active processes');
 				return;
 			}
 
@@ -487,9 +489,9 @@ class ProcessLedger {
 				}
 			}
 
-			console.log(`[ProcessLedger] Loaded ${this.orphanedProcesses.size} potential orphans from previous session`);
+			log(`[ProcessLedger] Loaded ${this.orphanedProcesses.size} potential orphans from previous session`);
 		} catch (err) {
-			console.log('[ProcessLedger] Failed to load previous state:', err);
+			log('[ProcessLedger] Failed to load previous state:', err);
 		}
 	}
 
@@ -506,7 +508,7 @@ class ProcessLedger {
 				entry.endedAt = new Date().toISOString();
 				this.addToRecentlyCompleted(entry);
 			} else {
-				console.log(`[ProcessLedger] Orphaned process still running: PID ${pid} — ${entry.command}`);
+				log(`[ProcessLedger] Orphaned process still running: PID ${pid} — ${entry.command}`);
 			}
 		}
 
@@ -514,7 +516,7 @@ class ProcessLedger {
 			this.orphanedProcesses.delete(pid);
 		}
 
-		console.log(`[ProcessLedger] Orphan detection complete — ${this.orphanedProcesses.size} orphans confirmed`);
+		log(`[ProcessLedger] Orphan detection complete — ${this.orphanedProcesses.size} orphans confirmed`);
 	}
 
 	private async isProcessRunning(pid: number): Promise<boolean> {
@@ -549,7 +551,7 @@ class ProcessLedger {
 	 * Dispose the ledger and clean up.
 	 */
 	dispose(): void {
-		console.log('[ProcessLedger] Disposing');
+		log('[ProcessLedger] Disposing');
 		this.saveActiveProcesses().catch(() => {});
 	}
 }

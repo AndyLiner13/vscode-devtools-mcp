@@ -54,7 +54,7 @@ const EXT_REBUILT_BANNER = '✅ **Extension was recently updated.** The Extensio
  * Result from the extension's checkForChanges RPC handler.
  * The extension is the single authority for all change detection.
  */
-export interface ChangeCheckResult {
+interface ChangeCheckResult {
 	extBuildError: null | string;
 	extChanged: boolean;
 	extClientReloaded: boolean;
@@ -77,7 +77,7 @@ interface PipelineEntry {
  * Dependencies injected into the pipeline at construction time.
  * Keeps the pipeline decoupled from host-pipe and main.ts specifics.
  */
-export interface PipelineDeps {
+interface PipelineDeps {
 	/** Call the extension's checkForChanges RPC. */
 	checkForChanges: (mcpServerRoot: string, extensionPath: string) => Promise<ChangeCheckResult>;
 	/** Extension root (absolute path), or empty string if no extension configured. */

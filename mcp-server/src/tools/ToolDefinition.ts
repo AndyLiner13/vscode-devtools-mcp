@@ -21,26 +21,7 @@ const /**
 	 */
 	CHARACTER_LIMIT = 25000;
 
-/**
- * Standard response format options.
- */
-export enum ResponseFormat {
-	JSON = 'json',
-	MARKDOWN = 'markdown'
-}
-
-/**
- * Standard pagination metadata for list responses.
- */
-export interface PaginationMetadata {
-	count: number;
-	has_more: boolean;
-	next_offset?: number;
-	offset: number;
-	total: number;
-}
-
-export interface ToolDefinition<Schema extends zod.ZodRawShape = zod.ZodRawShape, OutputSchema extends zod.ZodTypeAny = zod.ZodTypeAny> {
+export interface ToolDefinition<Schema extends zod.ZodRawShape = zod.ZodRawShape, OutputSchema extends zod.ZodType = zod.ZodType> {
 	annotations: {
 		title?: string;
 		category: ToolCategory;
@@ -85,16 +66,6 @@ export interface ImageContentData {
 	mimeType: string;
 }
 
-interface SnapshotParams {
-	filePath?: string;
-	verbose?: boolean;
-}
-
-interface DevToolsData {
-	cdpBackendNodeId?: number;
-	cdpRequestId?: string;
-}
-
 export interface Response {
 	appendResponseLine: (value: string) => void;
 	attachImage: (value: ImageContentData) => void;
@@ -105,48 +76,6 @@ export interface Response {
 	setSkipLedger: () => void;
 }
 
-export function defineTool<Schema extends zod.ZodRawShape>(definition: ToolDefinition<Schema>) {
+export function defineTool<Schema extends zod.ZodRawShape>(definition: ToolDefinition<Schema>): ToolDefinition<Schema> {
 	return definition;
-}
-
-const /**
-	 *
-	 */
-	responseFormatSchema = zod.nativeEnum(ResponseFormat).optional().default(ResponseFormat.MARKDOWN).describe('Output format: "markdown" for human-readable or "json" for machine-readable structured data.');
-
-const timeoutSchema = {
-	timeout: zod
-		.number()
-		.int()
-		.optional()
-		.describe(`Maximum wait time in milliseconds. If set to 0, the default timeout will be used.`)
-		.transform((value) => {
-			return value && value <= 0 ? undefined : value;
-		})
-};
-
-/**
- * Check if content exceeds CHARACTER_LIMIT and throw an error with available params.
- */
-function checkCharacterLimit(content: string, toolName: string, availableParams: Record<string, string>): void {
-	if (content.length > CHARACTER_LIMIT) {
-		const paramList = Object.entries(availableParams)
-			.map(([name, desc]) => `  - ${name}: ${desc}`)
-			.join('\n');
-		throw new Error(`Response too long (${content.length} chars, limit: ${CHARACTER_LIMIT}). ` + `Optimize your request using these parameters:\n${paramList}`);
-	}
-}
-
-/**
- * Create standard pagination metadata.
- */
-function createPaginationMetadata(total: number, count: number, offset: number): PaginationMetadata {
-	const has_more = total > offset + count;
-	return {
-		count,
-		has_more,
-		offset,
-		total,
-		...(has_more ? { next_offset: offset + count } : {})
-	};
 }

@@ -24,7 +24,6 @@ import * as monacoNs from 'monaco-editor';
  * Fire-and-forget, non-blocking.
  */
 function log(message: string): void {
-	console.log(`[json-interactivity] ${message}`);
 	rpc('log', { message }).catch(() => {
 		// Silently ignore if extension host is unavailable
 	});
