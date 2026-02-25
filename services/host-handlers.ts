@@ -767,17 +767,18 @@ async function waitForClientReady(port: number, maxWaitMs = 90_000, adaptiveMaxM
 		}
 
 		const cdpOk = await isCdpPortReady(port);
-		const pipeOk = await isClientPipeConnectable();
+		// Full RPC ping (not just TCP) — Client must actually handle requests
+		const pipeOk = await pingClientPipe(2000);
 
 		if (cdpOk && pipeOk) {
 			const finalElapsed = Date.now() - startTime;
-			log(`[host] Client is ready (CDP HTTP + pipe responding) after ${finalElapsed}ms`);
+			log(`[host] Client is ready (CDP HTTP + pipe RPC responding) after ${finalElapsed}ms`);
 			return;
 		}
 
 		if (pipeOk && !pipeSeenUp) {
 			pipeSeenUp = true;
-			log(`[host] Client pipe is UP after ${elapsed}ms — extending timeout to ${adaptiveMaxMs}ms while waiting for CDP`);
+			log(`[host] Client pipe RPC is UP after ${elapsed}ms — extending timeout to ${adaptiveMaxMs}ms while waiting for CDP`);
 		}
 
 		// Log status every 5 seconds so we can diagnose hangs
@@ -792,9 +793,9 @@ async function waitForClientReady(port: number, maxWaitMs = 90_000, adaptiveMaxM
 
 	// Final diagnostic before throwing
 	const finalCdp = await isCdpPortReady(port);
-	const finalPipe = await isClientPipeConnectable();
+	const finalPipe = await pingClientPipe(2000);
 	const totalElapsed = Date.now() - startTime;
-	throw new Error(`Client did not become ready within ${totalElapsed}ms — CDP: ${finalCdp ? 'UP' : 'DOWN'}, pipe: ${finalPipe ? 'UP' : 'DOWN'}`);
+	throw new Error(`Client did not become ready within ${totalElapsed}ms — CDP: ${finalCdp ? 'UP' : 'DOWN'}, pipe RPC: ${finalPipe ? 'UP' : 'DOWN'}`);
 }
 
 async function sleep(ms: number): Promise<void> {
