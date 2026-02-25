@@ -694,24 +694,33 @@ function collectSymbolsByDepth(rootSymbols: FileSymbol[]): { byDepth: FileSymbol
 }
 
 /**
+ * Symbol kinds that represent body-bearing constructs (functions, classes, etc.).
+ * In file-overview mode these always stay as skeleton stubs — Copilot must request
+ * them by name via the `symbol` parameter to see their raw body.
+ */
+const BODY_BEARING_KINDS = new Set([
+	'function', 'method', 'constructor', 'getter', 'setter',
+	'class', 'interface', 'enum',
+]);
+
+/**
  * Compress full-file output using incremental skeleton→progressive expansion approach.
  * Phase 1: Skeleton nesting (0 → max) — build up the full skeleton including all children.
- * Phase 2: Only after the full skeleton fits, progressively expand symbols to raw content
- *          one depth layer at a time (depth 0 first, then depth 1, etc.), smallest symbols
- *          first within each depth, until the budget is exhausted.
+ * Phase 2: Only after the full skeleton fits, progressively expand expandable symbols
+ *          to raw content. Body-bearing symbols (functions, classes, etc.) always stay
+ *          as skeleton stubs so Copilot can only edit lines that are actually visible.
  */
 function compressFullFileOutput(rawContent: string, structure: FileStructure | undefined, allLines: string[], startLine1: number, lineNumbers: boolean): CompressionResult {
 	const trace: string[] = [];
 
-	// Quick check: does full raw content fit?
 	const numbered = addLineNumbers(rawContent, startLine1, lineNumbers);
 	trace.push(`raw=${numbered.length}`);
-	if (numbered.length <= OUTPUT_CHAR_LIMIT) {
-		return { collapsedRanges: [], compressed: false, label: null, output: numbered, sourceRanges: [], trace };
-	}
 
-	// No structure available — return raw with guidance (can't compress without structure)
+	// No structure available — return raw (can't collapse parent symbols without structure)
 	if (!structure) {
+		if (numbered.length <= OUTPUT_CHAR_LIMIT) {
+			return { collapsedRanges: [], compressed: false, label: null, output: numbered, sourceRanges: [], trace };
+		}
 		trace.push(`no structure available, returning raw`);
 		return {
 			collapsedRanges: [],
@@ -721,6 +730,16 @@ function compressFullFileOutput(rawContent: string, structure: FileStructure | u
 			sourceRanges: [],
 			trace
 		};
+	}
+
+	// Check if any symbol is body-bearing (function, class, etc.)
+	const hasBodyBearingSymbols = structure.symbols.some(function isBodyBearing(s: FileSymbol): boolean {
+		return BODY_BEARING_KINDS.has(s.kind) || s.children.some(isBodyBearing);
+	});
+
+	// No body-bearing symbols and raw content fits → return raw as-is
+	if (!hasBodyBearingSymbols && numbered.length <= OUTPUT_CHAR_LIMIT) {
+		return { collapsedRanges: [], compressed: false, label: null, output: numbered, sourceRanges: [], trace };
 	}
 
 	const skeletonPieces = buildSkeletonPieces(structure);
@@ -763,15 +782,15 @@ function compressFullFileOutput(rawContent: string, structure: FileStructure | u
 		bestSkeletonNesting = nesting;
 	}
 
-	// Phase 2: Multi-depth progressive expansion.
+	// Phase 2: Multi-depth progressive expansion (expandable symbols only).
 	// Only proceeds if the full skeleton (all nesting levels) fits within the budget.
-	// Expands symbols to raw content one depth layer at a time (depth 0 first, then
-	// depth 1, etc.). Within each depth, expands smallest symbols first.
-	// Unexpanded symbols remain as skeleton stubs with their children visible.
+	// Body-bearing symbols (functions, methods, classes, interfaces, enums, etc.) always
+	// remain as skeleton stubs. Only non-body-bearing symbols (variables, properties,
+	// type aliases, imports, comments, etc.) are expanded to raw content.
+	// Copilot must request body-bearing symbols by name to see their raw body.
 	if (bestSkeletonNesting === maxSkeletonNesting) {
 		const rootSymbols = contentPieces.flatMap((p) => p.symbol ? [p.symbol] : []);
 		const { byDepth, parentMap } = collectSymbolsByDepth(rootSymbols);
-		const totalSymbols = byDepth.reduce((sum, group) => sum + group.length, 0);
 
 		const expandedSet = new Set<FileSymbol>();
 		let stoppedAtName: string | undefined;
@@ -779,9 +798,15 @@ function compressFullFileOutput(rawContent: string, structure: FileStructure | u
 		let stoppedAtLength = 0;
 		let stoppedAtDepth = 0;
 
+		// Only expand non-body-bearing symbols in file-overview mode.
+		// Body-bearing symbols (functions, methods, classes, etc.) stay as
+		// skeleton stubs regardless of whether they have children.
+		const expandable = byDepth.map((group) => group.filter((s) => !BODY_BEARING_KINDS.has(s.kind)));
+		const totalExpandable = expandable.reduce((sum, group) => sum + group.length, 0);
+
 		outer:
-		for (let depth = 0; depth < byDepth.length; depth++) {
-			for (const sym of byDepth[depth]) {
+		for (let depth = 0; depth < expandable.length; depth++) {
+			for (const sym of expandable[depth]) {
 				// Skip if parent isn't expanded — this symbol is invisible
 				const parent = parentMap.get(sym);
 				if (parent && !expandedSet.has(parent)) continue;
@@ -798,15 +823,15 @@ function compressFullFileOutput(rawContent: string, structure: FileStructure | u
 				}
 				bestOutput = candidate;
 				bestPhase = 'content';
-				bestLabel = `progressive: ${expandedSet.size}/${totalSymbols} symbols expanded (depth ${depth}/${byDepth.length - 1})`;
+				bestLabel = `progressive: ${expandedSet.size}/${totalExpandable} expandable symbols shown (depth ${depth}/${expandable.length - 1})`;
 				bestRanges = computeProgressiveContentRanges(contentPieces, expandedSet);
 			}
 		}
 
 		if (stoppedAtName) {
-			trace.push(`progressive(${expandedSet.size}/${totalSymbols}): stopped at depth ${stoppedAtDepth} '${stoppedAtName}' (${stoppedAtSize} lines, would be ${stoppedAtLength} chars)`);
+			trace.push(`progressive(${expandedSet.size}/${totalExpandable}): stopped at depth ${stoppedAtDepth} '${stoppedAtName}' (${stoppedAtSize} lines, would be ${stoppedAtLength} chars)`);
 		} else {
-			trace.push(`progressive(${expandedSet.size}/${totalSymbols}): all symbols expanded`);
+			trace.push(`progressive(${expandedSet.size}/${totalExpandable}): all expandable symbols shown`);
 		}
 	}
 
