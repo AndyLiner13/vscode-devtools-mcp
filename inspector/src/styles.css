@@ -33,11 +33,16 @@ body {
 	-webkit-font-smoothing: antialiased;
 }
 
+/* Shared container — single source of horizontal inset for the whole inspector */
+.app-root {
+	padding: 0 8px;
+}
+
 /* ── Tool Selector Dropdown ────────────────────────────────────────── */
 
 .tool-selector {
 	width: 100%;
-	padding: 6px 8px;
+	padding: 6px 0;
 }
 
 .select-wrapper {
@@ -49,7 +54,9 @@ body {
 	width: 100%;
 	appearance: none;
 	-webkit-appearance: none;
+	-moz-appearance: none;
 	background: var(--color-vscode-input);
+	background-image: none;
 	color: var(--color-vscode-text);
 	border: 1px solid var(--color-vscode-border);
 	border-radius: 4px;
@@ -58,6 +65,11 @@ body {
 	font-family: var(--font-family-sans);
 	cursor: pointer;
 	outline: none;
+}
+
+/* Hide native browser dropdown arrow in all browsers */
+.tool-select::-ms-expand {
+	display: none;
 }
 
 .tool-select:hover {
@@ -183,7 +195,7 @@ code {
 }
 
 .tool-io-section {
-	padding: 0 8px;
+	padding: 6px 8px;
 	margin: 8px 0;
 }
 

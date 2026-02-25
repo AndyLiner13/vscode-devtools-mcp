@@ -9,6 +9,7 @@
  */
 
 import net from 'node:net';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import * as vscode from 'vscode';
 
@@ -31,6 +32,7 @@ const IS_WINDOWS = process.platform === 'win32';
 const CLIENT_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-client' : '/tmp/vscode-devtools-client.sock';
 const PANEL_VIEW_TYPE = 'mcpInspector';
 const RPC_TIMEOUT_MS = 30_000;
+const STATE_KEY_PANEL_OPEN = 'inspector.panelOpen';
 
 // ── Client Pipe RPC ──
 
@@ -122,11 +124,16 @@ function getNonce(): string {
 
 export class InspectorPanelProvider {
 	private panel: undefined | vscode.WebviewPanel;
+	private readonly workspaceState: vscode.Memento;
 
 	constructor(
 		private readonly extensionUri: vscode.Uri,
-		private readonly logger: (msg: string) => void
-	) {}
+		private readonly inspectorUri: vscode.Uri,
+		private readonly logger: (msg: string) => void,
+		workspaceState: vscode.Memento
+	) {
+		this.workspaceState = workspaceState;
+	}
 
 	show(): void {
 		if (this.panel) {
@@ -136,20 +143,24 @@ export class InspectorPanelProvider {
 
 		this.logger('Creating Inspector WebView panel');
 
-		this.panel = vscode.window.createWebviewPanel(
+		const panel = vscode.window.createWebviewPanel(
 			PANEL_VIEW_TYPE,
 			'MCP Inspector',
 			vscode.ViewColumn.One,
-			{
-				enableScripts: true,
-				localResourceRoots: [
-					vscode.Uri.joinPath(this.extensionUri, 'inspector'),
-					vscode.Uri.joinPath(this.extensionUri, 'inspector', 'dist')
-				],
-				retainContextWhenHidden: true
-			}
+			this.getWebviewOptions()
 		);
 
+		this.attachPanel(panel);
+		this.logger('Inspector WebView panel created');
+	}
+
+	/**
+	 * Attach a WebView panel (newly created or restored by serializer)
+	 * and wire up message relay + dispose tracking.
+	 */
+	attachPanel(panel: vscode.WebviewPanel): void {
+		this.panel = panel;
+		this.panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'icon.png');
 		this.panel.webview.html = this.getHtml();
 
 		this.panel.webview.onDidReceiveMessage(
@@ -159,9 +170,10 @@ export class InspectorPanelProvider {
 		this.panel.onDidDispose(() => {
 			this.logger('Inspector WebView panel disposed');
 			this.panel = undefined;
+			void this.workspaceState.update(STATE_KEY_PANEL_OPEN, false);
 		});
 
-		this.logger('Inspector WebView panel created');
+		void this.workspaceState.update(STATE_KEY_PANEL_OPEN, true);
 	}
 
 	/**
@@ -197,7 +209,26 @@ export class InspectorPanelProvider {
 		this.panel?.dispose();
 	}
 
+	/**
+	 * Whether the panel was previously open (persisted across reloads).
+	 */
+	get wasOpen(): boolean {
+		return this.workspaceState.get<boolean>(STATE_KEY_PANEL_OPEN) ?? false;
+	}
+
 	// ── Private ──
+
+	private getWebviewOptions(): vscode.WebviewOptions & vscode.WebviewPanelOptions {
+		return {
+			enableScripts: true,
+			localResourceRoots: [
+				vscode.Uri.joinPath(this.extensionUri, 'inspector'),
+				vscode.Uri.joinPath(this.extensionUri, 'inspector', 'dist'),
+				vscode.Uri.joinPath(this.inspectorUri, 'dist')
+			],
+			retainContextWhenHidden: true
+		};
+	}
 
 	/**
 	 * Thin relay: forward every request to Client pipe, return response to WebView.
@@ -231,7 +262,7 @@ export class InspectorPanelProvider {
 	private getHtml(): string {
 		if (!this.panel) return '';
 
-		const distUri = vscode.Uri.joinPath(this.extensionUri, 'inspector', 'dist');
+		const distUri = vscode.Uri.joinPath(this.inspectorUri, 'dist');
 		const { webview } = this.panel;
 
 		const mainJs = webview.asWebviewUri(vscode.Uri.joinPath(distUri, 'main.js'));
@@ -246,7 +277,7 @@ export class InspectorPanelProvider {
 	<meta http-equiv="Content-Security-Policy"
 		content="default-src 'none';
 			style-src ${webview.cspSource} 'unsafe-inline';
-			script-src 'nonce-${nonce}' blob:;
+			script-src 'nonce-${nonce}' blob: ${webview.cspSource};
 			font-src ${webview.cspSource};
 			img-src ${webview.cspSource} data:;
 			worker-src blob:;
@@ -272,8 +303,26 @@ export function registerInspectorPanel(
 	context: vscode.ExtensionContext,
 	logger: (msg: string) => void
 ): InspectorPanelProvider {
-	const provider = new InspectorPanelProvider(context.extensionUri, logger);
-	const inspectorRoot = join(context.extensionUri.fsPath, 'inspector');
+	// Prefer workspace inspector source for hot-reload + asset serving (development).
+	// Fall back to the installed extension path (production).
+	const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri;
+	const workspaceInspectorPath = workspaceRoot ? join(workspaceRoot.fsPath, 'inspector') : null;
+	const hasWorkspaceSource = workspaceInspectorPath !== null && existsSync(join(workspaceInspectorPath, 'tsconfig.json'));
+
+	const inspectorRoot = hasWorkspaceSource
+		? workspaceInspectorPath
+		: join(context.extensionUri.fsPath, 'inspector');
+	const inspectorUri = hasWorkspaceSource
+		? vscode.Uri.file(inspectorRoot)
+		: vscode.Uri.joinPath(context.extensionUri, 'inspector');
+
+	if (hasWorkspaceSource) {
+		logger(`Inspector using workspace source: ${inspectorRoot}`);
+	} else {
+		logger(`Inspector using installed extension: ${inspectorRoot}`);
+	}
+
+	const provider = new InspectorPanelProvider(context.extensionUri, inspectorUri, logger, context.workspaceState);
 
 	const rebuildIfNeeded = async (): Promise<boolean> => {
 		const hotReload = getHotReloadService();
@@ -290,6 +339,17 @@ export function registerInspectorPanel(
 		}
 		return false;
 	};
+
+	// Register serializer so VS Code can restore the panel across reloads.
+	// Must be registered synchronously during activation (before any await).
+	context.subscriptions.push(
+		vscode.window.registerWebviewPanelSerializer(PANEL_VIEW_TYPE, {
+			async deserializeWebviewPanel(panel: vscode.WebviewPanel) {
+				logger('Restoring Inspector panel from previous session');
+				provider.attachPanel(panel);
+			}
+		})
+	);
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('devtools.openInspector', async () => {

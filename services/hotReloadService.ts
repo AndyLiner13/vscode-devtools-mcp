@@ -18,7 +18,7 @@ import type * as vscode from 'vscode';
 
 import { exec } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { ts } from 'ts-morph';
 
@@ -59,6 +59,9 @@ class HotReloadService {
 	 * Prefers tsconfig.build.json (build-specific config) over tsconfig.json.
 	 * Uses ts.readConfigFile() + ts.parseJsonConfigFileContent() to resolve
 	 * the full list of matching files, respecting include/exclude/extends.
+	 *
+	 * Also scans for non-TS asset files (.css, .html, .json) in the same
+	 * include directories so that style/markup changes trigger rebuilds.
 	 */
 	discoverSourceFiles(packageRoot: string): string[] {
 		const buildConfigPath = join(packageRoot, 'tsconfig.build.json');
@@ -86,7 +89,49 @@ class HotReloadService {
 			}
 		}
 
-		return parsed.fileNames;
+		const tsFiles = parsed.fileNames;
+
+		// Also discover non-TS asset files (.css, .html) in tsconfig include dirs
+		const assetExtensions = new Set(['.css', '.html']);
+		const includes: string[] = configFile.config?.include ?? ['src'];
+		const assetFiles: string[] = [];
+
+		for (const inc of includes) {
+			const dir = join(packageRoot, inc);
+			if (existsSync(dir)) {
+				this.collectAssetFiles(dir, assetExtensions, assetFiles);
+			}
+		}
+
+		const allFiles = new Set(tsFiles);
+		for (const f of assetFiles) {
+			allFiles.add(f);
+		}
+
+		return [...allFiles];
+	}
+
+	/**
+	 * Recursively collect files matching the given extensions.
+	 */
+	private collectAssetFiles(dir: string, extensions: Set<string>, result: string[]): void {
+		let entries;
+		try {
+			entries = readdirSync(dir, { withFileTypes: true });
+		} catch {
+			return;
+		}
+		for (const entry of entries) {
+			const fullPath = join(dir, entry.name);
+			if (entry.isDirectory()) {
+				this.collectAssetFiles(fullPath, extensions, result);
+			} else if (entry.isFile()) {
+				const dotIdx = entry.name.lastIndexOf('.');
+				if (dotIdx !== -1 && extensions.has(entry.name.slice(dotIdx))) {
+					result.push(fullPath);
+				}
+			}
+		}
 	}
 
 	/**

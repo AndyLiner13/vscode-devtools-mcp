@@ -121,6 +121,11 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	log('VS Code DevTools extension activating...');
 
+	// Register the Inspector WebView serializer synchronously — MUST happen
+	// before any `await` so VS Code can restore the panel across reloads.
+	const inspectorPanel = registerInspectorPanel(context, log);
+	log('Inspector WebView panel registered (serializer active)');
+
 	// ========================================================================
 	// Status Bar (always visible — reflects MCP connection state for Host)
 	// ========================================================================
@@ -259,10 +264,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			const mcpProvider = registerMcpServerProvider(context);
 			log(`MCP server provider registered (enabled: ${mcpProvider.enabled})`);
 
-			// Register MCP Inspector as a WebView panel (replaces old Vite dev server)
-			registerInspectorPanel(context, log);
-			log('Inspector WebView panel registered');
-
 			// Listen for settings changes and refresh MCP server definitions
 			context.subscriptions.push(
 				vscode.workspace.onDidChangeConfiguration((e) => {
@@ -333,6 +334,13 @@ export async function activate(context: vscode.ExtensionContext) {
 					if (connected) {
 						updateStatusBar('connected');
 						log('Client window connected — ensuring MCP server is running');
+
+						// Restore Inspector panel if it was open before reload
+						if (inspectorPanel.wasOpen && !inspectorPanel.isVisible) {
+							log('Restoring Inspector panel (was open before reload)');
+							inspectorPanel.show();
+						}
+
 						tetheredAction = true;
 						void vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true }).then(
 							() => {
