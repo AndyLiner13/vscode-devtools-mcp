@@ -26,6 +26,7 @@ import { ts } from 'ts-morph';
 
 const HASH_KEY_MCP = 'hotReload:hash:mcpServer';
 const HASH_KEY_EXT = 'hotReload:hash:extension';
+const HASH_KEY_INSPECTOR = 'hotReload:hash:inspector';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -169,12 +170,28 @@ class HotReloadService {
 	}
 
 	/**
+	 * Check inspector frontend source and rebuild if changed.
+	 * Uses the inspector's own tsconfig to discover source files
+	 * and runs 'inspector:build' (esbuild → inspector/dist/).
+	 */
+	async checkInspector(inspectorRoot: string): Promise<PackageCheckResult> {
+		return this.checkPackage(inspectorRoot, HASH_KEY_INSPECTOR, 'inspector:build');
+	}
+
+	/**
+	 * Detect-only check for inspector source changes (no build).
+	 */
+	detectInspectorChange(inspectorRoot: string): { changed: boolean; currentHash: string } {
+		return this.detectChange(inspectorRoot, 'inspector');
+	}
+
+	/**
 	 * Check if source files have changed without triggering a build.
 	 * Returns the current content hash and whether it differs from stored.
 	 * Use with runBuild() + commitHash() for progress-aware workflows.
 	 */
-	detectChange(packageRoot: string, hashKey: 'ext' | 'mcp'): { changed: boolean; currentHash: string } {
-		const key = hashKey === 'mcp' ? HASH_KEY_MCP : HASH_KEY_EXT;
+	detectChange(packageRoot: string, hashKey: 'ext' | 'inspector' | 'mcp'): { changed: boolean; currentHash: string } {
+		const key = hashKey === 'mcp' ? HASH_KEY_MCP : hashKey === 'inspector' ? HASH_KEY_INSPECTOR : HASH_KEY_EXT;
 		const files = this.discoverSourceFiles(packageRoot);
 		if (files.length === 0) {
 			return { changed: false, currentHash: '' };
@@ -197,8 +214,8 @@ class HotReloadService {
 	 * Store a content hash after a successful build.
 	 * Call after runBuild() succeeds to persist the hash for future comparisons.
 	 */
-	async commitHash(hashKey: 'ext' | 'mcp', hash: string): Promise<void> {
-		const key = hashKey === 'mcp' ? HASH_KEY_MCP : HASH_KEY_EXT;
+	async commitHash(hashKey: 'ext' | 'inspector' | 'mcp', hash: string): Promise<void> {
+		const key = hashKey === 'mcp' ? HASH_KEY_MCP : hashKey === 'inspector' ? HASH_KEY_INSPECTOR : HASH_KEY_EXT;
 		await this.setStoredHash(key, hash);
 		console.log(`[hotReload] Hash committed (${key}): ${hash.slice(0, 12)}...`);
 	}

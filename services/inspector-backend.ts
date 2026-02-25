@@ -410,10 +410,29 @@ export function registerInspectorHandlers(
 
 		try {
 			const uri = vscode.Uri.file(filePath);
+
+			// Open the document so the language server loads it before requesting symbols.
+			// executeDocumentSymbolProvider returns null/empty for files that haven't been
+			// processed by the language server yet.
+			await vscode.workspace.openTextDocument(uri);
+
 			const rawSymbols = await vscode.commands.executeCommand<RawSymbol[]>(
 				'vscode.executeDocumentSymbolProvider',
 				uri
 			);
+
+			if (!rawSymbols || rawSymbols.length === 0) {
+				// Language server may need a moment to initialize symbols.
+				// Retry once after a short delay.
+				await new Promise((r) => setTimeout(r, 500));
+				const retrySymbols = await vscode.commands.executeCommand<RawSymbol[]>(
+					'vscode.executeDocumentSymbolProvider',
+					uri
+				);
+				const symbols = flattenDocumentSymbols(retrySymbols ?? []);
+				return { symbols };
+			}
+
 			const symbols = flattenDocumentSymbols(rawSymbols);
 			return { symbols };
 		} catch (err) {

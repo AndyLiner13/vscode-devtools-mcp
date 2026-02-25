@@ -508,10 +508,6 @@ function setupSymbolIntellisense(
 	const symbolPropNames = new Set(symbolProps.keys());
 	log(`[setupSymbolIntellisense] symbolPropNames: ${[...symbolPropNames]}`);
 
-	// In-memory cache so we don't re-fetch on every keystroke
-	let cachedFilePath: null | string = null;
-	let cachedSymbols: SymbolEntry[] = [];
-
 	return monacoNs.languages.registerCompletionItemProvider('json', {
 		provideCompletionItems: async (model, position) => {
 			log(`[symbolIntellisense] provideCompletionItems called at line ${position.lineNumber} col ${position.column}`);
@@ -530,31 +526,22 @@ function setupSymbolIntellisense(
 			const filePath = readStringPropertyValue(model, fileProp);
 			log(`[symbolIntellisense] filePath: ${filePath ?? 'null'}`);
 			if (!filePath) {
-				// File field is empty, clear cache to avoid stale suggestions
-				cachedFilePath = null;
-				cachedSymbols = [];
 				log(`[symbolIntellisense] → returning empty (no filePath)`);
 				return empty;
 			}
 
-			if (filePath !== cachedFilePath) {
-				// Clear cache immediately so stale symbols aren't shown if rpc fails
-				cachedFilePath = null;
-				cachedSymbols = [];
-
-				try {
-					log(`[symbolIntellisense] fetching symbols for: ${filePath}`);
-					const data = await rpc<SymbolsResponse>('editor/symbols', { file: filePath });
-					cachedFilePath = filePath;
-					cachedSymbols = data.symbols ?? [];
-					log(`[symbolIntellisense] fetched ${cachedSymbols.length} symbols`);
-				} catch (e) {
-					log(`[symbolIntellisense] rpc error: ${e}`);
-					return empty;
-				}
+			let symbols: SymbolEntry[] = [];
+			try {
+				log(`[symbolIntellisense] fetching symbols for: ${filePath}`);
+				const data = await rpc<SymbolsResponse>('editor/symbols', { file: filePath });
+				symbols = data.symbols ?? [];
+				log(`[symbolIntellisense] fetched ${symbols.length} symbols`);
+			} catch (e) {
+				log(`[symbolIntellisense] rpc error: ${e}`);
+				return empty;
 			}
 
-			if (cachedSymbols.length === 0) {
+			if (symbols.length === 0) {
 				log(`[symbolIntellisense] → returning empty (no symbols)`);
 				return empty;
 			}
@@ -564,9 +551,8 @@ function setupSymbolIntellisense(
 				position.lineNumber, valueRange.contentEnd
 			);
 
-			// Don't offer a suggestion for the value that is already fully typed
 			const currentValue = line.substring(valueRange.contentStart - 1, valueRange.contentEnd - 1);
-			const visibleSymbols = cachedSymbols.filter((sym) => sym.name !== currentValue);
+			const visibleSymbols = symbols.filter((sym) => sym.name !== currentValue);
 			log(`[symbolIntellisense] returning ${visibleSymbols.length} suggestions`);
 
 			const suggestions: monacoNs.languages.CompletionItem[] = visibleSymbols.map((sym, idx) => ({

@@ -28,8 +28,7 @@ export function createToolDropdown(): HTMLElement {
 	select.appendChild(placeholder);
 
 	const chevron = document.createElement('span');
-	chevron.className = 'select-chevron';
-	chevron.textContent = '\u25be';
+	chevron.className = 'select-chevron codicon codicon-chevron-down';
 
 	selectWrapper.appendChild(select);
 	selectWrapper.appendChild(chevron);

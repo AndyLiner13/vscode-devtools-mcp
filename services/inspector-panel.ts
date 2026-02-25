@@ -9,7 +9,10 @@
  */
 
 import net from 'node:net';
+import { join } from 'node:path';
 import * as vscode from 'vscode';
+
+import { getHotReloadService } from './hotReloadService';
 
 // ── Types ──
 
@@ -270,10 +273,36 @@ export function registerInspectorPanel(
 	logger: (msg: string) => void
 ): InspectorPanelProvider {
 	const provider = new InspectorPanelProvider(context.extensionUri, logger);
+	const inspectorRoot = join(context.extensionUri.fsPath, 'inspector');
+
+	const rebuildIfNeeded = async (): Promise<boolean> => {
+		const hotReload = getHotReloadService();
+		if (!hotReload) return false;
+
+		const result = await hotReload.checkInspector(inspectorRoot);
+		if (result.rebuilt) {
+			logger('Inspector frontend rebuilt — refreshing WebView');
+			return true;
+		}
+		if (result.changed && result.buildError) {
+			logger(`Inspector build failed: ${result.buildError}`);
+			vscode.window.showErrorMessage(`Inspector build failed: ${result.buildError}`);
+		}
+		return false;
+	};
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('devtools.openInspector', () => { provider.show(); }),
-		vscode.commands.registerCommand('devtools.refreshInspector', () => { provider.refresh(); }),
+		vscode.commands.registerCommand('devtools.openInspector', async () => {
+			const rebuilt = await rebuildIfNeeded();
+			if (rebuilt && provider.isVisible) {
+				provider.refresh();
+			}
+			provider.show();
+		}),
+		vscode.commands.registerCommand('devtools.refreshInspector', async () => {
+			await rebuildIfNeeded();
+			provider.refresh();
+		}),
 		{ dispose: () => { provider.dispose(); } }
 	);
 
