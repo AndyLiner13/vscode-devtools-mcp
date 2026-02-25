@@ -23,6 +23,9 @@ const OUTPUT_TOKEN_LIMIT = 3_000;
 const CHARS_PER_TOKEN = 4;
 const OUTPUT_CHAR_LIMIT = OUTPUT_TOKEN_LIMIT * CHARS_PER_TOKEN;
 
+// Container kinds are valid symbol targets even when childless
+const CONTAINER_KINDS = new Set(['imports', 'exports', 'comment', 'jsdoc', 'tsdoc', 'directives']);
+
 function resolveFilePath(file: string): string {
 	if (path.isAbsolute(file)) return file;
 	return path.resolve(getClientWorkspace(), file);
@@ -374,7 +377,6 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 	const hasChildren = symbol.children && symbol.children.length > 0;
 	// Container symbols: either kind === name (e.g. "imports") or known
 	// container kinds whose name was overridden (e.g. comments with TF-IDF slugs)
-	const CONTAINER_KINDS = new Set(['imports', 'exports', 'comments', 'directives']);
 	const isContainer = symbol.kind === symbol.name || CONTAINER_KINDS.has(symbol.kind);
 	const expandChildren = hasChildren && !isContainer;
 	const maxNesting = getSymbolTreeDepth(symbol);
@@ -878,6 +880,18 @@ export const /**
 			const symbolTarget = params.symbol?.trim() || '';
 			const hasTarget = symbolTarget.length > 0;
 
+			// Plural category selectors map to singular kinds
+			const PLURAL_TO_KIND: Record<string, string> = {
+				comments: 'comment',
+				jsdocs: 'jsdoc',
+				tsdocs: 'tsdoc',
+			};
+
+			// Meta-categories that expand to multiple kinds
+			const KIND_GROUPS: Record<string, string[]> = {
+				comment: ['comment', 'jsdoc', 'tsdoc'],
+			};
+
 			const relativePath = path.relative(getClientWorkspace(), filePath).replaceAll('\\', '/');
 
 			// ── Mutual exclusivity: symbol + startLine/endLine ────────
@@ -998,14 +1012,47 @@ export const /**
 				return;
 			}
 
+			// Normalize plural category in dot-paths: "comments.slug" → "comment.slug"
+			const normalizedDotTarget = symbolTarget.includes('.')
+				? (() => {
+					const dot = symbolTarget.indexOf('.');
+					const kindPart = symbolTarget.slice(0, dot).toLowerCase();
+					const rest = symbolTarget.slice(dot);
+					return (PLURAL_TO_KIND[kindPart] ?? kindPart) + rest;
+				})()
+				: symbolTarget;
+
 			const match = resolveSymbolTarget(structure.symbols, symbolTarget)
-				?? (resolveByKindAndName(structure.symbols, symbolTarget)
-					? { symbol: resolveByKindAndName(structure.symbols, symbolTarget)!, parent: undefined, path: [symbolTarget] }
+				?? (resolveByKindAndName(structure.symbols, normalizedDotTarget)
+					? { symbol: resolveByKindAndName(structure.symbols, normalizedDotTarget)!, parent: undefined, path: [symbolTarget] }
 					: undefined);
 
+			// Only parent symbols (with children) or container kinds are valid targets.
+			// Leaf symbols of other kinds should be read via startLine/endLine.
+			const isValidTarget = (s: FileSymbol): boolean =>
+				(s.children && s.children.length > 0) || CONTAINER_KINDS.has(s.kind);
+			const targetableSymbols = structure.symbols.filter(isValidTarget);
+
+			if (match && !isValidTarget(match.symbol)) {
+				const { startLine: sLine, endLine: eLine } = match.symbol.range;
+				const available = targetableSymbols.map((s) => s.kind === s.name ? s.kind : `${s.kind} ${s.name}`).join(', ');
+				response.appendResponseLine(`"${symbolTarget}" is a leaf symbol (no children). Use \`startLine: ${sLine}\` / \`endLine: ${eLine}\` to read it directly.`);
+				response.appendResponseLine(`Available parent symbols: ${available || 'none'}`);
+				return;
+			}
+
 			if (!match) {
+				// Normalize plural category selectors to singular kinds
+				const normalizedTarget = PLURAL_TO_KIND[symbolTarget.toLowerCase()] ?? symbolTarget;
+
+				// Expand meta-categories (e.g. "comment" → comment + jsdoc + tsdoc)
+				const expandedKinds = KIND_GROUPS[normalizedTarget] ?? [normalizedTarget];
+
 				// Fall back to kind-based filtering: "interface" → all interfaces
-				const kindMatches = findSymbolsByKind(structure.symbols, symbolTarget);
+				const kindMatches = expandedKinds
+					.flatMap((k) => findSymbolsByKind(structure.symbols, k))
+					.filter(isValidTarget)
+					.sort((a, b) => a.range.startLine - b.range.startLine);
 				if (kindMatches.length > 0) {
 					const lines: string[] = [];
 					for (const sym of kindMatches) {
@@ -1024,8 +1071,8 @@ export const /**
 					}
 					response.appendResponseLine(output);
 				} else {
-					const available = structure.symbols.map((s) => s.kind === s.name ? s.kind : `${s.kind} ${s.name}`).join(', ');
-					const availableKinds = collectSymbolKinds(structure.symbols);
+					const available = targetableSymbols.map((s) => s.kind === s.name ? s.kind : `${s.kind} ${s.name}`).join(', ');
+					const availableKinds = collectSymbolKinds(targetableSymbols);
 					response.appendResponseLine(`"${symbolTarget}": Not found. Available: ${available || 'none'}`);
 					if (availableKinds.length > 0) {
 						response.appendResponseLine(`Hint: You can also use a kind to list all symbols of that type: ${availableKinds.join(', ')}`);
@@ -1075,7 +1122,7 @@ export const /**
 			symbol: zod
 				.string()
 				.optional()
-				.describe('Symbol to read by name, or a kind to list all symbols of that type (e.g. "interface", "function", "variable"). Use dot notation for nested symbols (e.g. "UserService.findById"). Container symbols like "imports", "exports", "comments", "directives" target those groups.'),
+				.describe('Parent symbol to read (must have children/nested content). Use dot notation for nested symbols (e.g. "UserService.findById"), or a kind to list all of that type (e.g. "interface", "class"). Container symbols: "imports", "exports", "comments", "directives". Leaf symbols without children must be read via startLine/endLine.'),
 			endLine: zod.number().int().optional().describe('End line (1-indexed) for structured range reading. If omitted with startLine, reads to end of file.'),
 			startLine: zod
 				.number()

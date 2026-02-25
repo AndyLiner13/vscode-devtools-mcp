@@ -107,7 +107,7 @@ function buildContainerGroups(containerName: string, containerKind: string, node
 	return groups.map((group) => ({
 		children: [],
 		kind: containerKind,
-		name: containerName,
+		name: group[0].name || containerName,
 		range: {
 			endLine: group[group.length - 1].range.end,
 			startLine: group[0].range.start
@@ -132,18 +132,31 @@ export class TypeScriptLanguageService implements LanguageService {
 		maybeAdd('imports', 'imports', result.imports);
 		maybeAdd('exports', 'exports', result.exports);
 
-		// Build comment containers and assign TF-IDF semantic identifiers
-		const commentContainers = buildContainerGroups('comments', 'comments', result.orphanComments);
-		if (commentContainers.length > 0) {
-			const commentNodes = toCommentNodes(commentContainers, result.content);
-			const identifiers = getIdentifiers(filePath, result.content, commentNodes);
-			for (let i = 0; i < commentContainers.length; i++) {
-				if (identifiers[i]?.slug) {
-					commentContainers[i] = { ...commentContainers[i], name: identifiers[i].slug };
+		// Split orphan comments into jsdoc, tsdoc, and generic comments
+		const jsdocNodes = result.orphanComments.filter((c) => c.kind === 'jsdoc');
+		const tsdocNodes = result.orphanComments.filter((c) => c.kind === 'tsdoc');
+		const genericCommentNodes = result.orphanComments.filter((c) => c.kind !== 'jsdoc' && c.kind !== 'tsdoc');
+
+		// Build container groups for each comment category and assign TF-IDF identifiers
+		const commentCategories: Array<{ kind: string; nodes: SymbolNode[] }> = [
+			{ kind: 'jsdoc', nodes: jsdocNodes },
+			{ kind: 'tsdoc', nodes: tsdocNodes },
+			{ kind: 'comment', nodes: genericCommentNodes },
+		];
+
+		for (const { kind, nodes } of commentCategories) {
+			const containers = buildContainerGroups(kind, kind, nodes);
+			if (containers.length > 0) {
+				const commentNodes = toCommentNodes(containers, result.content);
+				const identifiers = getIdentifiers(filePath, result.content, commentNodes);
+				for (let i = 0; i < containers.length; i++) {
+					if (identifiers[i]?.slug) {
+						containers[i] = { ...containers[i], name: identifiers[i].slug };
+					}
 				}
 			}
+			containerSymbols.push(...containers);
 		}
-		containerSymbols.push(...commentContainers);
 
 		maybeAdd('directives', 'directives', result.directives);
 

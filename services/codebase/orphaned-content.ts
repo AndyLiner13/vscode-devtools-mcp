@@ -498,7 +498,13 @@ function getLineFromPos(sourceFile: SourceFile, pos: number): number {
 
 function classifyComment(text: string): string {
 	// Multi-line comment types
-	if (text.startsWith('/**')) return 'jsdoc';
+	if (text.startsWith('/**')) {
+		// TSDoc uses JSDoc syntax but adds tags like @remarks, @typeParam, etc.
+		if (/\@(remarks|typeParam|eventProperty|sealed|virtual|override|defaultValue|decorator|label|link)\b/.test(text)) {
+			return 'tsdoc';
+		}
+		return 'jsdoc';
+	}
 	if (text.startsWith('/*')) {
 		// Linter directives in block comments
 		if (/\/\*\s*(eslint-disable|eslint-enable|prettier-ignore|istanbul\s+ignore|c8\s+ignore)/i.test(text)) {
