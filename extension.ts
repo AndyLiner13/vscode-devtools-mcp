@@ -226,7 +226,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			// Dynamic import keeps host-handlers out of the static dependency graph.
 			// If it fails to compile, the extension still works in Safe Mode.
 			log('Loading host-handlers module...');
-			const { cleanup, createReconnectCdpCallback, isClientWindowConnected, onBrowserServiceChanged, onClientStateChanged, registerHostHandlers, startClientWindow, stopClientWindow } = await import('./services/host-handlers');
+			const { cleanup, createReconnectCdpCallback, isClientWindowConnected, isHotReloadInProgress, onBrowserServiceChanged, onClientStateChanged, registerHostHandlers, startClientWindow, stopClientWindow } = await import('./services/host-handlers');
 			log('host-handlers module loaded, registering handlers...');
 			registerHostHandlers(bootstrap.registerHandler, context);
 			hostHandlersCleanup = cleanup;
@@ -326,6 +326,10 @@ export async function activate(context: vscode.ExtensionContext) {
 				onClientStateChanged((connected: boolean) => {
 					if (tetheredAction) {
 						log('Tethered lifecycle: ignoring state change (tethered action in progress)');
+						return;
+					}
+					if (isHotReloadInProgress()) {
+						log('Tethered lifecycle: ignoring state change (hot reload in progress)');
 						return;
 					}
 					if (connected) {

@@ -79,6 +79,11 @@ function getMcpServerId(): string {
 /** Flag to prevent MCP shutdown during hot-reload */
 let hotReloadInProgress = false;
 
+/** Exported getter so extension.ts can check before tethered lifecycle actions. */
+export function isHotReloadInProgress(): boolean {
+	return hotReloadInProgress;
+}
+
 // ── Inspector Staleness ──────────────────────────────────────────────────
 
 function markInspectorRecordsStale(): void {
@@ -1494,6 +1499,7 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 						const workspace = currentClientWorkspace;
 
 						progress.report({ message: 'Stopping client window…' });
+						disconnectCdpClient();
 						stopClient();
 						await waitForPipeRelease();
 
@@ -1617,13 +1623,6 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 			}
 		})
 	);
-}
-
-/**
- * Check hot-reload state
- */
-function isHotReloadInProgress(): boolean {
-	return hotReloadInProgress;
 }
 
 // ── Client Lifecycle Exports ─────────────────────────────────────────────────

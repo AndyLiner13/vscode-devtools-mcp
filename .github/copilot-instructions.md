@@ -64,6 +64,17 @@ Only add dependencies to workspaces when they are:
 - If tools aren't available yet, call any MCP tool — it will auto-reload and then work.
 - Get straight to testing. Skip all rebuild/reinstall steps. It's all automatic.
 
+## CRITICAL: Use output_read for Debugging
+
+- You have access to the literal VS Code output panels via the `output_read` tool.
+- ALWAYS use `output_read` as your FIRST step when troubleshooting errors, crashes, unexpected behavior, or trying to understand why something isn't working.
+- The output panels contain real-time logs from the extension host, MCP servers, and other VS Code subsystems — they are the most reliable source of truth for diagnosing issues.
+- Use `output_read` with `channel: "mcp"` to see MCP server logs (startup, tool calls, hot-reload, pipeline activity, crashes).
+- Use `output_read` with `channel: "exthost"` and `session: "client"` to see extension host logs from the client window.
+- Do NOT guess or speculate about what went wrong. Read the actual output logs first.
+- When a tool call fails, crashes, or returns unexpected results, immediately check the output logs before attempting any fix.
+- When the user reports something isn't working, check the output logs before asking them what happened — the answer is usually right there.
+
 ## CRITICAL: Ask Questions Formatting
 
 - When using the ask_questions tool, keep the question text SHORT and PLAIN TEXT only.
