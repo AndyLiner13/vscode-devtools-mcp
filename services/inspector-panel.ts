@@ -140,6 +140,7 @@ export class InspectorPanelProvider {
 			{
 				enableScripts: true,
 				localResourceRoots: [
+					vscode.Uri.joinPath(this.extensionUri, 'inspector'),
 					vscode.Uri.joinPath(this.extensionUri, 'inspector', 'dist')
 				],
 				retainContextWhenHidden: true
@@ -231,7 +232,7 @@ export class InspectorPanelProvider {
 		const { webview } = this.panel;
 
 		const mainJs = webview.asWebviewUri(vscode.Uri.joinPath(distUri, 'main.js'));
-		const stylesUri = webview.asWebviewUri(vscode.Uri.joinPath(distUri, 'styles.css'));
+		const stylesUri = webview.asWebviewUri(vscode.Uri.joinPath(distUri, 'main.css'));
 		const nonce = getNonce();
 
 		return `<!DOCTYPE html>
@@ -247,8 +248,8 @@ export class InspectorPanelProvider {
 			worker-src ${webview.cspSource} blob:;">
 	<link rel="stylesheet" href="${stylesUri.toString()}">
 </head>
-<body class="bg-vscode-bg text-vscode-text h-screen overflow-hidden">
-	<div id="app" class="flex flex-col h-full"></div>
+<body>
+	<div id="app"></div>
 	<script nonce="${nonce}" src="${mainJs.toString()}"></script>
 </body>
 </html>`;

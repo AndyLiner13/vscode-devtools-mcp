@@ -10,15 +10,15 @@ export function onToolSelect(handler: (tool: ToolDefinition) => void): void {
 /** Creates the dropdown selector + collapsible description area */
 export function createToolDropdown(): HTMLElement {
 	const wrapper = document.createElement('div');
-	wrapper.className = 'p-3 flex flex-col gap-2';
+	wrapper.className = 'tool-selector';
 
 	// Dropdown row
 	const selectWrapper = document.createElement('div');
-	selectWrapper.className = 'relative';
+	selectWrapper.className = 'select-wrapper';
 
 	const select = document.createElement('select');
 	select.id = 'tool-select';
-	select.className = ['w-full px-2.5 py-1 pr-8 rounded border border-vscode-border', 'bg-vscode-input text-vscode-text text-[13px]', 'focus:border-vscode-accent focus:outline-none cursor-pointer appearance-none'].join(' ');
+	select.className = 'tool-select';
 
 	const placeholder = document.createElement('option');
 	placeholder.value = '';
@@ -28,7 +28,7 @@ export function createToolDropdown(): HTMLElement {
 	select.appendChild(placeholder);
 
 	const chevron = document.createElement('span');
-	chevron.className = 'pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-vscode-text-dim text-xs';
+	chevron.className = 'select-chevron';
 	chevron.textContent = '\u25be';
 
 	selectWrapper.appendChild(select);
@@ -37,7 +37,7 @@ export function createToolDropdown(): HTMLElement {
 	// Annotation badges row
 	const badgesRow = document.createElement('div');
 	badgesRow.id = 'tool-badges-row';
-	badgesRow.className = 'hidden flex-wrap gap-1';
+	badgesRow.className = 'badges-row';
 
 	wrapper.appendChild(selectWrapper);
 	wrapper.appendChild(badgesRow);
@@ -52,14 +52,12 @@ export function createToolDropdown(): HTMLElement {
 		badgesRow.innerHTML = '';
 		const badges = tool.annotations ? buildBadges(tool.annotations) : [];
 		if (badges.length > 0) {
-			badgesRow.classList.remove('hidden');
-			badgesRow.classList.add('flex');
+		badgesRow.classList.add('visible');
 			for (const badge of badges) {
 				badgesRow.appendChild(badge);
 			}
 		} else {
-			badgesRow.classList.add('hidden');
-			badgesRow.classList.remove('flex');
+		badgesRow.classList.remove('visible');
 		}
 
 		localStorage.setItem('mcp-inspector-selected-tool', tool.name);
@@ -105,10 +103,10 @@ export function renderToolList(tools: ToolDefinition[]): void {
 function buildBadges(annotations: NonNullable<ToolDefinition['annotations']>): HTMLElement[] {
 	const badges: HTMLElement[] = [];
 	const defs: Array<[string, boolean | undefined, string]> = [
-		['read-only', annotations.readOnlyHint, 'bg-vscode-success/20 text-vscode-success'],
-		['destructive', annotations.destructiveHint, 'bg-vscode-error/20 text-vscode-error'],
-		['idempotent', annotations.idempotentHint, 'bg-vscode-accent/20 text-vscode-accent'],
-		['open-world', annotations.openWorldHint, 'bg-vscode-warning/20 text-vscode-warning']
+		['read-only', annotations.readOnlyHint, 'badge-success'],
+		['destructive', annotations.destructiveHint, 'badge-error'],
+		['idempotent', annotations.idempotentHint, 'badge-accent'],
+		['open-world', annotations.openWorldHint, 'badge-warning']
 	];
 
 	for (const [label, value, color] of defs) {
@@ -116,7 +114,7 @@ function buildBadges(annotations: NonNullable<ToolDefinition['annotations']>): H
 			continue;
 		}
 		const badge = document.createElement('span');
-		badge.className = `text-[10px] px-1.5 py-0.5 rounded ${color}`;
+		badge.className = `badge ${color}`;
 		badge.textContent = label;
 		badges.push(badge);
 	}

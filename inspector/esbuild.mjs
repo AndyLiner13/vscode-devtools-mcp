@@ -1,6 +1,8 @@
 import esbuild from 'esbuild';
 import fs from 'node:fs';
 import path from 'node:path';
+import postcss from 'postcss';
+import tailwindcss from '@tailwindcss/postcss';
 
 const __dirname = import.meta.dirname;
 const distDir = path.join(__dirname, 'dist');
@@ -31,8 +33,8 @@ const appConfig = {
 	platform: 'browser',
 	sourcemap: !production,
 	target: 'es2022',
-	// CSS is handled by Tailwind CLI separately — strip CSS imports from JS
-	plugins: [cssExternalPlugin(), monacoWorkerStubPlugin()]
+	loader: { '.ttf': 'file' },
+	plugins: [tailwindPostcssPlugin(), monacoWorkerStubPlugin()]
 };
 
 // Monaco editor worker — bundled as a separate entry point
@@ -78,17 +80,21 @@ function resolveMonacoWorker(name) {
 }
 
 /**
- * Strip CSS imports from the JS bundle — CSS is built separately
- * by Tailwind CLI (handles @import 'tailwindcss' + codicons).
+ * Process CSS through PostCSS + Tailwind v4.
+ * Intercepts .css files before esbuild resolves @import directives,
+ * so Tailwind handles `@import 'tailwindcss'` and codicon imports.
+ * Returns fully compiled CSS to esbuild.
  */
-function cssExternalPlugin() {
+function tailwindPostcssPlugin() {
+	const processor = postcss([tailwindcss()]);
 	return {
-		name: 'css-external',
+		name: 'tailwind-postcss',
 		setup(build) {
-			build.onResolve({ filter: /\.css$/ }, () => ({
-				external: true,
-				sideEffects: false
-			}));
+			build.onLoad({ filter: /\.css$/ }, async (args) => {
+				const source = await fs.promises.readFile(args.path, 'utf8');
+				const result = await processor.process(source, { from: args.path });
+				return { contents: result.css, loader: 'css' };
+			});
 		}
 	};
 }

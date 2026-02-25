@@ -139,13 +139,13 @@ export function rerunWithInput(input: string, recordId: string): void {
 
 export function createToolDetail(): HTMLElement {
 	const panel = document.createElement('div');
-	panel.className = 'flex-1 flex flex-col overflow-hidden bg-vscode-bg';
+	panel.className = 'tool-detail-panel';
 	panel.id = 'tool-detail-panel';
 
 	const emptyState = document.createElement('div');
-	emptyState.className = 'flex-1 flex items-center justify-center text-vscode-text-dim';
+	emptyState.className = 'empty-state';
 	emptyState.id = 'tool-detail-empty';
-	emptyState.innerHTML = '<div class="text-center"><p class="text-lg mb-2">Select a tool</p><p class="text-sm">Choose a tool from the list to inspect and execute it</p></div>';
+	emptyState.innerHTML = '<div><p class="empty-state-title">Select a tool</p><p class="empty-state-subtitle">Choose a tool from the list to inspect and execute it</p></div>';
 
 	panel.appendChild(emptyState);
 	return panel;
@@ -161,7 +161,7 @@ export function renderToolDetail(tool: ToolDefinition): void {
 	panel.innerHTML = '';
 
 	const scrollContainer = document.createElement('div');
-	scrollContainer.className = 'flex-1 overflow-y-auto p-4';
+	scrollContainer.className = 'tool-detail-scroll';
 
 	// ── Tool Invocation Card (VS Code Copilot Chat style) ──
 	const card = document.createElement('div');
@@ -213,7 +213,7 @@ export function renderToolDetail(tool: ToolDefinition): void {
 	activeOutputSection.className = 'tool-io-section';
 
 	const outputHeader = document.createElement('div');
-	outputHeader.className = 'flex items-center gap-2';
+	outputHeader.className = 'output-header';
 
 	const outputLabel = document.createElement('h3');
 	outputLabel.id = 'live-output-label';

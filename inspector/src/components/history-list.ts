@@ -53,7 +53,7 @@ onStorageChange((toolName) => {
 export function createHistoryContainer(): HTMLElement {
 	const container = document.createElement('div');
 	container.id = 'history-container';
-	container.className = 'mt-2';
+	container.className = 'history-container';
 	return container;
 }
 
@@ -159,7 +159,7 @@ function renderArchivedSection(records: ExecutionRecord[]): HTMLElement {
 	section.className = 'history-section';
 
 	const header = document.createElement('button');
-	header.className = 'history-section-header cursor-pointer w-full';
+	header.className = 'history-section-header clickable';
 	header.innerHTML = `<span>Archived</span><span class="text-vscode-text-dim text-[11px]">${records.length}</span>`;
 
 	const list = document.createElement('div');

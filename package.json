@@ -70,6 +70,14 @@
 				"title": "DevTools: Restart MCP Server"
 			}
 		],
+		"keybindings": [
+			{
+				"command": "devtools.refreshInspector",
+				"key": "ctrl+r",
+				"mac": "cmd+r",
+				"when": "activeWebviewPanelId == 'mcpInspector'"
+			}
+		],
 		"configuration": [
 			{
 				"title": "General",
@@ -937,6 +945,7 @@
 		"@eslint/js": "^10.0.1",
 		"@modelcontextprotocol/inspector": "^0.20.0",
 		"@stylistic/eslint-plugin": "^5.4.0",
+		"@tailwindcss/postcss": "^4.1.0",
 		"@types/mdast": "^4.0.4",
 		"@types/node": "22.x",
 		"@types/vscode": "^1.100.0",
@@ -953,6 +962,7 @@
 		"globals": "^17.0.0",
 		"mdast-util-directive": "^3.1.0",
 		"mdast-util-math": "^3.0.0",
+		"postcss": "^8.5.0",
 		"prettier": "^3.6.2",
 		"prettier-plugin-packagejson": "^2.5.0",
 		"typescript": "^5.9.2",
