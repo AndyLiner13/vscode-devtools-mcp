@@ -59,7 +59,8 @@ function formatSkeletonEntry(symbol: SymbolLike, indent = '', maxNesting = 0, cu
 	const { startLine, endLine } = symbol.range;
 	const range = startLine === endLine ? `${startLine}` : `${startLine}-${endLine}`;
 
-	lines.push(`${indent}[${range}] ${symbol.kind} ${symbol.name}`);
+	const label = symbol.kind === symbol.name ? symbol.kind : `${symbol.kind} ${symbol.name}`;
+	lines.push(`${indent}[${range}] ${label}`);
 
 	if (currentDepth < maxNesting && symbol.children && symbol.children.length > 0) {
 		for (const child of symbol.children) {
@@ -145,10 +146,60 @@ function renderTargetSkeletonAtLevel(symbol: FileSymbol, maxNesting: number): st
 	return formatSkeletonEntry(symbol, '', maxNesting).join('\n');
 }
 
+interface LineRange {
+	endLine: number;
+	startLine: number;
+}
+
 interface CompressionResult {
+	collapsedRanges: LineRange[];
 	compressed: boolean;
 	label: null | string;
 	output: string;
+	sourceRanges: LineRange[];
+}
+
+/**
+ * Compute collapsed (symbol stubs) and source (raw/gap) ranges from skeleton pieces.
+ * Symbols shown as stubs → collapsed; raw gaps → source.
+ */
+function computeSkeletonRanges(pieces: SkeletonPiece[], maxNesting: number): { collapsedRanges: LineRange[]; sourceRanges: LineRange[] } {
+	const collapsedRanges: LineRange[] = [];
+	const sourceRanges: LineRange[] = [];
+
+	for (const piece of pieces) {
+		if (piece.category === 'raw') {
+			sourceRanges.push({ endLine: piece.endLine, startLine: piece.startLine });
+		} else if (piece.symbol) {
+			collectSymbolRanges(piece.symbol, 0, maxNesting, collapsedRanges, sourceRanges);
+		}
+	}
+
+	return { collapsedRanges, sourceRanges };
+}
+
+/**
+ * Recursively collect ranges for a symbol tree at a given nesting level.
+ * Symbols beyond the nesting limit are collapsed; expanded symbols contribute
+ * their gap lines as source and recurse into children.
+ */
+function collectSymbolRanges(
+	symbol: SymbolLike,
+	currentDepth: number,
+	maxNesting: number,
+	collapsedRanges: LineRange[],
+	sourceRanges: LineRange[]
+): void {
+	// At or beyond nesting limit: entire symbol is a collapsed stub
+	if (currentDepth >= maxNesting || !symbol.children || symbol.children.length === 0) {
+		collapsedRanges.push({ endLine: symbol.range.endLine, startLine: symbol.range.startLine });
+		return;
+	}
+
+	// Symbol is expanded — its children may be collapsed or further expanded
+	for (const child of symbol.children) {
+		collectSymbolRanges(child, currentDepth + 1, maxNesting, collapsedRanges, sourceRanges);
+	}
 }
 
 /**
@@ -166,7 +217,8 @@ function compressSkeletonOutput(structure: FileStructure, allLines: string[], re
 	// Quick check: does the full output fit?
 	const fullOutput = renderSkeletonAtLevel(pieces, allLines, maxNesting, lineNumbers);
 	if (fullOutput.length <= OUTPUT_CHAR_LIMIT) {
-		return { compressed: false, label: null, output: fullOutput };
+		const ranges = computeSkeletonRanges(pieces, maxNesting);
+		return { ...ranges, compressed: false, label: null, output: fullOutput };
 	}
 
 	// Compression needed — incrementally build up from nesting=0
@@ -177,7 +229,9 @@ function compressSkeletonOutput(structure: FileStructure, allLines: string[], re
 		const candidate = renderSkeletonAtLevel(pieces, allLines, nesting, lineNumbers);
 		if (candidate.length > OUTPUT_CHAR_LIMIT) {
 			if (nesting === 0) {
+				const ranges = computeSkeletonRanges(pieces, 0);
 				return {
+					...ranges,
 					compressed: true,
 					label: `top-level skeleton only (${structure.symbols.length} symbols)`,
 					output: candidate
@@ -190,8 +244,10 @@ function compressSkeletonOutput(structure: FileStructure, allLines: string[], re
 	}
 
 	const label = bestNesting < maxNesting ? `symbol depth ${bestNesting} of ${maxNesting}` : null;
+	const ranges = computeSkeletonRanges(pieces, bestNesting);
 
 	return {
+		...ranges,
 		compressed: true,
 		label,
 		output: bestOutput
@@ -201,12 +257,20 @@ function compressSkeletonOutput(structure: FileStructure, allLines: string[], re
 /**
  * Compress a target symbol's skeleton output using incremental nesting expansion.
  */
+function computeTargetRanges(symbol: SymbolLike, maxNesting: number): { collapsedRanges: LineRange[]; sourceRanges: LineRange[] } {
+	const collapsedRanges: LineRange[] = [];
+	const sourceRanges: LineRange[] = [];
+	collectSymbolRanges(symbol, 0, maxNesting, collapsedRanges, sourceRanges);
+	return { collapsedRanges, sourceRanges };
+}
+
 function compressTargetSkeleton(symbol: FileSymbol, requestedMaxNesting: number): CompressionResult {
 	const maxNesting = Math.min(requestedMaxNesting, getSymbolTreeDepth(symbol));
 
 	const fullOutput = renderTargetSkeletonAtLevel(symbol, maxNesting);
 	if (fullOutput.length <= OUTPUT_CHAR_LIMIT) {
-		return { compressed: false, label: null, output: fullOutput };
+		const ranges = computeTargetRanges(symbol, maxNesting);
+		return { ...ranges, compressed: false, label: null, output: fullOutput };
 	}
 
 	let bestOutput = '';
@@ -216,7 +280,9 @@ function compressTargetSkeleton(symbol: FileSymbol, requestedMaxNesting: number)
 		const candidate = renderTargetSkeletonAtLevel(symbol, nesting);
 		if (candidate.length > OUTPUT_CHAR_LIMIT) {
 			if (nesting === 0) {
+				const ranges = computeTargetRanges(symbol, 0);
 				return {
+					...ranges,
 					compressed: true,
 					label: `top-level only (${symbol.children?.length ?? 0} children)`,
 					output: candidate
@@ -228,7 +294,10 @@ function compressTargetSkeleton(symbol: FileSymbol, requestedMaxNesting: number)
 		bestNesting = nesting;
 	}
 
+	const ranges = computeTargetRanges(symbol, bestNesting);
+
 	return {
+		...ranges,
 		compressed: true,
 		label: `symbol depth ${bestNesting} of ${maxNesting}`,
 		output: bestOutput
@@ -245,65 +314,145 @@ function compressTargetSkeleton(symbol: FileSymbol, requestedMaxNesting: number)
  *           recursive=true  → contentMaxNesting = max symbol nesting
  *           recursive=false → contentMaxNesting = 0 (children as stubs)
  */
+/**
+ * Compute ranges for target-content mode at a specific content nesting level.
+ * Children beyond the nesting limit are collapsed stubs; their ranges are collapsed.
+ * Raw lines between children are source ranges.
+ */
+function computeContentRanges(symbol: SymbolLike, contentNesting: number): { collapsedRanges: LineRange[]; sourceRanges: LineRange[] } {
+	const collapsedRanges: LineRange[] = [];
+	const sourceRanges: LineRange[] = [];
+
+	const walk = (sym: SymbolLike, depth: number): void => {
+		if (!sym.children || sym.children.length === 0) {
+			// Leaf: all content is source
+			sourceRanges.push({ endLine: sym.range.endLine, startLine: sym.range.startLine });
+			return;
+		}
+
+		// Track gap lines (lines not covered by any child)
+		const childLines = new Set<number>();
+		for (const child of sym.children) {
+			for (let l = child.range.startLine; l <= child.range.endLine; l++) {
+				childLines.add(l);
+			}
+		}
+
+		// Gap lines within this symbol are source
+		let gapStart: number | undefined;
+		for (let l = sym.range.startLine; l <= sym.range.endLine; l++) {
+			if (!childLines.has(l)) {
+				if (gapStart === undefined) gapStart = l;
+			} else {
+				if (gapStart !== undefined) {
+					sourceRanges.push({ endLine: l - 1, startLine: gapStart });
+					gapStart = undefined;
+				}
+			}
+		}
+		if (gapStart !== undefined) {
+			sourceRanges.push({ endLine: sym.range.endLine, startLine: gapStart });
+		}
+
+		// Children: collapsed or expanded based on nesting
+		for (const child of sym.children) {
+			if (depth < contentNesting) {
+				walk(child, depth + 1);
+			} else {
+				collapsedRanges.push({ endLine: child.range.endLine, startLine: child.range.startLine });
+			}
+		}
+	};
+
+	walk(symbol, 0);
+	return { collapsedRanges, sourceRanges };
+}
+
 function compressTargetContent(symbol: FileSymbol, allLines: string[], structure: FileStructure, recursive: boolean, lineNumbers: boolean): CompressionResult {
 	const { startLine } = symbol.range;
 	const { endLine } = symbol.range;
 	const hasChildren = symbol.children && symbol.children.length > 0;
+	// Container symbols (kind === name, e.g. "imports") should show raw source
+	// in rawContent mode instead of expanding children as a tree
+	const isContainer = symbol.kind === symbol.name;
+	const expandChildren = hasChildren && !isContainer;
 	const maxNesting = getSymbolTreeDepth(symbol);
 	const contentMaxNesting = recursive ? maxNesting : 0;
-	const header = `[${startLine === endLine ? `${startLine}` : `${startLine}-${endLine}`}] ${symbol.kind} ${symbol.name}\n`;
+	const headerLabel = symbol.kind === symbol.name ? symbol.kind : `${symbol.kind} ${symbol.name}`;
+	// Containers (imports, exports, etc.) don't need the header when showing raw source —
+	// the content is self-evident. The header only appears when compressed to a stub.
+	const header = isContainer ? '' : `[${startLine === endLine ? `${startLine}` : `${startLine}-${endLine}`}] ${headerLabel}\n`;
 
 	// Quick check: does the maximum-detail output fit?
-	const maxContent = hasChildren ? formatContentAtNesting(allLines, symbol, startLine, endLine, contentMaxNesting, 0, lineNumbers) : addLineNumbers(getContentSlice(allLines, startLine, endLine), startLine, lineNumbers);
+	const maxContent = expandChildren ? formatContentAtNesting(allLines, symbol, startLine, endLine, contentMaxNesting, 0, lineNumbers) : addLineNumbers(getContentSlice(allLines, startLine, endLine), startLine, lineNumbers);
 	const maxOutput = header + maxContent;
 	if (maxOutput.length <= OUTPUT_CHAR_LIMIT) {
-		return { compressed: false, label: null, output: maxOutput };
+		// Full content fits — no collapsing needed
+		const noCollapsing = expandChildren ? computeContentRanges(symbol, contentMaxNesting) : { collapsedRanges: [], sourceRanges: [] };
+		return { ...noCollapsing, compressed: false, label: null, output: maxOutput };
 	}
 
 	// Compression needed — bottom-up incremental expansion
 	let bestOutput = '';
 	let compressionLabel = '';
+	let bestNesting = 0;
+	let phase: 'content' | 'skeleton' = 'skeleton';
 
 	// Phase 1: Skeleton nesting expansion (nesting 0 → max)
 	for (let n = 0; n <= maxNesting; n++) {
 		const candidate = renderTargetSkeletonAtLevel(symbol, n);
 		if (candidate.length > OUTPUT_CHAR_LIMIT) {
 			if (n === 0) {
+				const ranges = computeTargetRanges(symbol, 0);
 				return {
+					...ranges,
 					compressed: true,
 					label: `top-level only (${symbol.children?.length ?? 0} children)`,
 					output: candidate
 				};
 			}
 			compressionLabel = `symbol depth ${n - 1} of ${maxNesting}`;
+			bestNesting = n - 1;
 			break;
 		}
 		bestOutput = candidate;
+		bestNesting = n;
 	}
 
 	// Phase 2: Content nesting expansion (nesting 0 → contentMaxNesting)
-	if (!compressionLabel && hasChildren) {
+	if (!compressionLabel && expandChildren) {
+		phase = 'content';
 		for (let n = 0; n <= contentMaxNesting; n++) {
 			const content = formatContentAtNesting(allLines, symbol, startLine, endLine, n, 0, lineNumbers);
 			const candidate = header + content;
 			if (candidate.length > OUTPUT_CHAR_LIMIT) {
 				if (n === 0) {
 					compressionLabel = 'auto-skeleton';
+					bestNesting = maxNesting;
+					phase = 'skeleton';
 				} else {
 					compressionLabel = `content depth ${n - 1} of ${contentMaxNesting}`;
+					bestNesting = n - 1;
 				}
 				break;
 			}
 			bestOutput = candidate;
+			bestNesting = n;
 		}
 	}
 
 	// No children and nothing collapsible — return full content (a stub is useless here)
-	if (!compressionLabel && !hasChildren) {
-		return { compressed: false, label: null, output: maxOutput };
+	if (!compressionLabel && !expandChildren) {
+		return { collapsedRanges: [], compressed: false, label: null, output: maxOutput, sourceRanges: [] };
 	}
 
+	// Compute ranges based on which phase won
+	const ranges = phase === 'skeleton'
+		? computeTargetRanges(symbol, bestNesting)
+		: computeContentRanges(symbol, bestNesting);
+
 	return {
+		...ranges,
 		compressed: !!compressionLabel,
 		label: compressionLabel || null,
 		output: bestOutput
@@ -317,7 +466,7 @@ function compressFullFileOutput(rawContent: string, structure: FileStructure | u
 	// Try raw content first
 	const numbered = addLineNumbers(rawContent, startLine1, lineNumbers);
 	if (numbered.length <= OUTPUT_CHAR_LIMIT) {
-		return { compressed: false, label: null, output: numbered };
+		return { collapsedRanges: [], compressed: false, label: null, output: numbered, sourceRanges: [] };
 	}
 
 	// Auto-switch to skeleton if structure is available
@@ -325,18 +474,21 @@ function compressFullFileOutput(rawContent: string, structure: FileStructure | u
 		const maxNesting = getMaxSymbolNesting(structure.symbols);
 		const result = compressSkeletonOutput(structure, allLines, maxNesting, lineNumbers);
 		return {
+			collapsedRanges: result.collapsedRanges,
 			compressed: true,
 			label: `auto-skeleton${result.label ? `, ${result.label}` : ''}`,
-			output: result.output
+			output: result.output,
+			sourceRanges: result.sourceRanges
 		};
 	}
 
 	// No structure available — return raw with guidance
-	// Still return the full content but with a compression notice
 	return {
+		collapsedRanges: [],
 		compressed: true,
 		label: 'file too large for token budget. Use startLine/endLine to read specific ranges',
-		output: numbered
+		output: numbered,
+		sourceRanges: []
 	};
 }
 
@@ -397,7 +549,8 @@ function formatContentAtNesting(allLines: string[], symbol: SymbolLike, startLin
 					result.push(formatContentAtNesting(allLines, child, child.range.startLine, child.range.endLine, maxChildNesting, currentDepth + 1, lineNumbers));
 				} else {
 					const childRange = child.range.startLine === child.range.endLine ? `${child.range.startLine}` : `${child.range.startLine}-${child.range.endLine}`;
-					result.push(`[${childRange}] ${child.kind} ${child.name}`);
+					const childLabel = child.kind === child.name ? child.kind : `${child.kind} ${child.name}`;
+					result.push(`[${childRange}] ${childLabel}`);
 				}
 			}
 		} else {
@@ -595,7 +748,8 @@ function renderStructuredRange(
 			if (!emittedSymbols.has(sym)) {
 				emittedSymbols.add(sym);
 				const symRange = sym.range.startLine === sym.range.endLine ? `${sym.range.startLine}` : `${sym.range.startLine}-${sym.range.endLine}`;
-				result.push(`[${symRange}] ${sym.kind} ${sym.name}`);
+				const symLabel = sym.kind === sym.name ? sym.kind : `${sym.kind} ${sym.name}`;
+				result.push(`[${symRange}] ${symLabel}`);
 			}
 			// Track all lines of this symbol within the range
 			const symEndInRange = Math.min(sym.range.endLine, expandedEnd);
@@ -809,11 +963,10 @@ export const /**
 					return;
 				}
 
-				// Focus the file in the client editor (full file range, 0-indexed)
-				fileHighlightReadRange(filePath, 0, structure.totalLines - 1);
-
 				const maxNesting = recursive ? getMaxSymbolNesting(structure.symbols) : 0;
 				const result = compressSkeletonOutput(structure, allLines, maxNesting, lineNumbers);
+
+				fileHighlightReadRange(filePath, 0, structure.totalLines - 1, result.collapsedRanges, result.sourceRanges);
 
 				if (result.compressed && result.label) {
 					response.appendResponseLine(`Output compressed: ${result.label}.\n`);
@@ -825,9 +978,9 @@ export const /**
 			// ── Full file mode (no targets, rawContent, no line range) ──
 			if (!hasTarget) {
 				const content = await fileReadContent(filePath);
-				fileHighlightReadRange(filePath, content.startLine, content.endLine);
-
 				const result = compressFullFileOutput(content.content, structure, allLines, content.startLine + 1, lineNumbers);
+
+				fileHighlightReadRange(filePath, content.startLine, content.endLine, result.collapsedRanges, result.sourceRanges);
 
 				if (result.compressed && result.label) {
 					response.appendResponseLine(`Output compressed: ${result.label}.\n`);
@@ -847,7 +1000,7 @@ export const /**
 			const match = resolveSymbolTarget(structure.symbols, symbolTarget);
 
 			if (!match) {
-				const available = structure.symbols.map((s) => `${s.kind} ${s.name}`).join(', ');
+				const available = structure.symbols.map((s) => s.kind === s.name ? s.kind : `${s.kind} ${s.name}`).join(', ');
 				response.appendResponseLine(`"${symbolTarget}": Not found. Available: ${available || 'none'}`);
 
 				const qualifiedPaths = findQualifiedPaths(structure.symbols, symbolTarget);
@@ -861,18 +1014,20 @@ export const /**
 				const { endLine } = symbol.range;
 
 				if (!rawContent) {
-					fileHighlightReadRange(filePath, startLine - 1, endLine - 1);
-
 					const maxNesting = recursive ? getSymbolTreeDepth(symbol) : 0;
 					const result = compressTargetSkeleton(symbol, maxNesting);
+
+					fileHighlightReadRange(filePath, startLine - 1, endLine - 1, result.collapsedRanges, result.sourceRanges);
+
 					if (result.compressed && result.label) {
 						response.appendResponseLine(`Output compressed: ${result.label}.\n`);
 					}
 					response.appendResponseLine(result.output);
 				} else {
-					fileHighlightReadRange(filePath, startLine - 1, endLine - 1);
-
 					const result = compressTargetContent(symbol, allLines, structure, recursive, lineNumbers);
+
+					fileHighlightReadRange(filePath, startLine - 1, endLine - 1, result.collapsedRanges, result.sourceRanges);
+
 					if (result.compressed && result.label) {
 						response.appendResponseLine(`Output compressed: ${result.label}.\n`);
 					}

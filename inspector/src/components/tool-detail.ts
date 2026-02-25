@@ -175,7 +175,7 @@ export function renderToolDetail(tool: ToolDefinition): void {
 	inputEditorWrapper.className = 'tool-io-editor-wrapper';
 
 	const savedInput = loadInputState(tool.name);
-	const initialValue = savedInput ?? buildInitialInput(tool.inputSchema);
+	const initialValue = syncInputWithSchema(savedInput, tool.inputSchema);
 
 	activeInputEditor = createInputEditor(inputEditorWrapper, initialValue);
 
@@ -291,6 +291,52 @@ function renderLiveOutput(content: ContentBlock[], isError: boolean): void {
 }
 
 // ── Helpers ──
+
+/**
+ * Sync saved input JSON with the current tool schema.
+ * Removes keys no longer in the schema, adds new keys with defaults.
+ * Preserves existing values for keys that still exist.
+ */
+function syncInputWithSchema(savedInput: string | null, schema: JsonSchema): string {
+	if (!savedInput) return buildInitialInput(schema);
+	if (!schema.properties || Object.keys(schema.properties).length === 0) return '{}';
+
+	let parsed: Record<string, unknown>;
+	try {
+		parsed = JSON.parse(savedInput) as Record<string, unknown>;
+		if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+			return buildInitialInput(schema);
+		}
+	} catch {
+		return buildInitialInput(schema);
+	}
+
+	const schemaKeys = new Set(Object.keys(schema.properties));
+	const merged: Record<string, unknown> = {};
+
+	// Schema keys in order: required first, then optional
+	const required = new Set(schema.required ?? []);
+	const sortedKeys = [
+		...Object.keys(schema.properties).filter((k) => required.has(k)),
+		...Object.keys(schema.properties).filter((k) => !required.has(k))
+	];
+
+	for (const key of sortedKeys) {
+		if (key in parsed) {
+			merged[key] = parsed[key];
+		} else {
+			const prop = schema.properties[key];
+			if (prop) merged[key] = buildValueExample(prop);
+		}
+	}
+
+	// Check if anything changed
+	const savedKeys = new Set(Object.keys(parsed));
+	const keysMatch = savedKeys.size === schemaKeys.size && [...savedKeys].every((k) => schemaKeys.has(k));
+	if (keysMatch) return savedInput;
+
+	return JSON.stringify(merged, null, 2);
+}
 
 function buildInitialInput(schema: JsonSchema): string {
 	if (!schema.properties || Object.keys(schema.properties).length === 0) {
