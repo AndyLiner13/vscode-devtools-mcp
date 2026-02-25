@@ -11,6 +11,8 @@
 import type { RegisterHandler } from './client-handlers';
 
 import { readdirSync } from 'node:fs';
+
+import { inspectorLog } from './logger';
 import net from 'node:net';
 import { resolve as resolvePath } from 'node:path';
 import * as vscode from 'vscode';
@@ -116,8 +118,13 @@ async function sendPipeRpc(
 
 interface RawSymbol {
 	children?: RawSymbol[];
-	kind?: string;
+	kind?: vscode.SymbolKind;
 	name?: string;
+}
+
+function symbolKindToString(kind: vscode.SymbolKind | undefined): string {
+	if (kind === undefined) return 'Unknown';
+	return vscode.SymbolKind[kind] ?? 'Unknown';
 }
 
 function isFileWrapperName(name: string): boolean {
@@ -130,7 +137,7 @@ function flattenDocumentSymbols(
 ): Array<{ kind: string; name: string }> {
 	const out: Array<{ kind: string; name: string }> = [];
 	for (const sym of symbols) {
-		const kind = sym.kind ?? 'Unknown';
+		const kind = symbolKindToString(sym.kind);
 		const isFileWrapper = prefix === '' && (
 			FILE_WRAPPER_KINDS.has(kind.toLowerCase()) || isFileWrapperName(sym.name ?? '')
 		);
@@ -173,13 +180,10 @@ async function saveAllRecords(state: vscode.Memento, records: ExecutionRecord[])
  */
 export function registerInspectorHandlers(
 	register: RegisterHandler,
-	workspaceState: vscode.Memento,
-	logFn?: (msg: string) => void
+	workspaceState: vscode.Memento
 ): void {
 	const log = (msg: string): void => {
-		if (logFn) {
-			logFn(`[inspector-backend] ${msg}`);
-		}
+		inspectorLog(`[inspector-backend] ${msg}`);
 	};
 
 	log('Registering Inspector backend handlers');
@@ -395,6 +399,9 @@ export function registerInspectorHandlers(
 		const workspaceRoot = workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
 		const requestedFile = typeof params.file === 'string' ? params.file : '';
 
+		log(`[editor/symbols] requestedFile: ${requestedFile}`);
+		log(`[editor/symbols] workspaceRoot: ${workspaceRoot}`);
+
 		let filePath: string;
 		if (!requestedFile) {
 			filePath = '';
@@ -404,12 +411,15 @@ export function registerInspectorHandlers(
 			filePath = resolvePath(workspaceRoot, requestedFile);
 		}
 
+		log(`[editor/symbols] resolved filePath: ${filePath}`);
+
 		if (!filePath) {
 			return { symbols: [] };
 		}
 
 		try {
 			const uri = vscode.Uri.file(filePath);
+			log(`[editor/symbols] uri: ${uri.toString()}`);
 
 			// Open the document so the language server loads it before requesting symbols.
 			// executeDocumentSymbolProvider returns null/empty for files that haven't been
@@ -421,21 +431,27 @@ export function registerInspectorHandlers(
 				uri
 			);
 
+			log(`[editor/symbols] rawSymbols count: ${rawSymbols?.length ?? 0}`);
+
 			if (!rawSymbols || rawSymbols.length === 0) {
 				// Language server may need a moment to initialize symbols.
 				// Retry once after a short delay.
+				log(`[editor/symbols] No symbols, retrying after 500ms...`);
 				await new Promise((r) => setTimeout(r, 500));
 				const retrySymbols = await vscode.commands.executeCommand<RawSymbol[]>(
 					'vscode.executeDocumentSymbolProvider',
 					uri
 				);
+				log(`[editor/symbols] retrySymbols count: ${retrySymbols?.length ?? 0}`);
 				const symbols = flattenDocumentSymbols(retrySymbols ?? []);
 				return { symbols };
 			}
 
 			const symbols = flattenDocumentSymbols(rawSymbols);
+			log(`[editor/symbols] returning ${symbols.length} symbols`);
 			return { symbols };
 		} catch (err) {
+			log(`[editor/symbols] ERROR: ${err}`);
 			return { error: String(err), symbols: [] };
 		}
 	});
