@@ -140,6 +140,26 @@ export function findSymbolsByKind<T extends SymbolLike>(symbols: T[], targetKind
 }
 
 /**
+ * Resolve a "kind.name" target like "comments.pipe-extension-use".
+ * Splits on the first dot, matches the first segment as a kind,
+ * then finds a symbol with that kind whose name matches the rest.
+ */
+export function resolveByKindAndName<T extends SymbolLike>(symbols: T[], target: string): T | undefined {
+	const dotIndex = target.indexOf('.');
+	if (dotIndex < 0) return undefined;
+
+	const kindPart = target.slice(0, dotIndex).toLowerCase();
+	const namePart = target.slice(dotIndex + 1);
+
+	for (const sym of symbols) {
+		if (sym.kind.toLowerCase() === kindPart && nameMatches(sym.name, namePart)) {
+			return sym;
+		}
+	}
+	return undefined;
+}
+
+/**
  * Collect all unique symbol kinds present in a symbol tree.
  */
 export function collectSymbolKinds(symbols: readonly SymbolLike[]): string[] {

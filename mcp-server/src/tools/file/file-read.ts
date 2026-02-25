@@ -15,7 +15,7 @@ import { getClientWorkspace } from '../../config.js';
 import { ToolCategory } from '../categories.js';
 import { defineTool } from '../ToolDefinition.js';
 import { isStrictLogFile } from './logFile-read.js';
-import { collectSymbolKinds, findQualifiedPaths, findSymbolsByKind, resolveSymbolTarget } from './symbol-resolver.js';
+import { collectSymbolKinds, findQualifiedPaths, findSymbolsByKind, resolveByKindAndName, resolveSymbolTarget } from './symbol-resolver.js';
 
 // ── Output Compression Constants ─────────────────────────
 // Same 3,000 token budget used by codebase_map and codebase_trace
@@ -372,9 +372,10 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 	const { startLine } = symbol.range;
 	const { endLine } = symbol.range;
 	const hasChildren = symbol.children && symbol.children.length > 0;
-	// Container symbols (kind === name, e.g. "imports") should show raw source
-	// in rawContent mode instead of expanding children as a tree
-	const isContainer = symbol.kind === symbol.name;
+	// Container symbols: either kind === name (e.g. "imports") or known
+	// container kinds whose name was overridden (e.g. comments with TF-IDF slugs)
+	const CONTAINER_KINDS = new Set(['imports', 'exports', 'comments', 'directives']);
+	const isContainer = symbol.kind === symbol.name || CONTAINER_KINDS.has(symbol.kind);
 	const expandChildren = hasChildren && !isContainer;
 	const maxNesting = getSymbolTreeDepth(symbol);
 	const contentMaxNesting = recursive ? maxNesting : 0;
@@ -997,13 +998,15 @@ export const /**
 				return;
 			}
 
-			const match = resolveSymbolTarget(structure.symbols, symbolTarget);
+			const match = resolveSymbolTarget(structure.symbols, symbolTarget)
+				?? (resolveByKindAndName(structure.symbols, symbolTarget)
+					? { symbol: resolveByKindAndName(structure.symbols, symbolTarget)!, parent: undefined, path: [symbolTarget] }
+					: undefined);
 
 			if (!match) {
 				// Fall back to kind-based filtering: "interface" → all interfaces
 				const kindMatches = findSymbolsByKind(structure.symbols, symbolTarget);
 				if (kindMatches.length > 0) {
-					response.appendResponseLine(`All **${symbolTarget}** symbols (${kindMatches.length}):\n`);
 					const lines: string[] = [];
 					for (const sym of kindMatches) {
 						const maxNesting = recursive ? getSymbolTreeDepth(sym) : 0;
@@ -1039,7 +1042,11 @@ export const /**
 				const { startLine } = symbol.range;
 				const { endLine } = symbol.range;
 
-				if (!rawContent) {
+				// Leaf symbols (no children) have no structure to show —
+				// auto-promote to raw content so the output is useful.
+				const isLeaf = !symbol.children || symbol.children.length === 0;
+
+				if (!rawContent && !isLeaf) {
 					const maxNesting = recursive ? getSymbolTreeDepth(symbol) : 0;
 					const result = compressTargetSkeleton(symbol, maxNesting);
 
