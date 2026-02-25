@@ -233,6 +233,7 @@ export class InspectorPanelProvider {
 
 		const mainJs = webview.asWebviewUri(vscode.Uri.joinPath(distUri, 'main.js'));
 		const stylesUri = webview.asWebviewUri(vscode.Uri.joinPath(distUri, 'main.css'));
+		const workerBaseUri = webview.asWebviewUri(distUri);
 		const nonce = getNonce();
 
 		return `<!DOCTYPE html>
@@ -242,14 +243,16 @@ export class InspectorPanelProvider {
 	<meta http-equiv="Content-Security-Policy"
 		content="default-src 'none';
 			style-src ${webview.cspSource} 'unsafe-inline';
-			script-src 'nonce-${nonce}';
+			script-src 'nonce-${nonce}' blob:;
 			font-src ${webview.cspSource};
 			img-src ${webview.cspSource} data:;
-			worker-src ${webview.cspSource} blob:;">
+			worker-src blob:;
+			connect-src ${webview.cspSource};">
 	<link rel="stylesheet" href="${stylesUri.toString()}">
 </head>
 <body>
 	<div id="app"></div>
+	<script nonce="${nonce}">globalThis.__WORKER_BASE_URI__ = '${workerBaseUri.toString()}';</script>
 	<script type="module" nonce="${nonce}" src="${mainJs.toString()}"></script>
 </body>
 </html>`;

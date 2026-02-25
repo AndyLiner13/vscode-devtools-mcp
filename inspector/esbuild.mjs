@@ -120,15 +120,20 @@ function monacoWorkerStubPlugin() {
 				if (args.path.includes('json.worker')) {
 					workerFile = 'json.worker.js';
 				}
-				// Export a class that creates a Worker from the pre-built file.
-				// The actual URL will be set at runtime by the WebView bridge.
+				// Export a class that creates a blob Worker wrapping importScripts.
+				// VS Code WebView CSP blocks direct URL workers, so we create a
+				// blob: URL that imports the pre-built worker script at runtime.
 				return {
 					contents: `
 						const WorkerConstructor = class extends Worker {
 							constructor() {
-								// __WORKER_BASE_URI__ is replaced at runtime with the WebView asset URI
 								const baseUri = globalThis.__WORKER_BASE_URI__ || '';
-								super(baseUri + '/${workerFile}');
+								const workerUrl = baseUri + '/${workerFile}';
+								const blob = new Blob(
+									['importScripts(' + JSON.stringify(workerUrl) + ');'],
+									{ type: 'application/javascript' }
+								);
+								super(URL.createObjectURL(blob));
 							}
 						};
 						export default WorkerConstructor;
