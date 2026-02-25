@@ -149,13 +149,73 @@ function isNodeExported(node: Node): boolean {
 
 // ── Individual Extractors ──
 
+/**
+ * Extract inner named declarations from a function/method body.
+ * Finds variable statements, inner function declarations, inner classes,
+ * inner interfaces, inner type aliases, and inner enums.
+ * Recurses into nested function bodies for multi-level depth.
+ */
+function extractBodyChildren(node: Node): ExtractedSymbol[] {
+	const body = getBodyBlock(node);
+	if (!body) return [];
+
+	const children: ExtractedSymbol[] = [];
+	const sf = node.getSourceFile();
+
+	for (const stmt of body.getStatements()) {
+		if (Node.isVariableStatement(stmt)) {
+			children.push(...extractVariableStatement(stmt));
+		} else if (Node.isFunctionDeclaration(stmt)) {
+			if (stmt.getName() || stmt.isDefaultExport()) {
+				children.push(extractFunction(stmt));
+			}
+		} else if (Node.isClassDeclaration(stmt)) {
+			children.push(extractClass(stmt));
+		} else if (Node.isInterfaceDeclaration(stmt)) {
+			children.push(extractInterface(stmt));
+		} else if (Node.isTypeAliasDeclaration(stmt)) {
+			children.push(extractTypeAlias(stmt));
+		} else if (Node.isEnumDeclaration(stmt)) {
+			children.push(extractEnum(stmt));
+		} else if (Node.isModuleDeclaration(stmt)) {
+			children.push(extractModule(stmt, sf));
+		}
+	}
+
+	children.sort((a, b) => a.range.startLine - b.range.startLine);
+	return children;
+}
+
+/**
+ * Get the Block body from a function-like node, if it has one.
+ * Works for function declarations, methods, constructors, getters, setters,
+ * and arrow functions (only those with block bodies, not expression bodies).
+ */
+function getBodyBlock(node: Node): import('ts-morph').Block | undefined {
+	if (Node.isFunctionDeclaration(node) || Node.isMethodDeclaration(node) ||
+		Node.isConstructorDeclaration(node) || Node.isGetAccessorDeclaration(node) ||
+		Node.isSetAccessorDeclaration(node)) {
+		const body = node.getBody();
+		if (body && Node.isBlock(body)) return body;
+	}
+	if (Node.isArrowFunction(node)) {
+		const body = node.getBody();
+		if (Node.isBlock(body)) return body;
+	}
+	if (Node.isFunctionExpression(node)) {
+		const body = node.getBody();
+		if (Node.isBlock(body)) return body;
+	}
+	return undefined;
+}
+
 function extractFunction(node: FunctionDeclaration): ExtractedSymbol {
 	const name = node.getName() ?? '(anonymous)';
 	const mods = collectFunctionModifiers(node);
 	const isDefault = node.isDefaultExport();
 
 	return {
-		children: [],
+		children: extractBodyChildren(node),
 		exported: node.isExported() || undefined,
 		kind: 'function',
 		modifiers: mods.length > 0 ? mods : undefined,
@@ -170,7 +230,7 @@ function extractClassChildren(node: ClassDeclaration): ExtractedSymbol[] {
 	for (const ctor of node.getConstructors()) {
 		const ctorMods = collectConstructorModifiers(ctor);
 		children.push({
-			children: [],
+			children: extractBodyChildren(ctor),
 			kind: 'constructor',
 			modifiers: ctorMods.length > 0 ? ctorMods : undefined,
 			name: 'constructor',
@@ -181,7 +241,7 @@ function extractClassChildren(node: ClassDeclaration): ExtractedSymbol[] {
 	for (const method of node.getMethods()) {
 		const mods = collectFunctionModifiers(method);
 		children.push({
-			children: [],
+			children: extractBodyChildren(method),
 			kind: 'method',
 			modifiers: mods.length > 0 ? mods : undefined,
 			name: method.getName() || '(anonymous)',
@@ -410,7 +470,16 @@ function extractVariableStatement(node: VariableStatement): ExtractedSymbol[] {
 
 		const name = decl.getName() || '(anonymous)';
 		const initializer = decl.getInitializer();
-		const children = initializer ? extractObjectLiteralChildren(initializer) : [];
+
+		// For arrow/function expressions, extract inner body children
+		let children: ExtractedSymbol[] = [];
+		if (initializer) {
+			if (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer)) {
+				children = extractBodyChildren(initializer);
+			} else {
+				children = extractObjectLiteralChildren(initializer);
+			}
+		}
 
 		symbols.push({
 			children,

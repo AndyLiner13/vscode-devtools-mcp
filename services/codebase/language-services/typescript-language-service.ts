@@ -52,52 +52,6 @@ function convertSymbol(sym: ExtractedSymbol): FileSymbol {
 	};
 }
 
-/**
- * Build container FileSymbols from a group of SymbolNodes.
- * Only nodes on consecutive lines are grouped together; any gap starts a new container.
- * Each container spans from first to last item in its group, with individual items as children.
- */
-function buildContainerSymbols(containerName: string, containerKind: string, nodes: SymbolNode[]): FileSymbol[] {
-	if (nodes.length === 0) return [];
-
-	const groups: SymbolNode[][] = [];
-	let current: SymbolNode[] = [nodes[0]];
-
-	for (let i = 1; i < nodes.length; i++) {
-		const prev = current[current.length - 1];
-		if (nodes[i].range.start <= prev.range.end + 1) {
-			current.push(nodes[i]);
-		} else {
-			groups.push(current);
-			current = [nodes[i]];
-		}
-	}
-	groups.push(current);
-
-	return groups.map((group) => {
-		const children: FileSymbol[] = group.map((node) => ({
-			children: [],
-			detail: node.detail,
-			kind: node.kind,
-			name: node.name,
-			range: {
-				endLine: node.range.end,
-				startLine: node.range.start
-			}
-		}));
-
-		return {
-			children,
-			kind: containerKind,
-			name: containerName,
-			range: {
-				endLine: group[group.length - 1].range.end,
-				startLine: group[0].range.start
-			}
-		};
-	});
-}
-
 function slugify(text: string): string {
 	return text
 		.toLowerCase()
@@ -147,11 +101,19 @@ export class TypeScriptLanguageService implements LanguageService {
 		const result = extractTsMorphStructure(filePath);
 
 		const containerSymbols: FileSymbol[] = [];
-		const addContainers = (name: string, kind: string, nodes: SymbolNode[]): void => {
-			containerSymbols.push(...buildContainerSymbols(name, kind, nodes));
-		};
 
-		addContainers('imports', 'imports', result.imports);
+		// Build collapsed import groups with TF-IDF semantic identifiers
+		const importContainers = buildContainerGroups('imports', 'imports', result.imports);
+		if (importContainers.length > 0) {
+			const importNodes = toCommentNodes(importContainers, result.content);
+			const importIds = getIdentifiers(filePath, result.content, importNodes);
+			for (let i = 0; i < importContainers.length; i++) {
+				if (importIds[i]?.slug) {
+					importContainers[i] = { ...importContainers[i], name: importIds[i].slug };
+				}
+			}
+		}
+		containerSymbols.push(...importContainers);
 
 		// Filter out inline exports — they duplicate symbols that already have exported=true.
 		// An export is "inline" if its line range overlaps with any code symbol's range
@@ -165,7 +127,17 @@ export class TypeScriptLanguageService implements LanguageService {
 			}
 		}
 		const standaloneExports = result.exports.filter((e) => !symbolRangeSet.has(e.range.start));
-		addContainers('exports', 'exports', standaloneExports);
+		const exportContainers = buildContainerGroups('exports', 'exports', standaloneExports);
+		if (exportContainers.length > 0) {
+			const exportNodes = toCommentNodes(exportContainers, result.content);
+			const exportIds = getIdentifiers(filePath, result.content, exportNodes);
+			for (let i = 0; i < exportContainers.length; i++) {
+				if (exportIds[i]?.slug) {
+					exportContainers[i] = { ...exportContainers[i], name: exportIds[i].slug };
+				}
+			}
+		}
+		containerSymbols.push(...exportContainers);
 
 		// Split orphan comments into jsdoc, tsdoc, and generic comments
 		const jsdocNodes = result.orphanComments.filter((c) => c.kind === 'jsdoc');
@@ -193,7 +165,17 @@ export class TypeScriptLanguageService implements LanguageService {
 			containerSymbols.push(...containers);
 		}
 
-		addContainers('directives', 'directives', result.directives);
+		const directiveContainers = buildContainerGroups('directives', 'directives', result.directives);
+		if (directiveContainers.length > 0) {
+			const directiveNodes = toCommentNodes(directiveContainers, result.content);
+			const directiveIds = getIdentifiers(filePath, result.content, directiveNodes);
+			for (let i = 0; i < directiveContainers.length; i++) {
+				if (directiveIds[i]?.slug) {
+					directiveContainers[i] = { ...directiveContainers[i], name: directiveIds[i].slug };
+				}
+			}
+		}
+		containerSymbols.push(...directiveContainers);
 
 		const codeSymbols = result.symbols.map(convertSymbol);
 

@@ -546,14 +546,55 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 }
 
 /**
- * Render the file with some symbols expanded to raw content and the rest as skeleton stubs.
- * `expandedSet` controls which symbol pieces render as raw content.
- * Pieces NOT in the set render as skeleton entries at `skeletonNesting`.
+ * Recursively render a single symbol based on expansion state.
+ * - Expanded symbol with children: show body source, recurse into children
+ * - Expanded leaf symbol: show full raw content
+ * - Not expanded: skeleton stub with children shown up to skeletonNesting depth
+ */
+function renderSymbolProgressive(
+	symbol: FileSymbol,
+	allLines: string[],
+	expandedSet: ReadonlySet<FileSymbol>,
+	skeletonNesting: number,
+	lineNumbers: boolean
+): string {
+	if (!expandedSet.has(symbol)) {
+		return formatSkeletonEntry(symbol, '', skeletonNesting).join('\n');
+	}
+
+	if (symbol.children.length === 0) {
+		return addLineNumbers(getContentSlice(allLines, symbol.range.startLine, symbol.range.endLine), symbol.range.startLine, lineNumbers);
+	}
+
+	// Expanded parent: show raw source for gaps between children, recurse into each child
+	const result: string[] = [];
+	let currentLine = symbol.range.startLine;
+
+	const sortedChildren = [...symbol.children].sort((a, b) => a.range.startLine - b.range.startLine);
+	for (const child of sortedChildren) {
+		if (child.range.startLine > currentLine) {
+			result.push(addLineNumbers(getContentSlice(allLines, currentLine, child.range.startLine - 1), currentLine, lineNumbers));
+		}
+		result.push(renderSymbolProgressive(child, allLines, expandedSet, skeletonNesting, lineNumbers));
+		currentLine = child.range.endLine + 1;
+	}
+
+	if (currentLine <= symbol.range.endLine) {
+		result.push(addLineNumbers(getContentSlice(allLines, currentLine, symbol.range.endLine), currentLine, lineNumbers));
+	}
+
+	return result.join('\n');
+}
+
+/**
+ * Render the file with multi-depth progressive expansion.
+ * `expandedSet` tracks which FileSymbols (at any depth) are expanded to raw content.
+ * Unexpanded symbols show as skeleton stubs with children up to `skeletonNesting` depth.
  */
 function renderProgressiveContent(
 	pieces: SkeletonPiece[],
 	allLines: string[],
-	expandedSet: ReadonlySet<SkeletonPiece>,
+	expandedSet: ReadonlySet<FileSymbol>,
 	skeletonNesting: number,
 	lineNumbers: boolean
 ): string {
@@ -565,13 +606,7 @@ function renderProgressiveContent(
 				result.push(formatLine(l, allLines[l - 1] ?? '', lineNumbers));
 			}
 		} else if (piece.symbol) {
-			if (expandedSet.has(piece)) {
-				const sym = piece.symbol;
-				result.push(addLineNumbers(getContentSlice(allLines, sym.range.startLine, sym.range.endLine), sym.range.startLine, lineNumbers));
-			} else {
-				const entries = formatSkeletonEntry(piece.symbol, '', skeletonNesting);
-				for (const entry of entries) result.push(entry);
-			}
+			result.push(renderSymbolProgressive(piece.symbol, allLines, expandedSet, skeletonNesting, lineNumbers));
 		}
 	}
 
@@ -579,12 +614,37 @@ function renderProgressiveContent(
 }
 
 /**
- * Compute line ranges for progressive content mode.
- * Expanded symbols → source ranges; skeleton symbols → collapsed ranges.
+ * Recursively compute line ranges for a symbol based on expansion state.
+ */
+function collectSymbolRangesProgressive(
+	symbol: FileSymbol,
+	expandedSet: ReadonlySet<FileSymbol>,
+	sourceRanges: LineRange[],
+	collapsedRanges: LineRange[]
+): void {
+	if (!expandedSet.has(symbol)) {
+		collapsedRanges.push({ endLine: symbol.range.endLine, startLine: symbol.range.startLine });
+		return;
+	}
+
+	if (symbol.children.length === 0) {
+		sourceRanges.push({ endLine: symbol.range.endLine, startLine: symbol.range.startLine });
+		return;
+	}
+
+	// Parent is expanded — its own range is source, recurse children
+	sourceRanges.push({ endLine: symbol.range.endLine, startLine: symbol.range.startLine });
+	for (const child of symbol.children) {
+		collectSymbolRangesProgressive(child, expandedSet, sourceRanges, collapsedRanges);
+	}
+}
+
+/**
+ * Compute line ranges for progressive content mode (multi-depth).
  */
 function computeProgressiveContentRanges(
 	pieces: SkeletonPiece[],
-	expandedSet: ReadonlySet<SkeletonPiece>
+	expandedSet: ReadonlySet<FileSymbol>
 ): { collapsedRanges: LineRange[]; sourceRanges: LineRange[] } {
 	const collapsedRanges: LineRange[] = [];
 	const sourceRanges: LineRange[] = [];
@@ -593,11 +653,7 @@ function computeProgressiveContentRanges(
 		if (piece.category === 'raw') {
 			sourceRanges.push({ endLine: piece.endLine, startLine: piece.startLine });
 		} else if (piece.symbol) {
-			if (expandedSet.has(piece)) {
-				sourceRanges.push({ endLine: piece.symbol.range.endLine, startLine: piece.symbol.range.startLine });
-			} else {
-				collapsedRanges.push({ endLine: piece.symbol.range.endLine, startLine: piece.symbol.range.startLine });
-			}
+			collectSymbolRangesProgressive(piece.symbol, expandedSet, sourceRanges, collapsedRanges);
 		}
 	}
 
@@ -605,11 +661,44 @@ function computeProgressiveContentRanges(
 }
 
 /**
+ * Collect all symbols at every depth, grouped by depth level.
+ * Returns array where index = depth. Each entry is sorted by line count ascending.
+ * Also builds a parentMap so we can skip children whose parent isn't expanded.
+ */
+function collectSymbolsByDepth(rootSymbols: FileSymbol[]): { byDepth: FileSymbol[][]; parentMap: Map<FileSymbol, FileSymbol | null> } {
+	const byDepth: FileSymbol[][] = [];
+	const parentMap = new Map<FileSymbol, FileSymbol | null>();
+
+	function walk(symbols: FileSymbol[], depth: number, parent: FileSymbol | null): void {
+		if (!byDepth[depth]) byDepth[depth] = [];
+		for (const sym of symbols) {
+			byDepth[depth].push(sym);
+			parentMap.set(sym, parent);
+			if (sym.children.length > 0) {
+				walk(sym.children, depth + 1, sym);
+			}
+		}
+	}
+
+	walk(rootSymbols, 0, null);
+
+	for (const depthGroup of byDepth) {
+		depthGroup.sort((a, b) => {
+			const aLines = a.range.endLine - a.range.startLine;
+			const bLines = b.range.endLine - b.range.startLine;
+			return aLines - bLines;
+		});
+	}
+
+	return { byDepth, parentMap };
+}
+
+/**
  * Compress full-file output using incremental skeleton→progressive expansion approach.
- * Phase 1: Skeleton nesting (0 → max) — pure structural stubs, increasing depth.
- * Phase 2: Progressive expansion — starting from skeleton, expand symbols to raw content
- *          one at a time (smallest first) until the budget is exhausted.
- * This creates a smooth gradient from minimal skeleton to as much raw source as possible.
+ * Phase 1: Skeleton nesting (0 → max) — build up the full skeleton including all children.
+ * Phase 2: Only after the full skeleton fits, progressively expand symbols to raw content
+ *          one depth layer at a time (depth 0 first, then depth 1, etc.), smallest symbols
+ *          first within each depth, until the budget is exhausted.
  */
 function compressFullFileOutput(rawContent: string, structure: FileStructure | undefined, allLines: string[], startLine1: number, lineNumbers: boolean): CompressionResult {
 	const trace: string[] = [];
@@ -644,9 +733,10 @@ function compressFullFileOutput(rawContent: string, structure: FileStructure | u
 	let bestLabel: string | null = null;
 	let bestPhase: 'content' | 'none' | 'skeleton' = 'none';
 	let bestRanges: { collapsedRanges: LineRange[]; sourceRanges: LineRange[] } = { collapsedRanges: [], sourceRanges: [] };
+	let bestSkeletonNesting = -1;
 
 	// Phase 1: Skeleton nesting (0 → max)
-	// Start from least detail and build up
+	// Start from least detail and build up until the full skeleton is shown
 	for (let nesting = 0; nesting <= maxSkeletonNesting; nesting++) {
 		const candidate = renderSkeletonAtLevel(skeletonPieces, allLines, nesting, lineNumbers);
 		trace.push(`skeleton(${nesting})=${candidate.length}`);
@@ -670,46 +760,53 @@ function compressFullFileOutput(rawContent: string, structure: FileStructure | u
 		bestPhase = 'skeleton';
 		bestLabel = `skeleton depth ${nesting} of ${maxSkeletonNesting}`;
 		bestRanges = computeSkeletonRanges(skeletonPieces, nesting);
+		bestSkeletonNesting = nesting;
 	}
 
-	// Phase 2: Progressive expansion — expand symbols smallest-first from skeleton to raw.
-	// Start with all symbols as skeleton stubs (using contentPieces where containers
-	// are already exploded). Flip symbols to raw content one by one, fewest lines first,
-	// until the budget is exhausted. This produces a smooth gradient from skeleton to
-	// full content, maximizing the amount of actual source code shown.
-	{
-		const symbolPieces = contentPieces.filter((p) => p.category === 'symbol' && p.symbol);
-		symbolPieces.sort((a, b) => {
-			const aLines = a.symbol!.range.endLine - a.symbol!.range.startLine;
-			const bLines = b.symbol!.range.endLine - b.symbol!.range.startLine;
-			return aLines - bLines;
-		});
+	// Phase 2: Multi-depth progressive expansion.
+	// Only proceeds if the full skeleton (all nesting levels) fits within the budget.
+	// Expands symbols to raw content one depth layer at a time (depth 0 first, then
+	// depth 1, etc.). Within each depth, expands smallest symbols first.
+	// Unexpanded symbols remain as skeleton stubs with their children visible.
+	if (bestSkeletonNesting === maxSkeletonNesting) {
+		const rootSymbols = contentPieces.flatMap((p) => p.symbol ? [p.symbol] : []);
+		const { byDepth, parentMap } = collectSymbolsByDepth(rootSymbols);
+		const totalSymbols = byDepth.reduce((sum, group) => sum + group.length, 0);
 
-		const expandedSet = new Set<SkeletonPiece>();
+		const expandedSet = new Set<FileSymbol>();
 		let stoppedAtName: string | undefined;
 		let stoppedAtSize = 0;
 		let stoppedAtLength = 0;
+		let stoppedAtDepth = 0;
 
-		for (const sp of symbolPieces) {
-			expandedSet.add(sp);
-			const candidate = renderProgressiveContent(contentPieces, allLines, expandedSet, maxSkeletonNesting, lineNumbers);
-			if (candidate.length > OUTPUT_CHAR_LIMIT) {
-				stoppedAtName = sp.symbol?.name ?? '?';
-				stoppedAtSize = (sp.symbol?.range.endLine ?? 0) - (sp.symbol?.range.startLine ?? 0) + 1;
-				stoppedAtLength = candidate.length;
-				expandedSet.delete(sp);
-				break;
+		outer:
+		for (let depth = 0; depth < byDepth.length; depth++) {
+			for (const sym of byDepth[depth]) {
+				// Skip if parent isn't expanded — this symbol is invisible
+				const parent = parentMap.get(sym);
+				if (parent && !expandedSet.has(parent)) continue;
+
+				expandedSet.add(sym);
+				const candidate = renderProgressiveContent(contentPieces, allLines, expandedSet, maxSkeletonNesting, lineNumbers);
+				if (candidate.length > OUTPUT_CHAR_LIMIT) {
+					stoppedAtName = sym.name;
+					stoppedAtSize = sym.range.endLine - sym.range.startLine + 1;
+					stoppedAtLength = candidate.length;
+					stoppedAtDepth = depth;
+					expandedSet.delete(sym);
+					break outer;
+				}
+				bestOutput = candidate;
+				bestPhase = 'content';
+				bestLabel = `progressive: ${expandedSet.size}/${totalSymbols} symbols expanded (depth ${depth}/${byDepth.length - 1})`;
+				bestRanges = computeProgressiveContentRanges(contentPieces, expandedSet);
 			}
-			bestOutput = candidate;
-			bestPhase = 'content';
-			bestLabel = `progressive: ${expandedSet.size}/${symbolPieces.length} symbols expanded`;
-			bestRanges = computeProgressiveContentRanges(contentPieces, expandedSet);
 		}
 
 		if (stoppedAtName) {
-			trace.push(`progressive(${expandedSet.size}/${symbolPieces.length}): stopped at '${stoppedAtName}' (${stoppedAtSize} lines, would be ${stoppedAtLength} chars)`);
+			trace.push(`progressive(${expandedSet.size}/${totalSymbols}): stopped at depth ${stoppedAtDepth} '${stoppedAtName}' (${stoppedAtSize} lines, would be ${stoppedAtLength} chars)`);
 		} else {
-			trace.push(`progressive(${expandedSet.size}/${symbolPieces.length}): all symbols expanded`);
+			trace.push(`progressive(${expandedSet.size}/${totalSymbols}): all symbols expanded`);
 		}
 	}
 
