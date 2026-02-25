@@ -139,7 +139,7 @@ export function onBrowserServiceChanged(callback: (service: BrowserService | nul
 /**
  * Deferred promise for MCP server restart. Set when checkForChanges detects
  * MCP source changes (before readyToRestart is called). Resolved when the
- * new MCP server process calls mcpReady. Used by the mcpStatus LM tool.
+ * new MCP server process calls mcpReady.
  */
 let mcpReadyDeferred: null | { promise: Promise<void>; resolve: () => void } = null;
 
@@ -149,14 +149,14 @@ function expectMcpRestart(): void {
 		resolver = r;
 	});
 	mcpReadyDeferred = { promise, resolve: resolver };
-	log('[host] MCP restart expected — mcpStatus will block until mcpReady');
+	log('[host] MCP restart expected — waitForMcpReady will block until mcpReady');
 }
 
 function signalMcpReady(): void {
 	if (mcpReadyDeferred) {
 		mcpReadyDeferred.resolve();
 		mcpReadyDeferred = null;
-		log('[host] MCP ready signaled — mcpStatus unblocked');
+		log('[host] MCP ready signaled — waitForMcpReady unblocked');
 	}
 }
 
@@ -1083,7 +1083,7 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 	register('mcpReady', async (params) => {
 		log('[host] mcpReady called with params:', JSON.stringify(params));
 
-		// Signal that the MCP server is ready (unblocks mcpStatus tool if waiting)
+		// Signal that the MCP server is ready (unblocks waitForMcpReady callers)
 		signalMcpReady();
 
 		// MCP tells us where the client workspace and extension are

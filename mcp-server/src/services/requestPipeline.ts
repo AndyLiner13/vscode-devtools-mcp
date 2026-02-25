@@ -31,15 +31,13 @@ const RESTART_MESSAGE = [
 	'⚡ **MCP server source changed — rebuilt successfully.**',
 	'',
 	'The MCP server is restarting to apply the latest changes.',
-	'Use the `mcpStatus` tool with an empty input to wait for the server to be ready.',
-	'Do NOT retry any MCP tools until `mcpStatus` confirms the server is ready.'
+	'Wait a moment for the server to restart, then retry your tool call.'
 ].join('\n');
 
 const RESTARTING_QUEUED_MESSAGE = [
 	'⏳ MCP server is restarting to apply source changes.',
 	'',
-	'Use the `mcpStatus` tool with an empty input to wait for the server to be ready.',
-	'Do NOT retry any MCP tools until `mcpStatus` confirms the server is ready.'
+	'Wait a moment for the server to restart, then retry your tool call.'
 ].join('\n');
 
 function formatBuildFailure(packageName: string, error: string): string {

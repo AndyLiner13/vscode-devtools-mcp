@@ -14,8 +14,6 @@ import type { BrowserService } from './browser';
 import * as vscode from 'vscode';
 
 import { setBrowserService as _setBrowserService, setReconnectCdpCallback as _setReconnectCdpCallback, getClientDevTools } from './clientDevTools';
-import { InspectorReadTool } from './inspectorReadTool';
-import { McpStatusTool } from './mcpStatusTool';
 import { OutputReadTool, setClientLogsStoragePath, setHostLogUri } from './readHostOutputTool';
 import { TerminalExecuteTool, TerminalReadTool } from './terminalLmTools';
 import { disposeUserActionTracker, getUserActionTracker } from './userActionTracker';
@@ -102,8 +100,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	track(vscode.lm.registerTool('terminal_read', new TerminalReadTool()));
 	track(vscode.lm.registerTool('terminal_execute', new TerminalExecuteTool()));
 	track(vscode.lm.registerTool('wait', new WaitTool()));
-	track(vscode.lm.registerTool('mcpStatus', new McpStatusTool()));
-	track(vscode.lm.registerTool('inspector_read', new InspectorReadTool()));
 
 	// Client DevTools — browser automation via CDP (factory-created tools)
 	for (const entry of getClientDevTools()) {

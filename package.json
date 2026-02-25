@@ -408,26 +408,6 @@
 				}
 			},
 			{
-				"name": "mcpStatus",
-				"displayName": "MCP Status",
-				"toolReferenceName": "mcpStatus",
-				"icon": "$(sync)",
-				"canBeReferencedInPrompt": true,
-				"userDescription": "Wait for the MCP server to be ready after a hot-reload restart",
-				"modelDescription": "Wait for the MCP server to be fully started and accepting tool calls after a hot-reload restart.\n\nCall this tool when any MCP tool returns a message indicating the server is restarting. This tool blocks until the MCP server is ready or the timeout is reached.\n\nDo NOT call this tool unless an MCP tool explicitly told you to. Do NOT call it more than once per restart.\n\n**Input:** {} (empty — no parameters needed, or optionally { timeoutMs: number })\n\n**Returns:**\n- Ready message when the MCP server is accepting tool calls\n- Timeout message if the server did not start within the timeout period",
-				"inputSchema": {
-					"type": "object",
-					"properties": {
-						"timeoutMs": {
-							"type": "integer",
-							"minimum": 1000,
-							"maximum": 300000,
-							"description": "Maximum time to wait in milliseconds. Default: 60000 (60 seconds)."
-						}
-					}
-				}
-			},
-			{
 				"name": "take_snapshot",
 				"displayName": "Take Snapshot",
 				"toolReferenceName": "take_snapshot",
@@ -864,31 +844,6 @@
 							"description": "Show/hide stack frame templates. Default: true."
 						}
 					}
-				}
-			},
-			{
-				"name": "inspector_read",
-				"displayName": "Inspector Read",
-				"toolReferenceName": "inspector_read",
-				"icon": "$(checklist)",
-				"canBeReferencedInPrompt": true,
-				"userDescription": "Read flagged MCP Inspector test records to understand tool failures",
-				"modelDescription": "Read MCP Inspector test records that have been flagged (thumbs-down) by the user. Use this tool to understand what went wrong with specific MCP tool executions and how to fix them.\n\n**TWO MODES:**\n\n**List Mode** (toolName only): Returns a table of all flagged, non-stale records for the specified tool. Each row shows the record ID, description/comment, error status, last run time, and duration. Stale records (code changed since last run but not yet re-executed) are excluded — they need to be re-run in the Inspector first.\n\n**Detail Mode** (toolName + recordId): Returns the full input JSON and output text for a specific record. Use this after reviewing the list to drill into a specific issue.\n\n**WORKFLOW:**\n1. Call with just `toolName` to see all current flagged issues\n2. Review the descriptions to identify which issues are relevant\n3. Call again with `recordId` to see the full input/output\n4. Fix the underlying code\n5. User re-runs in Inspector to verify the fix\n\n**STALENESS:**\nWhen code changes trigger a hot reload, flagged records become stale and are hidden from this tool. They only reappear after the user re-runs them in the Inspector, confirming the issue still exists with the new code.",
-				"inputSchema": {
-					"type": "object",
-					"properties": {
-						"toolName": {
-							"type": "string",
-							"description": "The MCP tool name to check for flagged issues (e.g., 'codebase_search', 'file_read')."
-						},
-						"recordId": {
-							"type": "string",
-							"description": "Specific record ID to retrieve full input/output details. Omit to list all flagged issues."
-						}
-					},
-					"required": [
-						"toolName"
-					]
 				}
 			}
 		],
