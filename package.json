@@ -29,6 +29,7 @@
 		"check-types": "tsc --noEmit",
 		"compile": "node esbuild.mjs",
 		"format": "eslint --cache --fix . && prettier --write --cache .",
+		"inspector:build": "cd inspector && npm run inspector:build",
 		"install:vsix": "node --input-type=module -e \"import{readFileSync}from'node:fs';import{execSync}from'node:child_process';const p=JSON.parse(readFileSync('./package.json','utf8'));execSync('code --install-extension '+p.name+'-'+p.version+'.vsix --force',{stdio:'inherit'})\"",
 		"knip": "knip --strict",
 		"lint": "eslint .",
@@ -49,16 +50,12 @@
 				"title": "VS Code DevTools: Settings"
 			},
 			{
-				"command": "devtools.startInspector",
-				"title": "DevTools: Start MCP Inspector"
+				"command": "devtools.openInspector",
+				"title": "DevTools: Open MCP Inspector"
 			},
 			{
-				"command": "devtools.stopInspector",
-				"title": "DevTools: Stop MCP Inspector"
-			},
-			{
-				"command": "devtools.restartInspector",
-				"title": "DevTools: Restart MCP Inspector"
+				"command": "devtools.refreshInspector",
+				"title": "DevTools: Refresh MCP Inspector"
 			},
 			{
 				"command": "devtools.startMcpServer",

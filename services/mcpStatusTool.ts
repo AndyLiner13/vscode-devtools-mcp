@@ -12,21 +12,13 @@
 import type * as vscode from 'vscode';
 
 import { waitForMcpReady } from './host-handlers';
-import { getInspectorPort } from './inspectorManager';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const DEFAULT_TIMEOUT_MS = 60_000;
 
 function getReadyMessage(): string {
-	const inspectorVitePort = getInspectorPort();
-
-	let portInfo = '';
-	if (inspectorVitePort) {
-		portInfo += `\n- Inspector UI: http://localhost:${inspectorVitePort}/`;
-	}
-
-	return `✅ MCP server is ready.${portInfo}
+	return `✅ MCP server is ready.
 
 The MCP tool cache was already cleared during the restart.
 Do NOT call mcpStatus again — proceed directly to using MCP tools.

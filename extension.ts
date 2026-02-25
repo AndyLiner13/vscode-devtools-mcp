@@ -21,7 +21,7 @@ import * as vscode from 'vscode';
 import * as bootstrap from './bootstrap';
 import pkg from './package.json';
 import { startWorker, stopWorker } from './services/codebase/codebase-worker-proxy';
-import { ensureInspectorRunning, getInspectorPort, registerInspectorCommands, shutdownInspector } from './services/inspectorManager';
+import { registerInspectorPanel } from './services/inspector-panel';
 import { registerMcpServerProvider } from './services/mcpServerProvider';
 
 // VS Code constructs server definition IDs as: ExtensionIdentifier.toKey(id) + '/' + label
@@ -139,12 +139,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		switch (state) {
 			case 'connected': {
 				statusBarItem.text = '$(debug-connected) VS Code DevTools Host';
-				const inspectorVitePort = getInspectorPort();
-				let portInfo = '';
-				if (inspectorVitePort) {
-					portInfo += `\nInspector: http://localhost:${inspectorVitePort}/`;
-				}
-				statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Host\nClient Window: Connected\nMCP Server: Enabled${portInfo}\nClick to toggle`;
+				statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Host\nClient Window: Connected\nMCP Server: Enabled\nClick to toggle`;
 				statusBarItem.command = 'devtools.toggleMcpServer';
 				statusBarItem.backgroundColor = undefined;
 				break;
@@ -264,21 +259,9 @@ export async function activate(context: vscode.ExtensionContext) {
 			const mcpProvider = registerMcpServerProvider(context);
 			log(`MCP server provider registered (enabled: ${mcpProvider.enabled})`);
 
-			// Register MCP Inspector lifecycle commands (start / stop / restart)
-			const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-			if (workspacePath) {
-				registerInspectorCommands(context, workspacePath, log);
-				log('Inspector commands registered');
-
-				// Auto-start the inspector Vite dev server (idempotent — no-op if already running)
-				void ensureInspectorRunning(workspacePath).then(
-					(ok) => log(`Inspector auto-start: ${ok ? 'ready' : 'failed'}`),
-					(err: unknown) => {
-						const msg = err instanceof Error ? err.message : String(err);
-						log(`Inspector auto-start error: ${msg}`);
-					}
-				);
-			}
+			// Register MCP Inspector as a WebView panel (replaces old Vite dev server)
+			registerInspectorPanel(context, log);
+			log('Inspector WebView panel registered');
 
 			// Listen for settings changes and refresh MCP server definitions
 			context.subscriptions.push(
@@ -574,10 +557,6 @@ export async function deactivate() {
 		hostHandlersCleanup = undefined;
 		log('Host cleanup completed (client window stopped)');
 	}
-
-	// Stop the MCP Inspector if it was started by this extension
-	await shutdownInspector();
-	log('Inspector shutdown completed');
 
 	if (currentRole === 'client') {
 		try {

@@ -22,6 +22,7 @@
 import * as vscode from 'vscode';
 
 import { extractFileStructure, extractOrphanedContent, extractStructure, findDeadCode, findDuplicates, getExports, getImportGraph, getOverview, traceSymbol } from './codebase/codebase-worker-proxy';
+import { registerInspectorHandlers } from './inspector-backend';
 import { disposeProcessLedger, getProcessLedger, initProcessLedger, type ProcessLedgerSummary } from './processLedger';
 import { SingleTerminalController } from './singleTerminalController';
 import { getUserActionTracker } from './userActionTracker';
@@ -1124,6 +1125,9 @@ export function registerClientHandlers(register: RegisterHandler, workspaceState
 	register('file.applyCodeAction', handleFileApplyCodeAction);
 	register('file.extractOrphanedContent', handleExtractOrphanedContent);
 	register('file.extractStructure', handleFileExtractStructure);
+
+	// Inspector backend handlers (storage CRUD, MCP proxy, file browsing, symbols)
+	registerInspectorHandlers(register, workspaceState);
 
 	console.log('[client] Client RPC handlers registered');
 

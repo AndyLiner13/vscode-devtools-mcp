@@ -58,6 +58,7 @@ node_modules/**
 # ── Directories not needed in extension VSIX ──────────────
 # These MUST come last so they override all earlier !include rules
 inspector/**
+!inspector/dist/**
 mcp-server/**
 .devtools/**
 tests/**

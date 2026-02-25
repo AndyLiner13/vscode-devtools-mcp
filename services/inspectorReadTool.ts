@@ -10,12 +10,57 @@
  *   2. Detail mode (toolName + recordId): Returns full input/output for one record
  */
 
+import net from 'node:net';
 import * as vscode from 'vscode';
-import { getInspectorPort } from './inspectorManager.js';
 
-function getInspectorBaseUrl(): string {
-	const port = getInspectorPort() ?? 6275;
-	return `http://localhost:${port}`;
+// ── Client Pipe RPC ──────────────────────────────────────────────────────────
+
+const IS_WINDOWS = process.platform === 'win32';
+const CLIENT_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-client' : '/tmp/vscode-devtools-client.sock';
+
+let rpcIdCounter = 0;
+
+async function sendClientRpc<T = unknown>(method: string, params?: Record<string, unknown>): Promise<T> {
+	rpcIdCounter += 1;
+	const id = `inspector-read-${rpcIdCounter}`;
+
+	return new Promise((resolve, reject) => {
+		let settled = false;
+		let acc = '';
+
+		const finish = (error?: Error, result?: unknown): void => {
+			if (settled) return;
+			settled = true;
+			clearTimeout(timer);
+			try { socket.destroy(); } catch { /* best-effort */ }
+			if (error) { reject(error); } else { resolve(result as T); }
+		};
+
+		const socket = net.createConnection(CLIENT_PIPE_PATH, () => {
+			const payload = JSON.stringify({ id, jsonrpc: '2.0', method: `inspector.${method}`, params: params ?? {} });
+			socket.write(`${payload}\n`);
+		});
+
+		socket.setEncoding('utf8');
+
+		socket.on('data', (chunk: string) => {
+			acc += chunk;
+			const idx = acc.indexOf('\n');
+			if (idx === -1) return;
+			try {
+				const resp = JSON.parse(acc.slice(0, idx)) as { error?: { message: string }; result?: unknown };
+				if (resp.error) { finish(new Error(resp.error.message)); }
+				else { finish(undefined, resp.result); }
+			} catch {
+				finish(new Error('Invalid JSON-RPC response'));
+			}
+		});
+
+		socket.on('error', (err) => { finish(new Error(`Client pipe error: ${err.message}`)); });
+		socket.on('close', () => { finish(new Error('Client pipe closed before response')); });
+
+		const timer = setTimeout(() => { finish(new Error('Client RPC timed out')); }, 10_000);
+	});
 }
 
 // ── Input Schema ─────────────────────────────────────────────────────────────
@@ -45,24 +90,15 @@ interface InspectorRecord {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 async function fetchInspectorRecords(toolName: string): Promise<InspectorRecord[]> {
-	const url = `${getInspectorBaseUrl()}/api/records?tool=${encodeURIComponent(toolName)}`;
-	const res = await fetch(url);
-	if (!res.ok) {
-		throw new Error(`Inspector API returned ${res.status}`);
-	}
-	return res.json() as Promise<InspectorRecord[]>;
+	return sendClientRpc<InspectorRecord[]>('records/list', { tool: toolName });
 }
 
 async function fetchInspectorRecord(recordId: string): Promise<InspectorRecord | null> {
-	const url = `${getInspectorBaseUrl()}/api/records/${encodeURIComponent(recordId)}`;
-	const res = await fetch(url);
-	if (res.status === 404) {
+	try {
+		return await sendClientRpc<InspectorRecord>('records/get', { id: recordId });
+	} catch {
 		return null;
 	}
-	if (!res.ok) {
-		throw new Error(`Inspector API returned ${res.status}`);
-	}
-	return res.json() as Promise<InspectorRecord>;
 }
 
 function combineOutputText(blocks: Array<{ type: string; text?: string }>): string {
@@ -109,8 +145,8 @@ export class InspectorReadTool implements vscode.LanguageModelTool<IInspectorRea
 		} catch (err) {
 			const message = err instanceof Error ? err.message : String(err);
 
-			if (message.includes('ECONNREFUSED') || message.includes('fetch failed')) {
-				return textResult('Inspector is not running. Start it with `npm run dev` in the inspector/ directory.');
+			if (message.includes('ECONNREFUSED') || message.includes('pipe error') || message.includes('pipe closed')) {
+				return textResult('Inspector backend is not available. Ensure the Client window is running.');
 			}
 
 			return textResult(`Error reading inspector records: ${message}`);

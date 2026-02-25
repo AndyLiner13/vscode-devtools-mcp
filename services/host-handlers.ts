@@ -80,17 +80,20 @@ let hotReloadInProgress = false;
 
 // ── Inspector Staleness ──────────────────────────────────────────────────
 
-import { getInspectorPort } from './inspectorManager.js';
-
-function getInspectorBaseUrl(): string {
-	const port = getInspectorPort() ?? 6275;
-	return `http://localhost:${port}`;
-}
-
 function markInspectorRecordsStale(): void {
-	fetch(`${getInspectorBaseUrl()}/api/records/mark-stale`, { method: 'POST' }).catch(() => {
-		// Inspector may not be running — that's fine
+	const IS_WIN = process.platform === 'win32';
+	const pipePath = IS_WIN ? '\\\\.\\pipe\\vscode-devtools-client' : '/tmp/vscode-devtools-client.sock';
+	const socket = net.createConnection(pipePath, () => {
+		const payload = JSON.stringify({
+			id: `mark-stale-${Date.now()}`,
+			jsonrpc: '2.0',
+			method: 'inspector.records/markStale',
+			params: {}
+		});
+		socket.write(`${payload}\n`);
+		socket.on('data', () => { socket.destroy(); });
 	});
+	socket.on('error', () => { /* Inspector backend may not be ready */ });
 }
 
 /** Workspace storage path for persisting user-data, set during registerHostHandlers */

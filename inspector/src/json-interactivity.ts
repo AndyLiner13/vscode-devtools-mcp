@@ -14,24 +14,19 @@
 
 import type { JsonSchema } from './types';
 
+import { rpc } from './bridge';
 import * as monacoNs from 'monaco-editor';
 
 // ── Logging ──────────────────────────────────────────────────────────────────
 
-const LOG_ENDPOINT = '/api/log';
-
 /**
- * Send log messages to the server to appear in VS Code output panel.
- * Fire-and-forget, non-blocking. Falls back silently if server unavailable.
+ * Send log messages to the extension host output panel.
+ * Fire-and-forget, non-blocking.
  */
 function log(message: string): void {
 	console.log(`[json-interactivity] ${message}`);
-	fetch(LOG_ENDPOINT, {
-		body: JSON.stringify({ message }),
-		headers: { 'Content-Type': 'application/json' },
-		method: 'POST'
-	}).catch(() => {
-		// Silently ignore if server is unavailable
+	rpc('log', { message }).catch(() => {
+		// Silently ignore if extension host is unavailable
 	});
 }
 
@@ -197,8 +192,6 @@ function findNumberRange(line: string, column: number): null | { end: number; st
 // ── Feature 3: File/Dir Path Intellisense ────────────────────────────────────
 
 const FILE_DIR_PROPERTY_NAMES = new Set(['file', 'dir', 'directory', 'path', 'filePath', 'dirPath']);
-const BROWSE_ENDPOINT = '/api/browse';
-
 interface BrowseEntry {
 	name: string;
 	type: 'dir' | 'file';
@@ -361,17 +354,8 @@ async function providePathCompletions(
 	log(`[intellisense]   lastSlashBeforeCursor: ${lastSlashBeforeCursor} prefix: ${JSON.stringify(prefix)}`);
 
 	try {
-		const url = `${BROWSE_ENDPOINT}?path=${encodeURIComponent(dirPath)}`;
-		log(`[intellisense]   Fetching: ${url}`);
-		const response = await fetch(url);
-		log(`[intellisense]   Response status: ${response.status} ${response.ok}`);
-		if (!response.ok) {
-			log(`[intellisense]   → Response not OK, returning empty`);
-			return empty;
-		}
-
-		const data = await response.json() as BrowseResponse;
-		log(`[intellisense]   DEBUG from server: ${JSON.stringify(data.debug)}`);
+		log(`[intellisense]   RPC: fs/browse path=${JSON.stringify(dirPath)}`);
+		const data = await rpc<BrowseResponse>('fs/browse', { path: dirPath });
 		if (data.error) {
 			log(`[intellisense]   Server error: ${data.error}`);
 		}
@@ -428,8 +412,6 @@ async function providePathCompletions(
 }
 
 // ── Feature 3b: Symbol Intellisense ──────────────────────────────────────────
-
-const SYMBOLS_ENDPOINT = '/api/symbols';
 
 interface SymbolEntry {
 	kind: string;
@@ -556,21 +538,18 @@ function setupSymbolIntellisense(
 			}
 
 			if (filePath !== cachedFilePath) {
-				// Clear cache immediately so stale symbols aren't shown if fetch fails
+				// Clear cache immediately so stale symbols aren't shown if rpc fails
 				cachedFilePath = null;
 				cachedSymbols = [];
 
 				try {
 					log(`[symbolIntellisense] fetching symbols for: ${filePath}`);
-					const resp = await fetch(`${SYMBOLS_ENDPOINT}?file=${encodeURIComponent(filePath)}`);
-					log(`[symbolIntellisense] fetch response ok: ${resp.ok}`);
-					if (!resp.ok) return empty;
-					const data = await resp.json() as SymbolsResponse;
+					const data = await rpc<SymbolsResponse>('editor/symbols', { file: filePath });
 					cachedFilePath = filePath;
 					cachedSymbols = data.symbols ?? [];
 					log(`[symbolIntellisense] fetched ${cachedSymbols.length} symbols`);
 				} catch (e) {
-					log(`[symbolIntellisense] fetch error: ${e}`);
+					log(`[symbolIntellisense] rpc error: ${e}`);
 					return empty;
 				}
 			}

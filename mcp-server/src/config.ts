@@ -215,13 +215,13 @@ export function getClientWorkspace(): string {
 export function loadConfig(): ResolvedConfig {
 	const envConfig = process.env.DEVTOOLS_CONFIG;
 	if (!envConfig) {
-		logger('DEVTOOLS_CONFIG not set — using defaults (host workspace as client workspace)');
+		logger('DEVTOOLS_CONFIG not set — using defaults (host workspace as client workspace and extension path)');
 		const hostRoot = getHostWorkspace();
 		_resolvedClientWorkspace = hostRoot;
 		return {
 			clientWorkspace: hostRoot,
 			explicitExtensionDevelopmentPath: false,
-			extensionBridgePath: '',
+			extensionBridgePath: hostRoot,
 			hostWorkspace: hostRoot,
 			hotReload: { ...DEFAULT_HOT_RELOAD_CONFIG },
 			launch: { ...DEFAULT_LAUNCH_FLAGS }
@@ -238,7 +238,7 @@ export function loadConfig(): ResolvedConfig {
 			return {
 				clientWorkspace: hostRoot,
 				explicitExtensionDevelopmentPath: false,
-				extensionBridgePath: '',
+				extensionBridgePath: hostRoot,
 				hostWorkspace: hostRoot,
 				hotReload: { ...DEFAULT_HOT_RELOAD_CONFIG },
 				launch: { ...DEFAULT_LAUNCH_FLAGS }
@@ -248,8 +248,9 @@ export function loadConfig(): ResolvedConfig {
 		const clientWorkspace = typeof parsed.clientWorkspace === 'string' && parsed.clientWorkspace ? parsed.clientWorkspace : hostRoot;
 		_resolvedClientWorkspace = clientWorkspace;
 
-		const extensionPath = typeof parsed.extensionPath === 'string' ? parsed.extensionPath : '';
-		const explicitExtensionDevelopmentPath = extensionPath.length > 0;
+		const extensionPathRaw = typeof parsed.extensionPath === 'string' ? parsed.extensionPath : '';
+		const extensionPath = extensionPathRaw || hostRoot;
+		const explicitExtensionDevelopmentPath = extensionPathRaw.length > 0;
 
 		const launchPartial = coerceLaunchFlags(parsed.launch);
 		const hotReloadPartial: Partial<HotReloadConfig> = {};
@@ -281,7 +282,7 @@ export function loadConfig(): ResolvedConfig {
 		return {
 			clientWorkspace: hostRoot,
 			explicitExtensionDevelopmentPath: false,
-			extensionBridgePath: '',
+			extensionBridgePath: hostRoot,
 			hostWorkspace: hostRoot,
 			hotReload: { ...DEFAULT_HOT_RELOAD_CONFIG },
 			launch: { ...DEFAULT_LAUNCH_FLAGS }
