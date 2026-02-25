@@ -82,6 +82,13 @@ function buildContainerSymbol(containerName: string, containerKind: string, node
 	};
 }
 
+function slugify(text: string): string {
+	return text
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-|-$/g, '');
+}
+
 /**
  * Build multiple leaf container symbols by splitting nodes into contiguous groups.
  * Nodes on consecutive lines belong to the same group; any gap starts a new container.
@@ -107,7 +114,7 @@ function buildContainerGroups(containerName: string, containerKind: string, node
 	return groups.map((group) => ({
 		children: [],
 		kind: containerKind,
-		name: group[0].name || containerName,
+		name: slugify(group[0].name || containerName),
 		range: {
 			endLine: group[group.length - 1].range.end,
 			startLine: group[0].range.start
