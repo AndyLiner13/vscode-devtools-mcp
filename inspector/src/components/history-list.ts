@@ -11,6 +11,9 @@ let renderGeneration = 0;
 const expandedEntries = new Set<string>();
 const entryEditors = new Map<string, monaco.editor.IStandaloneCodeEditor>();
 
+// Track which sections are collapsed (Archived starts collapsed)
+const collapsedSections = new Set<string>(['Archived']);
+
 // Track in-flight addToChat calls to avoid duplicate RPCs
 const addToChatPending = new Set<string>();
 
@@ -130,7 +133,7 @@ async function renderHistory(): Promise<void> {
 		container.appendChild(renderSection('Recent', unrated));
 	}
 	if (archived.length > 0) {
-		container.appendChild(renderArchivedSection(archived));
+		container.appendChild(renderSection('Archived', archived));
 	}
 
 	// Restore focus after rebuild
@@ -148,31 +151,38 @@ function renderSection(title: string, records: ExecutionRecord[]): HTMLElement {
 	const section = document.createElement('div');
 	section.className = 'history-section';
 
-	const header = document.createElement('div');
-	header.className = 'history-section-header';
-	header.innerHTML = `<span>${title}</span><span class="section-count">${records.length}</span>`;
-	section.appendChild(header);
-
-	for (const record of records) {
-		section.appendChild(renderEntry(record));
-	}
-
-	return section;
-}
-
-function renderArchivedSection(records: ExecutionRecord[]): HTMLElement {
-	const section = document.createElement('div');
-	section.className = 'history-section';
+	const isCollapsed = collapsedSections.has(title);
 
 	const header = document.createElement('button');
 	header.className = 'history-section-header clickable';
-	header.innerHTML = `<span>Archived</span><span class="section-count">${records.length}</span>`;
+
+	const chevron = createSvgIcon(isCollapsed ? ICON_PATHS.chevronRight : ICON_PATHS.chevronDown);
+	chevron.style.flexShrink = '0';
+
+	header.appendChild(chevron);
+	const titleSpan = document.createElement('span');
+	titleSpan.textContent = title;
+	titleSpan.style.flex = '1';
+	titleSpan.style.textAlign = 'left';
+	header.appendChild(titleSpan);
+
+	const count = document.createElement('span');
+	count.className = 'section-count';
+	count.textContent = String(records.length);
+	header.appendChild(count);
 
 	const list = document.createElement('div');
-	list.className = 'hidden';
+	if (isCollapsed) {
+		list.className = 'hidden';
+	}
 
 	header.addEventListener('click', () => {
-		list.classList.toggle('hidden');
+		if (collapsedSections.has(title)) {
+			collapsedSections.delete(title);
+		} else {
+			collapsedSections.add(title);
+		}
+		renderHistory().catch(() => { /* error sent via RPC */ });
 	});
 
 	section.appendChild(header);

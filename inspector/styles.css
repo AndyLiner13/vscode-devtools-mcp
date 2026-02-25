@@ -298,8 +298,8 @@ textarea, pre, code {
 
 .history-section-header {
 	display: flex;
-	justify-content: space-between;
 	align-items: center;
+	gap: 4px;
 	padding: 6px 8px;
 	font-size: 11px;
 	font-weight: 600;
@@ -308,11 +308,25 @@ textarea, pre, code {
 	letter-spacing: 0.05em;
 	border-top: 1px solid var(--inspector-border);
 	user-select: none;
+	background: transparent;
+	border-left: none;
+	border-right: none;
+	border-bottom: none;
 }
 
 .history-section-header.clickable {
 	cursor: pointer;
 	width: 100%;
+}
+
+.history-section-header.clickable:hover {
+	background: var(--inspector-hover);
+}
+
+.history-section-header svg {
+	width: 16px;
+	height: 16px;
+	fill: currentColor;
 }
 
 .section-count {
