@@ -148,6 +148,16 @@
 						"description": "Max wait time (ms) for MCP status tool before timeout."
 					}
 				}
+			},
+			{
+				"title": "Inspector",
+				"properties": {
+					"devtools.inspector.autoRetryOnRestart": {
+						"type": "boolean",
+						"default": false,
+						"description": "Automatically retry tool requests after MCP server restarts instead of showing the reboot message."
+					}
+				}
 			}
 		],
 		"languageModelTools": [

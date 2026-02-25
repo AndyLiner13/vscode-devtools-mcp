@@ -47,6 +47,45 @@ const HOST_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-host' : '/tmp/
 const STORAGE_KEY = 'inspector.records';
 const FILE_WRAPPER_KINDS = new Set(['module', 'file', 'namespace']);
 
+// Detect MCP restart messages (matches pipeline restart indicators)
+const RESTART_INDICATORS = [
+	'⚡ **MCP server source changed',
+	'⏳ MCP server is restarting'
+];
+
+function isRestartMessage(result: Record<string, unknown>): boolean {
+	const content = result.content;
+	if (!Array.isArray(content)) return false;
+	const textBlock = content.find((c): c is { text: string; type: 'text' } =>
+		typeof c === 'object' && c !== null && 'type' in c && c.type === 'text' && 'text' in c
+	);
+	if (!textBlock) return false;
+	return RESTART_INDICATORS.some(indicator => textBlock.text.startsWith(indicator));
+}
+
+function isBuildFailure(result: Record<string, unknown>): boolean {
+	const content = result.content;
+	if (!Array.isArray(content)) return false;
+	const textBlock = content.find((c): c is { text: string; type: 'text' } =>
+		typeof c === 'object' && c !== null && 'type' in c && c.type === 'text' && 'text' in c
+	);
+	if (!textBlock) return false;
+	return textBlock.text.startsWith('❌ **') && textBlock.text.includes('rebuild failed');
+}
+
+async function waitForMcpReady(maxWaitMs = 30_000, intervalMs = 500): Promise<boolean> {
+	const start = Date.now();
+	while (Date.now() - start < maxWaitMs) {
+		try {
+			await sendPipeRpc(MCP_PIPE_PATH, 'listTools', {}, 5_000);
+			return true;
+		} catch {
+			await new Promise(resolve => setTimeout(resolve, intervalMs));
+		}
+	}
+	return false;
+}
+
 // ── Pipe RPC helpers ──
 
 let rpcIdCounter = 0;
@@ -207,7 +246,35 @@ export function registerInspectorHandlers(
 		if (!toolName) {
 			throw new Error('Missing required field: name');
 		}
-		return sendPipeRpc(MCP_PIPE_PATH, 'callTool', { arguments: args, name: toolName }, 120_000);
+
+		const result = await sendPipeRpc(MCP_PIPE_PATH, 'callTool', { arguments: args, name: toolName }, 120_000);
+
+		// Check if auto-retry on restart is enabled
+		const config = vscode.workspace.getConfiguration('devtools.inspector');
+		const autoRetry = config.get<boolean>('autoRetryOnRestart', false);
+
+		if (autoRetry && isRestartMessage(result)) {
+			// Don't retry if it was a build failure
+			if (isBuildFailure(result)) {
+				log('Build failure detected, not auto-retrying');
+				return result;
+			}
+
+			log('MCP restart detected, waiting for server to be ready...');
+			const ready = await waitForMcpReady(30_000, 500);
+			if (!ready) {
+				log('MCP server did not become ready in time');
+				return {
+					content: [{ text: '⚠️ MCP server restart timed out. Please try again manually.', type: 'text' }],
+					isError: true
+				};
+			}
+
+			log('MCP server ready, retrying tool call...');
+			return sendPipeRpc(MCP_PIPE_PATH, 'callTool', { arguments: args, name: toolName }, 120_000);
+		}
+
+		return result;
 	});
 
 	// ── Storage CRUD ──
