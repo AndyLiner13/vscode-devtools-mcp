@@ -35,14 +35,14 @@ body {
 
 /* Shared container — single source of horizontal inset for the whole inspector */
 .app-root {
-	padding: 0 8px;
+	padding: 6px 8px 8px;
 }
 
 /* ── Tool Selector Dropdown ────────────────────────────────────────── */
 
 .tool-selector {
 	width: 100%;
-	padding: 6px 0;
+	padding: 0 0 6px;
 }
 
 .select-wrapper {
@@ -188,7 +188,7 @@ code {
 
 .tool-invocation-card h3 {
 	font-weight: 600;
-	margin: 0 0 2px;
+	margin: 0 0 4px;
 	font-size: 12px;
 	line-height: 1;
 	color: var(--color-vscode-text-dim);

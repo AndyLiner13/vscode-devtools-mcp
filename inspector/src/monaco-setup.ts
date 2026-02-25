@@ -70,7 +70,7 @@ const SHARED_EDITOR_OPTIONS: monaco.editor.IStandaloneEditorConstructionOptions 
 	occurrencesHighlight: 'off',
 	overviewRulerBorder: false,
 	overviewRulerLanes: 0,
-	padding: { bottom: 4, top: 2 },
+	padding: { bottom: 4, top: 4 },
 	renderLineHighlight: 'none',
 
 	renderWhitespace: 'none',
