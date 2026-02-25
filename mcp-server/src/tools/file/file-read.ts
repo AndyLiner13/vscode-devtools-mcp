@@ -124,6 +124,54 @@ function buildSkeletonPieces(structure: FileStructure): SkeletonPiece[] {
 }
 
 /**
+ * Build source-ordered pieces for content rendering.
+ * Container symbols (imports, comments, jsdoc, tsdoc, etc.) are "exploded":
+ * their children are promoted to root-level pieces so each import/comment
+ * is a leaf symbol rendered as raw content. Non-container symbols stay as-is.
+ */
+function buildContentPieces(structure: FileStructure): SkeletonPiece[] {
+	const pieces: SkeletonPiece[] = [];
+
+	for (const sym of structure.symbols) {
+		if (CONTAINER_KINDS.has(sym.kind) && sym.children && sym.children.length > 0) {
+			// Promote children to root-level pieces
+			for (const child of sym.children) {
+				pieces.push({ category: 'symbol', endLine: child.range.endLine, startLine: child.range.startLine, symbol: child });
+			}
+			// Any lines in the container range not covered by children become raw pieces
+			const childLines = new Set<number>();
+			for (const child of sym.children) {
+				for (let l = child.range.startLine; l <= child.range.endLine; l++) {
+					childLines.add(l);
+				}
+			}
+			let rawStart: number | null = null;
+			for (let l = sym.range.startLine; l <= sym.range.endLine; l++) {
+				if (!childLines.has(l)) {
+					if (rawStart === null) rawStart = l;
+				} else if (rawStart !== null) {
+					pieces.push({ category: 'raw', endLine: l - 1, startLine: rawStart });
+					rawStart = null;
+				}
+			}
+			if (rawStart !== null) {
+				pieces.push({ category: 'raw', endLine: sym.range.endLine, startLine: rawStart });
+			}
+		} else {
+			pieces.push({ category: 'symbol', endLine: sym.range.endLine, startLine: sym.range.startLine, symbol: sym });
+		}
+	}
+	for (const gap of structure.gaps) {
+		if (gap.type === 'unknown') {
+			pieces.push({ category: 'raw', endLine: gap.end, startLine: gap.start });
+		}
+	}
+
+	pieces.sort((a, b) => a.startLine - b.startLine);
+	return pieces;
+}
+
+/**
  * Render skeleton output at a given compression level.
  */
 function renderSkeletonAtLevel(pieces: SkeletonPiece[], allLines: string[], maxNesting: number, lineNumbers: boolean): string {
@@ -161,6 +209,16 @@ interface CompressionResult {
 	label: null | string;
 	output: string;
 	sourceRanges: LineRange[];
+	trace: string[];
+}
+
+/** Format a compression header with debug trace for output. */
+function formatCompressionHeader(result: { compressed: boolean; label: null | string; trace: string[] }): string {
+	if (!result.compressed || !result.label) return '';
+	const traceStr = result.trace.length > 0
+		? `\nCompression trace: ${result.trace.join(', ')}`
+		: '';
+	return `Output compressed: ${result.label}.${traceStr}\n`;
 }
 
 /**
@@ -217,12 +275,14 @@ function collectSymbolRanges(
 function compressSkeletonOutput(structure: FileStructure, allLines: string[], requestedMaxNesting: number, lineNumbers: boolean): CompressionResult {
 	const pieces = buildSkeletonPieces(structure);
 	const maxNesting = Math.min(requestedMaxNesting, getMaxSymbolNesting(structure.symbols));
+	const trace: string[] = [];
 
 	// Quick check: does the full output fit?
 	const fullOutput = renderSkeletonAtLevel(pieces, allLines, maxNesting, lineNumbers);
+	trace.push(`skeleton(${maxNesting})=${fullOutput.length}`);
 	if (fullOutput.length <= OUTPUT_CHAR_LIMIT) {
 		const ranges = computeSkeletonRanges(pieces, maxNesting);
-		return { ...ranges, compressed: false, label: null, output: fullOutput };
+		return { ...ranges, compressed: false, label: null, output: fullOutput, trace };
 	}
 
 	// Compression needed — incrementally build up from nesting=0
@@ -231,14 +291,17 @@ function compressSkeletonOutput(structure: FileStructure, allLines: string[], re
 
 	for (let nesting = 0; nesting <= maxNesting; nesting++) {
 		const candidate = renderSkeletonAtLevel(pieces, allLines, nesting, lineNumbers);
+		trace.push(`skeleton(${nesting})=${candidate.length}`);
 		if (candidate.length > OUTPUT_CHAR_LIMIT) {
 			if (nesting === 0) {
+				trace.push(`← selected (exceeds limit, minimum)`);
 				const ranges = computeSkeletonRanges(pieces, 0);
 				return {
 					...ranges,
 					compressed: true,
 					label: `top-level skeleton only (${structure.symbols.length} symbols)`,
-					output: candidate
+					output: candidate,
+					trace
 				};
 			}
 			break;
@@ -247,6 +310,7 @@ function compressSkeletonOutput(structure: FileStructure, allLines: string[], re
 		bestNesting = nesting;
 	}
 
+	trace.push(`← skeleton(${bestNesting}) selected`);
 	const label = bestNesting < maxNesting ? `symbol depth ${bestNesting} of ${maxNesting}` : null;
 	const ranges = computeSkeletonRanges(pieces, bestNesting);
 
@@ -254,7 +318,8 @@ function compressSkeletonOutput(structure: FileStructure, allLines: string[], re
 		...ranges,
 		compressed: true,
 		label,
-		output: bestOutput
+		output: bestOutput,
+		trace
 	};
 }
 
@@ -270,11 +335,13 @@ function computeTargetRanges(symbol: SymbolLike, maxNesting: number): { collapse
 
 function compressTargetSkeleton(symbol: FileSymbol, requestedMaxNesting: number): CompressionResult {
 	const maxNesting = Math.min(requestedMaxNesting, getSymbolTreeDepth(symbol));
+	const trace: string[] = [];
 
 	const fullOutput = renderTargetSkeletonAtLevel(symbol, maxNesting);
+	trace.push(`skeleton(${maxNesting})=${fullOutput.length}`);
 	if (fullOutput.length <= OUTPUT_CHAR_LIMIT) {
 		const ranges = computeTargetRanges(symbol, maxNesting);
-		return { ...ranges, compressed: false, label: null, output: fullOutput };
+		return { ...ranges, compressed: false, label: null, output: fullOutput, trace };
 	}
 
 	let bestOutput = '';
@@ -282,14 +349,17 @@ function compressTargetSkeleton(symbol: FileSymbol, requestedMaxNesting: number)
 
 	for (let nesting = 0; nesting <= maxNesting; nesting++) {
 		const candidate = renderTargetSkeletonAtLevel(symbol, nesting);
+		trace.push(`skeleton(${nesting})=${candidate.length}`);
 		if (candidate.length > OUTPUT_CHAR_LIMIT) {
 			if (nesting === 0) {
+				trace.push(`← selected (exceeds limit, minimum)`);
 				const ranges = computeTargetRanges(symbol, 0);
 				return {
 					...ranges,
 					compressed: true,
 					label: `top-level only (${symbol.children?.length ?? 0} children)`,
-					output: candidate
+					output: candidate,
+					trace
 				};
 			}
 			break;
@@ -298,13 +368,15 @@ function compressTargetSkeleton(symbol: FileSymbol, requestedMaxNesting: number)
 		bestNesting = nesting;
 	}
 
+	trace.push(`← skeleton(${bestNesting}) selected`);
 	const ranges = computeTargetRanges(symbol, bestNesting);
 
 	return {
 		...ranges,
 		compressed: true,
 		label: `symbol depth ${bestNesting} of ${maxNesting}`,
-		output: bestOutput
+		output: bestOutput,
+		trace
 	};
 }
 
@@ -386,14 +458,16 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 	// Containers (imports, exports, etc.) don't need the header when showing raw source —
 	// the content is self-evident. The header only appears when compressed to a stub.
 	const header = isContainer ? '' : `[${startLine === endLine ? `${startLine}` : `${startLine}-${endLine}`}] ${headerLabel}\n`;
+	const trace: string[] = [];
 
 	// Quick check: does the maximum-detail output fit?
 	const maxContent = expandChildren ? formatContentAtNesting(allLines, symbol, startLine, endLine, contentMaxNesting, 0, lineNumbers) : addLineNumbers(getContentSlice(allLines, startLine, endLine), startLine, lineNumbers);
 	const maxOutput = header + maxContent;
+	trace.push(`full-content=${maxOutput.length}`);
 	if (maxOutput.length <= OUTPUT_CHAR_LIMIT) {
 		// Full content fits — no collapsing needed
 		const noCollapsing = expandChildren ? computeContentRanges(symbol, contentMaxNesting) : { collapsedRanges: [], sourceRanges: [] };
-		return { ...noCollapsing, compressed: false, label: null, output: maxOutput };
+		return { ...noCollapsing, compressed: false, label: null, output: maxOutput, trace };
 	}
 
 	// Compression needed — bottom-up incremental expansion
@@ -405,14 +479,17 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 	// Phase 1: Skeleton nesting expansion (nesting 0 → max)
 	for (let n = 0; n <= maxNesting; n++) {
 		const candidate = renderTargetSkeletonAtLevel(symbol, n);
+		trace.push(`skeleton(${n})=${candidate.length}`);
 		if (candidate.length > OUTPUT_CHAR_LIMIT) {
 			if (n === 0) {
+				trace.push(`← selected (exceeds limit, minimum)`);
 				const ranges = computeTargetRanges(symbol, 0);
 				return {
 					...ranges,
 					compressed: true,
 					label: `top-level only (${symbol.children?.length ?? 0} children)`,
-					output: candidate
+					output: candidate,
+					trace
 				};
 			}
 			compressionLabel = `symbol depth ${n - 1} of ${maxNesting}`;
@@ -429,11 +506,13 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 		for (let n = 0; n <= contentMaxNesting; n++) {
 			const content = formatContentAtNesting(allLines, symbol, startLine, endLine, n, 0, lineNumbers);
 			const candidate = header + content;
+			trace.push(`content(${n})=${candidate.length}`);
 			if (candidate.length > OUTPUT_CHAR_LIMIT) {
 				if (n === 0) {
 					compressionLabel = 'auto-skeleton';
 					bestNesting = maxNesting;
 					phase = 'skeleton';
+					trace.push(`← fell back to skeleton(${maxNesting})`);
 				} else {
 					compressionLabel = `content depth ${n - 1} of ${contentMaxNesting}`;
 					bestNesting = n - 1;
@@ -447,8 +526,10 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 
 	// No children and nothing collapsible — return full content (a stub is useless here)
 	if (!compressionLabel && !expandChildren) {
-		return { collapsedRanges: [], compressed: false, label: null, output: maxOutput, sourceRanges: [] };
+		return { collapsedRanges: [], compressed: false, label: null, output: maxOutput, sourceRanges: [], trace };
 	}
+
+	trace.push(`← ${phase}(${bestNesting}) selected`);
 
 	// Compute ranges based on which phase won
 	const ranges = phase === 'skeleton'
@@ -459,40 +540,192 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 		...ranges,
 		compressed: !!compressionLabel,
 		label: compressionLabel || null,
-		output: bestOutput
+		output: bestOutput,
+		trace
 	};
 }
 
 /**
- * Compress full-file output. Auto-switches to skeleton mode with incremental nesting.
+ * Render the file with some symbols expanded to raw content and the rest as skeleton stubs.
+ * `expandedSet` controls which symbol pieces render as raw content.
+ * Pieces NOT in the set render as skeleton entries at `skeletonNesting`.
  */
-function compressFullFileOutput(rawContent: string, structure: FileStructure | undefined, allLines: string[], startLine1: number, lineNumbers: boolean): CompressionResult {
-	// Try raw content first
-	const numbered = addLineNumbers(rawContent, startLine1, lineNumbers);
-	if (numbered.length <= OUTPUT_CHAR_LIMIT) {
-		return { collapsedRanges: [], compressed: false, label: null, output: numbered, sourceRanges: [] };
+function renderProgressiveContent(
+	pieces: SkeletonPiece[],
+	allLines: string[],
+	expandedSet: ReadonlySet<SkeletonPiece>,
+	skeletonNesting: number,
+	lineNumbers: boolean
+): string {
+	const result: string[] = [];
+
+	for (const piece of pieces) {
+		if (piece.category === 'raw') {
+			for (let l = piece.startLine; l <= piece.endLine; l++) {
+				result.push(formatLine(l, allLines[l - 1] ?? '', lineNumbers));
+			}
+		} else if (piece.symbol) {
+			if (expandedSet.has(piece)) {
+				const sym = piece.symbol;
+				result.push(addLineNumbers(getContentSlice(allLines, sym.range.startLine, sym.range.endLine), sym.range.startLine, lineNumbers));
+			} else {
+				const entries = formatSkeletonEntry(piece.symbol, '', skeletonNesting);
+				for (const entry of entries) result.push(entry);
+			}
+		}
 	}
 
-	// Auto-switch to skeleton if structure is available
-	if (structure) {
-		const maxNesting = getMaxSymbolNesting(structure.symbols);
-		const result = compressSkeletonOutput(structure, allLines, maxNesting, lineNumbers);
+	return result.join('\n');
+}
+
+/**
+ * Compute line ranges for progressive content mode.
+ * Expanded symbols → source ranges; skeleton symbols → collapsed ranges.
+ */
+function computeProgressiveContentRanges(
+	pieces: SkeletonPiece[],
+	expandedSet: ReadonlySet<SkeletonPiece>
+): { collapsedRanges: LineRange[]; sourceRanges: LineRange[] } {
+	const collapsedRanges: LineRange[] = [];
+	const sourceRanges: LineRange[] = [];
+
+	for (const piece of pieces) {
+		if (piece.category === 'raw') {
+			sourceRanges.push({ endLine: piece.endLine, startLine: piece.startLine });
+		} else if (piece.symbol) {
+			if (expandedSet.has(piece)) {
+				sourceRanges.push({ endLine: piece.symbol.range.endLine, startLine: piece.symbol.range.startLine });
+			} else {
+				collapsedRanges.push({ endLine: piece.symbol.range.endLine, startLine: piece.symbol.range.startLine });
+			}
+		}
+	}
+
+	return { collapsedRanges, sourceRanges };
+}
+
+/**
+ * Compress full-file output using incremental skeleton→progressive expansion approach.
+ * Phase 1: Skeleton nesting (0 → max) — pure structural stubs, increasing depth.
+ * Phase 2: Progressive expansion — starting from skeleton, expand symbols to raw content
+ *          one at a time (smallest first) until the budget is exhausted.
+ * This creates a smooth gradient from minimal skeleton to as much raw source as possible.
+ */
+function compressFullFileOutput(rawContent: string, structure: FileStructure | undefined, allLines: string[], startLine1: number, lineNumbers: boolean): CompressionResult {
+	const trace: string[] = [];
+
+	// Quick check: does full raw content fit?
+	const numbered = addLineNumbers(rawContent, startLine1, lineNumbers);
+	trace.push(`raw=${numbered.length}`);
+	if (numbered.length <= OUTPUT_CHAR_LIMIT) {
+		return { collapsedRanges: [], compressed: false, label: null, output: numbered, sourceRanges: [], trace };
+	}
+
+	// No structure available — return raw with guidance (can't compress without structure)
+	if (!structure) {
+		trace.push(`no structure available, returning raw`);
 		return {
-			collapsedRanges: result.collapsedRanges,
+			collapsedRanges: [],
 			compressed: true,
-			label: `auto-skeleton${result.label ? `, ${result.label}` : ''}`,
-			output: result.output,
-			sourceRanges: result.sourceRanges
+			label: 'file too large for token budget. Use startLine/endLine to read specific ranges',
+			output: numbered,
+			sourceRanges: [],
+			trace
 		};
 	}
 
-	// No structure available — return raw with guidance
+	const skeletonPieces = buildSkeletonPieces(structure);
+	const contentPieces = buildContentPieces(structure);
+	const maxSkeletonNesting = getMaxSymbolNesting(structure.symbols);
+
+	trace.push(`limit=${OUTPUT_CHAR_LIMIT}, skeletonPieces=${skeletonPieces.length}, contentPieces=${contentPieces.length}, maxSkeletonNesting=${maxSkeletonNesting}`);
+
+	let bestOutput = '';
+	let bestLabel: string | null = null;
+	let bestPhase: 'content' | 'none' | 'skeleton' = 'none';
+	let bestRanges: { collapsedRanges: LineRange[]; sourceRanges: LineRange[] } = { collapsedRanges: [], sourceRanges: [] };
+
+	// Phase 1: Skeleton nesting (0 → max)
+	// Start from least detail and build up
+	for (let nesting = 0; nesting <= maxSkeletonNesting; nesting++) {
+		const candidate = renderSkeletonAtLevel(skeletonPieces, allLines, nesting, lineNumbers);
+		trace.push(`skeleton(${nesting})=${candidate.length}`);
+		if (candidate.length > OUTPUT_CHAR_LIMIT) {
+			if (nesting === 0) {
+				// Even top-level skeleton exceeds limit — return it anyway as minimum
+				trace.push(`← selected (exceeds limit, minimum)`);
+				const ranges = computeSkeletonRanges(skeletonPieces, 0);
+				return {
+					...ranges,
+					compressed: true,
+					label: `top-level skeleton only (${structure.symbols.length} symbols)`,
+					output: candidate,
+					trace
+				};
+			}
+			// Previous level was the best we can do in skeleton phase
+			break;
+		}
+		bestOutput = candidate;
+		bestPhase = 'skeleton';
+		bestLabel = `skeleton depth ${nesting} of ${maxSkeletonNesting}`;
+		bestRanges = computeSkeletonRanges(skeletonPieces, nesting);
+	}
+
+	// Phase 2: Progressive expansion — expand symbols smallest-first from skeleton to raw.
+	// Start with all symbols as skeleton stubs (using contentPieces where containers
+	// are already exploded). Flip symbols to raw content one by one, fewest lines first,
+	// until the budget is exhausted. This produces a smooth gradient from skeleton to
+	// full content, maximizing the amount of actual source code shown.
+	{
+		const symbolPieces = contentPieces.filter((p) => p.category === 'symbol' && p.symbol);
+		symbolPieces.sort((a, b) => {
+			const aLines = a.symbol!.range.endLine - a.symbol!.range.startLine;
+			const bLines = b.symbol!.range.endLine - b.symbol!.range.startLine;
+			return aLines - bLines;
+		});
+
+		const expandedSet = new Set<SkeletonPiece>();
+		let stoppedAtName: string | undefined;
+		let stoppedAtSize = 0;
+		let stoppedAtLength = 0;
+
+		for (const sp of symbolPieces) {
+			expandedSet.add(sp);
+			const candidate = renderProgressiveContent(contentPieces, allLines, expandedSet, maxSkeletonNesting, lineNumbers);
+			if (candidate.length > OUTPUT_CHAR_LIMIT) {
+				stoppedAtName = sp.symbol?.name ?? '?';
+				stoppedAtSize = (sp.symbol?.range.endLine ?? 0) - (sp.symbol?.range.startLine ?? 0) + 1;
+				stoppedAtLength = candidate.length;
+				expandedSet.delete(sp);
+				break;
+			}
+			bestOutput = candidate;
+			bestPhase = 'content';
+			bestLabel = `progressive: ${expandedSet.size}/${symbolPieces.length} symbols expanded`;
+			bestRanges = computeProgressiveContentRanges(contentPieces, expandedSet);
+		}
+
+		if (stoppedAtName) {
+			trace.push(`progressive(${expandedSet.size}/${symbolPieces.length}): stopped at '${stoppedAtName}' (${stoppedAtSize} lines, would be ${stoppedAtLength} chars)`);
+		} else {
+			trace.push(`progressive(${expandedSet.size}/${symbolPieces.length}): all symbols expanded`);
+		}
+	}
+
+	// If we reached full content without exceeding limit, it's not compressed
+	const isCompressed = bestOutput !== numbered;
+
+	if (isCompressed) {
+		trace.push(`← ${bestPhase}(best) selected`);
+	}
+
 	return {
-		collapsedRanges: [],
-		compressed: true,
-		label: 'file too large for token budget. Use startLine/endLine to read specific ranges',
-		output: numbered,
-		sourceRanges: []
+		...bestRanges,
+		compressed: isCompressed,
+		label: isCompressed ? bestLabel : null,
+		output: bestOutput,
+		trace
 	};
 }
 
@@ -514,11 +747,11 @@ function compressStructuredRangeOutput(
 } {
 	const result = renderStructuredRange(structure, allLines, reqStart, reqEnd, lineNumbers);
 	if (result.output.length <= OUTPUT_CHAR_LIMIT) {
-		return { ...result, compressed: false, label: null };
+		return { ...result, compressed: false, label: null, trace: [`structured-range=${result.output.length}`] };
 	}
 
 	// Already at minimum detail — return as-is (guaranteed minimum)
-	return { ...result, compressed: true, label: 'structured range (exceeds budget)' };
+	return { ...result, compressed: true, label: 'structured range (exceeds budget)', trace: [`structured-range=${result.output.length}`, `← exceeds limit=${OUTPUT_CHAR_LIMIT}`] };
 }
 
 /**
@@ -965,9 +1198,8 @@ export const /**
 				// Highlight source (yellow) and collapsed (grey + fold) ranges
 				fileHighlightReadRange(filePath, compressed.actualStart - 1, compressed.actualEnd - 1, compressed.collapsedRanges, compressed.sourceRanges);
 
-				if (compressed.compressed && compressed.label) {
-					response.appendResponseLine(`Output compressed: ${compressed.label}.\n`);
-				}
+				const header = formatCompressionHeader(compressed);
+				if (header) response.appendResponseLine(header);
 				response.appendResponseLine(compressed.output);
 				return;
 			}
@@ -984,9 +1216,8 @@ export const /**
 
 				fileHighlightReadRange(filePath, 0, structure.totalLines - 1, result.collapsedRanges, result.sourceRanges);
 
-				if (result.compressed && result.label) {
-					response.appendResponseLine(`Output compressed: ${result.label}.\n`);
-				}
+				const header = formatCompressionHeader(result);
+				if (header) response.appendResponseLine(header);
 				response.appendResponseLine(result.output);
 				return;
 			}
@@ -998,9 +1229,8 @@ export const /**
 
 				fileHighlightReadRange(filePath, content.startLine, content.endLine, result.collapsedRanges, result.sourceRanges);
 
-				if (result.compressed && result.label) {
-					response.appendResponseLine(`Output compressed: ${result.label}.\n`);
-				}
+				const header = formatCompressionHeader(result);
+				if (header) response.appendResponseLine(header);
 				response.appendResponseLine(result.output);
 				return;
 			}
@@ -1100,18 +1330,16 @@ export const /**
 
 					fileHighlightReadRange(filePath, startLine - 1, endLine - 1, result.collapsedRanges, result.sourceRanges);
 
-					if (result.compressed && result.label) {
-						response.appendResponseLine(`Output compressed: ${result.label}.\n`);
-					}
+					const header = formatCompressionHeader(result);
+					if (header) response.appendResponseLine(header);
 					response.appendResponseLine(result.output);
 				} else {
 					const result = compressTargetContent(symbol, allLines, structure, recursive, lineNumbers);
 
 					fileHighlightReadRange(filePath, startLine - 1, endLine - 1, result.collapsedRanges, result.sourceRanges);
 
-					if (result.compressed && result.label) {
-						response.appendResponseLine(`Output compressed: ${result.label}.\n`);
-					}
+					const header = formatCompressionHeader(result);
+					if (header) response.appendResponseLine(header);
 					response.appendResponseLine(result.output);
 				}
 			}
