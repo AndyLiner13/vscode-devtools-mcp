@@ -930,7 +930,7 @@
 		"@vscode/codicons": "^0.0.44",
 		"jsonc-parser": "^3.3.1",
 		"koffi": "^2.15.1",
-		"remark-directive": "^3.0.1",
+		"remark-directive": "^4.0.0",
 		"remark-frontmatter": "^5.0.0",
 		"remark-gfm": "^4.0.1",
 		"remark-math": "^6.0.0",
