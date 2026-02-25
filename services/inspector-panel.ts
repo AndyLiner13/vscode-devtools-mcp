@@ -491,6 +491,7 @@ class InspectorPanelProvider {
 		const mainJs = webview.asWebviewUri(vscode.Uri.joinPath(distUri, 'main.js'));
 		const stylesUri = webview.asWebviewUri(vscode.Uri.joinPath(distUri, 'main.css'));
 		const workerBaseUri = webview.asWebviewUri(distUri);
+		const iconUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'icon.png'));
 		const nonce = getNonce();
 
 		return `<!DOCTYPE html>
@@ -509,7 +510,8 @@ class InspectorPanelProvider {
 </head>
 <body>
 	<div id="app"></div>
-	<script nonce="${nonce}">globalThis.__WORKER_BASE_URI__ = '${workerBaseUri.toString()}';</script>
+	<script nonce="${nonce}">globalThis.__WORKER_BASE_URI__ = '${workerBaseUri.toString()}';
+globalThis.__EXTENSION_ICON_URI__ = '${iconUri.toString()}';</script>
 	<script type="module" nonce="${nonce}" src="${mainJs.toString()}"></script>
 </body>
 </html>`;

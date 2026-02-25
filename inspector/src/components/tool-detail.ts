@@ -140,7 +140,18 @@ export function createToolDetail(): HTMLElement {
 	const emptyState = document.createElement('div');
 	emptyState.className = 'empty-state';
 	emptyState.id = 'tool-detail-empty';
-	emptyState.innerHTML = '<div><p class="empty-state-title">Select a tool</p><p class="empty-state-subtitle">Choose a tool from the list to inspect and execute it</p></div>';
+
+	const iconUri = (globalThis as Record<string, unknown>).__EXTENSION_ICON_URI__ as string | undefined;
+	if (iconUri) {
+		const img = document.createElement('img');
+		img.src = iconUri;
+		img.alt = '';
+		img.className = 'empty-state-icon';
+		img.draggable = false;
+		emptyState.appendChild(img);
+	} else {
+		emptyState.innerHTML = '<div><p class="empty-state-title">Select a tool</p><p class="empty-state-subtitle">Choose a tool from the list to inspect and execute it</p></div>';
+	}
 
 	panel.appendChild(emptyState);
 	return panel;

@@ -22,7 +22,7 @@ export function createToolDropdown(): HTMLElement {
 
 	const placeholder = document.createElement('option');
 	placeholder.value = '';
-	placeholder.textContent = 'Not connected\u2026';
+	placeholder.textContent = 'Reconnecting\u2026';
 	placeholder.disabled = true;
 	placeholder.selected = true;
 	select.appendChild(placeholder);

@@ -27,7 +27,8 @@ const ICON_PATHS = {
 	trash:
 		'M14 2H10C10 0.897 9.103 0 8 0C6.897 0 6 0.897 6 2H2C1.724 2 1.5 2.224 1.5 2.5C1.5 2.776 1.724 3 2 3H2.54L3.349 12.708C3.456 13.994 4.55 15 5.84 15H10.159C11.449 15 12.543 13.993 12.65 12.708L13.459 3H13.999C14.275 3 14.499 2.776 14.499 2.5C14.499 2.224 14.275 2 13.999 2H14ZM8 1C8.551 1 9 1.449 9 2H7C7 1.449 7.449 1 8 1ZM11.655 12.625C11.591 13.396 10.934 14 10.16 14H5.841C5.067 14 4.41 13.396 4.346 12.625L3.544 3H12.458L11.656 12.625H11.655ZM7 5.5V11.5C7 11.776 6.776 12 6.5 12C6.224 12 6 11.776 6 11.5V5.5C6 5.224 6.224 5 6.5 5C6.776 5 7 5.224 7 5.5ZM10 5.5V11.5C10 11.776 9.776 12 9.5 12C9.224 12 9 11.776 9 11.5V5.5C9 5.224 9.224 5 9.5 5C9.776 5 10 5.224 10 5.5Z',
 	warning: 'M7.56 1h.88l6.54 12.26-.44.74H1.44L1 13.26 7.56 1zM8 2.28 2.28 13H13.7L8 2.28zM8.625 12v-1h-1.25v1h1.25zm-1.25-2V6h1.25v4h-1.25z',
-	add: 'M14 7v1H8v6H7V8H1V7h6V1h1v6h6z'
+	add: 'M14 7v1H8v6H7V8H1V7h6V1h1v6h6z',
+	check: 'M14.431 3.323l-8.47 10-.79-.036-3.35-4.77.818-.574 2.978 4.24 8.051-9.506.764.646z'
 };
 
 function createSvgIcon(pathData: string): SVGSVGElement {
@@ -149,7 +150,7 @@ function renderSection(title: string, records: ExecutionRecord[]): HTMLElement {
 
 	const header = document.createElement('div');
 	header.className = 'history-section-header';
-	header.innerHTML = `<span>${title}</span><span class="text-vscode-text-dim text-[11px]">${records.length}</span>`;
+	header.innerHTML = `<span>${title}</span><span class="section-count">${records.length}</span>`;
 	section.appendChild(header);
 
 	for (const record of records) {
@@ -165,7 +166,7 @@ function renderArchivedSection(records: ExecutionRecord[]): HTMLElement {
 
 	const header = document.createElement('button');
 	header.className = 'history-section-header clickable';
-	header.innerHTML = `<span>Archived <span class="text-vscode-text-dim" style="font-weight:400">${records.length}</span></span>`;
+	header.innerHTML = `<span>Archived</span><span class="section-count">${records.length}</span>`;
 
 	const list = document.createElement('div');
 	list.className = 'hidden';
@@ -240,7 +241,8 @@ function createAddToChatButton(record: ExecutionRecord): HTMLElement {
 	const btn = document.createElement('button');
 	btn.className = 'history-rating-btn';
 	btn.title = 'Add to Copilot Chat as context';
-	btn.appendChild(createSvgIcon(ICON_PATHS.add));
+	const addIcon = createSvgIcon(ICON_PATHS.add);
+	btn.appendChild(addIcon);
 
 	btn.addEventListener('click', (e) => {
 		e.stopPropagation();
@@ -260,10 +262,16 @@ function createAddToChatButton(record: ExecutionRecord): HTMLElement {
 			rating: record.rating,
 			toolName: record.toolName
 		}).then(() => {
-			btn.classList.add('checked');
-			setTimeout(() => btn.classList.remove('checked'), 1500);
+			// Swap to checkmark icon with green color for 3 seconds
+			const checkIcon = createSvgIcon(ICON_PATHS.check);
+			btn.replaceChild(checkIcon, btn.firstElementChild ?? addIcon);
+			btn.style.color = 'var(--inspector-success)';
+			setTimeout(() => {
+				const restoreIcon = createSvgIcon(ICON_PATHS.add);
+				btn.replaceChild(restoreIcon, btn.firstElementChild ?? checkIcon);
+				btn.style.color = '';
+			}, 3000);
 		}).catch(() => {
-			// Failed to attach — visual feedback
 			btn.style.color = 'var(--vscode-editorError-foreground, #f44)';
 			setTimeout(() => btn.style.color = '', 2000);
 		}).finally(() => {
@@ -324,11 +332,11 @@ function renderEntry(record: ExecutionRecord): HTMLElement {
 	const actions = document.createElement('span');
 	actions.className = 'history-row-rating';
 	actions.setAttribute('draggable', 'false');
-	actions.appendChild(createAddToChatButton(record));
 	actions.appendChild(createRerunButton(record));
 	actions.appendChild(createRatingButton(record, 'good'));
 	actions.appendChild(createRatingButton(record, 'bad'));
 	actions.appendChild(createDeleteButton(record));
+	actions.appendChild(createAddToChatButton(record));
 
 	row.appendChild(chevron);
 	row.appendChild(timeLabel);
