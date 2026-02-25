@@ -570,32 +570,6 @@ interface FileExecuteRenameResult {
 	totalEdits: number;
 }
 
-// ── Orphaned Content Types ─────────────────────────────────
-
-interface OrphanedSymbolNode {
-	children?: OrphanedSymbolNode[];
-	detail?: string;
-	kind: string;
-	name: string;
-	range: { start: number; end: number };
-}
-
-interface OrphanedContentResult {
-	directives: OrphanedSymbolNode[];
-	exports: OrphanedSymbolNode[];
-	gaps: Array<{ start: number; end: number; type: 'blank' | 'unknown' }>;
-	imports: OrphanedSymbolNode[];
-	orphanComments: OrphanedSymbolNode[];
-	stats: {
-		totalImports: number;
-		totalExports: number;
-		totalOrphanComments: number;
-		totalDirectives: number;
-		totalBlankLines: number;
-		coveragePercent: number;
-	};
-}
-
 // ── Unified File Structure Types ─────────────────────────
 
 interface UnifiedFileSymbolRange {

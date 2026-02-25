@@ -2,7 +2,6 @@
 // Runs all codebase analysis operations in a dedicated worker thread.
 // Holds ts-morph Project instances in memory permanently for instant reuse.
 
-import type { UnifiedFileResult } from './file-structure-extractor';
 import type { FileStructure, OverviewParams, OverviewResult } from './types';
 import type { ExportsParams, ExportsResult } from './types';
 import type { TraceSymbolParams, TraceSymbolResult } from './types';
@@ -17,13 +16,11 @@ import { parentPort } from 'node:worker_threads';
 import { chunkFile } from './chunker';
 import { findDuplicates } from './duplicate-detection-service';
 import { getExports } from './exports-service';
-import { extractFileStructure } from './file-structure-extractor';
 import { getImportGraph } from './import-graph-service';
 import { LanguageServiceRegistry } from './language-service-registry';
 import { TypeScriptLanguageService } from './language-services';
 import { MarkdownLanguageService } from './language-services';
 import { JsonLanguageService } from './language-services';
-import { extractOrphanedContent, type OrphanedContentResult } from './orphaned-content';
 import { getOverview } from './overview-service';
 import { findDeadCode, traceSymbol } from './trace-symbol-service';
 import { invalidateWorkspaceProject } from './ts-project';
@@ -57,12 +54,6 @@ type OperationHandler = (params: never) => Promise<unknown> | unknown;
 
 const operations: Record<string, OperationHandler> = {
 	chunkFile: (params: ChunkFileParams) => chunkFile(params),
-	extractFileStructure: (params: { filePath: string }) => {
-		return extractFileStructure(params.filePath);
-	},
-	extractOrphanedContent: (params: { filePath: string; symbolRanges?: Array<{ start: number; end: number }> }) => {
-		return extractOrphanedContent(params.filePath, params.symbolRanges);
-	},
 	extractStructure: async (params: { filePath: string }) => {
 		const ext = path.extname(params.filePath).slice(1).toLowerCase();
 		const service = registry.get(ext);

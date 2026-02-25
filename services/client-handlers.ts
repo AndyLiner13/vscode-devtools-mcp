@@ -21,7 +21,7 @@
 
 import * as vscode from 'vscode';
 
-import { extractFileStructure, extractOrphanedContent, extractStructure, findDeadCode, findDuplicates, getExports, getImportGraph, getOverview, traceSymbol } from './codebase/codebase-worker-proxy';
+import { extractStructure, findDeadCode, findDuplicates, getExports, getImportGraph, getOverview, traceSymbol } from './codebase/codebase-worker-proxy';
 import { registerInspectorHandlers } from './inspector-backend';
 import { disposeProcessLedger, getProcessLedger, initProcessLedger, type ProcessLedgerSummary } from './processLedger';
 import { SingleTerminalController } from './singleTerminalController';
@@ -1034,45 +1034,6 @@ async function handleFileExtractStructure(params: Record<string, unknown>) {
 	return extractStructure(filePath);
 }
 
-// ── Orphaned Content Extraction ──────────────────────────────────────────────
-
-async function handleExtractOrphanedContent(params: Record<string, unknown>) {
-	const filePath = paramStr(params, 'filePath');
-	if (!filePath) throw new Error('filePath is required');
-
-	// Optionally get symbol ranges from VS Code first (for gap calculation)
-	const includeSymbols = paramBool(params, 'includeSymbols') ?? true;
-	const symbolRanges: Array<{ start: number; end: number }> = [];
-
-	if (includeSymbols) {
-		try {
-			const uri = vscode.Uri.file(filePath);
-			await vscode.workspace.openTextDocument(uri);
-			const symbols = await vscode.commands.executeCommand<undefined | vscode.DocumentSymbol[] | vscode.SymbolInformation[]>('vscode.executeDocumentSymbolProvider', uri);
-
-			if (symbols) {
-				const collectRanges = (syms: vscode.DocumentSymbol[]): void => {
-					for (const s of syms) {
-						symbolRanges.push({
-							end: s.range.end.line + 1,
-							start: s.range.start.line + 1 // Convert to 1-indexed
-						});
-						if (s.children) collectRanges(s.children);
-					}
-				};
-
-				const docSymbols = symbols.filter((s): s is vscode.DocumentSymbol => 'children' in s);
-				collectRanges(docSymbols);
-			}
-		} catch {
-			// Continue without symbol ranges
-		}
-	}
-
-	const result = await extractOrphanedContent({ filePath, symbolRanges });
-	return result;
-}
-
 // ── Registration ─────────────────────────────────────────────────────────────
 
 /**
@@ -1125,7 +1086,6 @@ export function registerClientHandlers(register: RegisterHandler, workspaceState
 	register('file.findReferences', handleFileFindReferences);
 	register('file.getCodeActions', handleFileGetCodeActions);
 	register('file.applyCodeAction', handleFileApplyCodeAction);
-	register('file.extractOrphanedContent', handleExtractOrphanedContent);
 	register('file.extractStructure', handleFileExtractStructure);
 
 	// Inspector backend handlers (storage CRUD, MCP proxy, file browsing, symbols)

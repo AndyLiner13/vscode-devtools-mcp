@@ -3,8 +3,6 @@
 // Provides the same API surface as the direct service imports.
 // Auto-restarts the worker on crash and applies per-request timeouts.
 
-import type { UnifiedFileResult } from './file-structure-extractor';
-import type { OrphanedContentResult } from './orphaned-content';
 import type { OverviewParams, OverviewResult } from './types';
 import type { ExportsParams, ExportsResult } from './types';
 import type { TraceSymbolParams, TraceSymbolResult } from './types';
@@ -29,7 +27,6 @@ const RESTART_WINDOW_MS = 60_000;
 // Per-operation timeout overrides (ms)
 const OPERATION_TIMEOUTS: Record<string, number> = {
 	chunkFile: 60_000,
-	extractOrphanedContent: 30_000,
 	findDeadCode: 120_000,
 	findDuplicates: 120_000,
 	getExports: 60_000,
@@ -277,19 +274,6 @@ async function chunkFile(params: ChunkFileParams): Promise<ChunkFileResult> {
 
 async function invalidateProject(rootDir?: string): Promise<void> {
 	return sendRequest<void>('invalidateProject', { rootDir });
-}
-
-interface ExtractOrphanedContentParams {
-	filePath: string;
-	symbolRanges?: Array<{ start: number; end: number }>;
-}
-
-export async function extractOrphanedContent(params: ExtractOrphanedContentParams): Promise<OrphanedContentResult> {
-	return sendRequest<OrphanedContentResult>('extractOrphanedContent', params);
-}
-
-export async function extractFileStructure(filePath: string): Promise<UnifiedFileResult> {
-	return sendRequest<UnifiedFileResult>('extractFileStructure', { filePath });
 }
 
 export async function extractStructure(filePath: string): Promise<FileStructure | undefined> {
