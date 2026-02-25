@@ -269,6 +269,18 @@ code {
 	border-top: 1px solid var(--color-vscode-border);
 }
 
+.history-entry[draggable="true"] {
+	cursor: grab;
+}
+
+.history-entry[draggable="true"]:active {
+	cursor: grabbing;
+}
+
+.history-entry.dragging {
+	opacity: 0.5;
+}
+
 .history-entry-error .history-entry-row {
 	border-left: 2px solid var(--color-vscode-error);
 }

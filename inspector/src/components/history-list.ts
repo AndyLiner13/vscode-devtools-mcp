@@ -1,6 +1,7 @@
 import type { CallToolResult, ContentBlock, ExecutionRecord, RecordRating } from '../types';
 import type * as monaco from 'monaco-editor';
 
+import { rpc } from '../bridge';
 import { createOutputEditor } from '../monaco-setup';
 import { addRecord, deleteRecord, getRecords, onStorageChange, updateComment, updateRating, updateRecordOutput } from '../storage';
 
@@ -9,6 +10,9 @@ let renderGeneration = 0;
 
 const expandedEntries = new Set<string>();
 const entryEditors = new Map<string, monaco.editor.IStandaloneCodeEditor>();
+
+// Track in-flight addToChat calls to avoid duplicate RPCs
+const addToChatPending = new Set<string>();
 
 const ICON_PATHS = {
 	chevronDown:
@@ -22,7 +26,8 @@ const ICON_PATHS = {
 		'M12.999 6.00002H10.672L11.207 4.21802C11.278 3.98102 11.314 3.73902 11.314 3.49602C11.314 2.12002 10.192 0.999023 8.81298 0.999023C8.42998 0.999023 8.08498 1.21202 7.91398 1.55402L5.82998 5.72202C5.74498 5.89202 5.57398 5.99802 5.38298 5.99802H3.00098C1.89798 5.99802 1.00098 6.89502 1.00098 7.99802V12.998C1.00098 14.101 1.89798 14.998 3.00098 14.998H11.163C12.727 14.998 13.283 13.796 13.565 12.893L14.908 8.59602C14.969 8.40102 15 8.19902 15 7.99602C15 6.89402 14.103 5.99802 12.999 5.99802V6.00002ZM1.99998 13V8.00002C1.99998 7.44902 2.44898 7.00002 2.99998 7.00002H3.99998V14H2.99998C2.44898 14 1.99998 13.551 1.99998 13ZM13.954 8.29802L12.611 12.596C12.247 13.761 11.769 13.999 11.163 13.999H5.00098V6.99902H5.38298C5.95498 6.99902 6.46898 6.68102 6.72498 6.17002L8.80898 2.00202C8.80898 2.00202 8.81098 2.00002 8.81298 2.00002C9.64098 2.00002 10.314 2.67102 10.314 3.49702C10.314 3.64202 10.292 3.78802 10.249 3.93202L9.52098 6.35702C9.47598 6.50802 9.50398 6.67202 9.59898 6.79902C9.69398 6.92602 9.84198 7.00102 9.99998 7.00102H12.999C13.551 7.00102 14 7.44802 14 7.99902C14 8.10002 13.984 8.20102 13.954 8.30002V8.29802Z',
 	trash:
 		'M14 2H10C10 0.897 9.103 0 8 0C6.897 0 6 0.897 6 2H2C1.724 2 1.5 2.224 1.5 2.5C1.5 2.776 1.724 3 2 3H2.54L3.349 12.708C3.456 13.994 4.55 15 5.84 15H10.159C11.449 15 12.543 13.993 12.65 12.708L13.459 3H13.999C14.275 3 14.499 2.776 14.499 2.5C14.499 2.224 14.275 2 13.999 2H14ZM8 1C8.551 1 9 1.449 9 2H7C7 1.449 7.449 1 8 1ZM11.655 12.625C11.591 13.396 10.934 14 10.16 14H5.841C5.067 14 4.41 13.396 4.346 12.625L3.544 3H12.458L11.656 12.625H11.655ZM7 5.5V11.5C7 11.776 6.776 12 6.5 12C6.224 12 6 11.776 6 11.5V5.5C6 5.224 6.224 5 6.5 5C6.776 5 7 5.224 7 5.5ZM10 5.5V11.5C10 11.776 9.776 12 9.5 12C9.224 12 9 11.776 9 11.5V5.5C9 5.224 9.224 5 9.5 5C9.776 5 10 5.224 10 5.5Z',
-	warning: 'M7.56 1h.88l6.54 12.26-.44.74H1.44L1 13.26 7.56 1zM8 2.28 2.28 13H13.7L8 2.28zM8.625 12v-1h-1.25v1h1.25zm-1.25-2V6h1.25v4h-1.25z'
+	warning: 'M7.56 1h.88l6.54 12.26-.44.74H1.44L1 13.26 7.56 1zM8 2.28 2.28 13H13.7L8 2.28zM8.625 12v-1h-1.25v1h1.25zm-1.25-2V6h1.25v4h-1.25z',
+	add: 'M14 7v1H8v6H7V8H1V7h6V1h1v6h6z'
 };
 
 function createSvgIcon(pathData: string): SVGSVGElement {
@@ -231,6 +236,45 @@ function createDeleteButton(record: ExecutionRecord): HTMLElement {
 	return btn;
 }
 
+function createAddToChatButton(record: ExecutionRecord): HTMLElement {
+	const btn = document.createElement('button');
+	btn.className = 'history-rating-btn';
+	btn.title = 'Add to Copilot Chat as context';
+	btn.appendChild(createSvgIcon(ICON_PATHS.add));
+
+	btn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		if (addToChatPending.has(record.id)) return;
+		addToChatPending.add(record.id);
+
+		btn.classList.add('disabled');
+
+		rpc<{ ok: boolean }>('context/addToChat', {
+			comment: record.comment,
+			createdAt: record.createdAt,
+			durationMs: record.durationMs,
+			id: record.id,
+			input: record.input,
+			isError: record.isError,
+			output: record.output,
+			rating: record.rating,
+			toolName: record.toolName
+		}).then(() => {
+			btn.classList.add('checked');
+			setTimeout(() => btn.classList.remove('checked'), 1500);
+		}).catch(() => {
+			// Failed to attach — visual feedback
+			btn.style.color = 'var(--vscode-editorError-foreground, #f44)';
+			setTimeout(() => btn.style.color = '', 2000);
+		}).finally(() => {
+			addToChatPending.delete(record.id);
+			btn.classList.remove('disabled');
+		});
+	});
+
+	return btn;
+}
+
 function renderEntry(record: ExecutionRecord): HTMLElement {
 	const entry = document.createElement('div');
 	entry.className = 'history-entry';
@@ -260,6 +304,7 @@ function renderEntry(record: ExecutionRecord): HTMLElement {
 	commentField.dataset.recordId = record.id;
 	commentField.value = record.comment;
 	commentField.placeholder = 'Add a note\u2026';
+	commentField.setAttribute('draggable', 'false');
 	commentField.addEventListener('click', (e) => {
 		e.stopPropagation();
 	});
@@ -278,6 +323,8 @@ function renderEntry(record: ExecutionRecord): HTMLElement {
 
 	const actions = document.createElement('span');
 	actions.className = 'history-row-rating';
+	actions.setAttribute('draggable', 'false');
+	actions.appendChild(createAddToChatButton(record));
 	actions.appendChild(createRerunButton(record));
 	actions.appendChild(createRatingButton(record, 'good'));
 	actions.appendChild(createRatingButton(record, 'bad'));
