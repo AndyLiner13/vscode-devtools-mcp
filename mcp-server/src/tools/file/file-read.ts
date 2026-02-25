@@ -10,6 +10,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { z as zod } from 'zod';
 
+import { formatSymbolLabel } from './symbol-resolver.js';
+
 import { fileExtractStructure, fileHighlightReadRange, fileReadContent, type FileStructure, type FileSymbol } from '../../client-pipe.js';
 import { getClientWorkspace } from '../../config.js';
 import { ToolCategory } from '../categories.js';
@@ -62,8 +64,7 @@ function formatSkeletonEntry(symbol: SymbolLike, indent = '', maxNesting = 0, cu
 	const { startLine, endLine } = symbol.range;
 	const range = startLine === endLine ? `${startLine}` : `${startLine}-${endLine}`;
 
-	const label = symbol.kind === symbol.name ? symbol.kind : `${symbol.kind} ${symbol.name}`;
-	lines.push(`${indent}[${range}] ${label}`);
+	lines.push(`${indent}[${range}] ${formatSymbolLabel(symbol)}`);
 
 	if (currentDepth < maxNesting && symbol.children && symbol.children.length > 0) {
 		for (const child of symbol.children) {
@@ -381,7 +382,7 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 	const expandChildren = hasChildren && !isContainer;
 	const maxNesting = getSymbolTreeDepth(symbol);
 	const contentMaxNesting = recursive ? maxNesting : 0;
-	const headerLabel = symbol.kind === symbol.name ? symbol.kind : `${symbol.kind} ${symbol.name}`;
+	const headerLabel = formatSymbolLabel(symbol);
 	// Containers (imports, exports, etc.) don't need the header when showing raw source —
 	// the content is self-evident. The header only appears when compressed to a stub.
 	const header = isContainer ? '' : `[${startLine === endLine ? `${startLine}` : `${startLine}-${endLine}`}] ${headerLabel}\n`;
@@ -552,7 +553,7 @@ function formatContentAtNesting(allLines: string[], symbol: SymbolLike, startLin
 					result.push(formatContentAtNesting(allLines, child, child.range.startLine, child.range.endLine, maxChildNesting, currentDepth + 1, lineNumbers));
 				} else {
 					const childRange = child.range.startLine === child.range.endLine ? `${child.range.startLine}` : `${child.range.startLine}-${child.range.endLine}`;
-					const childLabel = child.kind === child.name ? child.kind : `${child.kind} ${child.name}`;
+					const childLabel = formatSymbolLabel(child);
 					result.push(`[${childRange}] ${childLabel}`);
 				}
 			}
@@ -751,7 +752,7 @@ function renderStructuredRange(
 			if (!emittedSymbols.has(sym)) {
 				emittedSymbols.add(sym);
 				const symRange = sym.range.startLine === sym.range.endLine ? `${sym.range.startLine}` : `${sym.range.startLine}-${sym.range.endLine}`;
-				const symLabel = sym.kind === sym.name ? sym.kind : `${sym.kind} ${sym.name}`;
+				const symLabel = formatSymbolLabel(sym);
 				result.push(`[${symRange}] ${symLabel}`);
 			}
 			// Track all lines of this symbol within the range
@@ -1035,7 +1036,7 @@ export const /**
 
 			if (match && !isValidTarget(match.symbol)) {
 				const { startLine: sLine, endLine: eLine } = match.symbol.range;
-				const available = targetableSymbols.map((s) => s.kind === s.name ? s.kind : `${s.kind} ${s.name}`).join(', ');
+				const available = targetableSymbols.map((s) => formatSymbolLabel(s)).join(', ');
 				response.appendResponseLine(`"${symbolTarget}" is a leaf symbol (no children). Use \`startLine: ${sLine}\` / \`endLine: ${eLine}\` to read it directly.`);
 				response.appendResponseLine(`Available parent symbols: ${available || 'none'}`);
 				return;
@@ -1071,7 +1072,7 @@ export const /**
 					}
 					response.appendResponseLine(output);
 				} else {
-					const available = targetableSymbols.map((s) => s.kind === s.name ? s.kind : `${s.kind} ${s.name}`).join(', ');
+					const available = targetableSymbols.map((s) => formatSymbolLabel(s)).join(', ');
 					const availableKinds = collectSymbolKinds(targetableSymbols);
 					response.appendResponseLine(`"${symbolTarget}": Not found. Available: ${available || 'none'}`);
 					if (availableKinds.length > 0) {

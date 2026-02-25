@@ -40,14 +40,14 @@ const STATE_KEY_PANEL_OPEN = 'inspector.panelOpen';
 
 let rpcIdCounter = 0;
 
-/**
- * Send a JSON-RPC request to the Client pipe and return the result.
- * Opens a short-lived connection per request (simple and stateless).
- */
-async function sendClientRpc(method: string, params?: unknown): Promise<unknown> {
-	rpcIdCounter += 1;
-	const id = `inspector-${rpcIdCounter}`;
+const RETRY_INTERVAL_MS = 2_000;
+const MAX_RETRY_MS = 30_000;
 
+/**
+ * Attempt a single JSON-RPC request to the Client pipe.
+ * Returns the result on success, throws on connection/protocol errors.
+ */
+function sendClientRpcOnce(id: string, method: string, params?: unknown): Promise<unknown> {
 	return new Promise((resolve, reject) => {
 		let settled = false;
 		let responseBuffer = '';
@@ -112,6 +112,46 @@ async function sendClientRpc(method: string, params?: unknown): Promise<unknown>
 			finish(new Error(`Client RPC timed out after ${RPC_TIMEOUT_MS}ms: inspector.${method}`));
 		}, RPC_TIMEOUT_MS);
 	});
+}
+
+/**
+ * Whether a Client pipe error is transient and worth retrying.
+ * Covers pipe-close during hot-reload, connection refused, and pipe not found.
+ */
+function isRetryableClientError(message: string): boolean {
+	return message.includes('pipe closed') ||
+		message.includes('pipe error') ||
+		message.includes('ENOENT') ||
+		message.includes('ECONNREFUSED') ||
+		message.includes('connect EPIPE');
+}
+
+/**
+ * Send a JSON-RPC request to the Client pipe and return the result.
+ * Opens a short-lived connection per request (simple and stateless).
+ *
+ * Automatically retries on transient connection errors (e.g., Client pipe
+ * closing during a hot-reload). Retries every 2 s for up to 30 s total.
+ */
+async function sendClientRpc(method: string, params?: unknown): Promise<unknown> {
+	rpcIdCounter += 1;
+	const id = `inspector-${rpcIdCounter}`;
+	const deadline = Date.now() + MAX_RETRY_MS;
+
+	for (let attempt = 1; ; attempt++) {
+		try {
+			return await sendClientRpcOnce(id, method, params);
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+
+			if (!isRetryableClientError(message) || Date.now() + RETRY_INTERVAL_MS > deadline) {
+				throw err;
+			}
+
+			log(`Client RPC (inspector.${method}) attempt ${attempt} failed: ${message} — retrying in ${RETRY_INTERVAL_MS}ms`);
+			await new Promise<void>((r) => setTimeout(r, RETRY_INTERVAL_MS));
+		}
+	}
 }
 
 // ── Nonce Generator ──

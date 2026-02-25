@@ -15,9 +15,26 @@ export interface SymbolLikeRange {
 
 export interface SymbolLike {
 	children: SymbolLike[];
+	exported?: boolean;
 	kind: string;
+	modifiers?: string[];
 	name: string;
 	range: SymbolLikeRange;
+}
+
+/**
+ * Build a display label for a symbol, prefixing its kind with export/async/etc. modifiers.
+ * When kind === name (e.g. container symbols like "imports"), the name is omitted.
+ */
+export function formatSymbolLabel(symbol: SymbolLike): string {
+	const prefixParts: string[] = [];
+	if (symbol.exported) prefixParts.push('export');
+	if (symbol.modifiers) {
+		for (const mod of symbol.modifiers) prefixParts.push(mod);
+	}
+	prefixParts.push(symbol.kind);
+	const qualifiedKind = prefixParts.join(' ');
+	return symbol.kind === symbol.name ? qualifiedKind : `${qualifiedKind} ${symbol.name}`;
 }
 
 /**

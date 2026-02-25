@@ -53,33 +53,49 @@ function convertSymbol(sym: ExtractedSymbol): FileSymbol {
 }
 
 /**
- * Build a container FileSymbol from a group of SymbolNodes.
- * The container spans from the first to the last item in the group,
- * with each individual item as a child.
+ * Build container FileSymbols from a group of SymbolNodes.
+ * Only nodes on consecutive lines are grouped together; any gap starts a new container.
+ * Each container spans from first to last item in its group, with individual items as children.
  */
-function buildContainerSymbol(containerName: string, containerKind: string, nodes: SymbolNode[]): FileSymbol | undefined {
-	if (nodes.length === 0) return undefined;
+function buildContainerSymbols(containerName: string, containerKind: string, nodes: SymbolNode[]): FileSymbol[] {
+	if (nodes.length === 0) return [];
 
-	const children: FileSymbol[] = nodes.map((node) => ({
-		children: [],
-		detail: node.detail,
-		kind: node.kind,
-		name: node.name,
-		range: {
-			endLine: node.range.end,
-			startLine: node.range.start
-		}
-	}));
+	const groups: SymbolNode[][] = [];
+	let current: SymbolNode[] = [nodes[0]];
 
-	return {
-		children,
-		kind: containerKind,
-		name: containerName,
-		range: {
-			endLine: nodes[nodes.length - 1].range.end,
-			startLine: nodes[0].range.start
+	for (let i = 1; i < nodes.length; i++) {
+		const prev = current[current.length - 1];
+		if (nodes[i].range.start <= prev.range.end + 1) {
+			current.push(nodes[i]);
+		} else {
+			groups.push(current);
+			current = [nodes[i]];
 		}
-	};
+	}
+	groups.push(current);
+
+	return groups.map((group) => {
+		const children: FileSymbol[] = group.map((node) => ({
+			children: [],
+			detail: node.detail,
+			kind: node.kind,
+			name: node.name,
+			range: {
+				endLine: node.range.end,
+				startLine: node.range.start
+			}
+		}));
+
+		return {
+			children,
+			kind: containerKind,
+			name: containerName,
+			range: {
+				endLine: group[group.length - 1].range.end,
+				startLine: group[0].range.start
+			}
+		};
+	});
 }
 
 function slugify(text: string): string {
@@ -131,13 +147,25 @@ export class TypeScriptLanguageService implements LanguageService {
 		const result = extractTsMorphStructure(filePath);
 
 		const containerSymbols: FileSymbol[] = [];
-		const maybeAdd = (name: string, kind: string, nodes: SymbolNode[]): void => {
-			const container = buildContainerSymbol(name, kind, nodes);
-			if (container) containerSymbols.push(container);
+		const addContainers = (name: string, kind: string, nodes: SymbolNode[]): void => {
+			containerSymbols.push(...buildContainerSymbols(name, kind, nodes));
 		};
 
-		maybeAdd('imports', 'imports', result.imports);
-		maybeAdd('exports', 'exports', result.exports);
+		addContainers('imports', 'imports', result.imports);
+
+		// Filter out inline exports — they duplicate symbols that already have exported=true.
+		// An export is "inline" if its line range overlaps with any code symbol's range
+		// (e.g. "export function activate" is both an export and a function symbol).
+		// Keep only standalone exports (re-export, named-export, export default expr, etc.)
+		// that don't overlap with any symbol.
+		const symbolRangeSet = new Set<number>();
+		for (const sym of result.symbols) {
+			for (let line = sym.range.startLine; line <= sym.range.endLine; line++) {
+				symbolRangeSet.add(line);
+			}
+		}
+		const standaloneExports = result.exports.filter((e) => !symbolRangeSet.has(e.range.start));
+		addContainers('exports', 'exports', standaloneExports);
 
 		// Split orphan comments into jsdoc, tsdoc, and generic comments
 		const jsdocNodes = result.orphanComments.filter((c) => c.kind === 'jsdoc');
@@ -165,7 +193,7 @@ export class TypeScriptLanguageService implements LanguageService {
 			containerSymbols.push(...containers);
 		}
 
-		maybeAdd('directives', 'directives', result.directives);
+		addContainers('directives', 'directives', result.directives);
 
 		const codeSymbols = result.symbols.map(convertSymbol);
 
