@@ -61,6 +61,35 @@ function buildContainerSymbol(containerName: string, containerKind: string, node
 	};
 }
 
+/**
+ * Build multiple container symbols by splitting nodes into contiguous groups.
+ * Nodes on consecutive lines belong to the same group; any gap starts a new container.
+ */
+function buildContainerGroups(containerName: string, containerKind: string, nodes: SymbolNode[]): FileSymbol[] {
+	if (nodes.length === 0) return [];
+
+	const groups: SymbolNode[][] = [];
+	let current: SymbolNode[] = [nodes[0]];
+
+	for (let i = 1; i < nodes.length; i++) {
+		const prev = current[current.length - 1];
+		if (nodes[i].range.start <= prev.range.end + 1) {
+			current.push(nodes[i]);
+		} else {
+			groups.push(current);
+			current = [nodes[i]];
+		}
+	}
+	groups.push(current);
+
+	const containers: FileSymbol[] = [];
+	for (const group of groups) {
+		const container = buildContainerSymbol(containerName, containerKind, group);
+		if (container) containers.push(container);
+	}
+	return containers;
+}
+
 export class TypeScriptLanguageService implements LanguageService {
 	readonly id = 'typescript';
 	readonly name = 'TypeScript / JavaScript';
@@ -77,7 +106,7 @@ export class TypeScriptLanguageService implements LanguageService {
 
 		maybeAdd('imports', 'imports', result.imports);
 		maybeAdd('exports', 'exports', result.exports);
-		maybeAdd('comments', 'comments', result.orphanComments);
+		containerSymbols.push(...buildContainerGroups('comments', 'comments', result.orphanComments));
 		maybeAdd('directives', 'directives', result.directives);
 
 		const codeSymbols = result.symbols.map(convertSymbol);

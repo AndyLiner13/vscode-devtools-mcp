@@ -160,27 +160,45 @@ function computeGaps(symbols: FileSymbol[], totalLines: number): Array<{ start: 
 }
 
 /**
- * Build a "comments" container FileSymbol from extracted JSONC comments.
+ * Build "comments" container FileSymbols from extracted JSONC comments,
+ * splitting into separate containers per contiguous group.
  */
-function buildCommentsContainer(comments: CommentRange[]): FileSymbol | undefined {
-	if (comments.length === 0) return undefined;
+function buildCommentsContainers(comments: CommentRange[]): FileSymbol[] {
+	if (comments.length === 0) return [];
 
-	const children: FileSymbol[] = comments.map((c) => ({
-		children: [],
-		kind: classifyJsonComment(c.text),
-		name: extractJsonCommentTitle(c.text),
-		range: { endLine: c.endLine, startLine: c.startLine }
-	}));
+	// Split into contiguous groups (no gap between end of one and start of next)
+	const groups: CommentRange[][] = [];
+	let current: CommentRange[] = [comments[0]];
 
-	return {
-		children,
-		kind: 'comments',
-		name: 'comments',
-		range: {
-			endLine: comments[comments.length - 1].endLine,
-			startLine: comments[0].startLine
+	for (let i = 1; i < comments.length; i++) {
+		const prev = current[current.length - 1];
+		if (comments[i].startLine <= prev.endLine + 1) {
+			current.push(comments[i]);
+		} else {
+			groups.push(current);
+			current = [comments[i]];
 		}
-	};
+	}
+	groups.push(current);
+
+	return groups.map((group) => {
+		const children: FileSymbol[] = group.map((c) => ({
+			children: [],
+			kind: classifyJsonComment(c.text),
+			name: extractJsonCommentTitle(c.text),
+			range: { endLine: c.endLine, startLine: c.startLine }
+		}));
+
+		return {
+			children,
+			kind: 'comments' as const,
+			name: 'comments' as const,
+			range: {
+				endLine: group[group.length - 1].endLine,
+				startLine: group[0].startLine
+			}
+		};
+	});
 }
 
 export class JsonLanguageService implements LanguageService {
@@ -208,12 +226,11 @@ export class JsonLanguageService implements LanguageService {
 
 		const gaps = computeGaps(symbols, lineCount);
 
-		// Extract JSONC/JSON5 comments as a container symbol
+		// Extract JSONC/JSON5 comments as container symbols (grouped by proximity)
 		const containerSymbols: FileSymbol[] = [];
 		if (COMMENT_EXTS.has(ext)) {
 			const comments = extractJsoncComments(text);
-			const container = buildCommentsContainer(comments);
-			if (container) containerSymbols.push(container);
+			containerSymbols.push(...buildCommentsContainers(comments));
 		}
 
 		// Merge container symbols into symbols list, sorted by position
