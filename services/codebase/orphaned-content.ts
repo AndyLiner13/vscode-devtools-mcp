@@ -395,6 +395,9 @@ function extractOrphanComments(sourceFile: SourceFile, symbolRanges: Array<{ sta
 		}
 	}
 
+	// Sort by start line — buildContainerGroups assumes source order
+	result.sort((a, b) => a.range.start - b.range.start);
+
 	return result;
 }
 

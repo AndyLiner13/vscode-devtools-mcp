@@ -117,6 +117,46 @@ export function findQualifiedPaths(symbols: SymbolLike[], targetName: string): s
 }
 
 /**
+ * Find all symbols whose kind matches the target (case-insensitive).
+ * Searches top-level symbols and recursively through children.
+ */
+export function findSymbolsByKind<T extends SymbolLike>(symbols: T[], targetKind: string): T[] {
+	const kind = targetKind.toLowerCase();
+	const results: T[] = [];
+
+	function walk(list: SymbolLike[]): void {
+		for (const sym of list) {
+			if (sym.kind.toLowerCase() === kind) {
+				results.push(sym as T);
+			}
+			if (sym.children.length > 0) {
+				walk(sym.children);
+			}
+		}
+	}
+
+	walk(symbols);
+	return results;
+}
+
+/**
+ * Collect all unique symbol kinds present in a symbol tree.
+ */
+export function collectSymbolKinds(symbols: readonly SymbolLike[]): string[] {
+	const kinds = new Set<string>();
+
+	function walk(list: readonly SymbolLike[]): void {
+		for (const sym of list) {
+			kinds.add(sym.kind);
+			if (sym.children.length > 0) walk(sym.children);
+		}
+	}
+
+	walk(symbols);
+	return [...kinds].sort();
+}
+
+/**
  * Format a symbol's range as 1-indexed "lines X-Y of Z".
  * Takes 0-indexed line numbers (legacy path).
  */

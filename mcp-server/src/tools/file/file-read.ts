@@ -15,7 +15,7 @@ import { getClientWorkspace } from '../../config.js';
 import { ToolCategory } from '../categories.js';
 import { defineTool } from '../ToolDefinition.js';
 import { isStrictLogFile } from './logFile-read.js';
-import { findQualifiedPaths, resolveSymbolTarget } from './symbol-resolver.js';
+import { collectSymbolKinds, findQualifiedPaths, findSymbolsByKind, resolveSymbolTarget } from './symbol-resolver.js';
 
 // ── Output Compression Constants ─────────────────────────
 // Same 3,000 token budget used by codebase_map and codebase_trace
@@ -1000,13 +1000,39 @@ export const /**
 			const match = resolveSymbolTarget(structure.symbols, symbolTarget);
 
 			if (!match) {
-				const available = structure.symbols.map((s) => s.kind === s.name ? s.kind : `${s.kind} ${s.name}`).join(', ');
-				response.appendResponseLine(`"${symbolTarget}": Not found. Available: ${available || 'none'}`);
+				// Fall back to kind-based filtering: "interface" → all interfaces
+				const kindMatches = findSymbolsByKind(structure.symbols, symbolTarget);
+				if (kindMatches.length > 0) {
+					response.appendResponseLine(`All **${symbolTarget}** symbols (${kindMatches.length}):\n`);
+					const lines: string[] = [];
+					for (const sym of kindMatches) {
+						const maxNesting = recursive ? getSymbolTreeDepth(sym) : 0;
+						lines.push(...formatSkeletonEntry(sym, '', maxNesting));
+					}
+					let output = lines.join('\n');
+					if (output.length > OUTPUT_CHAR_LIMIT) {
+						// Re-render at nesting=0 if too large
+						const compact: string[] = [];
+						for (const sym of kindMatches) {
+							compact.push(...formatSkeletonEntry(sym, '', 0));
+						}
+						output = compact.join('\n');
+						response.appendResponseLine(`Output compressed: top-level only.\n`);
+					}
+					response.appendResponseLine(output);
+				} else {
+					const available = structure.symbols.map((s) => s.kind === s.name ? s.kind : `${s.kind} ${s.name}`).join(', ');
+					const availableKinds = collectSymbolKinds(structure.symbols);
+					response.appendResponseLine(`"${symbolTarget}": Not found. Available: ${available || 'none'}`);
+					if (availableKinds.length > 0) {
+						response.appendResponseLine(`Hint: You can also use a kind to list all symbols of that type: ${availableKinds.join(', ')}`);
+					}
 
-				const qualifiedPaths = findQualifiedPaths(structure.symbols, symbolTarget);
-				if (qualifiedPaths.length > 0) {
-					const suggestions = qualifiedPaths.map((p) => `"${p}"`).join(', ');
-					response.appendResponseLine(`Hint: Did you mean ${suggestions}? Use the qualified dot-path to target nested symbols.`);
+					const qualifiedPaths = findQualifiedPaths(structure.symbols, symbolTarget);
+					if (qualifiedPaths.length > 0) {
+						const suggestions = qualifiedPaths.map((p) => `"${p}"`).join(', ');
+						response.appendResponseLine(`Hint: Did you mean ${suggestions}? Use the qualified dot-path to target nested symbols.`);
+					}
 				}
 			} else {
 				const { symbol } = match;
@@ -1042,7 +1068,7 @@ export const /**
 			symbol: zod
 				.string()
 				.optional()
-				.describe('Symbol to read by name. Use dot notation for nested symbols (e.g. "UserService.findById"). Container symbols like "imports", "exports", "comments", "directives" target those groups.'),
+				.describe('Symbol to read by name, or a kind to list all symbols of that type (e.g. "interface", "function", "variable"). Use dot notation for nested symbols (e.g. "UserService.findById"). Container symbols like "imports", "exports", "comments", "directives" target those groups.'),
 			endLine: zod.number().int().optional().describe('End line (1-indexed) for structured range reading. If omitted with startLine, reads to end of file.'),
 			startLine: zod
 				.number()

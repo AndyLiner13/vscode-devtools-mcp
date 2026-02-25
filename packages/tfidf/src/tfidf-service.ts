@@ -3,7 +3,6 @@ import natural from 'natural';
 import type { CommentNode, TfIdfConfig, TfIdfIdentifier } from './types.js';
 
 const DEFAULT_TOP_TERMS = 3;
-const FALLBACK_SLUG = 'comment';
 
 // Only the literal JSDoc/TSDoc syntax keywords that appear in virtually
 // every doc comment. Everything else is situational and valuable as an identifier.
@@ -60,10 +59,10 @@ export function generateIdentifiers(
 			.slice(0, topN)
 			.map((t) => ({ term: t.term, score: t.tfidf }));
 
-		// Build slug from top terms; fall back to generic name if no terms surface
+		// Build slug from top terms; fall back to line number if no terms surface
 		const baseSlug = topTerms.length > 0
 			? topTerms.map((t) => t.term).join('-')
-			: FALLBACK_SLUG;
+			: `line-${comments[i].range.startLine}`;
 
 		// Stage 3: Collision resolution with numeric suffix
 		const count = usedSlugs.get(baseSlug) ?? 0;
