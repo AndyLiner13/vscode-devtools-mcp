@@ -156,10 +156,6 @@ function renderSection(title: string, records: ExecutionRecord[]): HTMLElement {
 	const header = document.createElement('button');
 	header.className = 'history-section-header clickable';
 
-	const chevron = createSvgIcon(isCollapsed ? ICON_PATHS.chevronRight : ICON_PATHS.chevronDown);
-	chevron.style.flexShrink = '0';
-
-	header.appendChild(chevron);
 	const titleSpan = document.createElement('span');
 	titleSpan.textContent = title;
 	titleSpan.style.flex = '1';
