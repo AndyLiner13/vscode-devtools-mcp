@@ -455,39 +455,166 @@ function computeContentRanges(symbol: SymbolLike, contentNesting: number): { col
 	return { collapsedRanges, sourceRanges };
 }
 
+/**
+ * Check whether a symbol is a deepest leaf — has no children at all.
+ * Deepest leaves are always shown in full because there's nothing deeper to drill into.
+ */
+function isDeepestLeaf(sym: SymbolLike): boolean {
+	return !sym.children || sym.children.length === 0;
+}
+
+/**
+ * Render symbol content with body-bearing children stubbed as skeleton entries.
+ * Gap lines (code between children) are always shown as raw source.
+ * Deepest-leaf children are always shown in full (no stub available to drill into).
+ * Non-body-bearing children (variables, types, properties) are shown as raw source.
+ */
+function formatContentWithBodyStubs(allLines: string[], symbol: SymbolLike, startLine: number, endLine: number, lineNumbers: boolean): string {
+	if (!symbol.children || symbol.children.length === 0) {
+		return addLineNumbers(getContentSlice(allLines, startLine, endLine), startLine, lineNumbers);
+	}
+
+	const childMap = new Map<number, SymbolLike>();
+	for (const child of symbol.children) {
+		for (let l = child.range.startLine; l <= child.range.endLine; l++) {
+			childMap.set(l, child);
+		}
+	}
+
+	const emitted = new Set<SymbolLike>();
+	const result: string[] = [];
+
+	for (let lineNum = startLine; lineNum <= endLine; lineNum++) {
+		const child = childMap.get(lineNum);
+		if (child) {
+			if (!emitted.has(child)) {
+				emitted.add(child);
+				const shouldStub = BODY_BEARING_KINDS.has(child.kind) && !isDeepestLeaf(child);
+				if (shouldStub) {
+					const childRange = child.range.startLine === child.range.endLine ? `${child.range.startLine}` : `${child.range.startLine}-${child.range.endLine}`;
+					result.push(`[${childRange}] ${formatSymbolLabel(child)}`);
+				} else {
+					// Non-body-bearing or deepest leaf — show full raw content
+					result.push(addLineNumbers(getContentSlice(allLines, child.range.startLine, child.range.endLine), child.range.startLine, lineNumbers));
+				}
+			}
+		} else {
+			result.push(formatLine(lineNum, allLines[lineNum - 1] ?? '', lineNumbers));
+		}
+	}
+
+	return result.join('\n');
+}
+
+/**
+ * Compute collapsed/source ranges for body-stub mode.
+ * Body-bearing children (with grandchildren) → collapsed; everything else → source.
+ */
+function computeBodyStubRanges(symbol: SymbolLike): { collapsedRanges: LineRange[]; sourceRanges: LineRange[] } {
+	const collapsedRanges: LineRange[] = [];
+	const sourceRanges: LineRange[] = [];
+
+	if (!symbol.children || symbol.children.length === 0) {
+		sourceRanges.push({ endLine: symbol.range.endLine, startLine: symbol.range.startLine });
+		return { collapsedRanges, sourceRanges };
+	}
+
+	const childLines = new Set<number>();
+	for (const child of symbol.children) {
+		for (let l = child.range.startLine; l <= child.range.endLine; l++) {
+			childLines.add(l);
+		}
+	}
+
+	// Gap lines are source
+	let gapStart: number | undefined;
+	for (let l = symbol.range.startLine; l <= symbol.range.endLine; l++) {
+		if (!childLines.has(l)) {
+			if (gapStart === undefined) gapStart = l;
+		} else {
+			if (gapStart !== undefined) {
+				sourceRanges.push({ endLine: l - 1, startLine: gapStart });
+				gapStart = undefined;
+			}
+		}
+	}
+	if (gapStart !== undefined) {
+		sourceRanges.push({ endLine: symbol.range.endLine, startLine: gapStart });
+	}
+
+	// Children: body-bearing with grandchildren → collapsed, everything else → source
+	for (const child of symbol.children) {
+		const shouldStub = BODY_BEARING_KINDS.has(child.kind) && !isDeepestLeaf(child);
+		if (shouldStub) {
+			collapsedRanges.push({ endLine: child.range.endLine, startLine: child.range.startLine });
+		} else {
+			sourceRanges.push({ endLine: child.range.endLine, startLine: child.range.startLine });
+		}
+	}
+
+	return { collapsedRanges, sourceRanges };
+}
+
 function compressTargetContent(symbol: FileSymbol, allLines: string[], structure: FileStructure, recursive: boolean, lineNumbers: boolean): CompressionResult {
 	const { startLine } = symbol.range;
 	const { endLine } = symbol.range;
 	const hasChildren = symbol.children && symbol.children.length > 0;
-	// Container symbols: either kind === name (e.g. "imports") or known
-	// container kinds whose name was overridden (e.g. comments with TF-IDF slugs)
 	const isContainer = symbol.kind === symbol.name || CONTAINER_KINDS.has(symbol.kind);
 	const expandChildren = hasChildren && !isContainer;
 	const maxNesting = getSymbolTreeDepth(symbol);
 	const contentMaxNesting = recursive ? maxNesting : 0;
 	const headerLabel = formatSymbolLabel(symbol);
-	// Containers (imports, exports, etc.) don't need the header when showing raw source —
-	// the content is self-evident. The header only appears when compressed to a stub.
 	const header = isContainer ? '' : `[${startLine === endLine ? `${startLine}` : `${startLine}-${endLine}`}] ${headerLabel}\n`;
 	const trace: string[] = [];
+
+	// Deepest leaf — always return full content, no matter the size.
+	// There's nothing deeper to drill into.
+	if (isDeepestLeaf(symbol)) {
+		const fullContent = addLineNumbers(getContentSlice(allLines, startLine, endLine), startLine, lineNumbers);
+		const output = header + fullContent;
+		trace.push(`deepest-leaf=${output.length}`);
+		return { collapsedRanges: [], compressed: false, label: null, output, sourceRanges: [], trace };
+	}
 
 	// Quick check: does the maximum-detail output fit?
 	const maxContent = expandChildren ? formatContentAtNesting(allLines, symbol, startLine, endLine, contentMaxNesting, 0, lineNumbers) : addLineNumbers(getContentSlice(allLines, startLine, endLine), startLine, lineNumbers);
 	const maxOutput = header + maxContent;
 	trace.push(`full-content=${maxOutput.length}`);
 	if (maxOutput.length <= OUTPUT_CHAR_LIMIT) {
-		// Full content fits — no collapsing needed
 		const noCollapsing = expandChildren ? computeContentRanges(symbol, contentMaxNesting) : { collapsedRanges: [], sourceRanges: [] };
 		return { ...noCollapsing, compressed: false, label: null, output: maxOutput, trace };
 	}
 
-	// Compression needed — bottom-up incremental expansion
+	// Full content exceeds limit — stub body-bearing children that have grandchildren.
+	// Deepest leaves and non-body-bearing children stay as raw source.
+	if (expandChildren) {
+		const hasBodyBearingChildren = symbol.children.some(
+			(c: FileSymbol) => BODY_BEARING_KINDS.has(c.kind) && !isDeepestLeaf(c)
+		);
+		if (hasBodyBearingChildren) {
+			const stubbedContent = formatContentWithBodyStubs(allLines, symbol, startLine, endLine, lineNumbers);
+			const stubbedOutput = header + stubbedContent;
+			trace.push(`body-stubbed=${stubbedOutput.length}`);
+			const stubbedRanges = computeBodyStubRanges(symbol);
+			const stubbedCount = symbol.children.filter(
+				(c: FileSymbol) => BODY_BEARING_KINDS.has(c.kind) && !isDeepestLeaf(c)
+			).length;
+			return {
+				...stubbedRanges,
+				compressed: true,
+				label: `${stubbedCount} body-bearing children collapsed — request each by name to expand`,
+				output: stubbedOutput,
+				trace
+			};
+		}
+	}
+
+	// No body-bearing children to stub — fall back to incremental skeleton/content expansion
 	let bestOutput = '';
 	let compressionLabel = '';
 	let bestNesting = 0;
 	let phase: 'content' | 'skeleton' = 'skeleton';
 
-	// Phase 1: Skeleton nesting expansion (nesting 0 → max)
 	for (let n = 0; n <= maxNesting; n++) {
 		const candidate = renderTargetSkeletonAtLevel(symbol, n);
 		trace.push(`skeleton(${n})=${candidate.length}`);
@@ -511,7 +638,6 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 		bestNesting = n;
 	}
 
-	// Phase 2: Content nesting expansion (nesting 0 → contentMaxNesting)
 	if (!compressionLabel && expandChildren) {
 		phase = 'content';
 		for (let n = 0; n <= contentMaxNesting; n++) {
@@ -535,14 +661,12 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 		}
 	}
 
-	// No children and nothing collapsible — return full content (a stub is useless here)
 	if (!compressionLabel && !expandChildren) {
 		return { collapsedRanges: [], compressed: false, label: null, output: maxOutput, sourceRanges: [], trace };
 	}
 
 	trace.push(`← ${phase}(${bestNesting}) selected`);
 
-	// Compute ranges based on which phase won
 	const ranges = phase === 'skeleton'
 		? computeTargetRanges(symbol, bestNesting)
 		: computeContentRanges(symbol, bestNesting);
@@ -1195,16 +1319,17 @@ export const /**
 			'- `startLine` / `endLine` — Read a structured range (1-indexed). ' +
 			'Shows raw source for gaps, collapsed stubs for symbols. ' +
 			'Cannot be used with `symbol`.\n\n' +
-			'**Structured Range Mode (startLine/endLine):**\n' +
-			'For supported file types (TS/JS, Markdown, JSON/JSONC), shows gap content as raw source ' +
-			'and collapses symbols into stubs. Use `symbol` to read a specific symbol.\n\n' +
-			'Children are always expanded when possible, with automatic compression to stay within token budget.\n\n' +
+			'**Symbol targeting:**\n' +
+			'When reading a symbol with rawContent=true, if the full content exceeds the token budget, ' +
+			'body-bearing children (functions, methods, classes, interfaces, enums) are collapsed to ' +
+			'skeleton stubs. Request each child by name to expand it. Leaf symbols (no children) ' +
+			'always return full content since there is nothing deeper to drill into.\n\n' +
 			'**EXAMPLES:**\n' +
 			'- File skeleton: `{ file: "src/service.ts", rawContent: false }`\n' +
-			'- Read a function: `{ file: "src/utils.ts", rawContent: true, symbol: "calculateTotal" }`\n' +
+			'- Read a class: `{ file: "src/service.ts", rawContent: true, symbol: "UserService" }`\n' +
+			'- Read a method: `{ file: "src/service.ts", rawContent: true, symbol: "UserService.findById" }`\n' +
 			'- Read imports: `{ file: "src/service.ts", rawContent: true, symbol: "imports" }`\n' +
-			'- Structured range: `{ file: "src/service.ts", rawContent: true, startLine: 1, endLine: 50 }`\n' +
-			'- Compact range: `{ file: "src/service.ts", rawContent: false, startLine: 1, endLine: 50 }`\n\n' +
+			'- Structured range: `{ file: "src/service.ts", rawContent: true, startLine: 1, endLine: 50 }`\n\n' +
 			'**Log Files:**\n' +
 			'Log file extensions (.log, .out, .err, .trace, .jsonl, etc.) must be read with `logFile_read` instead. ' +
 			'This tool will show a redirect notice for those file types.',
@@ -1400,19 +1525,9 @@ export const /**
 					? { symbol: resolveByKindAndName(structure.symbols, normalizedDotTarget)!, parent: undefined, path: [symbolTarget] }
 					: undefined);
 
-			// Only parent symbols (with children) or container kinds are valid targets.
-			// Leaf symbols of other kinds should be read via startLine/endLine.
-			const isValidTarget = (s: FileSymbol): boolean =>
-				(s.children && s.children.length > 0) || CONTAINER_KINDS.has(s.kind);
-			const targetableSymbols = structure.symbols.filter(isValidTarget);
-
-			if (match && !isValidTarget(match.symbol)) {
-				const { startLine: sLine, endLine: eLine } = match.symbol.range;
-				const available = targetableSymbols.map((s) => formatSymbolLabel(s)).join(', ');
-				response.appendResponseLine(`"${symbolTarget}" is a leaf symbol (no children). Use \`startLine: ${sLine}\` / \`endLine: ${eLine}\` to read it directly.`);
-				response.appendResponseLine(`Available parent symbols: ${available || 'none'}`);
-				return;
-			}
+			// All symbols are valid targets — leaf symbols return full content directly
+			// since they're the deepest level with nothing further to drill into.
+			const targetableSymbols = structure.symbols;
 
 			if (!match) {
 				// Normalize plural category selectors to singular kinds
@@ -1424,7 +1539,6 @@ export const /**
 				// Fall back to kind-based filtering: "interface" → all interfaces
 				const kindMatches = expandedKinds
 					.flatMap((k) => findSymbolsByKind(structure.symbols, k))
-					.filter(isValidTarget)
 					.sort((a, b) => a.range.startLine - b.range.startLine);
 				if (kindMatches.length > 0) {
 					const lines: string[] = [];
@@ -1493,7 +1607,7 @@ export const /**
 			symbol: zod
 				.string()
 				.optional()
-				.describe('Parent symbol to read (must have children/nested content). Use dot notation for nested symbols (e.g. "UserService.findById"), or a kind to list all of that type (e.g. "interface", "class"). Container symbols: "imports", "exports", "comments", "directives". Leaf symbols without children must be read via startLine/endLine.'),
+				.describe('Symbol to read by name. Use dot notation for nested symbols (e.g. "UserService.findById"), or a kind to list all of that type (e.g. "interface", "class"). Container symbols: "imports", "exports", "comments", "directives". When rawContent is true and the symbol exceeds the token budget, body-bearing children (functions, methods, classes) are collapsed to stubs — request each child by name to expand.'),
 			endLine: zod.number().int().optional().describe('End line (1-indexed) for structured range reading. If omitted with startLine, reads to end of file.'),
 			startLine: zod
 				.number()
