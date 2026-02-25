@@ -13,7 +13,7 @@ import type { RegisterHandler } from './client-handlers';
 import { readdirSync } from 'node:fs';
 
 import { extractStructure } from './codebase/codebase-worker-proxy';
-import type { FileSymbol } from './codebase/types';
+import { BODY_BEARING_KINDS, type FileSymbol } from './codebase/types';
 import { inspectorLog } from './logger';
 import net from 'node:net';
 import { resolve as resolvePath } from 'node:path';
@@ -48,12 +48,6 @@ const MCP_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-mcp' : '/tmp/vs
 const HOST_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-host' : '/tmp/vscode-devtools-host.sock';
 const STORAGE_KEY = 'inspector.records';
 
-// Symbol kinds that are valid targets for the file_read `symbol` parameter.
-// Body-bearing kinds (functions, classes, etc.) and container kinds (imports, comments, etc.)
-const BODY_BEARING_KINDS = new Set([
-	'function', 'method', 'constructor', 'getter', 'setter',
-	'class', 'interface', 'enum',
-]);
 const CONTAINER_KINDS = new Set(['imports', 'exports', 'comment', 'jsdoc', 'tsdoc', 'directives']);
 
 // Detect MCP restart messages (matches pipeline restart indicators)

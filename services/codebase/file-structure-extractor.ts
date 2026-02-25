@@ -21,7 +21,7 @@ import type {
 } from 'ts-morph';
 
 import * as path from 'node:path';
-import { Node, Scope } from 'ts-morph';
+import { Node, Scope, SyntaxKind } from 'ts-morph';
 
 import { extractOrphanedContent, findProjectRoot } from './orphaned-content';
 import { getWorkspaceProject } from './ts-project';
@@ -147,66 +147,202 @@ function isNodeExported(node: Node): boolean {
 	return false;
 }
 
+// ── Control Flow Dispatch ──
+
+// Maps SyntaxKind to skeleton kind for structural control flow nodes.
+// Any statement whose kind appears here is treated as a control flow container
+// with children extracted generically via forEachChild.
+const CONTROL_FLOW_KINDS = new Map<SyntaxKind, string>([
+	[SyntaxKind.TryStatement, 'try-catch'],
+	[SyntaxKind.IfStatement, 'if'],
+	[SyntaxKind.ForStatement, 'for'],
+	[SyntaxKind.ForInStatement, 'for-in'],
+	[SyntaxKind.ForOfStatement, 'for-of'],
+	[SyntaxKind.WhileStatement, 'while'],
+	[SyntaxKind.DoStatement, 'do-while'],
+	[SyntaxKind.SwitchStatement, 'switch'],
+]);
+
+// SyntaxKind values for all function-like nodes that may contain a Block body
+const FUNCTION_LIKE_KINDS: ReadonlySet<SyntaxKind> = new Set([
+	SyntaxKind.FunctionDeclaration,
+	SyntaxKind.MethodDeclaration,
+	SyntaxKind.Constructor,
+	SyntaxKind.GetAccessor,
+	SyntaxKind.SetAccessor,
+	SyntaxKind.ArrowFunction,
+	SyntaxKind.FunctionExpression,
+]);
+
 // ── Individual Extractors ──
 
 /**
- * Extract inner named declarations from a function/method body.
- * Finds variable statements, inner function declarations, inner classes,
- * inner interfaces, inner type aliases, and inner enums.
- * Recurses into nested function bodies for multi-level depth.
+ * Extract inner declarations AND control flow structure from a function/method body.
+ * Uses forEachChild on the body block to discover children generically.
  */
 function extractBodyChildren(node: Node): ExtractedSymbol[] {
 	const body = getBodyBlock(node);
 	if (!body) return [];
 
-	const children: ExtractedSymbol[] = [];
-	const sf = node.getSourceFile();
-
-	for (const stmt of body.getStatements()) {
-		if (Node.isVariableStatement(stmt)) {
-			children.push(...extractVariableStatement(stmt));
-		} else if (Node.isFunctionDeclaration(stmt)) {
-			if (stmt.getName() || stmt.isDefaultExport()) {
-				children.push(extractFunction(stmt));
-			}
-		} else if (Node.isClassDeclaration(stmt)) {
-			children.push(extractClass(stmt));
-		} else if (Node.isInterfaceDeclaration(stmt)) {
-			children.push(extractInterface(stmt));
-		} else if (Node.isTypeAliasDeclaration(stmt)) {
-			children.push(extractTypeAlias(stmt));
-		} else if (Node.isEnumDeclaration(stmt)) {
-			children.push(extractEnum(stmt));
-		} else if (Node.isModuleDeclaration(stmt)) {
-			children.push(extractModule(stmt, sf));
-		}
-	}
-
+	const children = extractBodyStatements(body.getStatements(), node.getSourceFile());
 	children.sort((a, b) => a.range.startLine - b.range.startLine);
 	return children;
 }
 
 /**
+ * Extract named declarations and structural control flow from a statement list.
+ * Declarations use type-specific extractors; control flow is dispatched through
+ * the CONTROL_FLOW_KINDS map and extracted with a generic forEachChild walker.
+ */
+function extractBodyStatements(statements: readonly Node[], sf: SourceFile): ExtractedSymbol[] {
+	const out: ExtractedSymbol[] = [];
+
+	for (const stmt of statements) {
+		// Named declarations — type-specific extractors
+		if (Node.isVariableStatement(stmt)) {
+			out.push(...extractVariableStatement(stmt));
+		} else if (Node.isFunctionDeclaration(stmt)) {
+			if (stmt.getName() || stmt.isDefaultExport()) {
+				out.push(extractFunction(stmt));
+			}
+		} else if (Node.isClassDeclaration(stmt)) {
+			out.push(extractClass(stmt));
+		} else if (Node.isInterfaceDeclaration(stmt)) {
+			out.push(extractInterface(stmt));
+		} else if (Node.isTypeAliasDeclaration(stmt)) {
+			out.push(extractTypeAlias(stmt));
+		} else if (Node.isEnumDeclaration(stmt)) {
+			out.push(extractEnum(stmt));
+		} else if (Node.isModuleDeclaration(stmt)) {
+			out.push(extractModule(stmt, sf));
+		} else {
+			// Control flow — dispatch via SyntaxKind map
+			const controlKind = CONTROL_FLOW_KINDS.get(stmt.getKind());
+			if (controlKind) {
+				out.push(extractControlFlowNode(stmt, controlKind, sf));
+			}
+		}
+	}
+
+	return out;
+}
+
+// ── Generic Control Flow Extraction ──
+
+/**
+ * Wrap expression text in parens for display.
+ */
+function parenWrap(text: string): string {
+	return `(${text})`;
+}
+
+/**
+ * Derive a display label from a control flow node's expression or initializer.
+ * Uses ts-morph's typed accessors to extract the relevant expression text.
+ */
+function deriveControlFlowName(node: Node, kind: string): string {
+	if (Node.isIfStatement(node) || Node.isWhileStatement(node) || Node.isDoStatement(node) || Node.isSwitchStatement(node)) {
+		return parenWrap(node.getExpression().getText());
+	}
+	if (Node.isForInStatement(node)) {
+		return `(${node.getInitializer().getText()} in ...)`;
+	}
+	if (Node.isForOfStatement(node)) {
+		return `(${node.getInitializer().getText()} of ...)`;
+	}
+	return kind;
+}
+
+/**
+ * Extract children from any control flow node using forEachChild.
+ * Discovers Block, CatchClause, CaseBlock, and nested IfStatement children
+ * generically instead of calling type-specific getters for each node kind.
+ *
+ * Special labeling:
+ * - TryStatement blocks → "try" / "finally" sub-containers
+ * - IfStatement else blocks → "else" container; else-if → recursive
+ * - CatchClause → "catch" container with variable name
+ * - CaseBlock clauses → "case" / "default" containers
+ * - All other blocks → children promoted directly
+ */
+function extractControlFlowChildren(node: Node, sf: SourceFile): ExtractedSymbol[] {
+	const children: ExtractedSymbol[] = [];
+
+	node.forEachChild(child => {
+		if (Node.isBlock(child)) {
+			const stmts = extractBodyStatements(child.getStatements(), sf);
+
+			if (Node.isTryStatement(node)) {
+				// Distinguish try block from finally block by position
+				const isTryBlock = child.getStart() === node.getTryBlock().getStart();
+				const label = isTryBlock ? 'try' : 'finally';
+				children.push({ children: stmts, kind: label, name: label, range: getRange(child) });
+			} else if (Node.isIfStatement(node) && child.getStart() !== node.getThenStatement().getStart()) {
+				// Else block (not the then-branch)
+				children.push({ children: stmts, kind: 'else', name: 'else', range: getRange(child) });
+			} else {
+				// Then-branch, loop body, or any other block: promote children directly
+				children.push(...stmts);
+			}
+		} else if (Node.isCatchClause(child)) {
+			const varDecl = child.getVariableDeclaration();
+			children.push({
+				children: extractBodyStatements(child.getBlock().getStatements(), sf),
+				kind: 'catch',
+				name: varDecl ? `(${varDecl.getName()})` : 'catch',
+				range: getRange(child)
+			});
+		} else if (Node.isCaseBlock(child)) {
+			for (const clause of child.getClauses()) {
+				const clauseStmts = extractBodyStatements(clause.getStatements(), sf);
+				if (Node.isCaseClause(clause)) {
+					children.push({
+						children: clauseStmts,
+						kind: 'case',
+						name: parenWrap(clause.getExpression().getText()),
+						range: getRange(clause)
+					});
+				} else {
+					children.push({ children: clauseStmts, kind: 'default', name: 'default', range: getRange(clause) });
+				}
+			}
+		} else if (Node.isIfStatement(child)) {
+			// Else-if branch — recurse with 'else-if' kind
+			children.push(extractControlFlowNode(child, 'else-if', sf));
+		}
+	});
+
+	return children;
+}
+
+/**
+ * Extract a control flow node as a skeleton entry.
+ * Uses the CONTROL_FLOW_KINDS map for the kind and forEachChild for children.
+ */
+function extractControlFlowNode(node: Node, kind: string, sf: SourceFile): ExtractedSymbol {
+	return {
+		children: extractControlFlowChildren(node, sf),
+		kind,
+		name: deriveControlFlowName(node, kind),
+		range: getRange(node)
+	};
+}
+
+/**
  * Get the Block body from a function-like node, if it has one.
- * Works for function declarations, methods, constructors, getters, setters,
- * and arrow functions (only those with block bodies, not expression bodies).
+ * Uses FUNCTION_LIKE_KINDS set and forEachChild to discover the block
+ * generically, without calling type-specific getBody() for each kind.
  */
 function getBodyBlock(node: Node): import('ts-morph').Block | undefined {
-	if (Node.isFunctionDeclaration(node) || Node.isMethodDeclaration(node) ||
-		Node.isConstructorDeclaration(node) || Node.isGetAccessorDeclaration(node) ||
-		Node.isSetAccessorDeclaration(node)) {
-		const body = node.getBody();
-		if (body && Node.isBlock(body)) return body;
-	}
-	if (Node.isArrowFunction(node)) {
-		const body = node.getBody();
-		if (Node.isBlock(body)) return body;
-	}
-	if (Node.isFunctionExpression(node)) {
-		const body = node.getBody();
-		if (Node.isBlock(body)) return body;
-	}
-	return undefined;
+	if (!FUNCTION_LIKE_KINDS.has(node.getKind())) return undefined;
+
+	let block: import('ts-morph').Block | undefined;
+	node.forEachChild(child => {
+		if (!block && Node.isBlock(child)) {
+			block = child;
+		}
+	});
+	return block;
 }
 
 function extractFunction(node: FunctionDeclaration): ExtractedSymbol {
@@ -462,7 +598,7 @@ function extractVariableStatement(node: VariableStatement): ExtractedSymbol[] {
 				children: [],
 				exported: isExported || undefined,
 				kind,
-				name: patternText.length > 40 ? `${patternText.substring(0, 40)}...` : patternText,
+				name: patternText,
 				range: isSingleDecl ? stmtRange : getRange(decl)
 			});
 			continue;

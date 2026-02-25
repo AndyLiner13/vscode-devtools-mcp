@@ -288,6 +288,16 @@ export const /**
 	 */
 	TS_PARSEABLE_EXTS = new Set(['ts', 'tsx', 'js', 'jsx', 'mts', 'mjs', 'cts', 'cjs']);
 
+/**
+ * Symbol kinds that represent body-bearing constructs (functions, classes, etc.).
+ * In file-overview mode these stay as skeleton stubs. Shared across extension
+ * host and MCP server to avoid duplication.
+ */
+export const BODY_BEARING_KINDS: ReadonlySet<string> = new Set([
+	'function', 'method', 'constructor', 'getter', 'setter',
+	'class', 'interface', 'enum',
+]);
+
 // ── Shared File Structure Types (Multi-Language) ─────────
 
 /**

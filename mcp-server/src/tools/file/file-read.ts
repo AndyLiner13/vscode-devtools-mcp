@@ -59,16 +59,19 @@ function addLineNumbers(content: string, startLine1: number, lineNumbers: boolea
 		.join('\n');
 }
 
-function formatSkeletonEntry(symbol: SymbolLike, indent = '', maxNesting = 0, currentDepth = 0): string[] {
+function formatSkeletonEntry(symbol: SymbolLike, indent = '', maxNesting = 0, currentDepth = 0, collapseKinds?: ReadonlySet<string>): string[] {
 	const lines: string[] = [];
 	const { startLine, endLine } = symbol.range;
 	const range = startLine === endLine ? `${startLine}` : `${startLine}-${endLine}`;
 
 	lines.push(`${indent}[${range}] ${formatSymbolLabel(symbol)}`);
 
-	if (currentDepth < maxNesting && symbol.children && symbol.children.length > 0) {
+	// When collapseKinds is provided, body-bearing symbols are fully collapsed
+	// (no children shown). Copilot must request them by name to see internals.
+	const forceCollapse = collapseKinds?.has(symbol.kind) ?? false;
+	if (!forceCollapse && currentDepth < maxNesting && symbol.children && symbol.children.length > 0) {
 		for (const child of symbol.children) {
-			lines.push(...formatSkeletonEntry(child, `${indent}  `, maxNesting, currentDepth + 1));
+			lines.push(...formatSkeletonEntry(child, `${indent}  `, maxNesting, currentDepth + 1, collapseKinds));
 		}
 	}
 
@@ -173,8 +176,9 @@ function buildContentPieces(structure: FileStructure): SkeletonPiece[] {
 
 /**
  * Render skeleton output at a given compression level.
+ * When collapseKinds is provided, symbols of those kinds are fully collapsed (no children).
  */
-function renderSkeletonAtLevel(pieces: SkeletonPiece[], allLines: string[], maxNesting: number, lineNumbers: boolean): string {
+function renderSkeletonAtLevel(pieces: SkeletonPiece[], allLines: string[], maxNesting: number, lineNumbers: boolean, collapseKinds?: ReadonlySet<string>): string {
 	const result: string[] = [];
 
 	for (const piece of pieces) {
@@ -183,7 +187,7 @@ function renderSkeletonAtLevel(pieces: SkeletonPiece[], allLines: string[], maxN
 				result.push(formatLine(l, allLines[l - 1] ?? '', lineNumbers));
 			}
 		} else if (piece.symbol) {
-			const entries = formatSkeletonEntry(piece.symbol, '', maxNesting);
+			const entries = formatSkeletonEntry(piece.symbol, '', maxNesting, 0, collapseKinds);
 			for (const entry of entries) result.push(entry);
 		}
 	}
@@ -225,7 +229,7 @@ function formatCompressionHeader(result: { compressed: boolean; label: null | st
  * Compute collapsed (symbol stubs) and source (raw/gap) ranges from skeleton pieces.
  * Symbols shown as stubs → collapsed; raw gaps → source.
  */
-function computeSkeletonRanges(pieces: SkeletonPiece[], maxNesting: number): { collapsedRanges: LineRange[]; sourceRanges: LineRange[] } {
+function computeSkeletonRanges(pieces: SkeletonPiece[], maxNesting: number, collapseKinds?: ReadonlySet<string>): { collapsedRanges: LineRange[]; sourceRanges: LineRange[] } {
 	const collapsedRanges: LineRange[] = [];
 	const sourceRanges: LineRange[] = [];
 
@@ -233,7 +237,7 @@ function computeSkeletonRanges(pieces: SkeletonPiece[], maxNesting: number): { c
 		if (piece.category === 'raw') {
 			sourceRanges.push({ endLine: piece.endLine, startLine: piece.startLine });
 		} else if (piece.symbol) {
-			collectSymbolRanges(piece.symbol, 0, maxNesting, collapsedRanges, sourceRanges);
+			collectSymbolRanges(piece.symbol, 0, maxNesting, collapsedRanges, sourceRanges, collapseKinds);
 		}
 	}
 
@@ -244,23 +248,26 @@ function computeSkeletonRanges(pieces: SkeletonPiece[], maxNesting: number): { c
  * Recursively collect ranges for a symbol tree at a given nesting level.
  * Symbols beyond the nesting limit are collapsed; expanded symbols contribute
  * their gap lines as source and recurse into children.
+ * When collapseKinds is provided, symbols of those kinds are always collapsed.
  */
 function collectSymbolRanges(
 	symbol: SymbolLike,
 	currentDepth: number,
 	maxNesting: number,
 	collapsedRanges: LineRange[],
-	sourceRanges: LineRange[]
+	sourceRanges: LineRange[],
+	collapseKinds?: ReadonlySet<string>
 ): void {
-	// At or beyond nesting limit: entire symbol is a collapsed stub
-	if (currentDepth >= maxNesting || !symbol.children || symbol.children.length === 0) {
+	// At or beyond nesting limit, or force-collapsed kind: entire symbol is a collapsed stub
+	const forceCollapse = collapseKinds?.has(symbol.kind) ?? false;
+	if (forceCollapse || currentDepth >= maxNesting || !symbol.children || symbol.children.length === 0) {
 		collapsedRanges.push({ endLine: symbol.range.endLine, startLine: symbol.range.startLine });
 		return;
 	}
 
 	// Symbol is expanded — its children may be collapsed or further expanded
 	for (const child of symbol.children) {
-		collectSymbolRanges(child, currentDepth + 1, maxNesting, collapsedRanges, sourceRanges);
+		collectSymbolRanges(child, currentDepth + 1, maxNesting, collapsedRanges, sourceRanges, collapseKinds);
 	}
 }
 
@@ -277,11 +284,15 @@ function compressSkeletonOutput(structure: FileStructure, allLines: string[], re
 	const maxNesting = Math.min(requestedMaxNesting, getMaxSymbolNesting(structure.symbols));
 	const trace: string[] = [];
 
+	// Body-bearing symbols are fully collapsed in overview — Copilot must
+	// request them by name via the `symbol` parameter to see their internals.
+	const collapse = BODY_BEARING_KINDS;
+
 	// Quick check: does the full output fit?
-	const fullOutput = renderSkeletonAtLevel(pieces, allLines, maxNesting, lineNumbers);
+	const fullOutput = renderSkeletonAtLevel(pieces, allLines, maxNesting, lineNumbers, collapse);
 	trace.push(`skeleton(${maxNesting})=${fullOutput.length}`);
 	if (fullOutput.length <= OUTPUT_CHAR_LIMIT) {
-		const ranges = computeSkeletonRanges(pieces, maxNesting);
+		const ranges = computeSkeletonRanges(pieces, maxNesting, collapse);
 		return { ...ranges, compressed: false, label: null, output: fullOutput, trace };
 	}
 
@@ -290,12 +301,12 @@ function compressSkeletonOutput(structure: FileStructure, allLines: string[], re
 	let bestNesting = 0;
 
 	for (let nesting = 0; nesting <= maxNesting; nesting++) {
-		const candidate = renderSkeletonAtLevel(pieces, allLines, nesting, lineNumbers);
+		const candidate = renderSkeletonAtLevel(pieces, allLines, nesting, lineNumbers, collapse);
 		trace.push(`skeleton(${nesting})=${candidate.length}`);
 		if (candidate.length > OUTPUT_CHAR_LIMIT) {
 			if (nesting === 0) {
 				trace.push(`← selected (exceeds limit, minimum)`);
-				const ranges = computeSkeletonRanges(pieces, 0);
+				const ranges = computeSkeletonRanges(pieces, 0, collapse);
 				return {
 					...ranges,
 					compressed: true,
@@ -312,7 +323,7 @@ function compressSkeletonOutput(structure: FileStructure, allLines: string[], re
 
 	trace.push(`← skeleton(${bestNesting}) selected`);
 	const label = bestNesting < maxNesting ? `symbol depth ${bestNesting} of ${maxNesting}` : null;
-	const ranges = computeSkeletonRanges(pieces, bestNesting);
+	const ranges = computeSkeletonRanges(pieces, bestNesting, collapse);
 
 	return {
 		...ranges,
@@ -549,17 +560,18 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
  * Recursively render a single symbol based on expansion state.
  * - Expanded symbol with children: show body source, recurse into children
  * - Expanded leaf symbol: show full raw content
- * - Not expanded: skeleton stub with children shown up to skeletonNesting depth
+ * - Not expanded: skeleton stub (body-bearing kinds fully collapsed)
  */
 function renderSymbolProgressive(
 	symbol: FileSymbol,
 	allLines: string[],
 	expandedSet: ReadonlySet<FileSymbol>,
 	skeletonNesting: number,
-	lineNumbers: boolean
+	lineNumbers: boolean,
+	collapseKinds?: ReadonlySet<string>
 ): string {
 	if (!expandedSet.has(symbol)) {
-		return formatSkeletonEntry(symbol, '', skeletonNesting).join('\n');
+		return formatSkeletonEntry(symbol, '', skeletonNesting, 0, collapseKinds).join('\n');
 	}
 
 	if (symbol.children.length === 0) {
@@ -575,7 +587,7 @@ function renderSymbolProgressive(
 		if (child.range.startLine > currentLine) {
 			result.push(addLineNumbers(getContentSlice(allLines, currentLine, child.range.startLine - 1), currentLine, lineNumbers));
 		}
-		result.push(renderSymbolProgressive(child, allLines, expandedSet, skeletonNesting, lineNumbers));
+		result.push(renderSymbolProgressive(child, allLines, expandedSet, skeletonNesting, lineNumbers, collapseKinds));
 		currentLine = child.range.endLine + 1;
 	}
 
@@ -590,13 +602,15 @@ function renderSymbolProgressive(
  * Render the file with multi-depth progressive expansion.
  * `expandedSet` tracks which FileSymbols (at any depth) are expanded to raw content.
  * Unexpanded symbols show as skeleton stubs with children up to `skeletonNesting` depth.
+ * When collapseKinds is provided, body-bearing symbols are always fully collapsed.
  */
 function renderProgressiveContent(
 	pieces: SkeletonPiece[],
 	allLines: string[],
 	expandedSet: ReadonlySet<FileSymbol>,
 	skeletonNesting: number,
-	lineNumbers: boolean
+	lineNumbers: boolean,
+	collapseKinds?: ReadonlySet<string>
 ): string {
 	const result: string[] = [];
 
@@ -606,7 +620,7 @@ function renderProgressiveContent(
 				result.push(formatLine(l, allLines[l - 1] ?? '', lineNumbers));
 			}
 		} else if (piece.symbol) {
-			result.push(renderSymbolProgressive(piece.symbol, allLines, expandedSet, skeletonNesting, lineNumbers));
+			result.push(renderSymbolProgressive(piece.symbol, allLines, expandedSet, skeletonNesting, lineNumbers, collapseKinds));
 		}
 	}
 
@@ -697,8 +711,9 @@ function collectSymbolsByDepth(rootSymbols: FileSymbol[]): { byDepth: FileSymbol
  * Symbol kinds that represent body-bearing constructs (functions, classes, etc.).
  * In file-overview mode these always stay as skeleton stubs — Copilot must request
  * them by name via the `symbol` parameter to see their raw body.
+ * Canonical source: services/codebase/types.ts → BODY_BEARING_KINDS
  */
-const BODY_BEARING_KINDS = new Set([
+const BODY_BEARING_KINDS: ReadonlySet<string> = new Set([
 	'function', 'method', 'constructor', 'getter', 'setter',
 	'class', 'interface', 'enum',
 ]);
@@ -746,6 +761,10 @@ function compressFullFileOutput(rawContent: string, structure: FileStructure | u
 	const contentPieces = buildContentPieces(structure);
 	const maxSkeletonNesting = getMaxSymbolNesting(structure.symbols);
 
+	// Body-bearing symbols are fully collapsed in overview — Copilot must
+	// request them by name via the `symbol` parameter to see their internals.
+	const collapse = BODY_BEARING_KINDS;
+
 	trace.push(`limit=${OUTPUT_CHAR_LIMIT}, skeletonPieces=${skeletonPieces.length}, contentPieces=${contentPieces.length}, maxSkeletonNesting=${maxSkeletonNesting}`);
 
 	let bestOutput = '';
@@ -755,15 +774,16 @@ function compressFullFileOutput(rawContent: string, structure: FileStructure | u
 	let bestSkeletonNesting = -1;
 
 	// Phase 1: Skeleton nesting (0 → max)
-	// Start from least detail and build up until the full skeleton is shown
+	// Start from least detail and build up until the full skeleton is shown.
+	// Body-bearing symbols stay fully collapsed at every nesting level.
 	for (let nesting = 0; nesting <= maxSkeletonNesting; nesting++) {
-		const candidate = renderSkeletonAtLevel(skeletonPieces, allLines, nesting, lineNumbers);
+		const candidate = renderSkeletonAtLevel(skeletonPieces, allLines, nesting, lineNumbers, collapse);
 		trace.push(`skeleton(${nesting})=${candidate.length}`);
 		if (candidate.length > OUTPUT_CHAR_LIMIT) {
 			if (nesting === 0) {
 				// Even top-level skeleton exceeds limit — return it anyway as minimum
 				trace.push(`← selected (exceeds limit, minimum)`);
-				const ranges = computeSkeletonRanges(skeletonPieces, 0);
+				const ranges = computeSkeletonRanges(skeletonPieces, 0, collapse);
 				return {
 					...ranges,
 					compressed: true,
@@ -778,7 +798,7 @@ function compressFullFileOutput(rawContent: string, structure: FileStructure | u
 		bestOutput = candidate;
 		bestPhase = 'skeleton';
 		bestLabel = `skeleton depth ${nesting} of ${maxSkeletonNesting}`;
-		bestRanges = computeSkeletonRanges(skeletonPieces, nesting);
+		bestRanges = computeSkeletonRanges(skeletonPieces, nesting, collapse);
 		bestSkeletonNesting = nesting;
 	}
 
@@ -812,7 +832,7 @@ function compressFullFileOutput(rawContent: string, structure: FileStructure | u
 				if (parent && !expandedSet.has(parent)) continue;
 
 				expandedSet.add(sym);
-				const candidate = renderProgressiveContent(contentPieces, allLines, expandedSet, maxSkeletonNesting, lineNumbers);
+				const candidate = renderProgressiveContent(contentPieces, allLines, expandedSet, maxSkeletonNesting, lineNumbers, collapse);
 				if (candidate.length > OUTPUT_CHAR_LIMIT) {
 					stoppedAtName = sym.name;
 					stoppedAtSize = sym.range.endLine - sym.range.startLine + 1;
