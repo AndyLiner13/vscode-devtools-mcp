@@ -312,29 +312,9 @@ export interface FileSymbol {
 	range: FileSymbolRange;
 }
 
-/**
- * Categories for orphaned content — items outside of any symbol's range.
- * Maps to special target keywords (#imports, #exports, #comments) in file_read.
- */
-export type OrphanedCategory = 'comment' | 'directive' | 'export' | 'footnote' | 'import' | 'linkdef';
-
-export interface OrphanedItem {
-	category: OrphanedCategory;
-	children?: OrphanedItem[];
-	detail?: string;
-	kind: string;
-	name: string;
-	range: { start: number; end: number };
-}
-
-export interface OrphanedContent {
-	items: OrphanedItem[];
-}
-
 export interface FileStructureStats {
 	coveragePercent: number;
 	totalBlankLines: number;
-	totalOrphaned: number;
 	totalSymbols: number;
 }
 
@@ -343,7 +323,6 @@ export interface FileStructure {
 	content: string;
 	fileType: 'json' | 'markdown' | 'typescript' | 'unknown';
 	gaps: Array<{ start: number; end: number; type: 'blank' | 'unknown' }>;
-	orphaned: OrphanedContent;
 	stats: FileStructureStats;
 	symbols: FileSymbol[];
 	totalLines: number;

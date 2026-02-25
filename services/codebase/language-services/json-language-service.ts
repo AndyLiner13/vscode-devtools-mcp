@@ -2,7 +2,7 @@
 // JSON Language Service — wraps parsers.ts JSON/JSONC/JSONL parsers in LanguageService interface.
 
 import type { LanguageService } from '../language-service-registry';
-import type { FileStructure, FileSymbol, FileSymbolRange, OrphanedItem } from '../types';
+import type { FileStructure, FileSymbol, FileSymbolRange } from '../types';
 import type { SymbolNode } from '../types';
 
 import * as jsoncParser from 'jsonc-parser';
@@ -159,6 +159,30 @@ function computeGaps(symbols: FileSymbol[], totalLines: number): Array<{ start: 
 	return gaps;
 }
 
+/**
+ * Build a "comments" container FileSymbol from extracted JSONC comments.
+ */
+function buildCommentsContainer(comments: CommentRange[]): FileSymbol | undefined {
+	if (comments.length === 0) return undefined;
+
+	const children: FileSymbol[] = comments.map((c) => ({
+		children: [],
+		kind: classifyJsonComment(c.text),
+		name: extractJsonCommentTitle(c.text),
+		range: { endLine: c.endLine, startLine: c.startLine }
+	}));
+
+	return {
+		children,
+		kind: 'comments',
+		name: 'comments',
+		range: {
+			endLine: comments[comments.length - 1].endLine,
+			startLine: comments[0].startLine
+		}
+	};
+}
+
 export class JsonLanguageService implements LanguageService {
 	readonly id = 'json';
 	readonly name = 'JSON / JSONC / JSONL';
@@ -169,7 +193,6 @@ export class JsonLanguageService implements LanguageService {
 		const parser = getCustomParser(ext);
 
 		if (!parser) {
-			// Fallback for unrecognized extension that somehow matched
 			return this.emptyStructure('');
 		}
 
@@ -178,9 +201,6 @@ export class JsonLanguageService implements LanguageService {
 		const symbols = symbolNodes.map(convertSymbolNode);
 
 		// Extend first/last symbol ranges to absorb root container braces.
-		// JSON files always have a root {} or [] whose braces aren't properties,
-		// so they'd otherwise appear as gaps. This makes coverage consistent
-		// with TS/JS (declarations start at line 1) and Markdown (sections span all).
 		if (symbols.length > 0) {
 			symbols[0].range.startLine = 1;
 			symbols[symbols.length - 1].range.endLine = lineCount;
@@ -188,22 +208,20 @@ export class JsonLanguageService implements LanguageService {
 
 		const gaps = computeGaps(symbols, lineCount);
 
-		// Extract JSONC/JSON5 comments as orphaned content
-		const orphanedItems: OrphanedItem[] = [];
+		// Extract JSONC/JSON5 comments as a container symbol
+		const containerSymbols: FileSymbol[] = [];
 		if (COMMENT_EXTS.has(ext)) {
 			const comments = extractJsoncComments(text);
-			for (const comment of comments) {
-				orphanedItems.push({
-					category: 'comment',
-					kind: classifyJsonComment(comment.text),
-					name: extractJsonCommentTitle(comment.text),
-					range: { end: comment.endLine, start: comment.startLine }
-				});
-			}
+			const container = buildCommentsContainer(comments);
+			if (container) containerSymbols.push(container);
 		}
 
+		// Merge container symbols into symbols list, sorted by position
+		const allSymbols = [...containerSymbols, ...symbols];
+		allSymbols.sort((a, b) => a.range.startLine - b.range.startLine);
+
 		const blankLines = text.split('\n').filter((l) => l.trim() === '').length;
-		const totalSymbols = countSymbols(symbols);
+		const totalSymbols = countSymbols(allSymbols);
 
 		// Coverage: lines covered by symbols vs total
 		const covered = new Set<number>();
@@ -215,7 +233,7 @@ export class JsonLanguageService implements LanguageService {
 				markCovered(child);
 			}
 		};
-		for (const sym of symbols) {
+		for (const sym of allSymbols) {
 			markCovered(sym);
 		}
 		const coveragePercent = lineCount > 0 ? Math.round((covered.size / lineCount) * 100) : 100;
@@ -224,14 +242,12 @@ export class JsonLanguageService implements LanguageService {
 			content: text,
 			fileType: 'json',
 			gaps,
-			orphaned: { items: orphanedItems },
 			stats: {
 				coveragePercent,
 				totalBlankLines: blankLines,
-				totalOrphaned: orphanedItems.length,
 				totalSymbols
 			},
-			symbols,
+			symbols: allSymbols,
 			totalLines: lineCount
 		};
 	}
@@ -241,11 +257,9 @@ export class JsonLanguageService implements LanguageService {
 			content,
 			fileType: 'json',
 			gaps: [],
-			orphaned: { items: [] },
 			stats: {
 				coveragePercent: 0,
 				totalBlankLines: 0,
-				totalOrphaned: 0,
 				totalSymbols: 0
 			},
 			symbols: [],

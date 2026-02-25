@@ -3,7 +3,7 @@
 
 import type { ExtractedSymbol, ExtractedSymbolRange } from '../file-structure-extractor';
 import type { LanguageService } from '../language-service-registry';
-import type { FileStructure, FileSymbol, FileSymbolRange, OrphanedCategory, OrphanedItem } from '../types';
+import type { FileStructure, FileSymbol, FileSymbolRange } from '../types';
 import type { SymbolNode } from '../types';
 
 import { extractFileStructure as extractTsMorphStructure } from '../file-structure-extractor';
@@ -31,14 +31,33 @@ function convertSymbol(sym: ExtractedSymbol): FileSymbol {
 	};
 }
 
-function convertOrphaned(node: SymbolNode, category: OrphanedCategory): OrphanedItem {
-	return {
-		category,
-		children: node.children?.map((c) => convertOrphaned(c, category)),
+/**
+ * Build a container FileSymbol from a group of SymbolNodes.
+ * The container spans from the first to the last item in the group,
+ * with each individual item as a child.
+ */
+function buildContainerSymbol(containerName: string, containerKind: string, nodes: SymbolNode[]): FileSymbol | undefined {
+	if (nodes.length === 0) return undefined;
+
+	const children: FileSymbol[] = nodes.map((node) => ({
+		children: [],
 		detail: node.detail,
 		kind: node.kind,
 		name: node.name,
-		range: { end: node.range.end, start: node.range.start }
+		range: {
+			endLine: node.range.end,
+			startLine: node.range.start
+		}
+	}));
+
+	return {
+		children,
+		kind: containerKind,
+		name: containerName,
+		range: {
+			endLine: nodes[nodes.length - 1].range.end,
+			startLine: nodes[0].range.start
+		}
 	};
 }
 
@@ -50,25 +69,33 @@ export class TypeScriptLanguageService implements LanguageService {
 	async extractStructure(filePath: string): Promise<FileStructure> {
 		const result = extractTsMorphStructure(filePath);
 
-		const orphanedItems: OrphanedItem[] = [
-			...result.imports.map((n) => convertOrphaned(n, 'import')),
-			...result.exports.map((n) => convertOrphaned(n, 'export')),
-			...result.orphanComments.map((n) => convertOrphaned(n, 'comment')),
-			...result.directives.map((n) => convertOrphaned(n, 'directive'))
-		];
+		const containerSymbols: FileSymbol[] = [];
+		const maybeAdd = (name: string, kind: string, nodes: SymbolNode[]): void => {
+			const container = buildContainerSymbol(name, kind, nodes);
+			if (container) containerSymbols.push(container);
+		};
+
+		maybeAdd('imports', 'imports', result.imports);
+		maybeAdd('exports', 'exports', result.exports);
+		maybeAdd('comments', 'comments', result.orphanComments);
+		maybeAdd('directives', 'directives', result.directives);
+
+		const codeSymbols = result.symbols.map(convertSymbol);
+
+		// Merge container symbols into the symbol list, sorted by source position
+		const allSymbols = [...containerSymbols, ...codeSymbols];
+		allSymbols.sort((a, b) => a.range.startLine - b.range.startLine);
 
 		return {
 			content: result.content,
 			fileType: 'typescript',
 			gaps: result.gaps,
-			orphaned: { items: orphanedItems },
 			stats: {
 				coveragePercent: result.stats.coveragePercent,
 				totalBlankLines: result.stats.totalBlankLines,
-				totalOrphaned: orphanedItems.length,
-				totalSymbols: countSymbols(result.symbols)
+				totalSymbols: countSymbols(result.symbols) + containerSymbols.length
 			},
-			symbols: result.symbols.map(convertSymbol),
+			symbols: allSymbols,
 			totalLines: result.totalLines
 		};
 	}

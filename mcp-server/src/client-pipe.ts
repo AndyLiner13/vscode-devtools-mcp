@@ -608,21 +608,9 @@ export interface FileSymbol {
 	range: FileSymbolRange;
 }
 
-export type OrphanedCategory = 'comment' | 'directive' | 'export' | 'footnote' | 'import' | 'linkdef';
-
-export interface OrphanedItem {
-	category: OrphanedCategory;
-	children?: OrphanedItem[];
-	detail?: string;
-	kind: string;
-	name: string;
-	range: { start: number; end: number };
-}
-
 export interface FileStructureStats {
 	coveragePercent: number;
 	totalBlankLines: number;
-	totalOrphaned: number;
 	totalSymbols: number;
 }
 
@@ -630,7 +618,6 @@ export interface FileStructure {
 	content: string;
 	fileType: 'json' | 'markdown' | 'typescript' | 'unknown';
 	gaps: Array<{ start: number; end: number; type: 'blank' | 'unknown' }>;
-	orphaned: { items: OrphanedItem[] };
 	stats: FileStructureStats;
 	symbols: FileSymbol[];
 	totalLines: number;
