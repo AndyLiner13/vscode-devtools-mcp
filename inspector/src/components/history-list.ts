@@ -113,7 +113,7 @@ async function renderHistory(): Promise<void> {
 		return;
 	}
 
-	const flagged = records.filter((r) => r.rating === 'bad').sort((a, b) => a.priority - b.priority);
+	const flagged = records.filter((r) => r.rating === 'bad');
 	const unrated = records.filter((r) => r.rating === null);
 	const archived = records.filter((r) => r.rating === 'good');
 
@@ -160,7 +160,7 @@ function renderArchivedSection(records: ExecutionRecord[]): HTMLElement {
 
 	const header = document.createElement('button');
 	header.className = 'history-section-header clickable';
-	header.innerHTML = `<span>Archived</span><span class="text-vscode-text-dim text-[11px]">${records.length}</span>`;
+	header.innerHTML = `<span>Archived <span class="text-vscode-text-dim" style="font-weight:400">${records.length}</span></span>`;
 
 	const list = document.createElement('div');
 	list.className = 'hidden';

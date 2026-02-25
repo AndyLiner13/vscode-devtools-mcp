@@ -219,7 +219,7 @@ export function registerInspectorHandlers(
 		if (tool) {
 			return records
 				.filter((r) => r.toolName === tool)
-				.sort((a, b) => a.priority - b.priority);
+				.sort((a, b) => b.priority - a.priority);
 		}
 
 		const grouped: Record<string, ExecutionRecord[]> = {};
