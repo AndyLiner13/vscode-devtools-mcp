@@ -250,7 +250,7 @@ export class InspectorPanelProvider {
 </head>
 <body>
 	<div id="app"></div>
-	<script nonce="${nonce}" src="${mainJs.toString()}"></script>
+	<script type="module" nonce="${nonce}" src="${mainJs.toString()}"></script>
 </body>
 </html>`;
 	}

@@ -33,6 +33,98 @@ body {
 	-webkit-font-smoothing: antialiased;
 }
 
+/* ── Tool Selector Dropdown ────────────────────────────────────────── */
+
+.tool-selector {
+	width: 100%;
+	padding: 6px 8px;
+}
+
+.select-wrapper {
+	position: relative;
+	width: 100%;
+}
+
+.tool-select {
+	width: 100%;
+	appearance: none;
+	-webkit-appearance: none;
+	background: var(--color-vscode-input);
+	color: var(--color-vscode-text);
+	border: 1px solid var(--color-vscode-border);
+	border-radius: 4px;
+	padding: 5px 28px 5px 8px;
+	font-size: 13px;
+	font-family: var(--font-family-sans);
+	cursor: pointer;
+	outline: none;
+}
+
+.tool-select:hover {
+	border-color: var(--color-vscode-accent);
+}
+
+.tool-select:focus {
+	border-color: var(--color-vscode-accent);
+	outline: 1px solid var(--color-vscode-accent);
+	outline-offset: -1px;
+}
+
+.select-chevron {
+	position: absolute;
+	right: 8px;
+	top: 50%;
+	transform: translateY(-50%);
+	pointer-events: none;
+	color: var(--color-vscode-text-dim);
+	font-size: 14px;
+	line-height: 1;
+}
+
+/* ── Tool Annotation Badges ───────────────────────────────────────── */
+
+.badges-row {
+	display: none;
+	flex-wrap: wrap;
+	gap: 4px;
+	padding-top: 4px;
+}
+
+.badges-row.visible {
+	display: flex;
+}
+
+.badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 1px 6px;
+	border-radius: 3px;
+	font-size: 11px;
+	font-weight: 500;
+	letter-spacing: 0.02em;
+	user-select: none;
+}
+
+.badge-success {
+	background: color-mix(in srgb, var(--color-vscode-success) 20%, transparent);
+	color: var(--color-vscode-success);
+}
+
+.badge-error {
+	background: color-mix(in srgb, var(--color-vscode-error) 20%, transparent);
+	color: var(--color-vscode-error);
+}
+
+.badge-accent {
+	background: color-mix(in srgb, var(--color-vscode-accent) 20%, transparent);
+	color: var(--color-vscode-accent);
+}
+
+.badge-warning {
+	background: color-mix(in srgb, var(--color-vscode-warning) 20%, transparent);
+	color: var(--color-vscode-warning);
+}
+
 /* Hide the Monaco suggest widget when no suggestions or just showing a message */
 .suggest-widget.empty,
 .suggest-widget .suggest-status-bar {
