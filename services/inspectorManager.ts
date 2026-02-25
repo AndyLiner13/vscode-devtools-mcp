@@ -8,8 +8,10 @@
  *   Stop  →  already stopped?  inform the user
  *   Restart → not running?     just start
  *
- * The inspector process is spawned as a detached child so it survives
- * brief extension reloads, but is explicitly killed on extension deactivate.
+ * The inspector process is spawned as a child of the extension host
+ * so it dies automatically when VS Code exits. Port and PID are persisted
+ * in globalState so stale processes from prior sessions are killed on
+ * re-activation — making duplicate Vite instances structurally impossible.
  */
 
 import { type ChildProcess, execSync, spawn } from 'node:child_process';
@@ -27,6 +29,7 @@ const PORT_PARSE_REGEX = /^INSPECTOR_PORT=(\d+)$/m;
 
 let inspectorProcess: ChildProcess | null = null;
 let currentInspectorPort: number | null = null;
+let extensionContext: vscode.ExtensionContext | undefined;
 let logFn: ((message: string) => void) | undefined;
 
 function log(message: string): void {
@@ -51,6 +54,79 @@ async function isPortListening(port: number): Promise<boolean> {
 			resolve(false);
 		});
 	});
+}
+
+// ── GlobalState Persistence ──────────────────────────────────────────────────
+
+const STATE_KEY_PORT = 'inspector.port';
+const STATE_KEY_PID = 'inspector.pid';
+
+function persistInspectorState(port: number, pid: number | null): void {
+	void extensionContext?.globalState.update(STATE_KEY_PORT, port);
+	void extensionContext?.globalState.update(STATE_KEY_PID, pid);
+}
+
+function clearInspectorState(): void {
+	void extensionContext?.globalState.update(STATE_KEY_PORT, undefined);
+	void extensionContext?.globalState.update(STATE_KEY_PID, undefined);
+}
+
+/**
+ * Kill any stale Vite process from a prior extension session.
+ * Reads port+PID from globalState, kills any matching process, then clears state.
+ */
+async function killStaleInspector(): Promise<void> {
+	const storedPort = extensionContext?.globalState.get<number>(STATE_KEY_PORT);
+	const storedPid = extensionContext?.globalState.get<number>(STATE_KEY_PID);
+
+	if (!storedPort && !storedPid) return;
+
+	log(`Checking for stale inspector (port=${storedPort ?? 'unknown'}, pid=${storedPid ?? 'unknown'})`);
+
+	if (storedPid) {
+		try {
+			if (process.platform === 'win32') {
+				execSync(`taskkill /PID ${storedPid} /T /F`, { stdio: 'ignore' });
+			} else {
+				process.kill(storedPid, 'SIGTERM');
+			}
+			log(`Killed stale inspector process (PID ${storedPid})`);
+		} catch {
+			// Process already exited
+		}
+	}
+
+	if (storedPort && await isPortListening(storedPort)) {
+		log(`Stale inspector still listening on port ${storedPort} — killing by port`);
+		try {
+			if (process.platform === 'win32') {
+				const output = execSync(
+					`netstat -ano | findstr LISTENING | findstr :${storedPort}`,
+					{ encoding: 'utf8' },
+				);
+				const pids = new Set<string>();
+				for (const line of output.split('\n')) {
+					const parts = line.trim().split(/\s+/);
+					const pid = parts[parts.length - 1];
+					if (pid && /^\d+$/.test(pid) && pid !== '0') {
+						pids.add(pid);
+					}
+				}
+				for (const pid of pids) {
+					try {
+						execSync(`taskkill /PID ${pid} /T /F`, { stdio: 'ignore' });
+					} catch { /* already exited */ }
+				}
+			} else {
+				execSync(`lsof -ti:${storedPort} | xargs kill -9`, { stdio: 'ignore' });
+			}
+			log('Killed stale inspector by port');
+		} catch {
+			log('Failed to kill stale inspector by port');
+		}
+	}
+
+	clearInspectorState();
 }
 
 // ── Lifecycle ────────────────────────────────────────────────────────────────
@@ -103,6 +179,8 @@ async function startInspector(workspacePath: string): Promise<boolean> {
 		return true;
 	}
 
+	await killStaleInspector();
+
 	log(`Spawning Vite dev server in ${inspectorDir}`);
 
 	const isWindows = process.platform === 'win32';
@@ -110,7 +188,6 @@ async function startInspector(workspacePath: string): Promise<boolean> {
 	// Capture stdout to parse the port
 	const child = spawn('npm', ['run', 'dev'], {
 		cwd: inspectorDir,
-		detached: !isWindows,
 		shell: isWindows,
 		stdio: ['ignore', 'pipe', 'pipe'],
 		windowsHide: true
@@ -170,16 +247,15 @@ async function startInspector(workspacePath: string): Promise<boolean> {
 		log(`Inspector process error: ${err.message}`);
 		inspectorProcess = null;
 		currentInspectorPort = null;
+		clearInspectorState();
 	});
 
 	child.on('exit', (code) => {
 		log(`Inspector process exited (code ${code ?? 'unknown'})`);
 		inspectorProcess = null;
 		currentInspectorPort = null;
+		clearInspectorState();
 	});
-
-	// Unref so the extension host can exit even if the inspector is still running
-	child.unref();
 
 	// Wait for the port to be parsed from stdout
 	const port = await portPromise;
@@ -190,6 +266,7 @@ async function startInspector(workspacePath: string): Promise<boolean> {
 	}
 
 	currentInspectorPort = port;
+	persistInspectorState(port, child.pid ?? null);
 	log(`Inspector port parsed: ${port}`);
 
 	// Wait for the Vite server to become responsive
@@ -216,6 +293,8 @@ async function ensureInspectorRunning(workspacePath: string): Promise<boolean> {
 		return true;
 	}
 
+	await killStaleInspector();
+
 	const inspectorDir = path.join(workspacePath, 'inspector');
 	log(`Auto-starting Vite dev server in ${inspectorDir}`);
 
@@ -224,7 +303,6 @@ async function ensureInspectorRunning(workspacePath: string): Promise<boolean> {
 	// Capture stdout to parse the port
 	const child = spawn('npm', ['run', 'dev'], {
 		cwd: inspectorDir,
-		detached: !isWindows,
 		shell: isWindows,
 		stdio: ['ignore', 'pipe', 'pipe'],
 		windowsHide: true
@@ -279,15 +357,15 @@ async function ensureInspectorRunning(workspacePath: string): Promise<boolean> {
 		log(`Inspector process error: ${err.message}`);
 		inspectorProcess = null;
 		currentInspectorPort = null;
+		clearInspectorState();
 	});
 
 	child.on('exit', (code) => {
 		log(`Inspector process exited (code ${code ?? 'unknown'})`);
 		inspectorProcess = null;
 		currentInspectorPort = null;
+		clearInspectorState();
 	});
-
-	child.unref();
 
 	// Wait for the port to be parsed from stdout
 	const port = await portPromise;
@@ -297,6 +375,7 @@ async function ensureInspectorRunning(workspacePath: string): Promise<boolean> {
 	}
 
 	currentInspectorPort = port;
+	persistInspectorState(port, child.pid ?? null);
 	log(`Inspector auto-start: port parsed as ${port}`);
 
 	const ready = await waitForPort(port, STARTUP_TIMEOUT_MS);
@@ -345,7 +424,6 @@ async function stopInspector(): Promise<boolean> {
 		log(`Killing inspector process (PID ${inspectorProcess.pid ?? 'unknown'})`);
 		try {
 			if (process.platform === 'win32') {
-				// On Windows, spawn is not detached — use taskkill to kill the tree
 				const { pid } = inspectorProcess;
 				if (pid) {
 					try {
@@ -355,10 +433,9 @@ async function stopInspector(): Promise<boolean> {
 					}
 				}
 			} else {
-				// On Unix, the process group was created with detached: true
 				const { pid } = inspectorProcess;
 				if (pid) {
-					process.kill(-pid, 'SIGTERM');
+					process.kill(pid, 'SIGTERM');
 				}
 			}
 		} catch {
@@ -366,6 +443,7 @@ async function stopInspector(): Promise<boolean> {
 		}
 		inspectorProcess = null;
 		currentInspectorPort = null;
+		clearInspectorState();
 		log('Inspector process killed');
 		return true;
 	}
@@ -397,6 +475,7 @@ async function stopInspector(): Promise<boolean> {
 			}
 			log('Killed external inspector process');
 			currentInspectorPort = null;
+			clearInspectorState();
 			return true;
 		} catch {
 			log('Failed to kill external inspector process');
@@ -450,6 +529,7 @@ function createRestartCommand(workspacePath: string): () => Promise<void> {
  * Call this from extension.ts in the Host role section.
  */
 export function registerInspectorCommands(context: vscode.ExtensionContext, workspacePath: string, logger?: (message: string) => void): void {
+	extensionContext = context;
 	logFn = logger;
 
 	context.subscriptions.push(
@@ -479,8 +559,7 @@ export function getInspectorPort(): number | null {
  * Called during extension deactivation.
  */
 export async function shutdownInspector(): Promise<void> {
-	if (inspectorProcess) {
-		log('Extension deactivating — stopping inspector');
-		await stopInspector();
-	}
+	log('Extension deactivating — stopping inspector');
+	await stopInspector();
+	clearInspectorState();
 }
