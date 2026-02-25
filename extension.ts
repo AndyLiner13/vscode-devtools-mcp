@@ -23,6 +23,7 @@ import pkg from './package.json';
 import { startWorker, stopWorker } from './services/codebase/codebase-worker-proxy';
 import { registerInspectorPanel } from './services/inspector-panel';
 import { initInspectorChannel, initMainChannel, log } from './services/logger';
+import { attachErrorToChat, showCompletionNotification } from './services/notifications';
 import { registerMcpServerProvider } from './services/mcpServerProvider';
 
 // VS Code constructs server definition IDs as: ExtensionIdentifier.toKey(id) + '/' + label
@@ -280,7 +281,7 @@ export async function activate(context: vscode.ExtensionContext) {
 					if (mcpProvider.enabled) {
 						log('Start MCP Server: already enabled — ensuring server is running');
 						if (!options?.silent) {
-							vscode.window.showInformationMessage('MCP Server is already running.');
+							showCompletionNotification('MCP Server is already running.');
 						}
 						if (!isClientWindowConnected()) {
 							log('Start MCP Server: client window not active — starting it');
@@ -299,7 +300,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				vscode.commands.registerCommand('devtools.stopMcpServer', () => {
 					if (!mcpProvider.enabled) {
 						log('Stop MCP Server: already stopped');
-						vscode.window.showInformationMessage('MCP Server is already stopped.');
+					showCompletionNotification('MCP Server is already stopped.');
 						return;
 					}
 					log('Stop MCP Server: disabling provider (triggers tethered lifecycle)');
@@ -534,9 +535,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		updateStatusBar('safe-mode', msg);
 
-		vscode.window.showErrorMessage(`devtools: Runtime failed to load — entering Safe Mode.\n\n${msg}`, 'Show Output').then((choice) => {
-			if (choice === 'Show Output') {
-				outputChannel.show();
+		vscode.window.showErrorMessage(`devtools: Runtime failed to load — entering Safe Mode.\n\n${msg}`, 'Attach to Chat').then((choice) => {
+			if (choice === 'Attach to Chat') {
+				void attachErrorToChat(`Runtime failed to load — entering Safe Mode.\n\n${msg}`, stack);
 			}
 		});
 

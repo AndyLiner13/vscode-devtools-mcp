@@ -15,6 +15,7 @@ import * as vscode from 'vscode';
 
 import { getHotReloadService } from './hotReloadService';
 import { inspectorLog as log } from './logger';
+import { showCompletionNotification } from './notifications';
 
 // ── Types ──
 
@@ -574,7 +575,7 @@ export function registerInspectorPanel(
 		}
 		if (result.changed && result.buildError) {
 			log(`Inspector build failed: ${result.buildError}`);
-			vscode.window.showErrorMessage(`Inspector build failed: ${result.buildError}`);
+			showCompletionNotification(`Inspector build failed: ${result.buildError}`, 'error');
 		}
 		return false;
 	};
@@ -622,7 +623,7 @@ export function registerInspectorPanel(
 					const buildError = await hotReload.runBuild(extensionPath, 'compile');
 					if (buildError) {
 						log(`[smartRefresh] Extension build failed: ${buildError}`);
-						vscode.window.showErrorMessage(`Extension build failed: ${buildError}`);
+						showCompletionNotification(`Extension build failed: ${buildError}`, 'error');
 					} else {
 						await hotReload.commitHash('ext', extChange.currentHash);
 						log('[smartRefresh] Extension rebuilt — restarting client window');
@@ -635,14 +636,14 @@ export function registerInspectorPanel(
 							try {
 								stopClientWindow();
 								await startClientWindow();
-								vscode.window.showInformationMessage('✅ Extension rebuilt — client reconnected');
+								showCompletionNotification('✅ Extension rebuilt — client reconnected');
 							} finally {
 								setHotReloadInProgress(false);
 							}
 						} catch (err) {
 							const msg = err instanceof Error ? err.message : String(err);
 							log(`[smartRefresh] Client restart failed: ${msg}`);
-							vscode.window.showErrorMessage(`Client restart failed: ${msg}`);
+						showCompletionNotification(`Client restart failed: ${msg}`, 'error');
 						}
 					}
 				}
@@ -653,7 +654,7 @@ export function registerInspectorPanel(
 					const buildError = await hotReload.runBuild(inspectorRoot, 'inspector:build');
 					if (buildError) {
 						log(`[smartRefresh] Inspector build failed: ${buildError}`);
-						vscode.window.showErrorMessage(`Inspector build failed: ${buildError}`);
+						showCompletionNotification(`Inspector build failed: ${buildError}`, 'error');
 					} else {
 						await hotReload.commitHash('inspector', inspectorChange.currentHash);
 						log('[smartRefresh] Inspector rebuilt');

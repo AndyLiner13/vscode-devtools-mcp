@@ -80,6 +80,17 @@
 		],
 		"configuration": [
 			{
+				"title": "Notifications",
+				"properties": {
+					"devtools.notifications.duration": {
+						"type": "integer",
+						"default": 3,
+						"minimum": -1,
+						"description": "How long completion notifications stay visible (seconds). 0 = suppress all, -1 = show until dismissed, >0 = auto-dismiss after N seconds."
+					}
+				}
+			},
+			{
 				"title": "General",
 				"properties": {
 					"devtools.clientWorkspace": {

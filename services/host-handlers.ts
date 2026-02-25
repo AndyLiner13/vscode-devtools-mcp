@@ -27,6 +27,7 @@ import { BrowserService, CdpClient } from './browser';
 import { setBrowserService, setReconnectCdpCallback } from './clientDevTools';
 import { type ChangeCheckResult, createHotReloadService, getHotReloadService } from './hotReloadService';
 import { log, warn } from './logger';
+import { showCompletionNotification } from './notifications';
 
 // ── Client State Events ────────────────────────────────────────────────────
 
@@ -1366,7 +1367,7 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 				} catch (startErr) {
 					const msg = startErr instanceof Error ? startErr.message : String(startErr);
 					log(`[host] MCP startServer failed: ${msg}`);
-					vscode.window.showWarningMessage(`❌ MCP Server failed to start: ${msg}`);
+					showCompletionNotification(`❌ MCP Server failed to start: ${msg}`, 'warning');
 					bridge.resolve();
 					return { error: msg, restarted: false };
 				}
@@ -1408,11 +1409,11 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 					} catch (startErr) {
 						const msg = startErr instanceof Error ? startErr.message : String(startErr);
 						log(`[host] MCP startServer failed: ${msg}`);
-						vscode.window.showWarningMessage(`❌ MCP Server failed to start: ${msg}`);
+						showCompletionNotification(`❌ MCP Server failed to start: ${msg}`, 'warning');
 						return { error: msg, restarted: false };
 					}
 
-					vscode.window.showInformationMessage('✅ MCP Server restarted');
+					showCompletionNotification('✅ MCP Server restarted');
 					return { restarted: true, toolCacheCleared: true };
 				}
 			);
@@ -1519,7 +1520,7 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 							// Reconnect CDP so Host knows client is alive and browser LM tools work
 							await connectCdpClient(spawnResult.cdpPort);
 
-							vscode.window.showInformationMessage('✅ Extension rebuilt — client reconnected');
+							showCompletionNotification('✅ Extension rebuilt — client reconnected');
 						}
 					}
 				);
@@ -1574,7 +1575,7 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 						await bridgePromise;
 						clearTimeout(safetyTimeout);
 
-						vscode.window.showInformationMessage('✅ MCP Server restarted');
+						showCompletionNotification('✅ MCP Server restarted');
 					}
 				);
 
