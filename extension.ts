@@ -226,7 +226,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			// Dynamic import keeps host-handlers out of the static dependency graph.
 			// If it fails to compile, the extension still works in Safe Mode.
 			log('Loading host-handlers module...');
-			const { cleanup, createReconnectCdpCallback, onBrowserServiceChanged, onClientStateChanged, registerHostHandlers, startClientWindow, stopClientWindow } = await import('./services/host-handlers');
+			const { cleanup, createReconnectCdpCallback, isClientWindowConnected, onBrowserServiceChanged, onClientStateChanged, registerHostHandlers, startClientWindow, stopClientWindow } = await import('./services/host-handlers');
 			log('host-handlers module loaded, registering handlers...');
 			registerHostHandlers(bootstrap.registerHandler, context);
 			hostHandlersCleanup = cleanup;
@@ -277,8 +277,10 @@ export async function activate(context: vscode.ExtensionContext) {
 						if (!options?.silent) {
 							vscode.window.showInformationMessage('MCP Server is already running.');
 						}
-						// Re-fire start in case the server crashed while enabled
-						void startClientWindow();
+						if (!isClientWindowConnected()) {
+							log('Start MCP Server: client window not active — starting it');
+							void startClientWindow();
+						}
 						void vscode.commands.executeCommand(
 							'workbench.mcp.startServer',
 							MCP_SERVER_DEF_ID,
@@ -449,6 +451,16 @@ export async function activate(context: vscode.ExtensionContext) {
 					startupClientListener.dispose();
 				}
 			});
+
+			// Fallback: if the MCP server's ensureConnection() fails to spawn the
+			// client (e.g. VS Code didn't actually launch the MCP process), start
+			// the client window directly after a grace period.
+			setTimeout(() => {
+				if (!isClientWindowConnected()) {
+					log('[auto-start] Client not connected after 10s — starting client window directly as fallback');
+					void startClientWindow();
+				}
+			}, 10_000);
 		} else {
 			log('Loading client-handlers module...');
 			const inspectorChannel = vscode.window.createOutputChannel('DevTools Inspector');

@@ -188,15 +188,16 @@ code {
 
 .tool-invocation-card h3 {
 	font-weight: 600;
-	margin: 4px 0 8px;
+	margin: 0 0 2px;
 	font-size: 12px;
+	line-height: 1;
 	color: var(--color-vscode-text-dim);
 	user-select: none;
 }
 
 .tool-io-section {
-	padding: 6px 8px;
-	margin: 8px 0;
+	padding: 8px;
+	margin: 0;
 }
 
 .tool-io-editor-wrapper {
@@ -213,7 +214,7 @@ code {
 }
 
 .tool-result-section .tool-io-section {
-	margin-top: 12px;
+	margin-top: 4px;
 }
 
 /* Error state for the result card */

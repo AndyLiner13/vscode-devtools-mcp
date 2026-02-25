@@ -1,13 +1,20 @@
 import * as monaco from 'monaco-editor';
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
+
+// VS Code WebView CSP blocks importScripts, so workers must be loaded
+// via fetch → Blob → blob: URL (per VS Code extension docs).
+function createWorkerFromUrl(url: string): Promise<Worker> {
+	return fetch(url)
+		.then((res) => res.blob())
+		.then((blob) => new Worker(URL.createObjectURL(blob)));
+}
 
 window.MonacoEnvironment = {
-	getWorker(_workerId: string, label: string) {
+	getWorker(_workerId: string, label: string): Promise<Worker> {
+		const base = (globalThis as Record<string, unknown>).__WORKER_BASE_URI__ as string ?? '';
 		if (label === 'json') {
-			return new jsonWorker();
+			return createWorkerFromUrl(`${base}/json.worker.js`);
 		}
-		return new editorWorker();
+		return createWorkerFromUrl(`${base}/editor.worker.js`);
 	}
 };
 
@@ -63,7 +70,7 @@ const SHARED_EDITOR_OPTIONS: monaco.editor.IStandaloneEditorConstructionOptions 
 	occurrencesHighlight: 'off',
 	overviewRulerBorder: false,
 	overviewRulerLanes: 0,
-	padding: { bottom: 5, top: 5 },
+	padding: { bottom: 4, top: 2 },
 	renderLineHighlight: 'none',
 
 	renderWhitespace: 'none',

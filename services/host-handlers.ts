@@ -1759,7 +1759,7 @@ export function stopClientWindow(): void {
 /**
  * Returns whether the client window is currently connected (fast, no I/O).
  */
-function isClientWindowConnected(): boolean {
+export function isClientWindowConnected(): boolean {
 	return lastKnownClientState;
 }
 

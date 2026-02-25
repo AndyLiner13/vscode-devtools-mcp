@@ -10,7 +10,7 @@
 
 import { existsSync } from 'node:fs';
 import net from 'node:net';
-import { join } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
 import * as vscode from 'vscode';
 
 import { getHotReloadService } from './hotReloadService';
@@ -331,7 +331,22 @@ export function registerInspectorPanel(
 
 	const provider = new InspectorPanelProvider(context.extensionUri, inspectorUri, context.workspaceState);
 
-	const rebuildIfNeeded = async (): Promise<boolean> => {
+	/**
+	 * Resolve the extension development path from VS Code settings.
+	 * Mirrors the config resolution in host-handlers' resolveClientConfig.
+	 */
+	const resolveExtensionPath = (): string | undefined => {
+		const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+		if (!workspacePath) return undefined;
+		const config = vscode.workspace.getConfiguration('devtools');
+		const raw = config.get<string>('extensionPath', '.');
+		return isAbsolute(raw) ? raw : resolve(workspacePath, raw);
+	};
+
+	/**
+	 * Build the inspector if source changed. Returns whether it was rebuilt.
+	 */
+	const rebuildInspectorIfNeeded = async (): Promise<boolean> => {
 		const hotReload = getHotReloadService();
 		if (!hotReload) return false;
 
@@ -347,6 +362,88 @@ export function registerInspectorPanel(
 		return false;
 	};
 
+	/**
+	 * Smart refresh: check both inspector and extension source.
+	 * - Inspector changed → rebuild inspector, refresh WebView
+	 * - Extension changed → rebuild extension, restart client (with notification)
+	 * - Neither changed → refresh WebView only (to pick up manual edits)
+	 * The client window is NEVER restarted unless extension source actually changed.
+	 */
+	const smartRefresh = async (): Promise<void> => {
+		const hotReload = getHotReloadService();
+		if (!hotReload) {
+			provider.refresh();
+			return;
+		}
+
+		// Phase 1: Detect changes without building (fast hash checks)
+		const inspectorChange = hotReload.detectChange(inspectorRoot, 'inspector');
+		const extensionPath = resolveExtensionPath();
+		const extChange = extensionPath ? hotReload.detectChange(extensionPath, 'ext') : { changed: false, currentHash: '' };
+
+		const needsInspectorBuild = inspectorChange.changed;
+		const needsExtBuild = extChange.changed && extensionPath !== undefined;
+
+		// Phase 2: If nothing changed, just refresh the WebView and return
+		if (!needsInspectorBuild && !needsExtBuild) {
+			log('[smartRefresh] No source changes detected — refreshing WebView only');
+			provider.refresh();
+			return;
+		}
+
+		// Phase 3: Rebuild with progress notification
+		await vscode.window.withProgress(
+			{
+				cancellable: false,
+				location: vscode.ProgressLocation.Notification,
+				title: 'Smart Refresh'
+			},
+			async (progress) => {
+				// Extension rebuild + client restart (only if extension source changed)
+				if (needsExtBuild && extensionPath) {
+					progress.report({ message: 'Rebuilding extension…' });
+					const buildError = await hotReload.runBuild(extensionPath, 'compile');
+					if (buildError) {
+						log(`[smartRefresh] Extension build failed: ${buildError}`);
+						vscode.window.showErrorMessage(`Extension build failed: ${buildError}`);
+					} else {
+						await hotReload.commitHash('ext', extChange.currentHash);
+						log('[smartRefresh] Extension rebuilt — restarting client window');
+
+						progress.report({ message: 'Restarting client window…' });
+						try {
+							const { startClientWindow, stopClientWindow } = await import('./host-handlers');
+							stopClientWindow();
+							await startClientWindow();
+							vscode.window.showInformationMessage('✅ Extension rebuilt — client reconnected');
+						} catch (err) {
+							const msg = err instanceof Error ? err.message : String(err);
+							log(`[smartRefresh] Client restart failed: ${msg}`);
+							vscode.window.showErrorMessage(`Client restart failed: ${msg}`);
+						}
+					}
+				}
+
+				// Inspector rebuild (only if inspector source changed)
+				if (needsInspectorBuild) {
+					progress.report({ message: 'Rebuilding Inspector…' });
+					const buildError = await hotReload.runBuild(inspectorRoot, 'inspector:build');
+					if (buildError) {
+						log(`[smartRefresh] Inspector build failed: ${buildError}`);
+						vscode.window.showErrorMessage(`Inspector build failed: ${buildError}`);
+					} else {
+						await hotReload.commitHash('inspector', inspectorChange.currentHash);
+						log('[smartRefresh] Inspector rebuilt');
+					}
+				}
+
+				// Refresh WebView with latest build output
+				progress.report({ message: 'Refreshing Inspector…' });
+				provider.refresh();
+			}
+		);
+	};
+
 	// Register serializer so VS Code can restore the panel across reloads.
 	// Must be registered synchronously during activation (before any await).
 	context.subscriptions.push(
@@ -360,15 +457,14 @@ export function registerInspectorPanel(
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('devtools.openInspector', async () => {
-			const rebuilt = await rebuildIfNeeded();
+			const rebuilt = await rebuildInspectorIfNeeded();
 			if (rebuilt && provider.isVisible) {
 				provider.refresh();
 			}
 			provider.show();
 		}),
 		vscode.commands.registerCommand('devtools.refreshInspector', async () => {
-			await rebuildIfNeeded();
-			provider.refresh();
+			await smartRefresh();
 		}),
 		{ dispose: () => { provider.dispose(); } }
 	);

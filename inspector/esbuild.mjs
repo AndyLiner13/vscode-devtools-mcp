@@ -100,47 +100,23 @@ function tailwindPostcssPlugin() {
 }
 
 /**
- * Stub plugin that intercepts Vite-style ?worker imports and replaces
- * them with a module that creates a Worker from the pre-built worker file.
- * This bridges the gap until Phase 4 fully migrates monaco-setup.ts.
+ * Stub plugin: the ?worker imports are no longer used.
+ * monaco-setup.ts now uses fetch+blob directly (per VS Code docs).
+ * This plugin marks any remaining ?worker imports as external/empty
+ * so esbuild doesn't choke on them.
  */
 function monacoWorkerStubPlugin() {
 	return {
 		name: 'monaco-worker-stub',
 		setup(build) {
-			// Match ?worker suffix imports
-			build.onResolve({ filter: /\?worker$/ }, (args) => ({
+			build.onResolve({ filter: /\?worker$/ }, () => ({
 				namespace: 'monaco-worker-stub',
-				path: args.path
+				path: 'worker-stub'
 			}));
-
-			build.onLoad({ filter: /.*/, namespace: 'monaco-worker-stub' }, (args) => {
-				// Determine which worker file to reference
-				let workerFile = 'editor.worker.js';
-				if (args.path.includes('json.worker')) {
-					workerFile = 'json.worker.js';
-				}
-				// Export a class that creates a blob Worker wrapping importScripts.
-				// VS Code WebView CSP blocks direct URL workers, so we create a
-				// blob: URL that imports the pre-built worker script at runtime.
-				return {
-					contents: `
-						const WorkerConstructor = class extends Worker {
-							constructor() {
-								const baseUri = globalThis.__WORKER_BASE_URI__ || '';
-								const workerUrl = baseUri + '/${workerFile}';
-								const blob = new Blob(
-									['importScripts(' + JSON.stringify(workerUrl) + ');'],
-									{ type: 'application/javascript' }
-								);
-								super(URL.createObjectURL(blob));
-							}
-						};
-						export default WorkerConstructor;
-					`,
-					loader: 'js'
-				};
-			});
+			build.onLoad({ filter: /.*/, namespace: 'monaco-worker-stub' }, () => ({
+				contents: 'export default class {}',
+				loader: 'js'
+			}));
 		}
 	};
 }
