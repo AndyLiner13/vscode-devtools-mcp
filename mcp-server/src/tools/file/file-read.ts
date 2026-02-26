@@ -69,7 +69,8 @@ function isVisibleInSkeleton(symbol: SymbolLike): boolean {
 	if (CONTROL_FLOW_KINDS.has(symbol.kind)) return false;
 	if (RAW_CODE_KINDS.has(symbol.kind)) return false;
 	if (BODY_BEARING_KINDS.has(symbol.kind)) return true;
-	if (CONTAINER_KINDS.has(symbol.kind)) return true;
+	// Container kinds are visible only when multi-line (single-line comments are raw code)
+	if (CONTAINER_KINDS.has(symbol.kind)) return symbol.range.endLine > symbol.range.startLine;
 	return symbol.range.endLine > symbol.range.startLine;
 }
 
@@ -380,13 +381,10 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 	if (hasBodyBearingChildren) {
 		const stubbedContent = formatContentWithBodyStubs(allLines, symbol, startLine, endLine, lineNumbers);
 		const stubbedRanges = computeBodyStubRanges(symbol);
-		const stubbedCount = symbol.children.filter(
-			(c: FileSymbol) => BODY_BEARING_KINDS.has(c.kind) && !isDeepestLeaf(c)
-		).length;
 		return {
 			...stubbedRanges,
 			compressed: true,
-			label: `${stubbedCount} body-bearing children collapsed — request each by name to expand`,
+			label: null,
 			output: stubbedContent,
 			slugMappings: [],
 			trace: []
@@ -651,9 +649,13 @@ export const /**
 					? { symbol: resolveByKindAndName(structure.symbols, normalizedDotTarget)!, parent: undefined, path: [symbolTarget] }
 					: undefined);
 
-			// Compute file map for error messages
-			const content = await fileReadContent(filePath);
-			const fileMap = compressFullFileOutput(content.content, structure, allLines, content.startLine + 1, lineNumbers);
+			// Build skeleton-only symbol hierarchy for error messages (no raw code)
+			const maxNesting = getMaxSymbolNesting(structure.symbols);
+			const skeletonLines: string[] = [];
+			for (const sym of structure.symbols) {
+				skeletonLines.push(...formatSkeletonEntry(sym, '', maxNesting));
+			}
+			const symbolHierarchy = skeletonLines.join('\n');
 
 			// ── Symbol match: check if navigable ──
 			if (match) {
@@ -663,7 +665,7 @@ export const /**
 				if (!isVisibleInSkeleton(symbol)) {
 					response.appendResponseLine(`"${symbolTarget}" is a single-line ${symbol.kind}, not a navigable symbol.\n`);
 					response.appendResponseLine(`Only body-bearing symbols, containers, and multi-line declarations can be requested.\n`);
-					response.appendResponseLine(`**File map:**\n${fileMap.output}`);
+					response.appendResponseLine(`Available symbols:\n${symbolHierarchy}`);
 					return;
 				}
 
@@ -701,7 +703,7 @@ export const /**
 				response.appendResponseLine(output);
 			} else {
 				response.appendResponseLine(`"${symbolTarget}": Not found.\n`);
-				response.appendResponseLine(`**File map:**\n${fileMap.output}`);
+				response.appendResponseLine(`**Available symbols:**\n${symbolHierarchy}`);
 			}
 		},
 		name: 'file_read',
