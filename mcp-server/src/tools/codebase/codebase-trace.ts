@@ -6,255 +6,399 @@
 
 import { z as zod } from 'zod';
 
-import { type CallChainNode, codebaseTraceSymbol, type CodebaseTraceSymbolResult, type ImpactInfo, type ReExportInfo, type ReferenceInfo, type SymbolLocationInfo, type TypeFlowInfo, type TypeHierarchyInfo } from '../../client-pipe.js';
+import { codebaseTraceSymbol, type CodebaseTraceSymbolResult, type TraceCallNode, type TraceCalls, type TraceDefinition, type TraceReferences, type TraceTypes } from '../../client-pipe.js';
 import { getClientWorkspace } from '../../config.js';
 import { ToolCategory } from '../categories.js';
 import { defineTool } from '../ToolDefinition.js';
 import { buildIgnoreContextJson } from './ignore-context.js';
 
-// ── Dynamic Timeout Configuration ────────────────────────
+// ── Adaptive Token Budget ────────────────────────────────
 
-const TIMEOUT_BASE_MS = 5_000;
-const TIMEOUT_FILE_FACTOR_MS = 15;
-const TIMEOUT_DEPTH_FACTOR_MS = 3_000;
-const TIMEOUT_MODE_FACTOR_MS = 2_000;
-
-// ── Progressive Detail Reduction ─────────────────────────
-
-const OUTPUT_TOKEN_LIMIT = 3_000;
+const OUTPUT_CHAR_LIMIT = 12_000;
 const CHARS_PER_TOKEN = 4;
-const OUTPUT_CHAR_LIMIT = OUTPUT_TOKEN_LIMIT * CHARS_PER_TOKEN;
 
-type ReductionLevel = 'collapsed-outgoing-calls' | 'collapsed-type-flows' | 'reduced-depth' | 'stripped-dts-refs';
-
-interface OutputScaling {
-	effectiveDepth: number;
-	estimatedTokens: number;
-	reductionsApplied: ReductionLevel[];
-	requestedDepth: number;
-	suggestions: string[];
-	tokenLimit: number;
+function estimateChars(text: string): number {
+	return text.length;
 }
 
-function estimateTokens(obj: unknown): number {
-	return Math.ceil(JSON.stringify(obj).length / CHARS_PER_TOKEN);
+// ── YAML Formatter ───────────────────────────────────────
+
+function yamlLine(indent: number, key: string, value?: string): string {
+	const prefix = '  '.repeat(indent);
+	return value !== undefined ? `${prefix}${key}: ${value}` : `${prefix}${key}:`;
 }
 
-function isDtsReference(file: string): boolean {
-	return /\.d\.ts$/.test(file) || file.includes('node_modules');
+function yamlInlineArray(items: string[]): string {
+	return `[${items.join(', ')}]`;
 }
 
-function stripDtsReferences(result: CodebaseTraceSymbolResult): void {
-	result.references = result.references.filter((r) => !isDtsReference(r.file));
-	result.reExports = result.reExports.filter((r) => !isDtsReference(r.file));
+function formatDefinition(def: TraceDefinition): string {
+	const lines: string[] = [];
+	lines.push('definition:');
+	lines.push(yamlLine(1, 'symbol', def.symbol));
+	lines.push(yamlLine(1, 'kind', def.kind));
+	lines.push(yamlLine(1, 'file', def.file));
+	lines.push(yamlLine(1, 'exported', String(def.exported)));
 
-	result.callChain.incomingCalls = result.callChain.incomingCalls.filter((c) => !isDtsReference(c.file));
-	result.callChain.outgoingCalls = result.callChain.outgoingCalls.filter((c) => !isDtsReference(c.file));
-
-	result.typeFlows = result.typeFlows.filter((f) => !f.traceTo || !isDtsReference(f.traceTo.file));
-
-	if (result.impact) {
-		result.impact.directDependents = result.impact.directDependents.filter((d) => !isDtsReference(d.file));
-		result.impact.transitiveDependents = result.impact.transitiveDependents.filter((d) => !isDtsReference(d.file));
+	if (def.modifiers && def.modifiers.length > 0) {
+		lines.push(yamlLine(1, 'modifiers', yamlInlineArray(def.modifiers)));
 	}
+
+	lines.push(yamlLine(1, 'signature', `"${def.signature.replaceAll('"', '\\"')}"`));
+
+	if (def.generics) {
+		lines.push(yamlLine(1, 'generics', `"${def.generics}"`));
+	}
+
+	if (def.jsdoc) {
+		lines.push(yamlLine(1, 'jsdoc', `"${def.jsdoc.replaceAll('"', '\\"')}"`));
+	}
+
+	if (def.parameters && def.parameters.length > 0) {
+		lines.push(yamlLine(1, 'parameters'));
+		for (const p of def.parameters) {
+			const defaultSuffix = p.defaultValue ? ` = ${p.defaultValue}` : '';
+			lines.push(`    - ${p.name}: ${p.type}${defaultSuffix}`);
+		}
+	}
+
+	if (def.returns) {
+		lines.push(yamlLine(1, 'returns', def.returns));
+	}
+
+	if (def.overloads && def.overloads.length > 0) {
+		lines.push(yamlLine(1, 'overloads'));
+		for (const o of def.overloads) {
+			lines.push(`    - "${o.replaceAll('"', '\\"')}"`);
+		}
+	}
+
+	if (def.resolvedFrom && def.resolvedFrom.length > 0) {
+		lines.push(yamlLine(1, 'resolvedFrom'));
+		for (const step of def.resolvedFrom) {
+			lines.push(`    - ${step.file} → ${step.action}`);
+		}
+	}
+
+	if (def.members && def.members.length > 0) {
+		lines.push(yamlLine(1, 'members'));
+		for (const m of def.members) {
+			const typeStr = m.type ? `: ${m.type}` : '';
+			lines.push(`    - ${m.name}${typeStr} (${m.kind})`);
+		}
+	}
+
+	return lines.join('\n');
 }
 
-function collapseOutgoingCalls(result: CodebaseTraceSymbolResult): void {
-	const count = result.callChain.outgoingCalls.length;
-	if (count > 0) {
-		result.callChain.outgoingCalls = [];
-		result.callChain.outgoingCollapsedCount = count;
+function formatReferences(refs: TraceReferences): string {
+	const lines: string[] = [];
+	lines.push('references:');
+	lines.push(yamlLine(1, 'total', String(refs.total)));
+	lines.push(yamlLine(1, 'files', String(refs.files)));
+
+	if (refs.byFile.length > 0) {
+		lines.push(yamlLine(1, 'byFile'));
+		for (const entry of refs.byFile) {
+			lines.push(`    - file: ${entry.file}`);
+			if (entry.test) {
+				lines.push('      test: true');
+			}
+			lines.push(`      usages: ${yamlInlineArray(entry.usages)}`);
+		}
 	}
+
+	if (refs.reExports.length > 0) {
+		lines.push(yamlLine(1, 'reExports'));
+		for (const re of refs.reExports) {
+			lines.push(`    - file: ${re.file}`);
+			lines.push(`      exportedAs: ${re.exportedAs}`);
+			lines.push(`      from: ${re.from}`);
+		}
+	}
+
+	return lines.join('\n');
 }
 
-function collapseTypeFlows(result: CodebaseTraceSymbolResult): void {
-	for (const flow of result.typeFlows) {
-		delete flow.traceTo;
+function formatCallTree(nodes: TraceCallNode[], indent: number): string[] {
+	const lines: string[] = [];
+	const prefix = '  '.repeat(indent);
+	for (const node of nodes) {
+		lines.push(`${prefix}- ${node.symbol} (${node.file})`);
+		if (node.children && node.children.length > 0) {
+			lines.push(...formatCallTree(node.children, indent + 1));
+		}
 	}
+	return lines;
 }
 
-function applyProgressiveReduction(result: CodebaseTraceSymbolResult, requestedDepth: number): OutputScaling {
-	const reductionsApplied: ReductionLevel[] = [];
-	const suggestions: string[] = [];
+function formatCalls(calls: TraceCalls): string {
+	const lines: string[] = [];
+	lines.push('calls:');
 
-	// Level 1: Strip .d.ts references
-	if (estimateTokens(result) > OUTPUT_TOKEN_LIMIT) {
-		stripDtsReferences(result);
-		reductionsApplied.push('stripped-dts-refs');
+	lines.push(yamlLine(1, 'incoming'));
+	if (calls.incoming.length > 0) {
+		lines.push(...formatCallTree(calls.incoming, 2));
 	}
 
-	// Level 2: Collapse outgoing calls to count only (keep incoming)
-	if (estimateTokens(result) > OUTPUT_TOKEN_LIMIT) {
-		collapseOutgoingCalls(result);
-		reductionsApplied.push('collapsed-outgoing-calls');
-		suggestions.push("Use include: ['calls'] to get full outgoing call detail");
+	lines.push(yamlLine(1, 'outgoing'));
+	if (calls.outgoing.length > 0) {
+		lines.push(...formatCallTree(calls.outgoing, 2));
 	}
 
-	// Level 3: Collapse type flows (drop traceTo)
-	if (estimateTokens(result) > OUTPUT_TOKEN_LIMIT) {
-		collapseTypeFlows(result);
-		reductionsApplied.push('collapsed-type-flows');
-		suggestions.push("Use include: ['type-flows'] to get full type flow detail");
+	return lines.join('\n');
+}
+
+function formatTypes(types: TraceTypes): string {
+	const lines: string[] = [];
+	lines.push('types:');
+
+	if (types.hierarchy) {
+		lines.push(yamlLine(1, 'hierarchy'));
+		if (types.hierarchy.extends) {
+			lines.push(yamlLine(2, 'extends', types.hierarchy.extends));
+		}
+		if (types.hierarchy.implements && types.hierarchy.implements.length > 0) {
+			lines.push(yamlLine(2, 'implements', yamlInlineArray(types.hierarchy.implements)));
+		}
+		if (types.hierarchy.subtypes && types.hierarchy.subtypes.length > 0) {
+			lines.push(yamlLine(2, 'subtypes'));
+			for (const s of types.hierarchy.subtypes) {
+				lines.push(`      - ${s}`);
+			}
+		}
 	}
 
-	// Level 4: Note that depth could be reduced (don't retry here — depth is set upstream)
-	const effectiveDepth = requestedDepth;
-	if (estimateTokens(result) > OUTPUT_TOKEN_LIMIT) {
-		reductionsApplied.push('reduced-depth');
-		suggestions.push(`Reduce depth from ${requestedDepth} to limit call hierarchy size`);
+	if (types.flows) {
+		lines.push(yamlLine(1, 'flows'));
+		if (types.flows.parameters && types.flows.parameters.length > 0) {
+			lines.push(yamlLine(2, 'parameters'));
+			for (const p of types.flows.parameters) {
+				const fileSuffix = p.file ? ` (${p.file})` : '';
+				lines.push(`      - ${p.name} → ${p.type}${fileSuffix}`);
+			}
+		}
+		if (types.flows.returns) {
+			lines.push(yamlLine(2, 'returns', types.flows.returns));
+		}
+		if (types.flows.properties && types.flows.properties.length > 0) {
+			lines.push(yamlLine(2, 'properties'));
+			for (const p of types.flows.properties) {
+				const fileSuffix = p.file ? ` (${p.file})` : '';
+				lines.push(`      - ${p.name} → ${p.type}${fileSuffix}`);
+			}
+		}
 	}
 
-	return {
-		effectiveDepth,
-		estimatedTokens: estimateTokens(result),
-		reductionsApplied,
-		requestedDepth,
-		suggestions,
-		tokenLimit: OUTPUT_TOKEN_LIMIT
-	};
+	if (types.typeGuard) {
+		lines.push(yamlLine(1, 'typeGuard', types.typeGuard));
+	}
+
+	if (types.mergedDeclarations && types.mergedDeclarations.length > 0) {
+		lines.push(yamlLine(1, 'mergedDeclarations'));
+		for (const d of types.mergedDeclarations) {
+			lines.push(`    - ${d}`);
+		}
+	}
+
+	return lines.join('\n');
+}
+
+function formatResult(result: CodebaseTraceSymbolResult): string {
+	const sections: string[] = [];
+
+	if (result.definition) {
+		sections.push(formatDefinition(result.definition));
+	}
+
+	if (result.references) {
+		sections.push(formatReferences(result.references));
+	}
+
+	if (result.calls) {
+		sections.push(formatCalls(result.calls));
+	}
+
+	if (result.types) {
+		sections.push(formatTypes(result.types));
+	}
+
+	if (result.diagnostics && result.diagnostics.length > 0) {
+		const diag = ['diagnostics:'];
+		for (const d of result.diagnostics) {
+			diag.push(`  - ${d}`);
+		}
+		sections.push(diag.join('\n'));
+	}
+
+	if (result.partial) {
+		sections.push(`partial: true\npartialReason: ${result.partialReason ?? 'unknown'}`);
+	}
+
+	return sections.join('\n\n');
+}
+
+// ── Progressive Reduction (adaptive token budget) ────────
+
+function stripDtsFromReferences(result: CodebaseTraceSymbolResult): boolean {
+	if (!result.references) return false;
+	const before = result.references.byFile.length;
+	result.references.byFile = result.references.byFile.filter((r) => !r.file.endsWith('.d.ts') && !r.file.includes('node_modules'));
+	result.references.reExports = result.references.reExports.filter((r) => !r.file.endsWith('.d.ts') && !r.file.includes('node_modules'));
+	const after = result.references.byFile.length;
+	if (before !== after) {
+		result.references.total = result.references.byFile.reduce((sum, f) => sum + f.usages.length, 0);
+		result.references.files = result.references.byFile.length;
+		return true;
+	}
+	return false;
+}
+
+function collapseOutgoingCalls(result: CodebaseTraceSymbolResult): boolean {
+	if (!result.calls || result.calls.outgoing.length === 0) return false;
+	const count = result.calls.outgoing.length;
+	result.calls.outgoing = [{ file: '', symbol: `(${count} outgoing calls collapsed)` }];
+	return true;
+}
+
+function collapseTypeFlows(result: CodebaseTraceSymbolResult): boolean {
+	if (!result.types?.flows) return false;
+	delete result.types.flows;
+	return true;
+}
+
+function applyProgressiveReduction(result: CodebaseTraceSymbolResult): string[] {
+	const reductions: string[] = [];
+	let output = formatResult(result);
+
+	if (estimateChars(output) <= OUTPUT_CHAR_LIMIT) return reductions;
+
+	if (stripDtsFromReferences(result)) {
+		reductions.push('Stripped .d.ts and node_modules references');
+		output = formatResult(result);
+		if (estimateChars(output) <= OUTPUT_CHAR_LIMIT) return reductions;
+	}
+
+	if (collapseOutgoingCalls(result)) {
+		reductions.push('Collapsed outgoing calls to count');
+		output = formatResult(result);
+		if (estimateChars(output) <= OUTPUT_CHAR_LIMIT) return reductions;
+	}
+
+	if (collapseTypeFlows(result)) {
+		reductions.push('Removed type flows to save space');
+		output = formatResult(result);
+	}
+
+	return reductions;
 }
 
 // ── Tool Definition ──────────────────────────────────────
 
-export const /**
-	 *
-	 */
-	trace = defineTool({
-		annotations: {
-			category: ToolCategory.CODEBASE_ANALYSIS,
-			conditions: ['client-pipe', 'codebase-sequential'],
-			destructiveHint: false,
-			idempotentHint: true,
-			openWorldHint: false,
-			readOnlyHint: true,
-			title: 'Codebase Trace'
-		},
-		description:
-			'Trace a symbol through the codebase to understand its full lifecycle.\n\n' +
-			"Finds a symbol's definition, all references, re-export chains, call hierarchy\n" +
-			'(who calls it / what it calls), type flows (parameter types, return types,\n' +
-			'inheritance), and optionally computes blast-radius impact analysis.\n\n' +
-			'Use this after codebase_map to deep-dive into a specific symbol. Provide\n' +
-			'the symbol name and optionally a file path for disambiguation.\n\n' +
-			'**PARAMETERS:**\n' +
-			'- `symbol` (string, required): Name of the symbol to trace\n' +
-			'- `file` (string): File where the symbol is defined (helps disambiguation)\n' +
-			'- `depth` (number, 1-10): Call hierarchy traversal depth. Default: 3\n' +
-			"- `include` (string[]): Which analyses to include. Default: ['all']\n" +
-			'- `includeImpact` (boolean): Compute blast-radius impact analysis. Default: false\n\n' +
-			'**EXAMPLES:**\n' +
-			'- Trace a function: `{ symbol: "calculateTotal" }`\n' +
-			'- Trace with file hint: `{ symbol: "UserService", file: "src/services/user.ts" }`\n' +
-			'- Only references: `{ symbol: "config", include: ["references"] }`\n' +
-			'- Call hierarchy: `{ symbol: "handleRequest", include: ["calls"], depth: 5 }`\n' +
-			'- Full impact: `{ symbol: "BaseEntity", includeImpact: true }`',
-		handler: async (request, response) => {
-			if (!request.params.symbol || request.params.symbol.trim() === '') {
-				response.setSkipLedger();
-				response.appendResponseLine(JSON.stringify({ error: 'symbol is required' }, null, 2));
-				return;
-			}
+export const trace = defineTool({
+	annotations: {
+		category: ToolCategory.CODEBASE_ANALYSIS,
+		conditions: ['client-pipe', 'codebase-sequential'],
+		destructiveHint: false,
+		idempotentHint: true,
+		openWorldHint: false,
+		readOnlyHint: true,
+		title: 'Codebase Trace'
+	},
+	description:
+		'Trace a symbol through the codebase to understand its full semantic lifecycle.\n\n' +
+		'Returns the symbol definition (always), plus optional sections enabled by boolean flags:\n' +
+		'- `references`: All reference sites grouped by file, plus re-export chains\n' +
+		'- `calls`: Hierarchical incoming/outgoing call chains at full depth\n' +
+		'- `types`: Type hierarchy, type flows, type guards, declaration merging\n\n' +
+		'Definition is always returned. Without any flags, you get a rich definition including\n' +
+		'signature, modifiers, generics, JSDoc, parameters with defaults, overloads,\n' +
+		'import resolution chain, and class/interface members.\n\n' +
+		'Output is YAML-structured text. No line numbers — navigate by symbol name.\n\n' +
+		'**EXAMPLES:**\n' +
+		'- What is this symbol? `{ symbol: "TraceSymbolParams" }`\n' +
+		'- Where is it used? `{ symbol: "traceSymbol", references: true }`\n' +
+		'- Show call chain: `{ symbol: "traceSymbol", calls: true }`\n' +
+		'- Full picture: `{ symbol: "traceSymbol", references: true, calls: true, types: true }`\n' +
+		'- Resolve an import: `{ symbol: "codebaseTraceSymbol", file: "client-handlers.ts" }`',
+	handler: async (request, response) => {
+		const { symbol, file, references, calls, types } = request.params;
 
-			// Dynamic timeout: scales with request complexity
-			const modeCount = request.params.include.includes('all') ? 6 : request.params.include.length;
-			const dynamicTimeout = TIMEOUT_BASE_MS + request.params.depth * TIMEOUT_DEPTH_FACTOR_MS + modeCount * TIMEOUT_MODE_FACTOR_MS;
-
-			const result = await codebaseTraceSymbol(
-				request.params.symbol,
-				getClientWorkspace(),
-				request.params.file,
-				request.params.depth,
-				request.params.include,
-				request.params.includeImpact,
-				undefined, // maxReferences: removed — no artificial limit
-				dynamicTimeout
-			);
-
-			// Adjust dynamic timeout with actual file count now that we have it
-			if (result.sourceFileCount !== undefined) {
-				const adjustedTimeout = TIMEOUT_BASE_MS + result.sourceFileCount * TIMEOUT_FILE_FACTOR_MS + request.params.depth * TIMEOUT_DEPTH_FACTOR_MS + modeCount * TIMEOUT_MODE_FACTOR_MS;
-				result.effectiveTimeout = adjustedTimeout;
-			}
-
-			const isEmpty =
-				result.summary.totalReferences === 0 &&
-				result.references.length === 0 &&
-				result.reExports.length === 0 &&
-				result.callChain.incomingCalls.length === 0 &&
-				result.callChain.outgoingCalls.length === 0 &&
-				result.typeFlows.length === 0 &&
-				!result.definition;
-
-			const effectiveRootDir = result.resolvedRootDir;
-
+		if (!symbol || symbol.trim() === '') {
 			response.setSkipLedger();
-
-			// Apply progressive detail reduction
-			const scaling = applyProgressiveReduction(result, request.params.depth);
-
-			// Build final output
-			const output: Record<string, unknown> = { ...result };
-
-			if (isEmpty && effectiveRootDir) {
-				output.ignoredBy = buildIgnoreContextJson(effectiveRootDir);
-			}
-
-			if (scaling.reductionsApplied.length > 0) {
-				output.outputScaling = scaling;
-			}
-
-			// Final size check — if still too large after all reductions, return error with summary
-			if (estimateTokens(output) > OUTPUT_TOKEN_LIMIT) {
-				const errorResult = {
-					definition: result.definition,
-					error: 'Response too large even after progressive reduction',
-					outputScaling: {
-						...scaling,
-						estimatedTokens: estimateTokens(output)
-					},
-					suggestions: ["Use include: ['references'] or include: ['calls'] to focus on one analysis mode", `Reduce depth from ${request.params.depth} to limit call hierarchy size`],
-					summary: result.summary,
-					symbol: result.symbol
-				};
-				response.appendResponseLine(JSON.stringify(errorResult, null, 2));
-				return;
-			}
-
-			response.appendResponseLine(JSON.stringify(output, null, 2));
-		},
-		name: 'codebase_trace',
-		schema: {
-			depth: zod
-				.number()
-				.int()
-				.min(1)
-				.max(10)
-				.optional()
-				.default(3)
-				.describe('Call hierarchy traversal depth. Higher values find deeper call chains ' + 'but take longer. Default: 3.'),
-			file: zod
-				.string()
-				.optional()
-				.describe('File path where the symbol is defined. ' + 'Helps disambiguate when multiple symbols share the same name. ' + 'Can be relative or absolute.'),
-			include: zod
-				.array(zod.enum(['all', 'definitions', 'references', 'reexports', 'calls', 'type-flows', 'hierarchy']))
-				.min(1)
-				.optional()
-				.default(['all'])
-				.describe("Which analyses to include. Default: ['all']. " + "Use specific modes like ['references', 'calls'] to reduce output."),
-			includeImpact: zod
-				.boolean()
-				.optional()
-				.default(false)
-				.describe('Compute blast-radius impact analysis. Shows direct and transitive ' + 'dependents with risk level assessment. Default: false.'),
-			symbol: zod.string().describe('Name of the symbol to trace (function, class, variable, etc.).')
+			response.appendResponseLine('error: symbol parameter is required');
+			return;
 		}
-	});
 
-// ── Extended call chain type (outgoing can be collapsed) ─
+		const rootDir = getClientWorkspace();
 
-declare module '../../client-pipe.js' {
-	interface CallChainInfo {
-		outgoingCollapsedCount?: number;
+		const result = await codebaseTraceSymbol(
+			symbol,
+			rootDir,
+			file,
+			references,
+			calls,
+			types
+		);
+
+		response.setSkipLedger();
+
+		if (result.errorMessage) {
+			const lines = [`error: ${result.errorMessage}`];
+			if (result.notFoundReason) {
+				lines.push(`reason: ${result.notFoundReason}`);
+			}
+			if (result.resolvedRootDir) {
+				const ignoredBy = buildIgnoreContextJson(result.resolvedRootDir);
+				if (ignoredBy) {
+					lines.push(`ignoredBy: ${JSON.stringify(ignoredBy)}`);
+				}
+			}
+			response.appendResponseLine(lines.join('\n'));
+			return;
+		}
+
+		const reductions = applyProgressiveReduction(result);
+
+		let output = formatResult(result);
+
+		if (reductions.length > 0) {
+			output += '\n\n# Adaptive reductions applied:\n';
+			for (const r of reductions) {
+				output += `#   - ${r}\n`;
+			}
+		}
+
+		if (result.elapsedMs !== undefined) {
+			output += `\n# elapsed: ${result.elapsedMs}ms`;
+		}
+		if (result.sourceFileCount !== undefined) {
+			output += `\n# sourceFiles: ${result.sourceFileCount}`;
+		}
+
+		response.appendResponseLine(output);
+	},
+	name: 'codebase_trace',
+	schema: {
+		calls: zod
+			.boolean()
+			.optional()
+			.default(false)
+			.describe('Include hierarchical incoming/outgoing call chains. Full depth with adaptive budget.'),
+		file: zod
+			.string()
+			.optional()
+			.describe('File where the symbol was encountered. Helps disambiguate and enables import resolution.'),
+		references: zod
+			.boolean()
+			.optional()
+			.default(false)
+			.describe('Include all reference sites grouped by file, plus re-export chains.'),
+		symbol: zod.string().describe('Name of the symbol to trace (function, class, interface, type, variable, etc.).'),
+		types: zod
+			.boolean()
+			.optional()
+			.default(false)
+			.describe('Include type hierarchy, type flows, type guards, and declaration merging.')
 	}
-}
+});

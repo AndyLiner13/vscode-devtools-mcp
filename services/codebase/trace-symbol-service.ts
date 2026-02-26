@@ -1,24 +1,27 @@
 import type {
-	CallChainInfo,
-	CallChainNode,
 	DeadCodeItem,
 	DeadCodeParams,
 	DeadCodeResult,
-	ImpactDependentInfo,
-	ImpactInfo,
-	ReExportInfo,
-	ReferenceInfo,
-	SymbolLocationInfo,
+	TraceCalls,
+	TraceCallNode,
+	TraceDefinition,
+	TraceMember,
+	TraceParameter,
+	TraceReExport,
+	TraceReferenceFile,
+	TraceReferences,
+	TraceResolutionStep,
 	TraceSymbolParams,
 	TraceSymbolResult,
-	TypeFlowInfo,
-	TypeHierarchyInfo,
-	TypeHierarchyNode
+	TraceTypeFlow,
+	TraceTypeHierarchy,
+	TraceTypes,
+	TraceUsageKind
 } from './types';
 
 import * as fs from 'node:fs';
 // IMPORTANT: DO NOT use any VS Code proposed APIs in this file.
-// Pure Node.js — no VS Code API dependency.
+// Pure Node.js â€” no VS Code API dependency.
 import * as path from 'node:path';
 import { Node, type Project, type SourceFile, SyntaxKind, ts, type Symbol as TsSymbol } from 'ts-morph';
 
@@ -27,7 +30,7 @@ import { getWorkspaceProject, invalidateWorkspaceProject } from './ts-project';
 import { warn } from '../logger';
 
 
-// ── File Filter ────────────────────────────────────────
+// â”€â”€ File Filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type FileFilter = (absoluteFilePath: string) => boolean;
 
@@ -50,7 +53,7 @@ function buildFileFilter(rootDir: string): FileFilter {
 	};
 }
 
-// ── Module-Level Constants ─────────────────────────────
+// â”€â”€ Module-Level Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const DECLARATION_KINDS = new Set([
 	SyntaxKind.FunctionDeclaration,
@@ -76,7 +79,7 @@ const CALLABLE_KINDS = new Set([SyntaxKind.FunctionDeclaration, SyntaxKind.Metho
 
 const ASSIGNMENT_OPERATORS = new Set(['=', '+=', '-=', '*=', '/=', '%=', '<<=', '>>=', '>>>=', '&=', '|=', '^=', '**=', '&&=', '||=', '??=']);
 
-// ── Project Root Detection ─────────────────────────────
+// â”€â”€ Project Root Detection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Walk up from a file path to find the best project root with a tsconfig.json.
@@ -102,7 +105,7 @@ function findNearestProjectRoot(filePath: string, workspaceRoot: string): string
 
 	if (candidates.length === 0) return undefined;
 
-	// Candidates are ordered nearest→highest. Reverse to try highest first.
+	// Candidates are ordered nearestâ†’highest. Reverse to try highest first.
 	candidates.reverse();
 
 	for (const candidate of candidates) {
@@ -120,7 +123,7 @@ function findNearestProjectRoot(filePath: string, workspaceRoot: string): string
 }
 
 /**
- * Check if a tsconfig is solution-style (files:[], no include — delegates to references).
+ * Check if a tsconfig is solution-style (files:[], no include â€” delegates to references).
  */
 function isSolutionTsconfig(dir: string): boolean {
 	try {
@@ -152,193 +155,105 @@ function solutionCoversFile(solutionDir: string, filePath: string): boolean {
 	}
 }
 
-// ── Public API ─────────────────────────────────────────
+// â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function traceSymbol(params: TraceSymbolParams): Promise<TraceSymbolResult> {
 	const startTime = Date.now();
-	const userTimeout = params.timeout ?? 30000;
-	const maxReferences = params.maxReferences ?? 500;
-	const include = new Set(params.include ?? ['all']);
-	const includeAll = include.has('all');
-	const depth = params.depth ?? 3;
 	let { rootDir } = params;
-
 	const elapsed = (): number => Date.now() - startTime;
+	const TIMEOUT_MS = 60_000;
+	const isTimedOut = (): boolean => elapsed() >= TIMEOUT_MS;
 
 	if (!rootDir) {
-		const result = emptyTraceResult(params.symbol);
-		result.notFoundReason = 'no-project';
-		result.errorMessage = 'No workspace folder found. Open a folder or specify rootDir.';
-		result.elapsedMs = elapsed();
-		return result;
+		return {
+			elapsedMs: elapsed(),
+			errorMessage: 'No workspace folder found. Open a folder or specify rootDir.',
+			notFoundReason: 'no-project',
+			symbol: params.symbol
+		};
 	}
 
 	try {
-		// When a specific file is given, find the best project root with a tsconfig
 		if (params.file) {
 			const absFile = path.resolve(rootDir, params.file);
 			const betterRoot = findNearestProjectRoot(absFile, rootDir);
-			if (betterRoot) {
-				rootDir = betterRoot;
-			}
+			if (betterRoot) rootDir = betterRoot;
 		}
 
-		// Always invalidate project cache so each request uses fresh data
 		invalidateWorkspaceProject(rootDir);
-
 		const project = getWorkspaceProject(rootDir);
-
-		// Build file filter from .devtoolsignore
 		const isIgnored = buildFileFilter(rootDir);
-
-		// Calculate dynamic timeout based on project size
 		const sourceFileCount = project.getSourceFiles().length;
-		const calculatedTimeout = calculateDynamicTimeout(sourceFileCount, maxReferences, depth);
-		const effectiveTimeout = Math.max(userTimeout, calculatedTimeout);
-		const isTimedOut = (): boolean => elapsed() >= effectiveTimeout;
 
 		if (sourceFileCount === 0) {
-			const result = emptyTraceResult(params.symbol);
-			result.resolvedRootDir = rootDir;
-			result.notFoundReason = 'no-matching-files';
-			result.errorMessage = `No TypeScript/JavaScript files found in project. Check tsconfig.json "include" patterns or ensure *.ts files exist in ${rootDir}`;
-			result.elapsedMs = elapsed();
-			result.sourceFileCount = 0;
-			result.effectiveTimeout = effectiveTimeout;
-			return result;
+			return {
+				elapsedMs: elapsed(),
+				errorMessage: `No TypeScript/JavaScript files found in project. Check tsconfig.json in ${rootDir}`,
+				notFoundReason: 'no-matching-files',
+				resolvedRootDir: rootDir,
+				sourceFileCount: 0,
+				symbol: params.symbol
+			};
 		}
 
 		let symbolInfo = findSymbolNode(project, params, rootDir, isIgnored, isTimedOut);
 
 		if (!symbolInfo) {
-			const emptyResult = emptyTraceResult(params.symbol);
-			emptyResult.resolvedRootDir = rootDir;
-			emptyResult.elapsedMs = elapsed();
-			emptyResult.sourceFileCount = sourceFileCount;
-			emptyResult.effectiveTimeout = effectiveTimeout;
-			emptyResult.notFoundReason = 'symbol-not-found';
-			emptyResult.errorMessage = buildSymbolNotFoundMessage(params, sourceFileCount);
-			return emptyResult;
+			return {
+				elapsedMs: elapsed(),
+				errorMessage: buildSymbolNotFoundMessage(params, sourceFileCount),
+				notFoundReason: 'symbol-not-found',
+				resolvedRootDir: rootDir,
+				sourceFileCount,
+				symbol: params.symbol
+			};
 		}
 
-		// If the found node is an import, follow to the actual definition
-		const originalNodeKind = symbolInfo.node.getKind();
-		const wasImport = originalNodeKind === SyntaxKind.ImportSpecifier || originalNodeKind === SyntaxKind.ImportClause;
 		const resolvedImport = resolveImportToDefinition(symbolInfo, project);
-		const unresolved = wasImport && !resolvedImport;
 		symbolInfo = resolvedImport ?? symbolInfo;
 
 		const { node, sourceFile, symbol } = symbolInfo;
 
-		const result: TraceSymbolResult = {
-			callChain: { incomingCalls: [], outgoingCalls: [] },
-			reExports: [],
-			references: [],
-			summary: { maxCallDepth: 0, totalFiles: 0, totalReferences: 0 },
-			symbol: params.symbol,
-			typeFlows: []
-		};
+		const result: TraceSymbolResult = { symbol: params.symbol };
 
-		// Phase 1: Definition (fast, always do)
-		if (includeAll || include.has('definitions')) {
-			result.definition = traceDefinition(node, sourceFile, rootDir);
-			if (result.definition && unresolved) {
-				result.definition.unresolved = true;
-			}
+		result.definition = buildDefinition(node, sourceFile, rootDir, project);
+
+		if (!isTimedOut() && params.references) {
+			result.references = buildReferences(node, symbol, project, rootDir, isIgnored);
 		}
 
-		// Phase 2: References (can be slow, respect limits)
-		if (!isTimedOut() && (includeAll || include.has('references'))) {
-			const refs = traceReferences(node, symbol, project, rootDir, isIgnored, maxReferences);
-			result.references = refs.references;
-			if (refs.truncated) {
-				result.partial = true;
-				result.partialReason = 'max-references';
-			}
+		if (!isTimedOut() && params.calls) {
+			result.calls = buildCalls(node, symbol, project, rootDir, isIgnored);
 		}
 
-		// Phase 3: Re-exports (moderate cost)
-		if (!isTimedOut() && (includeAll || include.has('reexports'))) {
-			result.reExports = traceReExports(params.symbol, sourceFile, project, rootDir, isIgnored);
+		if (!isTimedOut() && params.types) {
+			result.types = buildTypes(node, project, rootDir, isIgnored);
 		}
 
-		// Phase 4: Call hierarchy (can be slow) with adaptive depth
-		if (!isTimedOut() && (includeAll || include.has('calls'))) {
-			const TOKEN_BUDGET = 12_000; // ~3000 tokens
-			let usedDepth = depth;
-			let callChain = traceCallHierarchy(node, symbol, project, usedDepth, rootDir, isIgnored);
-
-			// Adaptive depth: reduce if over budget
-			while (usedDepth > 1 && estimateCallChainChars(callChain) > TOKEN_BUDGET) {
-				usedDepth--;
-				callChain = traceCallHierarchy(node, symbol, project, usedDepth, rootDir, isIgnored);
-			}
-
-			result.callChain = callChain;
-
-			// Track auto-optimization metadata
-			if (usedDepth < depth) {
-				result._autoOptimizedCallDepth = {
-					reason: `Call chain exceeded ${TOKEN_BUDGET} char budget; reduced from depth ${depth} to ${usedDepth}.`,
-					requestedDepth: depth,
-					usedDepth
-				};
-			}
-		}
-
-		// Phase 5: Type flows (moderate cost)
-		if (!isTimedOut() && (includeAll || include.has('type-flows'))) {
-			result.typeFlows = traceTypeFlows(node, project, isIgnored);
-		}
-
-		// Phase 6: Type hierarchy (moderate cost)
-		if (!isTimedOut() && (includeAll || include.has('hierarchy'))) {
-			result.hierarchy = traceTypeHierarchy(node, project, depth, rootDir, isIgnored);
-		}
-
-		// Phase 7: Impact analysis (expensive, skip if timed out)
-		if (!isTimedOut() && params.includeImpact) {
-			result.impact = computeImpact(node, project, depth, rootDir, isIgnored);
-		}
-
-		// Check if we timed out during processing
-		if (isTimedOut() && !result.partial) {
+		if (isTimedOut()) {
 			result.partial = true;
 			result.partialReason = 'timeout';
 		}
 
-		const referencedFiles = new Set<string>();
-		for (const ref of result.references) {
-			referencedFiles.add(ref.file);
-		}
-		if (result.definition) {
-			referencedFiles.add(result.definition.file);
-		}
-		result.summary = {
-			maxCallDepth: computeMaxCallDepth(result.callChain, depth),
-			totalFiles: referencedFiles.size,
-			totalReferences: result.references.length
-		};
-
 		result.elapsedMs = elapsed();
 		result.sourceFileCount = sourceFileCount;
-		result.effectiveTimeout = effectiveTimeout;
 		result.resolvedRootDir = rootDir;
-		result.diagnostics = buildTraceDiagnostics(result, params);
+		result.diagnostics = buildTraceDiagnostics(result);
 
 		return result;
 	} catch (err: unknown) {
 		warn('[traceSymbol] Error:', err);
-		const errorResult = emptyTraceResult(params.symbol);
-		errorResult.elapsedMs = elapsed();
-		errorResult.partial = true;
-		errorResult.errorMessage = buildErrorMessage(err, params);
-		errorResult.resolvedRootDir = rootDir;
-		return errorResult;
+		return {
+			elapsedMs: elapsed(),
+			errorMessage: buildErrorMessage(err, params),
+			partial: true,
+			resolvedRootDir: rootDir,
+			symbol: params.symbol
+		};
 	}
 }
 
-// ── Find Symbol Node ─────────────────────────────────
+// â”€â”€ Find Symbol Node â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface SymbolNodeResult {
 	node: Node;
@@ -481,7 +396,7 @@ function isDeclarationNode(node: Node): boolean {
 	return DECLARATION_KINDS.has(node.getKind());
 }
 
-// ── Import Resolution ─────────────────────────────────
+// â”€â”€ Import Resolution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * When a found node is an import specifier/clause, follow to the actual definition
@@ -508,7 +423,7 @@ function resolveImportToDefinition(symbolInfo: { node: Node; sourceFile: SourceF
 
 		// Try native TypeChecker first.
 		// For ImportSpecifier with `as` alias or `type` modifier,
-		// getSymbolAtLocation on the full node may fail — fall back to the name identifier.
+		// getSymbolAtLocation on the full node may fail â€” fall back to the name identifier.
 		let rawSymbol = checker.getSymbolAtLocation(rawNode);
 		if (!rawSymbol && ts.isImportSpecifier(rawNode)) {
 			rawSymbol = checker.getSymbolAtLocation(rawNode.name);
@@ -526,9 +441,9 @@ function resolveImportToDefinition(symbolInfo: { node: Node; sourceFile: SourceF
 		if (!moduleSpecifier) return undefined;
 
 		// Extract the original exported name from the ImportSpecifier.
-		// `import { original as alias }` → propertyName = "original", name = "alias"
-		// `import { name }` → propertyName = undefined, name = "name"
-		// `import { type Foo }` → propertyName = undefined, name = "Foo"
+		// `import { original as alias }` â†’ propertyName = "original", name = "alias"
+		// `import { name }` â†’ propertyName = undefined, name = "name"
+		// `import { type Foo }` â†’ propertyName = undefined, name = "Foo"
 		let exportedName = symbolInfo.node.getText();
 		if (ts.isImportSpecifier(rawNode)) {
 			exportedName = rawNode.propertyName?.text ?? rawNode.name.text;
@@ -633,7 +548,7 @@ function resolveViaModuleResolution(symbolName: string, moduleSpecifier: string,
 		};
 	}
 
-	// Symbol not found at top level — search inside `declare module` blocks
+	// Symbol not found at top level â€” search inside `declare module` blocks
 	// (e.g., @types packages that wrap exports in `declare module "pkg-name"`)
 	for (const mod of morphSourceFile.getModules()) {
 		const modName = mod.getName().replaceAll(/^['"]|['"]$/g, '');
@@ -679,126 +594,233 @@ function resolveRawAlias(checker: ts.TypeChecker, symbol: ts.Symbol): ts.Symbol 
 	return current;
 }
 
-// ── Trace Definition ─────────────────────────────────
+// â”€â”€ Build Definition (always returned) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function traceDefinition(node: Node, sourceFile: SourceFile, rootDir: string): SymbolLocationInfo | undefined {
+function getSymbolName(node: Node): string {
+	if (
+		Node.isFunctionDeclaration(node) ||
+		Node.isMethodDeclaration(node) ||
+		Node.isClassDeclaration(node) ||
+		Node.isInterfaceDeclaration(node) ||
+		Node.isEnumDeclaration(node) ||
+		Node.isTypeAliasDeclaration(node)
+	) {
+		return node.getName() ?? '<anonymous>';
+	}
+	if (Node.isVariableDeclaration(node)) return node.getName();
+	if (Node.isPropertyDeclaration(node) || Node.isPropertySignature(node)) return node.getName();
+	if (Node.isConstructorDeclaration(node)) return 'constructor';
+	if (Node.isGetAccessor(node) || Node.isSetAccessor(node)) return node.getName();
+	return node.getSymbol()?.getName() ?? '<unknown>';
+}
+
+function isExportedNode(node: Node): boolean {
 	try {
-		const filePath = sourceFile.getFilePath();
-		const relativePath = path.relative(rootDir, filePath).replaceAll('\\', '/');
-		const startLine = node.getStartLineNumber();
-		const startCol = node.getStart() - node.getStartLinePos();
-
-		const kind = getNodeKindName(node);
-
-		let signature = node.getText();
-		if (signature.length > 200) {
-			const firstBrace = signature.indexOf('{');
-			if (firstBrace > 0) {
-				signature = `${signature.substring(0, firstBrace).trim()} { ... }`;
-			} else {
-				signature = `${signature.substring(0, 200)}…`;
-			}
+		if ('isExported' in node && typeof node.isExported === 'function') {
+			return (node as { isExported(): boolean }).isExported();
 		}
+		const parent = node.getParent();
+		if (parent && Node.isVariableStatement(parent)) {
+			return parent.isExported();
+		}
+		return false;
+	} catch {
+		return false;
+	}
+}
 
-		return {
-			column: startCol,
-			file: relativePath,
-			kind,
-			line: startLine,
-			signature
-		};
-	} catch (err: unknown) {
-		warn('[traceSymbol:traceDefinition]', err);
+function getModifiers(node: Node): string[] | undefined {
+	try {
+		if (!('getModifiers' in node)) return undefined;
+		const mods = (node as { getModifiers(): Node[] }).getModifiers();
+		if (!mods || mods.length === 0) return undefined;
+		return mods.map((m: Node) => m.getText());
+	} catch {
 		return undefined;
 	}
 }
 
-// ── Trace References ─────────────────────────────────
-
-function traceReferences(node: Node, symbol: TsSymbol | undefined, project: Project, rootDir: string, isIgnored: FileFilter, maxReferences = 500): { references: ReferenceInfo[]; truncated: boolean } {
+function getJsDoc(node: Node): string | undefined {
 	try {
-		const languageService = project.getLanguageService();
-		const referenceNodes = languageService.findReferencesAsNodes(node);
-
-		const results: ReferenceInfo[] = [];
-		const seen = new Set<string>();
-		let truncated = false;
-
-		const defLine = node.getStartLineNumber();
-		const defFile = node.getSourceFile().getFilePath();
-
-		for (const refNode of referenceNodes) {
-			// Check if we've reached the limit
-			if (results.length >= maxReferences) {
-				truncated = true;
-				break;
-			}
-
-			const refSourceFile = refNode.getSourceFile();
-			if (!refSourceFile) continue;
-
-			const refFilePath = refSourceFile.getFilePath();
-			if (isIgnored(refFilePath)) continue;
-
-			const line = refNode.getStartLineNumber();
-			const column = refNode.getStart() - refNode.getStartLinePos();
-
-			if (line === defLine && refFilePath === defFile) continue;
-
-			const relativePath = path.relative(rootDir, refFilePath).replaceAll('\\', '/');
-
-			const key = `${relativePath}:${line}:${column}`;
-			if (seen.has(key)) continue;
-			seen.add(key);
-
-			const lineText = refSourceFile.getFullText().split('\n')[line - 1]?.trim() ?? '';
-			const context = lineText.length > 200 ? `${lineText.substring(0, 200)}…` : lineText;
-
-			const kind = classifyReferenceKind(refNode);
-
-			results.push({
-				column,
-				context,
-				file: relativePath,
-				kind,
-				line
-			});
-		}
-
-		return { references: results, truncated };
-	} catch (err: unknown) {
-		warn('[traceSymbol:traceReferences]', err);
-		return { references: [], truncated: false };
+		if (!('getJsDocs' in node)) return undefined;
+		const docs = (node as { getJsDocs(): Array<{ getDescription(): string }> }).getJsDocs();
+		if (!docs || docs.length === 0) return undefined;
+		const text = docs.map((d) => d.getDescription()).join('\n').trim();
+		return text || undefined;
+	} catch {
+		return undefined;
 	}
 }
 
-function classifyReferenceKind(node: Node): ReferenceInfo['kind'] {
+function getTraceParameters(node: Node): TraceParameter[] | undefined {
+	try {
+		if (!Node.isFunctionDeclaration(node) && !Node.isMethodDeclaration(node) && !Node.isConstructorDeclaration(node)) {
+			return undefined;
+		}
+		const params = node.getParameters();
+		if (params.length === 0) return undefined;
+		return params.map((p) => {
+			const result: TraceParameter = {
+				name: p.getName(),
+				type: p.getType().getText(p)
+			};
+			const init = p.getInitializer();
+			if (init) result.defaultValue = init.getText();
+			return result;
+		});
+	} catch {
+		return undefined;
+	}
+}
+
+function getReturnType(node: Node): string | undefined {
+	try {
+		if (!Node.isFunctionDeclaration(node) && !Node.isMethodDeclaration(node)) return undefined;
+		const retNode = node.getReturnTypeNode();
+		if (retNode) return retNode.getText();
+		const retType = node.getReturnType();
+		const text = retType.getText(node);
+		return text === 'void' ? undefined : text;
+	} catch {
+		return undefined;
+	}
+}
+
+function getGenerics(node: Node): string | undefined {
+	try {
+		if (!('getTypeParameters' in node)) return undefined;
+		const typeParams = (node as { getTypeParameters(): Array<{ getText(): string }> }).getTypeParameters();
+		if (!typeParams || typeParams.length === 0) return undefined;
+		return `<${typeParams.map((tp) => tp.getText()).join(', ')}>`;
+	} catch {
+		return undefined;
+	}
+}
+
+function getOverloads(node: Node): string[] | undefined {
+	try {
+		if (Node.isFunctionDeclaration(node)) {
+			const overloads = node.getOverloads();
+			if (overloads.length === 0) return undefined;
+			return overloads.map((o) => o.getText().trim());
+		}
+		if (Node.isMethodDeclaration(node)) {
+			const overloads = node.getOverloads();
+			if (overloads.length === 0) return undefined;
+			return overloads.map((o) => o.getText().trim());
+		}
+		return undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+function getMembers(node: Node): TraceMember[] | undefined {
+	try {
+		if (!Node.isClassDeclaration(node) && !Node.isInterfaceDeclaration(node)) return undefined;
+
+		const members: TraceMember[] = [];
+
+		if (Node.isClassDeclaration(node)) {
+			for (const m of node.getMethods()) {
+				const member: TraceMember = { kind: 'method', name: m.getName() };
+				const ret = m.getReturnTypeNode();
+				if (ret) member.type = ret.getText();
+				members.push(member);
+			}
+			for (const p of node.getProperties()) {
+				const member: TraceMember = { kind: 'property', name: p.getName() };
+				const t = p.getTypeNode();
+				if (t) member.type = t.getText();
+				members.push(member);
+			}
+			for (const g of node.getGetAccessors()) {
+				members.push({ kind: 'getter', name: g.getName() });
+			}
+			for (const s of node.getSetAccessors()) {
+				members.push({ kind: 'setter', name: s.getName() });
+			}
+		} else {
+			for (const m of node.getMethods()) {
+				const member: TraceMember = { kind: 'method', name: m.getName() };
+				const ret = m.getReturnTypeNode();
+				if (ret) member.type = ret.getText();
+				members.push(member);
+			}
+			for (const p of node.getProperties()) {
+				const member: TraceMember = { kind: 'property', name: p.getName() };
+				const t = p.getTypeNode();
+				if (t) member.type = t.getText();
+				members.push(member);
+			}
+		}
+
+		return members.length > 0 ? members : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+function buildDefinition(node: Node, sourceFile: SourceFile, rootDir: string, project: Project): TraceDefinition {
+	const filePath = sourceFile.getFilePath();
+	const relativePath = path.relative(rootDir, filePath).replaceAll('\\', '/');
+	const kind = getNodeKindName(node);
+
+	let signature = node.getText();
+	if (signature.length > 300) {
+		const firstBrace = signature.indexOf('{');
+		if (firstBrace > 0) {
+			signature = `${signature.substring(0, firstBrace).trim()} { ... }`;
+		} else {
+			signature = `${signature.substring(0, 300)}â€¦`;
+		}
+	}
+
+	const def: TraceDefinition = {
+		exported: isExportedNode(node),
+		file: relativePath,
+		kind,
+		signature,
+		symbol: getSymbolName(node)
+	};
+
+	const mods = getModifiers(node);
+	if (mods) def.modifiers = mods;
+
+	const jsdoc = getJsDoc(node);
+	if (jsdoc) def.jsdoc = jsdoc;
+
+	const params = getTraceParameters(node);
+	if (params) def.parameters = params;
+
+	const returns = getReturnType(node);
+	if (returns) def.returns = returns;
+
+	const generics = getGenerics(node);
+	if (generics) def.generics = generics;
+
+	const overloads = getOverloads(node);
+	if (overloads) def.overloads = overloads;
+
+	const members = getMembers(node);
+	if (members) def.members = members;
+
+	return def;
+}
+
+// â”€â”€ Build References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+const TEST_FILE_RE = /[./](test|spec|__tests__)[./]/i;
+
+function classifyUsageKind(node: Node): TraceUsageKind {
 	const parent = node.getParent();
 	if (!parent) return 'unknown';
 
 	const parentKind = parent.getKind();
 
-	if (
-		parentKind === SyntaxKind.FunctionDeclaration ||
-		parentKind === SyntaxKind.ClassDeclaration ||
-		parentKind === SyntaxKind.InterfaceDeclaration ||
-		parentKind === SyntaxKind.TypeAliasDeclaration ||
-		parentKind === SyntaxKind.EnumDeclaration ||
-		parentKind === SyntaxKind.MethodDeclaration
-	) {
-		return 'read';
-	}
-
 	if (parentKind === SyntaxKind.ImportSpecifier || parentKind === SyntaxKind.ImportClause || parentKind === SyntaxKind.NamespaceImport || parentKind === SyntaxKind.ImportDeclaration) {
 		return 'import';
 	}
-
-	if (parentKind === SyntaxKind.ExportSpecifier || parentKind === SyntaxKind.ExportAssignment) {
-		return 'read';
-	}
-
-	const grandparent = parent.getParent();
-	const grandparentKind = grandparent?.getKind();
 
 	if (Node.isCallExpression(parent)) {
 		const expr = parent.getExpression();
@@ -807,9 +829,10 @@ function classifyReferenceKind(node: Node): ReferenceInfo['kind'] {
 		}
 	}
 
-	if (parentKind === SyntaxKind.NewExpression) {
-		return 'call';
-	}
+	if (parentKind === SyntaxKind.NewExpression) return 'call';
+
+	const grandparent = parent.getParent();
+	const grandparentKind = grandparent?.getKind();
 
 	if (parentKind === SyntaxKind.PropertyAccessExpression && grandparentKind === SyntaxKind.CallExpression) {
 		return 'call';
@@ -837,9 +860,7 @@ function classifyReferenceKind(node: Node): ReferenceInfo['kind'] {
 		}
 	}
 
-	if (parentKind === SyntaxKind.VariableDeclaration) {
-		return 'write';
-	}
+	if (parentKind === SyntaxKind.VariableDeclaration) return 'write';
 
 	if (parentKind === SyntaxKind.PropertyAssignment && parent.getChildAtIndex(0) === node) {
 		return 'write';
@@ -848,11 +869,9 @@ function classifyReferenceKind(node: Node): ReferenceInfo['kind'] {
 	return 'read';
 }
 
-// ── Trace Re-exports ─────────────────────────────────
-
-function traceReExports(symbolName: string, definitionSourceFile: SourceFile, project: Project, rootDir: string, isIgnored: FileFilter): ReExportInfo[] {
+function collectReExports(symbolName: string, definitionSourceFile: SourceFile, project: Project, rootDir: string, isIgnored: FileFilter): TraceReExport[] {
 	try {
-		const reExports: ReExportInfo[] = [];
+		const reExports: TraceReExport[] = [];
 		const definitionPath = definitionSourceFile.getFilePath();
 		const seen = new Set<string>();
 
@@ -879,30 +898,7 @@ function traceReExports(symbolName: string, definitionSourceFile: SourceFile, pr
 						reExports.push({
 							exportedAs,
 							file: relativePath,
-							from: moduleSpec,
-							line: exportDecl.getStartLineNumber(),
-							originalName
-						});
-					}
-				}
-			}
-
-			const exportedDecls = sourceFile.getExportedDeclarations();
-			const exportedSymbol = exportedDecls.get(symbolName);
-			if (exportedSymbol && exportedSymbol.length > 0) {
-				for (const decl of exportedSymbol) {
-					const declFile = decl.getSourceFile()?.getFilePath();
-					if (declFile && declFile !== filePath && declFile === definitionPath) {
-						const key = `${relativePath}:${symbolName}:${symbolName}`;
-						if (seen.has(key)) continue;
-						seen.add(key);
-
-						reExports.push({
-							exportedAs: symbolName,
-							file: relativePath,
-							from: path.relative(path.dirname(filePath), definitionPath).replaceAll('\\', '/'),
-							line: decl.getStartLineNumber?.() ?? 1,
-							originalName: symbolName
+							from: moduleSpec
 						});
 					}
 				}
@@ -911,92 +907,82 @@ function traceReExports(symbolName: string, definitionSourceFile: SourceFile, pr
 
 		return reExports;
 	} catch (err: unknown) {
-		warn('[traceSymbol:traceReExports]', err);
+		warn('[traceSymbol:collectReExports]', err);
 		return [];
 	}
 }
 
-// ── Trace Call Hierarchy ─────────────────────────────
-
-interface CallChainWithDepth {
-	actualDepth: number;
-	calls: CallChainNode[];
-	truncated: boolean;
-}
-
-function traceCallHierarchy(node: Node, symbol: TsSymbol | undefined, project: Project, depth: number, rootDir: string, isIgnored: FileFilter): CallChainInfo & { actualIncomingDepth?: number; actualOutgoingDepth?: number } {
-	const result: CallChainInfo & { actualIncomingDepth?: number; actualOutgoingDepth?: number } = {
-		incomingCalls: [],
-		outgoingCalls: []
-	};
-
+function buildReferences(node: Node, symbol: TsSymbol | undefined, project: Project, rootDir: string, isIgnored: FileFilter): TraceReferences {
 	try {
-		if (isCallableNode(node)) {
-			const outgoingResult = getOutgoingCallsWithDepth(node, project, rootDir, isIgnored, depth, new Set());
-			result.outgoingCalls = outgoingResult.calls;
-			result.outgoingTruncated = outgoingResult.truncated;
-			result.actualOutgoingDepth = outgoingResult.actualDepth;
+		const languageService = project.getLanguageService();
+		const referenceNodes = languageService.findReferencesAsNodes(node);
+
+		const fileMap = new Map<string, { test: boolean; usages: Set<TraceUsageKind> }>();
+		let total = 0;
+
+		const defLine = node.getStartLineNumber();
+		const defFile = node.getSourceFile().getFilePath();
+
+		for (const refNode of referenceNodes) {
+			const refSourceFile = refNode.getSourceFile();
+			if (!refSourceFile) continue;
+
+			const refFilePath = refSourceFile.getFilePath();
+			if (isIgnored(refFilePath)) continue;
+
+			const line = refNode.getStartLineNumber();
+			if (line === defLine && refFilePath === defFile) continue;
+
+			const relativePath = path.relative(rootDir, refFilePath).replaceAll('\\', '/');
+			const usage = classifyUsageKind(refNode);
+
+			total++;
+
+			if (!fileMap.has(relativePath)) {
+				fileMap.set(relativePath, { test: TEST_FILE_RE.test(relativePath), usages: new Set() });
+			}
+			const entry = fileMap.get(relativePath);
+			if (entry) entry.usages.add(usage);
 		}
 
-		if (symbol) {
-			const incomingResult = getIncomingCallsWithDepth(node, project, rootDir, isIgnored, depth, new Set());
-			result.incomingCalls = incomingResult.calls;
-			result.incomingTruncated = incomingResult.truncated;
-			result.actualIncomingDepth = incomingResult.actualDepth;
+		const sourceFile = node.getSourceFile();
+		const symbolName = getSymbolName(node);
+		const reExports = collectReExports(symbolName, sourceFile, project, rootDir, isIgnored);
+
+		const byFile: TraceReferenceFile[] = [];
+		for (const [file, info] of fileMap) {
+			const entry: TraceReferenceFile = {
+				file,
+				usages: [...info.usages].sort() as TraceUsageKind[]
+			};
+			if (info.test) entry.test = true;
+			byFile.push(entry);
 		}
+
+		return {
+			byFile: byFile.sort((a, b) => a.file.localeCompare(b.file)),
+			files: fileMap.size,
+			reExports,
+			total
+		};
 	} catch (err: unknown) {
-		warn('[traceSymbol:traceCallHierarchy]', err);
+		warn('[traceSymbol:buildReferences]', err);
+		return { byFile: [], files: 0, reExports: [], total: 0 };
 	}
-
-	return result;
 }
+
+// â”€â”€ Build Calls (hierarchical) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+const MAX_CALL_DEPTH = 10;
 
 function isCallableNode(node: Node): boolean {
 	return CALLABLE_KINDS.has(node.getKind());
 }
 
-/**
- * Quick check: does the call chain have callable targets that could go deeper
- * but were stopped by the depth limit?
- */
-function hasDeepCallsAtDepthLimit(node: Node, project: Project, rootDir: string, isIgnored: FileFilter, depth: number): boolean {
-	if (depth <= 0) return true;
-
-	// Check if any top-level outgoing calls have their own outgoing calls
-	const callExprs = node.getDescendantsOfKind(SyntaxKind.CallExpression);
-	for (const callExpr of callExprs) {
-		try {
-			const expr = callExpr.getExpression();
-			let targetNode: Node | undefined;
-
-			if (expr.getKind() === SyntaxKind.Identifier) {
-				const symbol = expr.getSymbol();
-				if (symbol) {
-					const decls = symbol.getDeclarations();
-					if (decls.length > 0) targetNode = decls[0];
-				}
-			}
-
-			if (targetNode && isCallableNode(targetNode)) {
-				const targetFile = targetNode.getSourceFile();
-				if (targetFile && !isIgnored(targetFile.getFilePath())) {
-					// This callable target exists and could have more calls beyond our depth
-					return true;
-				}
-			}
-		} catch {
-			// Skip errors in truncation detection
-		}
-	}
-
-	return false;
-}
-
-function getOutgoingCalls(node: Node, project: Project, rootDir: string, isIgnored: FileFilter, remainingDepth: number, visited: Set<string>): CallChainNode[] {
+function buildOutgoingTree(node: Node, project: Project, rootDir: string, isIgnored: FileFilter, visited: Set<string>, remainingDepth: number): TraceCallNode[] {
 	if (remainingDepth <= 0) return [];
 
-	const results: CallChainNode[] = [];
-
+	const results: TraceCallNode[] = [];
 	const callExprs = node.getDescendantsOfKind(SyntaxKind.CallExpression);
 
 	for (const callExpr of callExprs) {
@@ -1007,23 +993,19 @@ function getOutgoingCalls(node: Node, project: Project, rootDir: string, isIgnor
 
 			if (expr.getKind() === SyntaxKind.Identifier) {
 				calledName = expr.getText();
-				const symbol = expr.getSymbol();
-				if (symbol) {
-					const decls = symbol.getDeclarations();
-					if (decls.length > 0) {
-						targetNode = decls[0];
-					}
+				const sym = expr.getSymbol();
+				if (sym) {
+					const decls = sym.getDeclarations();
+					if (decls.length > 0) targetNode = decls[0];
 				}
 			} else if (expr.getKind() === SyntaxKind.PropertyAccessExpression) {
 				calledName = expr.getText();
 				const lastChild = expr.getLastChild();
 				if (lastChild) {
-					const symbol = lastChild.getSymbol();
-					if (symbol) {
-						const decls = symbol.getDeclarations();
-						if (decls.length > 0) {
-							targetNode = decls[0];
-						}
+					const sym = lastChild.getSymbol();
+					if (sym) {
+						const decls = sym.getDeclarations();
+						if (decls.length > 0) targetNode = decls[0];
 					}
 				}
 			} else {
@@ -1033,60 +1015,47 @@ function getOutgoingCalls(node: Node, project: Project, rootDir: string, isIgnor
 			if (!calledName) continue;
 
 			let filePath = '';
-			let line = 0;
-			let column = 0;
 
 			if (targetNode) {
 				const targetFile = targetNode.getSourceFile();
 				if (targetFile) {
 					const targetFilePath = targetFile.getFilePath();
-					if (isIgnored(targetFilePath)) {
-						continue;
-					}
+					if (isIgnored(targetFilePath)) continue;
 					filePath = path.relative(rootDir, targetFilePath).replaceAll('\\', '/');
-					line = targetNode.getStartLineNumber();
-					column = targetNode.getStart() - targetNode.getStartLinePos();
 				}
 			}
 
 			if (!filePath) {
 				const callFile = callExpr.getSourceFile();
 				const callFilePath = callFile.getFilePath();
-				if (isIgnored(callFilePath)) {
-					continue;
-				}
+				if (isIgnored(callFilePath)) continue;
 				filePath = path.relative(rootDir, callFilePath).replaceAll('\\', '/');
-				line = callExpr.getStartLineNumber();
-				column = callExpr.getStart() - callExpr.getStartLinePos();
 			}
 
-			const key = `${filePath}:${line}:${calledName}`;
+			const key = `${filePath}:${calledName}`;
 			if (visited.has(key)) continue;
 			visited.add(key);
 
-			results.push({
-				column,
-				file: filePath,
-				line,
-				symbol: calledName
-			});
+			const callNode: TraceCallNode = { file: filePath, symbol: calledName };
 
 			if (remainingDepth > 1 && targetNode && isCallableNode(targetNode)) {
-				const deeper = getOutgoingCalls(targetNode, project, rootDir, isIgnored, remainingDepth - 1, visited);
-				results.push(...deeper);
+				const children = buildOutgoingTree(targetNode, project, rootDir, isIgnored, visited, remainingDepth - 1);
+				if (children.length > 0) callNode.children = children;
 			}
-		} catch (err: unknown) {
-			console.debug('[traceSymbol:getOutgoingCalls] Skipping call expression:', err);
+
+			results.push(callNode);
+		} catch {
+			// Skip errors in call resolution
 		}
 	}
 
 	return results;
 }
 
-function getIncomingCalls(node: Node, project: Project, rootDir: string, isIgnored: FileFilter, remainingDepth: number, visited: Set<string>): CallChainNode[] {
+function buildIncomingTree(node: Node, project: Project, rootDir: string, isIgnored: FileFilter, visited: Set<string>, remainingDepth: number): TraceCallNode[] {
 	if (remainingDepth <= 0) return [];
 
-	const results: CallChainNode[] = [];
+	const results: TraceCallNode[] = [];
 
 	try {
 		const languageService = project.getLanguageService();
@@ -1112,659 +1081,68 @@ function getIncomingCalls(node: Node, project: Project, rootDir: string, isIgnor
 			}
 
 			let funcName = '';
-			let line: number;
-			let column: number;
-
 			if (containingFunc) {
 				if (Node.isFunctionDeclaration(containingFunc) || Node.isMethodDeclaration(containingFunc)) {
 					funcName = containingFunc.getName() ?? '<anonymous>';
 				} else {
 					funcName = '<anonymous>';
 				}
-				line = containingFunc.getStartLineNumber();
-				column = containingFunc.getStart() - containingFunc.getStartLinePos();
 			} else {
 				funcName = '<module>';
-				line = refNode.getStartLineNumber();
-				column = refNode.getStart() - refNode.getStartLinePos();
 			}
 
 			const relativePath = path.relative(rootDir, refFilePath).replaceAll('\\', '/');
-
-			const key = `${relativePath}:${line}:${funcName}`;
+			const key = `${relativePath}:${funcName}`;
 			if (visited.has(key)) continue;
 			visited.add(key);
 
-			results.push({
-				column,
-				file: relativePath,
-				line,
-				symbol: funcName
-			});
+			const callNode: TraceCallNode = { file: relativePath, symbol: funcName };
 
 			if (remainingDepth > 1 && containingFunc) {
-				const deeper = getIncomingCalls(containingFunc, project, rootDir, isIgnored, remainingDepth - 1, visited);
-				results.push(...deeper);
+				const children = buildIncomingTree(containingFunc, project, rootDir, isIgnored, visited, remainingDepth - 1);
+				if (children.length > 0) callNode.children = children;
 			}
+
+			results.push(callNode);
 		}
 	} catch (err: unknown) {
-		console.debug('[traceSymbol:getIncomingCalls] Failed:', err);
+		warn('[traceSymbol:buildIncomingTree]', err);
 	}
 
 	return results;
 }
 
-/**
- * Get outgoing calls with depth tracking and accurate truncation detection.
- * Returns actual depth reached and whether more calls exist at the limit.
- */
-function getOutgoingCallsWithDepth(node: Node, project: Project, rootDir: string, isIgnored: FileFilter, maxDepth: number, visited: Set<string>): CallChainWithDepth {
-	let actualDepth = 0;
-	let truncated = false;
-
-	function recurse(currentNode: Node, remainingDepth: number, currentDepth: number): CallChainNode[] {
-		if (remainingDepth <= 0) return [];
-
-		const results: CallChainNode[] = [];
-		const callExprs = currentNode.getDescendantsOfKind(SyntaxKind.CallExpression);
-
-		for (const callExpr of callExprs) {
-			try {
-				const expr = callExpr.getExpression();
-				let calledName = '';
-				let targetNode: Node | undefined;
-
-				if (expr.getKind() === SyntaxKind.Identifier) {
-					calledName = expr.getText();
-					const symbol = expr.getSymbol();
-					if (symbol) {
-						const decls = symbol.getDeclarations();
-						if (decls.length > 0) targetNode = decls[0];
-					}
-				} else if (expr.getKind() === SyntaxKind.PropertyAccessExpression) {
-					calledName = expr.getText();
-					const lastChild = expr.getLastChild();
-					if (lastChild) {
-						const symbol = lastChild.getSymbol();
-						if (symbol) {
-							const decls = symbol.getDeclarations();
-							if (decls.length > 0) targetNode = decls[0];
-						}
-					}
-				} else {
-					calledName = expr.getText();
-				}
-
-				if (!calledName) continue;
-
-				let filePath = '';
-				let line = 0;
-				let column = 0;
-
-				if (targetNode) {
-					const targetFile = targetNode.getSourceFile();
-					if (targetFile) {
-						const targetFilePath = targetFile.getFilePath();
-						if (isIgnored(targetFilePath)) continue;
-						filePath = path.relative(rootDir, targetFilePath).replaceAll('\\', '/');
-						line = targetNode.getStartLineNumber();
-						column = targetNode.getStart() - targetNode.getStartLinePos();
-					}
-				}
-
-				if (!filePath) {
-					const callFile = callExpr.getSourceFile();
-					const callFilePath = callFile.getFilePath();
-					if (isIgnored(callFilePath)) continue;
-					filePath = path.relative(rootDir, callFilePath).replaceAll('\\', '/');
-					line = callExpr.getStartLineNumber();
-					column = callExpr.getStart() - callExpr.getStartLinePos();
-				}
-
-				const key = `${filePath}:${line}:${calledName}`;
-				if (visited.has(key)) continue;
-				visited.add(key);
-
-				results.push({ column, file: filePath, line, symbol: calledName });
-				actualDepth = Math.max(actualDepth, currentDepth);
-
-				if (remainingDepth > 1 && targetNode && isCallableNode(targetNode)) {
-					const deeper = recurse(targetNode, remainingDepth - 1, currentDepth + 1);
-					results.push(...deeper);
-				} else if (remainingDepth === 1 && targetNode && isCallableNode(targetNode)) {
-					// Check if there are more calls at this level (truncation detection)
-					const targetCallExprs = targetNode.getDescendantsOfKind(SyntaxKind.CallExpression);
-					if (targetCallExprs.length > 0) {
-						truncated = true;
-					}
-				}
-			} catch {
-				// Skip errors
-			}
-		}
-
-		return results;
-	}
-
-	const calls = recurse(node, maxDepth, 1);
-	return { actualDepth, calls, truncated };
+function buildCalls(node: Node, symbol: TsSymbol | undefined, project: Project, rootDir: string, isIgnored: FileFilter): TraceCalls {
+	const outgoing = isCallableNode(node) ? buildOutgoingTree(node, project, rootDir, isIgnored, new Set(), MAX_CALL_DEPTH) : [];
+	const incoming = symbol ? buildIncomingTree(node, project, rootDir, isIgnored, new Set(), MAX_CALL_DEPTH) : [];
+	return { incoming, outgoing };
 }
 
-/**
- * Get incoming calls with depth tracking and accurate truncation detection.
- * Returns actual depth reached and whether more calls exist at the limit.
- */
-function getIncomingCallsWithDepth(node: Node, project: Project, rootDir: string, isIgnored: FileFilter, maxDepth: number, visited: Set<string>): CallChainWithDepth {
-	let actualDepth = 0;
-	let truncated = false;
+// â”€â”€ Build Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-	function recurse(currentNode: Node, remainingDepth: number, currentDepth: number): CallChainNode[] {
-		if (remainingDepth <= 0) return [];
-
-		const results: CallChainNode[] = [];
-
-		try {
-			const languageService = project.getLanguageService();
-			const refs = languageService.findReferencesAsNodes(currentNode);
-
-			for (const refNode of refs) {
-				const refSourceFile = refNode.getSourceFile();
-				if (!refSourceFile) continue;
-
-				const refFilePath = refSourceFile.getFilePath();
-				if (isIgnored(refFilePath)) continue;
-
-				const parent = refNode.getParent();
-				if (!parent) continue;
-
-				const isCall = parent.getKind() === SyntaxKind.CallExpression || parent.getKind() === SyntaxKind.NewExpression || (parent.getKind() === SyntaxKind.PropertyAccessExpression && parent.getParent()?.getKind() === SyntaxKind.CallExpression);
-
-				if (!isCall) continue;
-
-				let containingFunc: Node | undefined = parent;
-				while (containingFunc && !isCallableNode(containingFunc)) {
-					containingFunc = containingFunc.getParent();
-				}
-
-				let funcName = '';
-				let line: number;
-				let column: number;
-
-				if (containingFunc) {
-					if (Node.isFunctionDeclaration(containingFunc) || Node.isMethodDeclaration(containingFunc)) {
-						funcName = containingFunc.getName() ?? '<anonymous>';
-					} else {
-						funcName = '<anonymous>';
-					}
-					line = containingFunc.getStartLineNumber();
-					column = containingFunc.getStart() - containingFunc.getStartLinePos();
-				} else {
-					funcName = '<module>';
-					line = refNode.getStartLineNumber();
-					column = refNode.getStart() - refNode.getStartLinePos();
-				}
-
-				const relativePath = path.relative(rootDir, refFilePath).replaceAll('\\', '/');
-				const key = `${relativePath}:${line}:${funcName}`;
-				if (visited.has(key)) continue;
-				visited.add(key);
-
-				results.push({ column, file: relativePath, line, symbol: funcName });
-				actualDepth = Math.max(actualDepth, currentDepth);
-
-				if (remainingDepth > 1 && containingFunc) {
-					const deeper = recurse(containingFunc, remainingDepth - 1, currentDepth + 1);
-					results.push(...deeper);
-				} else if (remainingDepth === 1 && containingFunc) {
-					// Check if this function has callers (truncation detection)
-					const callerRefs = languageService.findReferencesAsNodes(containingFunc);
-					const hasCallers = callerRefs.some((r) => {
-						const p = r.getParent();
-						return p && (p.getKind() === SyntaxKind.CallExpression || p.getKind() === SyntaxKind.NewExpression);
-					});
-					if (hasCallers) {
-						truncated = true;
-					}
-				}
-			}
-		} catch (err: unknown) {
-			console.debug('[traceSymbol:getIncomingCallsWithDepth] Failed:', err);
-		}
-
-		return results;
-	}
-
-	const calls = recurse(node, maxDepth, 1);
-	return { actualDepth, calls, truncated };
-}
-
-// ── Trace Type Flows ─────────────────────────────────
-
-function traceTypeFlows(node: Node, project: Project, isIgnored: FileFilter): TypeFlowInfo[] {
-	try {
-		const flows: TypeFlowInfo[] = [];
-
-		if (Node.isFunctionDeclaration(node) || Node.isMethodDeclaration(node)) {
-			for (const param of node.getParameters()) {
-				const typeNode = param.getTypeNode();
-				if (typeNode) {
-					flows.push({
-						direction: 'parameter',
-						traceTo: resolveTypeTrace(typeNode, project, isIgnored),
-						type: typeNode.getText()
-					});
-				} else {
-					const paramType = param.getType();
-					flows.push({
-						direction: 'parameter',
-						traceTo: resolveInferredType(paramType, isIgnored),
-						type: paramType.getText()
-					});
-				}
-			}
-
-			const returnTypeNode = node.getReturnTypeNode();
-			if (returnTypeNode) {
-				flows.push({
-					direction: 'return',
-					traceTo: resolveTypeTrace(returnTypeNode, project, isIgnored),
-					type: returnTypeNode.getText()
-				});
-			} else {
-				const returnType = node.getReturnType();
-				flows.push({
-					direction: 'return',
-					traceTo: resolveInferredType(returnType, isIgnored),
-					type: returnType.getText()
-				});
-			}
-		}
-
-		if (Node.isClassDeclaration(node)) {
-			const extendsExpr = node.getExtends();
-			if (extendsExpr) {
-				flows.push({
-					direction: 'extends',
-					traceTo: resolveHeritageTrace(extendsExpr, isIgnored),
-					type: extendsExpr.getText()
-				});
-			}
-
-			for (const impl of node.getImplements()) {
-				flows.push({
-					direction: 'implements',
-					traceTo: resolveHeritageTrace(impl, isIgnored),
-					type: impl.getText()
-				});
-			}
-
-			// Class member type flows: properties and methods
-			for (const prop of node.getProperties()) {
-				const typeNode = prop.getTypeNode();
-				if (typeNode) {
-					flows.push({
-						direction: 'property',
-						traceTo: resolveTypeTrace(typeNode, project, isIgnored),
-						type: `${prop.getName()}: ${typeNode.getText()}`
-					});
-				}
-			}
-
-			for (const ctor of node.getConstructors()) {
-				for (const param of ctor.getParameters()) {
-					const typeNode = param.getTypeNode();
-					if (typeNode) {
-						flows.push({
-							direction: 'parameter',
-							traceTo: resolveTypeTrace(typeNode, project, isIgnored),
-							type: `constructor(${param.getName()}: ${typeNode.getText()})`
-						});
-					}
-				}
-			}
-
-			for (const method of node.getMethods()) {
-				const returnTypeNode = method.getReturnTypeNode();
-				if (returnTypeNode) {
-					flows.push({
-						direction: 'return',
-						traceTo: resolveTypeTrace(returnTypeNode, project, isIgnored),
-						type: `${method.getName()}(): ${returnTypeNode.getText()}`
-					});
-				}
-				for (const param of method.getParameters()) {
-					const typeNode = param.getTypeNode();
-					if (typeNode) {
-						flows.push({
-							direction: 'parameter',
-							traceTo: resolveTypeTrace(typeNode, project, isIgnored),
-							type: `${method.getName()}(${param.getName()}: ${typeNode.getText()})`
-						});
-					}
-				}
-			}
-		}
-
-		if (Node.isInterfaceDeclaration(node)) {
-			for (const ext of node.getExtends()) {
-				flows.push({
-					direction: 'extends',
-					traceTo: resolveHeritageTrace(ext, isIgnored),
-					type: ext.getText()
-				});
-			}
-
-			// Interface property type flows
-			for (const prop of node.getProperties()) {
-				const typeNode = prop.getTypeNode();
-				if (typeNode) {
-					flows.push({
-						direction: 'property',
-						traceTo: resolveTypeTrace(typeNode, project, isIgnored),
-						type: `${prop.getName()}: ${typeNode.getText()}`
-					});
-				}
-			}
-
-			for (const method of node.getMethods()) {
-				const returnTypeNode = method.getReturnTypeNode();
-				if (returnTypeNode) {
-					flows.push({
-						direction: 'return',
-						traceTo: resolveTypeTrace(returnTypeNode, project, isIgnored),
-						type: `${method.getName()}(): ${returnTypeNode.getText()}`
-					});
-				}
-			}
-		}
-
-		if (Node.isTypeAliasDeclaration(node)) {
-			const typeNode = node.getTypeNode();
-			if (typeNode) {
-				flows.push({
-					direction: 'property',
-					traceTo: resolveTypeTrace(typeNode, project, isIgnored),
-					type: typeNode.getText()
-				});
-
-				// Resolve constituent types in unions and intersections
-				if (Node.isUnionTypeNode(typeNode) || Node.isIntersectionTypeNode(typeNode)) {
-					for (const member of typeNode.getTypeNodes()) {
-						const memberTraceTo = resolveTypeTrace(member, project, isIgnored);
-						if (memberTraceTo) {
-							flows.push({
-								direction: 'property',
-								traceTo: memberTraceTo,
-								type: member.getText()
-							});
-						}
-					}
-				}
-			}
-		}
-
-		if (Node.isVariableDeclaration(node)) {
-			const typeNode = node.getTypeNode();
-			if (typeNode) {
-				flows.push({
-					direction: 'property',
-					traceTo: resolveTypeTrace(typeNode, project, isIgnored),
-					type: typeNode.getText()
-				});
-			} else {
-				const varType = node.getType();
-				flows.push({
-					direction: 'property',
-					traceTo: resolveInferredType(varType, isIgnored),
-					type: varType.getText()
-				});
-			}
-		}
-
-		return flows;
-	} catch (err: unknown) {
-		warn('[traceSymbol:traceTypeFlows]', err);
-		return [];
-	}
-}
-
-function resolveTypeTrace(typeNode: Node, project: Project, isIgnored: FileFilter): TypeFlowInfo['traceTo'] | undefined {
-	try {
-		const symbol = typeNode.getSymbol();
-		if (!symbol) {
-			const identifier = typeNode.getFirstDescendantByKind(SyntaxKind.Identifier);
-			if (identifier) {
-				const idSymbol = identifier.getSymbol();
-				if (idSymbol) {
-					return getSymbolLocation(idSymbol, isIgnored);
-				}
-			}
-			return undefined;
-		}
-
-		return getSymbolLocation(symbol, isIgnored);
-	} catch {
-		return undefined;
-	}
-}
-
-function resolveInferredType(type: ReturnType<Node['getType']>, isIgnored: FileFilter): TypeFlowInfo['traceTo'] | undefined {
-	try {
-		const symbol = type.getSymbol();
-		if (!symbol) return undefined;
-		return getSymbolLocation(symbol, isIgnored);
-	} catch {
-		return undefined;
-	}
-}
-
-function resolveHeritageTrace(heritageExpr: Node, isIgnored: FileFilter): TypeFlowInfo['traceTo'] | undefined {
+function formatTypeRef(heritageExpr: Node, rootDir: string): string {
 	try {
 		const expr = heritageExpr.getFirstDescendantByKind(SyntaxKind.Identifier);
-		if (!expr) return undefined;
+		if (!expr) return heritageExpr.getText();
 
-		const symbol = expr.getSymbol();
-		if (!symbol) return undefined;
+		const sym = expr.getSymbol();
+		if (!sym) return heritageExpr.getText();
 
-		return getSymbolLocation(symbol, isIgnored);
+		const decls = sym.getDeclarations();
+		const aliased = sym.getAliasedSymbol();
+		const resolvedDecls = aliased ? aliased.getDeclarations() : decls;
+
+		if (resolvedDecls.length > 0) {
+			const decl = resolvedDecls[0];
+			const file = decl.getSourceFile().getFilePath();
+			const relFile = path.relative(rootDir, file).replaceAll('\\', '/');
+			const kind = getNodeKindName(decl);
+			return `${heritageExpr.getText()} (${relFile}, ${kind})`;
+		}
+
+		return heritageExpr.getText();
 	} catch {
-		return undefined;
-	}
-}
-
-function getSymbolLocation(symbol: TsSymbol, isIgnored: FileFilter): TypeFlowInfo['traceTo'] | undefined {
-	try {
-		const decls = symbol.getDeclarations();
-		if (decls.length === 0) return undefined;
-
-		const decl = decls[0];
-		const sourceFile = decl.getSourceFile();
-		if (!sourceFile) return undefined;
-
-		const filePath = sourceFile.getFilePath();
-		if (isIgnored(filePath)) {
-			return undefined;
-		}
-
-		const line = decl.getStartLineNumber();
-		if (!filePath || line <= 0) {
-			return undefined;
-		}
-
-		return {
-			file: filePath,
-			line,
-			symbol: symbol.getName()
-		};
-	} catch {
-		return undefined;
-	}
-}
-
-// ── Type Hierarchy ───────────────────────────────────
-
-function traceTypeHierarchy(node: Node, project: Project, maxDepth: number, rootDir: string, isIgnored: FileFilter): TypeHierarchyInfo {
-	const supertypes: TypeHierarchyNode[] = [];
-	const subtypes: TypeHierarchyNode[] = [];
-	let actualMaxDepth = 0;
-
-	try {
-		if (Node.isClassDeclaration(node) || Node.isInterfaceDeclaration(node)) {
-			const visited = new Set<string>();
-			collectSupertypes(node, project, 1, maxDepth, rootDir, isIgnored, supertypes, visited);
-			collectSubtypes(node, project, 1, maxDepth, rootDir, isIgnored, subtypes, visited);
-
-			if (supertypes.length > 0 || subtypes.length > 0) {
-				actualMaxDepth = Math.max(supertypes.length > 0 ? 1 : 0, subtypes.length > 0 ? 1 : 0);
-			}
-		}
-	} catch (err) {
-		warn('[traceTypeHierarchy] Error:', err);
-	}
-
-	return {
-		stats: {
-			maxDepth: actualMaxDepth,
-			totalSubtypes: subtypes.length,
-			totalSupertypes: supertypes.length
-		},
-		subtypes,
-		supertypes
-	};
-}
-
-function nodeToHierarchyKind(node: Node): 'class' | 'interface' | 'type-alias' {
-	if (Node.isClassDeclaration(node)) return 'class';
-	if (Node.isInterfaceDeclaration(node)) return 'interface';
-	return 'type-alias';
-}
-
-function toHierarchyNode(node: Node, rootDir: string): TypeHierarchyNode | undefined {
-	const sourceFile = node.getSourceFile();
-	const filePath = sourceFile.getFilePath();
-	const relativePath = path.relative(rootDir, filePath).replaceAll('\\', '/');
-
-	let name = '';
-	if (Node.isClassDeclaration(node) || Node.isInterfaceDeclaration(node) || Node.isTypeAliasDeclaration(node)) {
-		name = node.getName() ?? '<anonymous>';
-	}
-
-	return {
-		column: node.getStart() - node.getStartLineNumber(),
-		file: relativePath,
-		kind: nodeToHierarchyKind(node),
-		line: node.getStartLineNumber(),
-		name
-	};
-}
-
-function collectSupertypes(node: Node, project: Project, currentDepth: number, maxDepth: number, rootDir: string, isIgnored: FileFilter, result: TypeHierarchyNode[], visited: Set<string>): void {
-	if (currentDepth > maxDepth) return;
-
-	const nodeKey = `${node.getSourceFile().getFilePath()}:${node.getStartLineNumber()}`;
-	if (visited.has(nodeKey)) return;
-	visited.add(nodeKey);
-
-	const parentTypes: Node[] = [];
-
-	if (Node.isClassDeclaration(node)) {
-		const extendsExpr = node.getExtends();
-		if (extendsExpr) {
-			const resolved = resolveExpressionToDeclaration(extendsExpr.getExpression(), project);
-			if (resolved) parentTypes.push(resolved);
-		}
-		for (const impl of node.getImplements()) {
-			const resolved = resolveExpressionToDeclaration(impl.getExpression(), project);
-			if (resolved) parentTypes.push(resolved);
-		}
-	} else if (Node.isInterfaceDeclaration(node)) {
-		for (const ext of node.getExtends()) {
-			const resolved = resolveExpressionToDeclaration(ext.getExpression(), project);
-			if (resolved) parentTypes.push(resolved);
-		}
-	}
-
-	for (const parentNode of parentTypes) {
-		const parentFile = parentNode.getSourceFile().getFilePath();
-		if (isIgnored(parentFile)) continue;
-
-		const hierarchyNode = toHierarchyNode(parentNode, rootDir);
-		if (hierarchyNode) {
-			result.push(hierarchyNode);
-			collectSupertypes(parentNode, project, currentDepth + 1, maxDepth, rootDir, isIgnored, result, visited);
-		}
-	}
-}
-
-function collectSubtypes(node: Node, project: Project, currentDepth: number, maxDepth: number, rootDir: string, isIgnored: FileFilter, result: TypeHierarchyNode[], visited: Set<string>): void {
-	if (currentDepth > maxDepth) return;
-
-	const targetName = Node.isClassDeclaration(node) || Node.isInterfaceDeclaration(node) ? node.getName() : undefined;
-	if (!targetName) return;
-
-	const targetFile = node.getSourceFile().getFilePath();
-	const targetLine = node.getStartLineNumber();
-	const targetKey = `${targetFile}:${targetLine}`;
-
-	for (const sourceFile of project.getSourceFiles()) {
-		const filePath = sourceFile.getFilePath();
-		if (isIgnored(filePath)) continue;
-
-		// Check classes that extend or implement the target
-		for (const classDecl of sourceFile.getClasses()) {
-			const classKey = `${filePath}:${classDecl.getStartLineNumber()}`;
-			if (visited.has(classKey)) continue;
-
-			let isSubtype = false;
-
-			const extendsExpr = classDecl.getExtends();
-			if (extendsExpr) {
-				const resolved = resolveExpressionToDeclaration(extendsExpr.getExpression(), project);
-				if (resolved && isSameDeclaration(resolved, node)) {
-					isSubtype = true;
-				}
-			}
-
-			if (!isSubtype) {
-				for (const impl of classDecl.getImplements()) {
-					const resolved = resolveExpressionToDeclaration(impl.getExpression(), project);
-					if (resolved && isSameDeclaration(resolved, node)) {
-						isSubtype = true;
-						break;
-					}
-				}
-			}
-
-			if (isSubtype) {
-				visited.add(classKey);
-				const hierarchyNode = toHierarchyNode(classDecl, rootDir);
-				if (hierarchyNode) {
-					result.push(hierarchyNode);
-					collectSubtypes(classDecl, project, currentDepth + 1, maxDepth, rootDir, isIgnored, result, visited);
-				}
-			}
-		}
-
-		// Check interfaces that extend the target (only if target is an interface)
-		if (Node.isInterfaceDeclaration(node)) {
-			for (const ifaceDecl of sourceFile.getInterfaces()) {
-				const ifaceKey = `${filePath}:${ifaceDecl.getStartLineNumber()}`;
-				if (visited.has(ifaceKey)) continue;
-
-				for (const ext of ifaceDecl.getExtends()) {
-					const resolved = resolveExpressionToDeclaration(ext.getExpression(), project);
-					if (resolved && isSameDeclaration(resolved, node)) {
-						visited.add(ifaceKey);
-						const hierarchyNode = toHierarchyNode(ifaceDecl, rootDir);
-						if (hierarchyNode) {
-							result.push(hierarchyNode);
-							collectSubtypes(ifaceDecl, project, currentDepth + 1, maxDepth, rootDir, isIgnored, result, visited);
-						}
-						break;
-					}
-				}
-			}
-		}
+		return heritageExpr.getText();
 	}
 }
 
@@ -1776,13 +1154,10 @@ function resolveExpressionToDeclaration(expr: Node, _project: Project): Node | u
 		const declarations = symbol.getDeclarations();
 		if (declarations.length === 0) return undefined;
 
-		// Follow aliased symbols (imports, re-exports)
 		const aliased = symbol.getAliasedSymbol();
 		if (aliased) {
 			const aliasedDeclarations = aliased.getDeclarations();
-			if (aliasedDeclarations.length > 0) {
-				return aliasedDeclarations[0];
-			}
+			if (aliasedDeclarations.length > 0) return aliasedDeclarations[0];
 		}
 
 		return declarations[0];
@@ -1792,157 +1167,200 @@ function resolveExpressionToDeclaration(expr: Node, _project: Project): Node | u
 }
 
 function isSameDeclaration(a: Node, b: Node): boolean {
-	return a.getSourceFile().getFilePath() === b.getSourceFile().getFilePath() && a.getStartLineNumber() === b.getStartLineNumber() && a.getStart() === b.getStart();
+	return a.getSourceFile().getFilePath() === b.getSourceFile().getFilePath() && a.getStart() === b.getStart();
 }
 
-// ── Impact Analysis ──────────────────────────────────
+function findSubtypes(node: Node, project: Project, rootDir: string, isIgnored: FileFilter): string[] {
+	const subtypes: string[] = [];
+	const targetName = (Node.isClassDeclaration(node) || Node.isInterfaceDeclaration(node)) ? node.getName() : undefined;
+	if (!targetName) return subtypes;
 
-function computeImpact(node: Node, project: Project, depth: number, rootDir: string, isIgnored: FileFilter): ImpactInfo {
-	const directDependents: ImpactDependentInfo[] = [];
-	const transitiveDependents: ImpactDependentInfo[] = [];
-	const visited = new Set<string>();
+	for (const sourceFile of project.getSourceFiles()) {
+		const filePath = sourceFile.getFilePath();
+		if (isIgnored(filePath)) continue;
 
-	try {
-		const languageService = project.getLanguageService();
-		const refs = languageService.findReferencesAsNodes(node);
+		for (const classDecl of sourceFile.getClasses()) {
+			let isSubtype = false;
 
-		for (const refNode of refs) {
-			const refSourceFile = refNode.getSourceFile();
-			if (!refSourceFile) continue;
-
-			const refFilePath = refSourceFile.getFilePath();
-			if (isIgnored(refFilePath)) continue;
-
-			const line = refNode.getStartLineNumber();
-			const relativePath = path.relative(rootDir, refFilePath).replaceAll('\\', '/');
-
-			const key = `${relativePath}:${line}`;
-			if (visited.has(key)) continue;
-			visited.add(key);
-
-			let containingNode: Node | undefined = refNode;
-			while (containingNode && !isDeclarationNode(containingNode)) {
-				containingNode = containingNode.getParent();
+			const extendsExpr = classDecl.getExtends();
+			if (extendsExpr) {
+				const resolved = resolveExpressionToDeclaration(extendsExpr.getExpression(), project);
+				if (resolved && isSameDeclaration(resolved, node)) isSubtype = true;
 			}
 
-			let symbolName = 'unknown';
-			let symbolKind = 'unknown';
-
-			if (containingNode) {
-				if (
-					Node.isFunctionDeclaration(containingNode) ||
-					Node.isMethodDeclaration(containingNode) ||
-					Node.isClassDeclaration(containingNode) ||
-					Node.isInterfaceDeclaration(containingNode) ||
-					Node.isVariableDeclaration(containingNode) ||
-					Node.isEnumDeclaration(containingNode) ||
-					Node.isTypeAliasDeclaration(containingNode)
-				) {
-					symbolName = containingNode.getName() ?? 'unknown';
-				} else if (Node.isPropertyDeclaration(containingNode) || Node.isPropertySignature(containingNode)) {
-					symbolName = containingNode.getName();
-				} else if (Node.isImportSpecifier(containingNode)) {
-					symbolName = containingNode.getName();
-					symbolKind = 'import';
-				} else if (Node.isImportClause(containingNode)) {
-					const defaultImport = containingNode.getDefaultImport();
-					symbolName = defaultImport?.getText() ?? 'default';
-					symbolKind = 'import';
-				}
-				if (symbolKind === 'unknown') {
-					symbolKind = getNodeKindName(containingNode);
+			if (!isSubtype) {
+				for (const impl of classDecl.getImplements()) {
+					const resolved = resolveExpressionToDeclaration(impl.getExpression(), project);
+					if (resolved && isSameDeclaration(resolved, node)) { isSubtype = true; break; }
 				}
 			}
 
-			directDependents.push({
-				file: relativePath,
-				kind: symbolKind,
-				line,
-				symbol: symbolName
+			if (isSubtype) {
+				const relFile = path.relative(rootDir, filePath).replaceAll('\\', '/');
+				const name = classDecl.getName() ?? '<anonymous>';
+				subtypes.push(`${name} (${relFile}, class)`);
+			}
+		}
+
+		if (Node.isInterfaceDeclaration(node)) {
+			for (const ifaceDecl of sourceFile.getInterfaces()) {
+				for (const ext of ifaceDecl.getExtends()) {
+					const resolved = resolveExpressionToDeclaration(ext.getExpression(), project);
+					if (resolved && isSameDeclaration(resolved, node)) {
+						const relFile = path.relative(rootDir, filePath).replaceAll('\\', '/');
+						const name = ifaceDecl.getName() ?? '<anonymous>';
+						subtypes.push(`${name} (${relFile}, interface)`);
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	return subtypes;
+}
+
+function buildTypeFlows(node: Node, project: Project, rootDir: string, isIgnored: FileFilter): TraceTypes['flows'] | undefined {
+	const flows: TraceTypes['flows'] = {};
+
+	if (Node.isFunctionDeclaration(node) || Node.isMethodDeclaration(node)) {
+		const params = node.getParameters();
+		if (params.length > 0) {
+			flows.parameters = params.map((p) => {
+				const typeText = p.getType().getText(p);
+				const flow: TraceTypeFlow = { name: p.getName(), type: typeText };
+				const resolved = resolveTypeToFile(p.getType(), rootDir, isIgnored);
+				if (resolved) flow.file = resolved;
+				return flow;
 			});
 		}
 
-		if (depth > 1 && directDependents.length < 50) {
-			for (const dep of directDependents) {
-				if (dep.kind !== 'function' && dep.kind !== 'method') continue;
-
-				const depFile = project.getSourceFile(path.join(rootDir, dep.file));
-				if (!depFile) continue;
-
-				const depNode = findNamedDeclaration(depFile, dep.symbol);
-				if (!depNode) continue;
-
-				try {
-					const depLangSvc = project.getLanguageService();
-					const depRefs = depLangSvc.findReferencesAsNodes(depNode);
-					for (const depRef of depRefs) {
-						const depRefFile = depRef.getSourceFile();
-						if (!depRefFile) continue;
-
-						const depRefFilePath = depRefFile.getFilePath();
-						if (isIgnored(depRefFilePath)) continue;
-
-						const parent = depRef.getParent();
-						if (!parent) continue;
-
-						const isCall = parent.getKind() === SyntaxKind.CallExpression || parent.getKind() === SyntaxKind.NewExpression;
-						if (!isCall) continue;
-
-						const depLine = depRef.getStartLineNumber();
-						const depRelPath = path.relative(rootDir, depRefFilePath).replaceAll('\\', '/');
-						const tKey = `${depRelPath}:${depLine}`;
-
-						if (!visited.has(tKey)) {
-							visited.add(tKey);
-
-							let containingFunc: Node | undefined = parent;
-							while (containingFunc && !isCallableNode(containingFunc)) {
-								containingFunc = containingFunc.getParent();
-							}
-
-							let funcName = 'unknown';
-							if (containingFunc && (Node.isFunctionDeclaration(containingFunc) || Node.isMethodDeclaration(containingFunc))) {
-								funcName = containingFunc.getName() ?? 'unknown';
-							}
-
-							transitiveDependents.push({
-								file: depRelPath,
-								kind: 'function',
-								line: depLine,
-								symbol: funcName
-							});
-						}
-					}
-				} catch (err: unknown) {
-					console.debug('[traceSymbol:computeImpact] Skipping transitive dep:', err);
-				}
-			}
-		}
-	} catch (err: unknown) {
-		warn('[traceSymbol:computeImpact]', err);
+		const retType = node.getReturnType();
+		flows.returns = retType.getText(node);
 	}
 
-	const directFileSet = new Set(directDependents.map((d) => d.file));
-	const transitiveFileSet = new Set(transitiveDependents.map((d) => d.file));
-	const totalAffected = directDependents.length + transitiveDependents.length;
+	if (Node.isClassDeclaration(node)) {
+		const props = node.getProperties();
+		if (props.length > 0) {
+			flows.properties = props.map((p) => {
+				const typeText = p.getType().getText(p);
+				const flow: TraceTypeFlow = { name: p.getName(), type: typeText };
+				const resolved = resolveTypeToFile(p.getType(), rootDir, isIgnored);
+				if (resolved) flow.file = resolved;
+				return flow;
+			});
+		}
+	}
 
-	let riskLevel: ImpactInfo['impactSummary']['riskLevel'] = 'low';
-	if (totalAffected > 20 || directFileSet.size > 5) riskLevel = 'high';
-	else if (totalAffected > 5 || directFileSet.size > 2) riskLevel = 'medium';
+	if (Node.isInterfaceDeclaration(node)) {
+		const props = node.getProperties();
+		if (props.length > 0) {
+			flows.properties = props.map((p) => {
+				const typeText = p.getType().getText(p);
+				const flow: TraceTypeFlow = { name: p.getName(), type: typeText };
+				const resolved = resolveTypeToFile(p.getType(), rootDir, isIgnored);
+				if (resolved) flow.file = resolved;
+				return flow;
+			});
+		}
+	}
 
-	return {
-		directDependents,
-		impactSummary: {
-			directFiles: directFileSet.size,
-			riskLevel,
-			totalSymbolsAffected: totalAffected,
-			transitiveFiles: transitiveFileSet.size
-		},
-		transitiveDependents
-	};
+	const hasContent = flows.parameters || flows.returns || flows.properties;
+	return hasContent ? flows : undefined;
 }
 
-// ── Helpers ──────────────────────────────────────────
+function resolveTypeToFile(type: ReturnType<Node['getType']>, rootDir: string, isIgnored: FileFilter): string | undefined {
+	try {
+		const sym = type.getSymbol();
+		if (!sym) return undefined;
+		const decls = sym.getDeclarations();
+		if (decls.length === 0) return undefined;
+		const filePath = decls[0].getSourceFile().getFilePath();
+		if (isIgnored(filePath)) return undefined;
+		return path.relative(rootDir, filePath).replaceAll('\\', '/');
+	} catch {
+		return undefined;
+	}
+}
+
+function detectTypeGuard(node: Node): string | undefined {
+	try {
+		if (!Node.isFunctionDeclaration(node) && !Node.isMethodDeclaration(node)) return undefined;
+		const retTypeNode = node.getReturnTypeNode();
+		if (!retTypeNode) return undefined;
+		const text = retTypeNode.getText();
+		if (text.includes(' is ')) return text;
+		return undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+function findMergedDeclarations(node: Node, project: Project, rootDir: string, isIgnored: FileFilter): string[] | undefined {
+	try {
+		const name = getSymbolName(node);
+		if (name === '<anonymous>' || name === '<unknown>') return undefined;
+
+		const declarations: string[] = [];
+		const nodeFile = node.getSourceFile().getFilePath();
+		const nodeStart = node.getStart();
+
+		for (const sourceFile of project.getSourceFiles()) {
+			const filePath = sourceFile.getFilePath();
+			if (isIgnored(filePath)) continue;
+
+			const exported = sourceFile.getExportedDeclarations().get(name);
+			if (!exported) continue;
+
+			for (const decl of exported) {
+				if (decl.getSourceFile().getFilePath() === nodeFile && decl.getStart() === nodeStart) continue;
+				const kind = getNodeKindName(decl);
+				const relFile = path.relative(rootDir, decl.getSourceFile().getFilePath()).replaceAll('\\', '/');
+				declarations.push(`${kind} in ${relFile}`);
+			}
+		}
+
+		return declarations.length > 0 ? declarations : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+function buildTypes(node: Node, project: Project, rootDir: string, isIgnored: FileFilter): TraceTypes {
+	const result: TraceTypes = {};
+
+	if (Node.isClassDeclaration(node) || Node.isInterfaceDeclaration(node)) {
+		const hierarchy: TraceTypeHierarchy = {};
+
+		if (Node.isClassDeclaration(node)) {
+			const ext = node.getExtends();
+			if (ext) hierarchy.extends = formatTypeRef(ext, rootDir);
+			const impls = node.getImplements();
+			if (impls.length > 0) hierarchy.implements = impls.map((i) => formatTypeRef(i, rootDir));
+		} else {
+			const exts = node.getExtends();
+			if (exts.length > 0) hierarchy.extends = exts.map((e) => formatTypeRef(e, rootDir)).join(', ');
+		}
+
+		const subtypes = findSubtypes(node, project, rootDir, isIgnored);
+		if (subtypes.length > 0) hierarchy.subtypes = subtypes;
+
+		if (Object.keys(hierarchy).length > 0) result.hierarchy = hierarchy;
+	}
+
+	const flows = buildTypeFlows(node, project, rootDir, isIgnored);
+	if (flows) result.flows = flows;
+
+	const typeGuard = detectTypeGuard(node);
+	if (typeGuard) result.typeGuard = typeGuard;
+
+	const merged = findMergedDeclarations(node, project, rootDir, isIgnored);
+	if (merged) result.mergedDeclarations = merged;
+
+	return result;
+}
+
+// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function getNodeKindName(node: Node): string {
 	const kind = node.getKind();
@@ -1990,166 +1408,64 @@ function getNodeKindName(node: Node): string {
 	}
 }
 
-/**
- * Build a descriptive error message for when a symbol is not found.
- */
 function buildSymbolNotFoundMessage(params: TraceSymbolParams, sourceFileCount: number): string {
 	const parts: string[] = [];
-
 	parts.push(`Symbol '${params.symbol}' not found in project (${sourceFileCount} files scanned).`);
 
 	if (params.file) {
-		parts.push(`Searched in file: ${params.file}`);
-		parts.push('. Verify the file is included in tsconfig.json.');
+		parts.push(`Searched in file: ${params.file}.`);
+		parts.push('Verify the file is included in tsconfig.json.');
 	} else {
-		parts.push('Try specifying a file path to narrow the search, or check if the symbol is exported.');
+		parts.push('Try specifying a file path to narrow the search.');
 	}
 
 	return parts.join(' ');
 }
 
-/**
- * Build a descriptive error message from an exception.
- */
 function buildErrorMessage(err: unknown, params: TraceSymbolParams): string {
 	const errorStr = err instanceof Error ? err.message : String(err);
 
-	// Common error patterns with helpful messages
 	if (errorStr.includes('Cannot find module') || errorStr.includes('ENOENT')) {
-		return `File not found. Ensure the file exists and is accessible: ${params.file ?? params.rootDir}`;
+		return `File not found: ${params.file ?? params.rootDir}`;
 	}
-
 	if (errorStr.includes('tsconfig') || errorStr.includes('Cannot parse')) {
-		return `TypeScript configuration error. Check tsconfig.json for syntax errors: ${errorStr}`;
+		return `TypeScript configuration error: ${errorStr}`;
 	}
-
 	if (errorStr.includes('out of memory') || errorStr.includes('heap')) {
-		return `Memory limit exceeded. Try reducing maxReferences or narrowing the search with a file hint.`;
+		return `Memory limit exceeded while tracing '${params.symbol}'.`;
 	}
 
-	if (errorStr.includes('timeout') || errorStr.includes('Timeout')) {
-		return `Operation timed out. The project may be too large. Try increasing timeout.`;
-	}
-
-	// Fallback with the original error
 	return `Unexpected error while tracing '${params.symbol}': ${errorStr}`;
 }
 
-const NODE_MODULES_SEG = `${path.sep}node_modules${path.sep}`;
-const D_TS_SUFFIX = '.d.ts';
-const NODE_MODULES_DIAGNOSTIC_THRESHOLD = 5;
-
-function buildTraceDiagnostics(result: TraceSymbolResult, params: TraceSymbolParams): string[] {
+function buildTraceDiagnostics(result: TraceSymbolResult): string[] {
 	const diagnostics: string[] = [];
+	const NODE_MODULES_SEG = '/node_modules/';
+	const D_TS_SUFFIX = '.d.ts';
+	const THRESHOLD = 5;
 
-	// Detect excessive node_modules / .d.ts references
 	let nodeModulesCount = 0;
 	let dtsCount = 0;
 
-	for (const ref of result.references) {
-		if (ref.file.includes(NODE_MODULES_SEG)) nodeModulesCount++;
-		if (ref.file.endsWith(D_TS_SUFFIX)) dtsCount++;
-	}
-	for (const call of result.callChain.outgoingCalls) {
-		if (call.file.includes(NODE_MODULES_SEG)) nodeModulesCount++;
-		if (call.file.endsWith(D_TS_SUFFIX)) dtsCount++;
-	}
-	for (const call of result.callChain.incomingCalls) {
-		if (call.file.includes(NODE_MODULES_SEG)) nodeModulesCount++;
-		if (call.file.endsWith(D_TS_SUFFIX)) dtsCount++;
+	if (result.references) {
+		for (const ref of result.references.byFile) {
+			if (ref.file.includes(NODE_MODULES_SEG)) nodeModulesCount++;
+			if (ref.file.endsWith(D_TS_SUFFIX)) dtsCount++;
+		}
 	}
 
-	if (nodeModulesCount >= NODE_MODULES_DIAGNOSTIC_THRESHOLD) {
-		diagnostics.push(`Found ${nodeModulesCount} references in node_modules. Consider adding "node_modules" to .devtoolsignore to exclude third-party code from analysis.`);
+	if (nodeModulesCount >= THRESHOLD) {
+		diagnostics.push(`Found ${nodeModulesCount} references in node_modules. Consider adding "node_modules" to .devtoolsignore.`);
 	}
-	if (dtsCount >= NODE_MODULES_DIAGNOSTIC_THRESHOLD) {
-		diagnostics.push(`Found ${dtsCount} references in .d.ts declaration files. Consider adding "**/*.d.ts" to .devtoolsignore to exclude type declarations from analysis.`);
+	if (dtsCount >= THRESHOLD) {
+		diagnostics.push(`Found ${dtsCount} references in .d.ts files. Consider adding "**/*.d.ts" to .devtoolsignore.`);
 	}
 
 	return diagnostics;
 }
 
-function computeMaxCallDepth(callChain: CallChainInfo & { actualIncomingDepth?: number; actualOutgoingDepth?: number }, requestedDepth: number): number {
-	// Bug #3 fix: Use actual tracked depth instead of array length
-	const actualIncoming = callChain.actualIncomingDepth ?? 0;
-	const actualOutgoing = callChain.actualOutgoingDepth ?? 0;
 
-	if (actualIncoming === 0 && actualOutgoing === 0) {
-		// Fall back to array length heuristic if no depth tracked
-		const hasIncoming = callChain.incomingCalls.length > 0;
-		const hasOutgoing = callChain.outgoingCalls.length > 0;
-		if (!hasIncoming && !hasOutgoing) return 0;
-		return Math.min(Math.max(callChain.incomingCalls.length, callChain.outgoingCalls.length), requestedDepth);
-	}
-
-	return Math.max(actualIncoming, actualOutgoing);
-}
-
-/**
- * Estimate the character count for a call chain result.
- * Used for adaptive depth optimization to stay within token budget.
- */
-function estimateCallChainChars(callChain: CallChainInfo): number {
-	let chars = 0;
-
-	// Each call entry: "  - symbol() from file:line"
-	// Average formatting overhead: ~15 chars (" - ", "() from ", ":")
-	const lineOverhead = 15;
-
-	for (const call of callChain.incomingCalls) {
-		chars += call.symbol.length + call.file.length + String(call.line).length + lineOverhead;
-	}
-
-	for (const call of callChain.outgoingCalls) {
-		chars += call.symbol.length + call.file.length + String(call.line).length + lineOverhead;
-	}
-
-	// Add section headers overhead (~100 chars for "#### Incoming Calls" etc.)
-	if (callChain.incomingCalls.length > 0) chars += 50;
-	if (callChain.outgoingCalls.length > 0) chars += 50;
-
-	return chars;
-}
-
-/**
- * Calculate dynamic timeout based on project size and analysis depth.
- * Large projects need more time for initial parsing and reference resolution.
- *
- * Formula: baseMs + (fileCount * msPerFile) + (depth * depthMultiplier * fileCount)
- *
- * Empirical observations:
- * - ~100 files: needs ~2-3s
- * - ~1,500 files: needs ~6-10s
- * - ~5,000 files: needs ~60-90s (VS Code repo)
- *
- * @param fileCount Number of source files in the project
- * @param maxReferences Max references limit (higher = more work)
- * @param depth Call hierarchy depth (higher = more traversal)
- */
-function calculateDynamicTimeout(fileCount: number, maxReferences: number, depth: number): number {
-	const baseMs = 5000; // Minimum 5 seconds for any project
-	const msPerFile = 12; // ~12ms per file for initial load and basic ops
-	const depthFactor = depth * 500; // Each depth level adds ~500ms overhead
-	const refFactor = Math.min(maxReferences / 100, 10) * 500; // Reference limit factor (capped)
-
-	const calculated = baseMs + fileCount * msPerFile + depthFactor + refFactor;
-
-	// Cap at 5 minutes to avoid runaway timeouts
-	return Math.min(calculated, 300000);
-}
-
-function emptyTraceResult(symbol: string): TraceSymbolResult {
-	return {
-		callChain: { incomingCalls: [], outgoingCalls: [] },
-		reExports: [],
-		references: [],
-		summary: { maxCallDepth: 0, totalFiles: 0, totalReferences: 0 },
-		symbol,
-		typeFlows: []
-	};
-}
-
-// ── Dead Code Detection ─────────────────────────────────
+// -- Dead Code Detection ----------
 
 const TEST_FILE_PATTERN = /[./](test|spec|__tests__)[./]/i;
 
@@ -2204,7 +1520,7 @@ export async function findDeadCode(params: DeadCodeParams): Promise<DeadCodeResu
 				continue;
 			}
 
-			// ── Exported symbols with zero external references ──
+			// â”€â”€ Exported symbols with zero external references â”€â”€
 			const exportedDeclarations = sourceFile.getExportedDeclarations();
 
 			for (const [name, declarations] of exportedDeclarations) {
@@ -2237,7 +1553,7 @@ export async function findDeadCode(params: DeadCodeParams): Promise<DeadCodeResu
 				}
 			}
 
-			// ── Non-exported symbols (unreachable functions + dead variables) ──
+			// â”€â”€ Non-exported symbols (unreachable functions + dead variables) â”€â”€
 			if (!exportedOnly) {
 				// Unreachable functions: not exported AND no internal callers
 				if (kinds.has('function')) {

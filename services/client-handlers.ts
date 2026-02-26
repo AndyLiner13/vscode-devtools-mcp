@@ -355,25 +355,19 @@ async function handleCodebaseTraceSymbol(params: Record<string, unknown>) {
 
 	try {
 		return await traceSymbol({
-			depth: paramNum(params, 'depth') ?? 3,
+			calls: paramBool(params, 'calls'),
 			file: paramStr(params, 'file'),
-			include: paramStrArray(params, 'include') ?? ['all'],
-			includeImpact: paramBool(params, 'includeImpact') ?? false,
-			maxReferences: undefined,
+			references: paramBool(params, 'references'),
 			rootDir: resolveRootDir(params),
 			symbol,
-			timeout: paramNum(params, 'timeout')
+			types: paramBool(params, 'types')
 		});
 	} catch (err: unknown) {
 		warn('[client] traceSymbol error:', errorMessage(err));
 		return {
-			callChain: { incomingCalls: [], outgoingCalls: [] },
+			errorMessage: errorMessage(err),
 			partial: true,
-			reExports: [],
-			references: [],
-			summary: { maxCallDepth: 0, totalFiles: 0, totalReferences: 0 },
-			symbol,
-			typeFlows: []
+			symbol
 		};
 	}
 }

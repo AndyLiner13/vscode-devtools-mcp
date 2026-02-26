@@ -217,122 +217,111 @@ interface CodebaseExportsResult {
 
 // ── Codebase Trace Symbol Types ──────────────────────────
 
-export interface SymbolLocationInfo {
-	column: number;
-	file: string;
-	kind?: string;
-	line: number;
-	signature?: string;
-	unresolved?: boolean;
-}
-
-export interface ReferenceInfo {
-	column: number;
-	context: string;
-	file: string;
-	kind: 'call' | 'import' | 'read' | 'type-ref' | 'unknown' | 'write';
-	line: number;
-}
-
-export interface ReExportInfo {
-	exportedAs: string;
-	file: string;
-	from: string;
-	line: number;
-	originalName: string;
-}
-
-export interface CallChainNode {
-	column: number;
-	file: string;
-	line: number;
-	symbol: string;
-}
-
-export interface CallChainInfo {
-	incomingCalls: CallChainNode[];
-	incomingTruncated?: boolean;
-	outgoingCalls: CallChainNode[];
-	outgoingTruncated?: boolean;
-}
-
-export interface TypeFlowInfo {
-	direction: 'extends' | 'implements' | 'parameter' | 'property' | 'return';
-	traceTo?: { symbol: string; file: string; line: number };
+export interface TraceParameter {
+	defaultValue?: string;
+	name: string;
 	type: string;
 }
 
-export interface ImpactDependentInfo {
+export interface TraceResolutionStep {
+	action: string;
 	file: string;
+}
+
+export interface TraceMember {
 	kind: string;
-	line: number;
+	name: string;
+	type?: string;
+}
+
+export interface TraceDefinition {
+	exported: boolean;
+	file: string;
+	generics?: string;
+	jsdoc?: string;
+	kind: string;
+	members?: TraceMember[];
+	modifiers?: string[];
+	overloads?: string[];
+	parameters?: TraceParameter[];
+	resolvedFrom?: TraceResolutionStep[];
+	returns?: string;
+	signature: string;
 	symbol: string;
 }
 
-export interface ImpactInfo {
-	directDependents: ImpactDependentInfo[];
-	impactSummary: {
-		directFiles: number;
-		transitiveFiles: number;
-		totalSymbolsAffected: number;
-		riskLevel: 'high' | 'low' | 'medium';
-	};
-	transitiveDependents: ImpactDependentInfo[];
-}
+export type TraceUsageKind = 'call' | 'import' | 'read' | 'type-ref' | 'unknown' | 'write';
 
-export interface TypeHierarchyNode {
-	column: number;
+export interface TraceReferenceFile {
 	file: string;
-	kind: 'class' | 'interface' | 'type-alias';
-	line: number;
-	name: string;
+	test?: boolean;
+	usages: TraceUsageKind[];
 }
 
-export interface TypeHierarchyInfo {
-	stats: {
-		totalSupertypes: number;
-		totalSubtypes: number;
-		maxDepth: number;
+export interface TraceReExport {
+	exportedAs: string;
+	file: string;
+	from: string;
+}
+
+export interface TraceReferences {
+	byFile: TraceReferenceFile[];
+	files: number;
+	reExports: TraceReExport[];
+	total: number;
+}
+
+export interface TraceCallNode {
+	children?: TraceCallNode[];
+	file: string;
+	symbol: string;
+}
+
+export interface TraceCalls {
+	incoming: TraceCallNode[];
+	outgoing: TraceCallNode[];
+}
+
+export interface TraceTypeFlow {
+	file?: string;
+	name: string;
+	type: string;
+}
+
+export interface TraceTypeHierarchy {
+	extends?: string;
+	implements?: string[];
+	subtypes?: string[];
+}
+
+export interface TraceTypes {
+	flows?: {
+		parameters?: TraceTypeFlow[];
+		properties?: TraceTypeFlow[];
+		returns?: string;
 	};
-	subtypes: TypeHierarchyNode[];
-	supertypes: TypeHierarchyNode[];
+	hierarchy?: TraceTypeHierarchy;
+	mergedDeclarations?: string[];
+	typeGuard?: string;
 }
 
 export interface CodebaseTraceSymbolResult {
-	callChain: CallChainInfo;
-	definition?: SymbolLocationInfo;
-	/** Diagnostic messages (e.g., excessive node_modules references). */
+	calls?: TraceCalls;
+	definition?: TraceDefinition;
 	diagnostics?: string[];
-	/** Calculated effective timeout in milliseconds. */
-	effectiveTimeout?: number;
-	/** Elapsed time in milliseconds. */
 	elapsedMs?: number;
-	/** Error message if an error occurred during tracing. */
 	errorMessage?: string;
-	hierarchy?: TypeHierarchyInfo;
-	impact?: ImpactInfo;
-	/** Reason why symbol was not found. */
 	notFoundReason?: 'file-not-in-project' | 'no-matching-files' | 'no-project' | 'parse-error' | 'symbol-not-found';
-	/** True if results were truncated due to timeout or maxReferences limit. */
 	partial?: boolean;
-	/** Reason for partial results. */
-	partialReason?: 'max-references' | 'timeout';
-	reExports: ReExportInfo[];
-	references: ReferenceInfo[];
-	/** Resolved absolute path used as the project root. */
+	partialReason?: 'timeout';
+	references?: TraceReferences;
 	resolvedRootDir?: string;
-	/** Number of source files in the project. */
 	sourceFileCount?: number;
-	summary: {
-		totalReferences: number;
-		totalFiles: number;
-		maxCallDepth: number;
-	};
 	symbol: string;
-	typeFlows: TypeFlowInfo[];
+	types?: TraceTypes;
 }
 
-// ── Codebase Methods ─────────────────────────────────────
+// ── Codebase Methods ─────────────────────────────────
 
 /**
  * Get a structural overview of the codebase as a recursive tree.
@@ -344,20 +333,18 @@ export async function codebaseGetOverview(rootDir: string, dir: string, recursiv
 }
 
 /**
- * Trace a symbol through the codebase: definitions, references, re-exports,
- * call hierarchy, type flows, and optional impact analysis.
+ * Trace a symbol through the codebase: definition, references, call hierarchy,
+ * type flows, and type hierarchy.
  */
 export async function codebaseTraceSymbol(
 	symbol: string,
 	rootDir?: string,
 	file?: string,
-	depth?: number,
-	include?: string[],
-	includeImpact?: boolean,
-	maxReferences?: number,
-	timeout?: number
+	references?: boolean,
+	calls?: boolean,
+	types?: boolean
 ): Promise<CodebaseTraceSymbolResult> {
-	const result = await sendClientRequest('codebase.traceSymbol', { depth, file, include, includeImpact, maxReferences, rootDir, symbol, timeout }, Math.max(60_000, (timeout ?? 30_000) + 5_000));
+	const result = await sendClientRequest('codebase.traceSymbol', { calls, file, references, rootDir, symbol, types }, 65_000);
 	assertResult<CodebaseTraceSymbolResult>(result, 'codebase.traceSymbol');
 	return result;
 }

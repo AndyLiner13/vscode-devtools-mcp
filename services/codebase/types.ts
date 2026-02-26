@@ -87,139 +87,148 @@ export interface ExportsResult {
 }
 
 // ── Trace Symbol Types ───────────────────────────────────
+// Redesigned interface: simple boolean flags (references, calls, types)
+// with rich definition always included. No line numbers.
+// See: resources/blueprints/CODEBASE-TRACE-REDESIGN.md
 
 export interface TraceSymbolParams {
-	depth?: number;
+	/** Enable incoming/outgoing call hierarchy (full depth, hierarchical). */
+	calls?: boolean;
+	/** File where the symbol was encountered (helps narrow search). */
 	file?: string;
-	include?: string[];
-	includeImpact?: boolean;
-	/** Max references to return (default: 500). Prevents runaway scans on large codebases. */
-	maxReferences?: number;
+	/** Enable all reference sites + re-export chains. */
+	references?: boolean;
+	/** Workspace root directory. */
 	rootDir: string;
+	/** Name of the symbol to trace. */
 	symbol: string;
-	/** Timeout in milliseconds (default: 30000). Returns partial results if exceeded. */
-	timeout?: number;
+	/** Enable type hierarchy, type flows, type guards, and declaration merging. */
+	types?: boolean;
 }
 
-export interface SymbolLocationInfo {
-	column: number;
-	file: string;
-	kind?: string;
-	line: number;
-	signature?: string;
-	unresolved?: boolean;
-}
+// ── Definition (always returned) ─────────────────────────
 
-export interface ReferenceInfo {
-	column: number;
-	context: string;
-	file: string;
-	kind: 'call' | 'import' | 'read' | 'type-ref' | 'unknown' | 'write';
-	line: number;
-}
-
-export interface ReExportInfo {
-	exportedAs: string;
-	file: string;
-	from: string;
-	line: number;
-	originalName: string;
-}
-
-export interface CallChainNode {
-	column: number;
-	file: string;
-	line: number;
-	symbol: string;
-}
-
-export interface CallChainInfo {
-	incomingCalls: CallChainNode[];
-	incomingTruncated?: boolean;
-	outgoingCalls: CallChainNode[];
-	outgoingTruncated?: boolean;
-}
-
-export interface TypeFlowInfo {
-	direction: 'extends' | 'implements' | 'parameter' | 'property' | 'return';
-	traceTo?: { symbol: string; file: string; line: number };
+export interface TraceParameter {
+	defaultValue?: string;
+	name: string;
 	type: string;
 }
 
-export interface ImpactDependentInfo {
+export interface TraceResolutionStep {
+	/** How this file participates: "imports from ...", "re-exports from ...", "defined here" */
+	action: string;
 	file: string;
+}
+
+export interface TraceMember {
 	kind: string;
-	line: number;
+	name: string;
+	type?: string;
+}
+
+export interface TraceDefinition {
+	exported: boolean;
+	file: string;
+	generics?: string;
+	jsdoc?: string;
+	kind: string;
+	members?: TraceMember[];
+	modifiers?: string[];
+	overloads?: string[];
+	parameters?: TraceParameter[];
+	resolvedFrom?: TraceResolutionStep[];
+	returns?: string;
+	signature: string;
 	symbol: string;
 }
 
-export interface ImpactInfo {
-	directDependents: ImpactDependentInfo[];
-	impactSummary: {
-		directFiles: number;
-		transitiveFiles: number;
-		totalSymbolsAffected: number;
-		riskLevel: 'high' | 'low' | 'medium';
-	};
-	transitiveDependents: ImpactDependentInfo[];
-}
+// ── References (when references=true) ────────────────────
 
-export interface TypeHierarchyNode {
-	column: number;
+export type TraceUsageKind = 'call' | 'import' | 'read' | 'type-ref' | 'unknown' | 'write';
+
+export interface TraceReferenceFile {
 	file: string;
-	kind: 'class' | 'interface' | 'type-alias';
-	line: number;
-	name: string;
+	/** True when file matches test patterns (*.test.*, *.spec.*, __tests__/*). */
+	test?: boolean;
+	usages: TraceUsageKind[];
 }
 
-export interface TypeHierarchyInfo {
-	stats: {
-		totalSupertypes: number;
-		totalSubtypes: number;
-		maxDepth: number;
-	};
-	subtypes: TypeHierarchyNode[];
-	supertypes: TypeHierarchyNode[];
+export interface TraceReExport {
+	exportedAs: string;
+	file: string;
+	from: string;
 }
+
+export interface TraceReferences {
+	byFile: TraceReferenceFile[];
+	files: number;
+	reExports: TraceReExport[];
+	total: number;
+}
+
+// ── Calls (when calls=true) ──────────────────────────────
+
+export interface TraceCallNode {
+	children?: TraceCallNode[];
+	file: string;
+	symbol: string;
+}
+
+export interface TraceCalls {
+	incoming: TraceCallNode[];
+	outgoing: TraceCallNode[];
+}
+
+// ── Types (when types=true) ──────────────────────────────
+
+export interface TraceTypeFlow {
+	/** File path (only for cross-file types; omitted for in-file/primitive types). */
+	file?: string;
+	name: string;
+	type: string;
+}
+
+export interface TraceTypeHierarchy {
+	extends?: string;
+	implements?: string[];
+	subtypes?: string[];
+}
+
+export interface TraceTypes {
+	flows?: {
+		parameters?: TraceTypeFlow[];
+		properties?: TraceTypeFlow[];
+		returns?: string;
+	};
+	hierarchy?: TraceTypeHierarchy;
+	mergedDeclarations?: string[];
+	typeGuard?: string;
+}
+
+// ── Result ───────────────────────────────────────────────
 
 export interface TraceSymbolResult {
-	/** Metadata when call hierarchy depth was auto-reduced to stay within token budget. */
-	_autoOptimizedCallDepth?: {
-		requestedDepth: number;
-		usedDepth: number;
-		reason: string;
-	};
-	callChain: CallChainInfo;
-	definition?: SymbolLocationInfo;
-	/** Diagnostic messages (e.g., excessive node_modules references, pattern match warnings). */
+	calls?: TraceCalls;
+	definition?: TraceDefinition;
+	/** Diagnostic messages (e.g., adaptive depth reduction, node_modules stripping). */
 	diagnostics?: string[];
-	/** Calculated effective timeout in milliseconds (max of user timeout and dynamic calculation). */
-	effectiveTimeout?: number;
 	/** Elapsed time in milliseconds. */
 	elapsedMs?: number;
 	/** Error message if an error occurred during tracing. */
 	errorMessage?: string;
-	hierarchy?: TypeHierarchyInfo;
-	impact?: ImpactInfo;
 	/** Reason why symbol was not found (if definition is missing). */
 	notFoundReason?: 'file-not-in-project' | 'no-matching-files' | 'no-project' | 'parse-error' | 'symbol-not-found';
-	/** True if results were truncated due to timeout or maxReferences limit. */
+	/** True if results were truncated due to timeout. */
 	partial?: boolean;
-	/** Reason for partial results (e.g., 'timeout', 'max-references'). */
-	partialReason?: 'max-references' | 'timeout';
-	reExports: ReExportInfo[];
-	references: ReferenceInfo[];
+	/** Reason for partial results. */
+	partialReason?: 'timeout';
+	references?: TraceReferences;
 	/** Resolved absolute path used as the project root. */
 	resolvedRootDir?: string;
 	/** Number of source files in the project (for diagnostics). */
 	sourceFileCount?: number;
-	summary: {
-		totalReferences: number;
-		totalFiles: number;
-		maxCallDepth: number;
-	};
 	symbol: string;
-	typeFlows: TypeFlowInfo[];
+	types?: TraceTypes;
 }
 
 // ── Unused Symbol Detection Types ────────────────────────
