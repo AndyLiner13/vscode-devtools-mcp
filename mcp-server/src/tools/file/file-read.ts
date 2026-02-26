@@ -10,8 +10,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { z as zod } from 'zod';
 
-import { generateIdentifiers } from '@packages/tfidf';
-
 import { formatSymbolLabel } from './symbol-resolver.js';
 
 import { fileExtractStructure, fileHighlightReadRange, fileReadContent, type FileStructure, type FileSymbol } from '../../client-pipe.js';
@@ -22,7 +20,10 @@ import { isStrictLogFile } from './logFile-read.js';
 import { collectSymbolKinds, findQualifiedPaths, findSymbolsByKind, resolveByKindAndName, resolveSymbolTarget } from './symbol-resolver.js';
 
 // Container kinds are valid symbol targets even when childless
-const CONTAINER_KINDS = new Set(['imports', 'comment', 'jsdoc', 'tsdoc']);
+const CONTAINER_KINDS = new Set(['comment', 'jsdoc', 'tsdoc']);
+
+// Kinds that are never collapsed — always shown as raw source code
+const RAW_CODE_KINDS = new Set(['imports']);
 
 function resolveFilePath(file: string): string {
 	if (path.isAbsolute(file)) return file;
@@ -52,36 +53,95 @@ function addLineNumbers(content: string, _startLine1: number, _lineNumbers: bool
 	return content;
 }
 
-/** Count all symbols in a tree (the root plus all descendants). */
-function countChildSymbolsDeep(children: readonly SymbolLike[]): number {
-	let count = children.length;
+/** Whether a symbol is standalone/collapsible: must span multiple lines. */
+function isStandaloneSymbol(symbol: SymbolLike): boolean {
+	if (CONTROL_FLOW_KINDS.has(symbol.kind)) return false;
+	if (RAW_CODE_KINDS.has(symbol.kind)) return false;
+	return symbol.range.endLine > symbol.range.startLine;
+}
+
+/**
+ * Whether a symbol should be visible in the skeleton hierarchy.
+ * Body-bearing kinds are always visible (even single-line, e.g. interface methods).
+ * Container kinds and multi-line symbols are also visible.
+ */
+function isVisibleInSkeleton(symbol: SymbolLike): boolean {
+	if (CONTROL_FLOW_KINDS.has(symbol.kind)) return false;
+	if (RAW_CODE_KINDS.has(symbol.kind)) return false;
+	if (BODY_BEARING_KINDS.has(symbol.kind)) return true;
+	if (CONTAINER_KINDS.has(symbol.kind)) return true;
+	return symbol.range.endLine > symbol.range.startLine;
+}
+
+/** Count skeleton-visible symbols in a tree. */
+function countVisibleSymbolsDeep(children: readonly SymbolLike[]): number {
+	let count = 0;
 	for (const c of children) {
-		if (c.children && c.children.length > 0) count += countChildSymbolsDeep(c.children);
+		if (isVisibleInSkeleton(c)) count++;
+		if (c.children && c.children.length > 0) count += countVisibleSymbolsDeep(c.children);
 	}
 	return count;
 }
 
-/** Build compact metadata tag matching codebase_map format: [30L|5S|3R|1I] */
+/** Abbreviated kind labels for the file map routing table. */
+const KIND_ABBREV: Record<string, string> = {
+	'function': 'fn',
+	'method': 'method',
+	'constructor': 'ctor',
+	'getter': 'getter',
+	'setter': 'setter',
+	'class': 'class',
+	'interface': 'iface',
+	'enum': 'enum',
+	'namespace': 'ns',
+	'module': 'mod',
+	'constant': 'const',
+	'variable': 'var',
+	'type': 'type',
+	'property': 'prop',
+	'comment': 'comment',
+	'jsdoc': 'jsdoc',
+	'tsdoc': 'tsdoc',
+};
+
+/** Build compact metadata tag: [30L|5S|fn] — includes kind abbreviation. */
 function buildSymbolMeta(symbol: SymbolLike): string {
 	const lineCount = symbol.range.endLine - symbol.range.startLine + 1;
-	// Single-line symbols don't need metadata — the content is trivial
-	if (lineCount === 1) return '';
+	const kind = KIND_ABBREV[symbol.kind] ?? symbol.kind;
 
 	const parts: string[] = [];
-	parts.push(`${lineCount}L`);
-	const symCount = symbol.children ? countChildSymbolsDeep(symbol.children) : 0;
+	if (lineCount > 1) parts.push(`${lineCount}L`);
+	const symCount = symbol.children ? countVisibleSymbolsDeep(symbol.children) : 0;
 	if (symCount > 0) parts.push(`${symCount}S`);
-	if ((symbol.referenceCount ?? 0) > 0) parts.push(`${symbol.referenceCount}R`);
-	if ((symbol.implementationCount ?? 0) > 0) parts.push(`${symbol.implementationCount}I`);
+	parts.push(kind);
 	return `[${parts.join('|')}]`;
 }
 
 function formatSkeletonEntry(symbol: SymbolLike, indent = '', maxNesting = 0, currentDepth = 0, collapseKinds?: ReadonlySet<string>): string[] {
+	// Hide control flow constructs entirely — they add noise to the skeleton
+	if (CONTROL_FLOW_KINDS.has(symbol.kind)) return [];
+
+	// Non-visible in skeleton: show as structural labels only if they have
+	// visible descendants (preserves hierarchy for dot-notation paths).
+	// Otherwise hide them entirely.
+	if (!isVisibleInSkeleton(symbol)) {
+		const visibleDescendants = symbol.children ? countVisibleSymbolsDeep(symbol.children) : 0;
+		if (visibleDescendants === 0) return [];
+
+		const lines: string[] = [];
+		lines.push(`${indent}${symbol.name}`);
+		if (symbol.children && currentDepth < maxNesting) {
+			for (const child of symbol.children) {
+				lines.push(...formatSkeletonEntry(child, `${indent}  `, maxNesting, currentDepth + 1, collapseKinds));
+			}
+		}
+		return lines;
+	}
+
 	const lines: string[] = [];
 
 	const meta = buildSymbolMeta(symbol);
-	const label = formatSymbolLabel(symbol);
-	lines.push(meta ? `${indent}${meta} ${label}` : `${indent}${label}`);
+	lines.push(`${indent}${meta} ${symbol.name}`);
 
 	// When collapseKinds is provided, body-bearing symbols are fully collapsed
 	// (no children shown). Copilot must request them by name to see internals.
@@ -121,11 +181,19 @@ interface LineRange {
 	startLine: number;
 }
 
+/** Slug-to-range mapping for TF-IDF regions. */
+interface SlugMapping {
+	endLine: number;
+	slug: string;
+	startLine: number;
+}
+
 interface CompressionResult {
 	collapsedRanges: LineRange[];
 	compressed: boolean;
 	label: null | string;
 	output: string;
+	slugMappings: SlugMapping[];
 	sourceRanges: LineRange[];
 	trace: string[];
 }
@@ -302,7 +370,7 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 	// Deepest leaf or nothing to expand — return full content
 	if (isDeepestLeaf(symbol) || !expandChildren) {
 		const fullContent = addLineNumbers(getContentSlice(allLines, startLine, endLine), startLine, lineNumbers);
-		return { collapsedRanges: [], compressed: false, label: null, output: fullContent, sourceRanges: [], trace: [] };
+		return { collapsedRanges: [], compressed: false, label: null, output: fullContent, slugMappings: [], sourceRanges: [], trace: [] };
 	}
 
 	// Stub body-bearing children that have grandchildren
@@ -320,6 +388,7 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 			compressed: true,
 			label: `${stubbedCount} body-bearing children collapsed — request each by name to expand`,
 			output: stubbedContent,
+			slugMappings: [],
 			trace: []
 		};
 	}
@@ -329,7 +398,7 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 	const contentMaxNesting = recursive ? maxNesting : 0;
 	const maxContent = formatContentAtNesting(allLines, symbol, startLine, endLine, contentMaxNesting, 0, lineNumbers);
 	const ranges = computeContentRanges(symbol, contentMaxNesting);
-	return { ...ranges, compressed: false, label: null, output: maxContent, trace: [] };
+	return { ...ranges, compressed: false, label: null, output: maxContent, slugMappings: [], trace: [] };
 }
 
 /**
@@ -344,111 +413,62 @@ const BODY_BEARING_KINDS: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Control flow constructs are hidden entirely from the skeleton overview.
+ * They add noise without helping Copilot navigate the file structure.
+ */
+const CONTROL_FLOW_KINDS: ReadonlySet<string> = new Set([
+	'if', 'else', 'for', 'for-in', 'for-of', 'while', 'do-while',
+	'switch', 'case', 'default', 'try', 'try-catch', 'catch', 'finally',
+]);
+
+/**
  * Compress full-file output into a file map with body-bearing symbols as stubs
  * and consecutive non-body-bearing content grouped into TF-IDF-named regions.
  *
- * Body-bearing symbols (functions, classes, methods, etc.) → standalone stubs
- * Container symbols (imports, comments, jsdoc, tsdoc) → standalone stubs
- * Other non-body content (constants, variables, gaps) → grouped into single TF-IDF stubs
+ * Body-bearing symbols with bodies (multi-line) → collapsed skeleton stubs
+ * Container symbols (imports, comments, jsdoc, tsdoc) → collapsed skeleton stubs
+ * Everything else (type aliases, variables, overload signatures, gaps) → raw source code
  */
 function compressFullFileOutput(_rawContent: string, structure: FileStructure | undefined, allLines: string[], _startLine1: number, _lineNumbers: boolean): CompressionResult {
-	// No structure available — return raw content as-is
 	if (!structure) {
 		const numbered = addLineNumbers(_rawContent, _startLine1, _lineNumbers);
-		return { collapsedRanges: [], compressed: false, label: null, output: numbered, sourceRanges: [], trace: [] };
+		return { collapsedRanges: [], compressed: false, label: null, output: numbered, slugMappings: [], sourceRanges: [], trace: [] };
 	}
 
-	// Classify pieces: standalone (body-bearing or container) vs groupable (everything else)
-	interface MapPiece {
-		endLine: number;
-		startLine: number;
-		type: 'standalone' | 'groupable';
-		symbol?: FileSymbol;
-		text?: string;
-	}
-
-	const pieces: MapPiece[] = [];
-
+	// Standalone symbols: multi-line or containers (collapsible stubs)
+	const standaloneSymbols: FileSymbol[] = [];
 	for (const sym of structure.symbols) {
-		const isBodyBearing = BODY_BEARING_KINDS.has(sym.kind);
-		const isContainer = CONTAINER_KINDS.has(sym.kind);
-		const isStandalone = isBodyBearing || isContainer;
-		pieces.push({
-			type: isStandalone ? 'standalone' : 'groupable',
-			startLine: sym.range.startLine,
-			endLine: sym.range.endLine,
-			symbol: sym,
-			text: allLines.slice(sym.range.startLine - 1, sym.range.endLine).join('\n')
-		});
-	}
-
-	for (const gap of structure.gaps) {
-		if (gap.type === 'blank') continue;
-		const text = allLines.slice(gap.start - 1, gap.end).join('\n').trim();
-		if (text.length === 0) continue;
-		pieces.push({ type: 'groupable', startLine: gap.start, endLine: gap.end, text });
-	}
-
-	pieces.sort((a, b) => a.startLine - b.startLine);
-
-	// Group consecutive groupable pieces into regions
-	interface Region {
-		type: 'standalone' | 'grouped';
-		startLine: number;
-		endLine: number;
-		symbol?: FileSymbol;
-		combinedText?: string;
-	}
-
-	const regions: Region[] = [];
-	let currentGroup: MapPiece[] = [];
-
-	function flushGroup(): void {
-		if (currentGroup.length === 0) return;
-		const startLine = currentGroup[0].startLine;
-		const endLine = currentGroup[currentGroup.length - 1].endLine;
-		const combinedText = currentGroup.map((p) => p.text ?? '').join('\n');
-		regions.push({ type: 'grouped', startLine, endLine, combinedText });
-		currentGroup = [];
-	}
-
-	for (const piece of pieces) {
-		if (piece.type === 'standalone') {
-			flushGroup();
-			regions.push({ type: 'standalone', startLine: piece.startLine, endLine: piece.endLine, symbol: piece.symbol });
-		} else {
-			currentGroup.push(piece);
+		if (isStandaloneSymbol(sym)) {
+			standaloneSymbols.push(sym);
 		}
 	}
-	flushGroup();
+	standaloneSymbols.sort((a, b) => a.range.startLine - b.range.startLine);
 
-	// Run TF-IDF on grouped regions to generate semantic identifiers
-	const groupedRegions = regions.filter((r): r is Region & { combinedText: string } => r.type === 'grouped');
-	const groupNodes = groupedRegions.map((g) => ({
-		kind: 'region',
-		range: { startLine: g.startLine, endLine: g.endLine },
-		text: g.combinedText
-	}));
-	const groupIds = generateIdentifiers(groupNodes);
-	const groupSlugMap = new Map<Region, string>();
-	for (let i = 0; i < groupedRegions.length; i++) {
-		groupSlugMap.set(groupedRegions[i], groupIds[i]?.slug ?? `region-${groupedRegions[i].startLine}`);
+	const outputLines: string[] = [];
+	const collapsedRanges: LineRange[] = [];
+	const maxNesting = getMaxSymbolNesting(structure.symbols);
+	let nextRawStart = 1;
+
+	for (const sym of standaloneSymbols) {
+		// Raw source for lines between previous standalone and this one
+		if (sym.range.startLine > nextRawStart) {
+			const rawLines = allLines.slice(nextRawStart - 1, sym.range.startLine - 1);
+			if (rawLines.length > 0) {
+				outputLines.push(...rawLines);
+			}
+		}
+
+		// Skeleton stub for this standalone symbol
+		outputLines.push(...formatSkeletonEntry(sym, '', maxNesting));
+		collapsedRanges.push({ startLine: sym.range.startLine, endLine: sym.range.endLine });
+		nextRawStart = sym.range.endLine + 1;
 	}
 
-	// Render the file map
-	const collapsedRanges: LineRange[] = [];
-	const outputLines: string[] = [];
-	const maxNesting = getMaxSymbolNesting(structure.symbols);
-
-	for (const region of regions) {
-		if (region.type === 'standalone' && region.symbol) {
-			outputLines.push(...formatSkeletonEntry(region.symbol, '', maxNesting));
-			collapsedRanges.push({ startLine: region.startLine, endLine: region.endLine });
-		} else if (region.type === 'grouped') {
-			const lineCount = region.endLine - region.startLine + 1;
-			const slug = groupSlugMap.get(region) ?? `region-${region.startLine}`;
-			outputLines.push(`[${lineCount}L] ${slug}`);
-			collapsedRanges.push({ startLine: region.startLine, endLine: region.endLine });
+	// Raw source for remaining lines after last standalone symbol
+	if (nextRawStart <= allLines.length) {
+		const rawLines = allLines.slice(nextRawStart - 1);
+		if (rawLines.length > 0) {
+			outputLines.push(...rawLines);
 		}
 	}
 
@@ -457,6 +477,7 @@ function compressFullFileOutput(_rawContent: string, structure: FileStructure | 
 		compressed: true,
 		label: null,
 		output: outputLines.join('\n'),
+		slugMappings: [],
 		sourceRanges: [],
 		trace: []
 	};
@@ -630,43 +651,22 @@ export const /**
 					? { symbol: resolveByKindAndName(structure.symbols, normalizedDotTarget)!, parent: undefined, path: [symbolTarget] }
 					: undefined);
 
-			const targetableSymbols = structure.symbols;
+			// Compute file map for error messages
+			const content = await fileReadContent(filePath);
+			const fileMap = compressFullFileOutput(content.content, structure, allLines, content.startLine + 1, lineNumbers);
 
-			if (!match) {
-				// Normalize plural category selectors to singular kinds
-				const normalizedTarget = PLURAL_TO_KIND[symbolTarget.toLowerCase()] ?? symbolTarget;
-
-				// Expand meta-categories (e.g. "comment" → comment + jsdoc + tsdoc)
-				const expandedKinds = KIND_GROUPS[normalizedTarget] ?? [normalizedTarget];
-
-				// Fall back to kind-based filtering: "interface" → all interfaces
-				const kindMatches = expandedKinds
-					.flatMap((k) => findSymbolsByKind(structure.symbols, k))
-					.sort((a, b) => a.range.startLine - b.range.startLine);
-				if (kindMatches.length > 0) {
-					const lines: string[] = [];
-					for (const sym of kindMatches) {
-						const maxNesting = recursive ? getSymbolTreeDepth(sym) : 0;
-						lines.push(...formatSkeletonEntry(sym, '', maxNesting));
-					}
-					const output = lines.join('\n');
-					response.appendResponseLine(output);
-				} else {
-					const available = targetableSymbols.map((s) => formatSymbolLabel(s)).join(', ');
-					const availableKinds = collectSymbolKinds(targetableSymbols);
-					response.appendResponseLine(`"${symbolTarget}": Not found. Available: ${available || 'none'}`);
-					if (availableKinds.length > 0) {
-						response.appendResponseLine(`Hint: You can also use a kind to list all symbols of that type: ${availableKinds.join(', ')}`);
-					}
-
-					const qualifiedPaths = findQualifiedPaths(structure.symbols, symbolTarget);
-					if (qualifiedPaths.length > 0) {
-						const suggestions = qualifiedPaths.map((p) => `"${p}"`).join(', ');
-						response.appendResponseLine(`Hint: Did you mean ${suggestions}? Use the qualified dot-path to target nested symbols.`);
-					}
-				}
-			} else {
+			// ── Symbol match: check if navigable ──
+			if (match) {
 				const { symbol } = match;
+
+				// Only skeleton-visible symbols are navigable
+				if (!isVisibleInSkeleton(symbol)) {
+					response.appendResponseLine(`"${symbolTarget}" is a single-line ${symbol.kind}, not a navigable symbol.\n`);
+					response.appendResponseLine(`Only body-bearing symbols, containers, and multi-line declarations can be requested.\n`);
+					response.appendResponseLine(`**File map:**\n${fileMap.output}`);
+					return;
+				}
+
 				const { startLine } = symbol.range;
 				const { endLine } = symbol.range;
 
@@ -677,6 +677,31 @@ export const /**
 				const header = formatCompressionHeader(result);
 				if (header) response.appendResponseLine(header);
 				response.appendResponseLine(result.output);
+				return;
+			}
+
+			// ── No match: try kind-based filtering or show error ──
+			// Normalize plural category selectors to singular kinds
+			const normalizedTarget = PLURAL_TO_KIND[symbolTarget.toLowerCase()] ?? symbolTarget;
+
+			// Expand meta-categories (e.g. "comment" → comment + jsdoc + tsdoc)
+			const expandedKinds = KIND_GROUPS[normalizedTarget] ?? [normalizedTarget];
+
+			// Fall back to kind-based filtering: "interface" → all interfaces
+			const kindMatches = expandedKinds
+				.flatMap((k) => findSymbolsByKind(structure.symbols, k))
+				.sort((a, b) => a.range.startLine - b.range.startLine);
+			if (kindMatches.length > 0) {
+				const lines: string[] = [];
+				for (const sym of kindMatches) {
+					const maxNesting = recursive ? getSymbolTreeDepth(sym) : 0;
+					lines.push(...formatSkeletonEntry(sym, '', maxNesting));
+				}
+				const output = lines.join('\n');
+				response.appendResponseLine(output);
+			} else {
+				response.appendResponseLine(`"${symbolTarget}": Not found.\n`);
+				response.appendResponseLine(`**File map:**\n${fileMap.output}`);
 			}
 		},
 		name: 'file_read',
@@ -684,6 +709,6 @@ export const /**
 			file: zod.string().describe('Path to file (relative to workspace root or absolute).'),
 			symbol: zod
 				.string()
-				.describe('Symbol to read. Use empty string "" for file overview (all symbols as stubs). Use dot notation for nested symbols (e.g. "UserService.findById"), or a kind to list all of that type (e.g. "interface", "class"). Container symbols: "imports", "comments". Children are collapsed to metadata stubs — request each child by name to expand.')
+				.describe('Symbol to read. Use empty string "" for file overview (body-bearing symbols as stubs, everything else as raw source). Use dot notation for nested symbols (e.g. "UserService.findById"), or a kind to list all of that type (e.g. "interface", "class"). Container symbols: "imports", "comments". Children are collapsed to metadata stubs — request each child by name to expand.')
 		}
 	});
