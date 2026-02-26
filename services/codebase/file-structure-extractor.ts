@@ -24,6 +24,7 @@ import * as path from 'node:path';
 import { Node, Scope, SyntaxKind } from 'ts-morph';
 
 import { extractOrphanedContent, findProjectRoot } from './orphaned-content';
+import { buildIdentifierMap, populateExtractedSymbolRefs } from './reference-counting';
 import { getWorkspaceProject } from './ts-project';
 import { TS_PARSEABLE_EXTS } from './types';
 
@@ -40,10 +41,12 @@ export interface ExtractedSymbol {
 	children: ExtractedSymbol[];
 	detail?: string;
 	exported?: boolean;
+	implementationCount?: number;
 	kind: string;
 	modifiers?: string[];
 	name: string;
 	range: ExtractedSymbolRange;
+	referenceCount?: number;
 }
 
 // ── Range Helper ──
@@ -871,6 +874,15 @@ export function extractFileStructure(filePath: string): UnifiedFileResult {
 
 		// Extract symbols using our ts-morph extractor
 		const symbols = extractSymbols(sourceFile);
+
+		// Populate reference/implementation counts using workspace project
+		try {
+			const langSvc = project.getLanguageService();
+			const identMap = buildIdentifierMap(sourceFile);
+			populateExtractedSymbolRefs(symbols, sourceFile, identMap, langSvc);
+		} catch {
+			// Reference counting is best-effort — continue without ref data
+		}
 
 		// Convert symbol ranges to flat list for orphaned content detection
 		const symbolRanges = flattenSymbolRanges(symbols);

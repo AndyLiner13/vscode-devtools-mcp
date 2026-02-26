@@ -69,8 +69,10 @@ export function extractOrphanedContent(filePath: string, symbolRanges: Array<{ s
 		const directives = extractDirectives(sourceFile);
 		const orphanComments = extractOrphanComments(sourceFile, symbolRanges, imports, exports, directives);
 
-		// Compute gaps (lines not covered by symbols, imports, exports, directives, or comments)
-		const allCoveredRanges = [...symbolRanges, ...imports.map((i) => i.range), ...exports.map((e) => e.range), ...directives.map((d) => d.range), ...orphanComments.map((c) => c.range)];
+		// Compute gaps (lines not covered by symbols, imports, or comments)
+		// Exports and directives are NOT counted as covered — they fall into gaps
+		// and get TF-IDF summaries in the file overview instead of dedicated containers.
+		const allCoveredRanges = [...symbolRanges, ...imports.map((i) => i.range), ...orphanComments.map((c) => c.range)];
 
 		const gaps = computeGaps(sourceFile, totalLines, allCoveredRanges);
 		const totalBlankLines = gaps.filter((g) => g.type === 'blank').reduce((sum, g) => sum + (g.end - g.start + 1), 0);

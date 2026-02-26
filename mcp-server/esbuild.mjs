@@ -12,8 +12,10 @@ const watch = process.argv.includes('--watch');
  * Necessary because esbuild's onResolve only fires in bundle mode.
  */
 function rewritePackageImports(buildDir) {
-	const pkgAlias = '@packages/log-consolidation';
-	const pkgTarget = 'packages/log-consolidation/src/index.js';
+	const aliases = [
+		{ alias: '@packages/log-consolidation', target: 'packages/log-consolidation/src/index.js' },
+		{ alias: '@packages/tfidf', target: 'packages/tfidf/src/index.js' },
+	];
 
 	function processDir(dir) {
 		for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -21,12 +23,17 @@ function rewritePackageImports(buildDir) {
 			if (entry.isDirectory()) {
 				processDir(fullPath);
 			} else if (entry.name.endsWith('.js')) {
-				const content = fs.readFileSync(fullPath, 'utf-8');
-				if (!content.includes(pkgAlias)) continue;
-				const targetAbs = path.join(buildDir, pkgTarget);
-				let rel = path.relative(path.dirname(fullPath), targetAbs).replace(/\\/g, '/');
-				if (!rel.startsWith('.')) rel = './' + rel;
-				fs.writeFileSync(fullPath, content.replaceAll(`"${pkgAlias}"`, `"${rel}"`));
+				let content = fs.readFileSync(fullPath, 'utf-8');
+				let changed = false;
+				for (const { alias, target } of aliases) {
+					if (!content.includes(alias)) continue;
+					const targetAbs = path.join(buildDir, target);
+					let rel = path.relative(path.dirname(fullPath), targetAbs).replace(/\\/g, '/');
+					if (!rel.startsWith('.')) rel = './' + rel;
+					content = content.replaceAll(`"${alias}"`, `"${rel}"`);
+					changed = true;
+				}
+				if (changed) fs.writeFileSync(fullPath, content);
 			}
 		}
 	}
@@ -50,7 +57,8 @@ function findTsFiles(dir) {
 }
 
 // Transpile the shared package files into build/packages/
-const packageFiles = findTsFiles(path.join(packagesDir, 'log-consolidation', 'src'));
+const logConsolidationFiles = findTsFiles(path.join(packagesDir, 'log-consolidation', 'src'));
+const tfidfFiles = findTsFiles(path.join(packagesDir, 'tfidf', 'src'));
 
 const config = {
 	entryPoints: findTsFiles('src'),
@@ -62,9 +70,9 @@ const config = {
 	sourcemap: true
 };
 
-// Separate config for the shared package (different outbase)
-const packageConfig = {
-	entryPoints: packageFiles,
+// Separate configs for each shared package (different outbase)
+const logConsolidationConfig = {
+	entryPoints: logConsolidationFiles,
 	outdir: path.join('build', 'packages', 'log-consolidation'),
 	outbase: path.join(packagesDir, 'log-consolidation'),
 	format: 'esm',
@@ -73,9 +81,21 @@ const packageConfig = {
 	sourcemap: true
 };
 
+const tfidfConfig = {
+	entryPoints: tfidfFiles,
+	outdir: path.join('build', 'packages', 'tfidf'),
+	outbase: path.join(packagesDir, 'tfidf'),
+	format: 'esm',
+	platform: 'node',
+	target: 'es2023',
+	sourcemap: true
+};
+
+const packageConfigs = [logConsolidationConfig, tfidfConfig];
+
 if (watch) {
-	// Build once initially (with package + rewrite), then watch src only
-	await Promise.all([esbuild.build(config), esbuild.build(packageConfig)]);
+	// Build once initially (with packages + rewrite), then watch src only
+	await Promise.all([esbuild.build(config), ...packageConfigs.map((c) => esbuild.build(c))]);
 	rewritePackageImports(path.resolve(__dirname, 'build'));
 	console.log('[esbuild] initial build complete, rewriting package imports…');
 
@@ -92,11 +112,12 @@ if (watch) {
 			}
 		]
 	});
-	const pkgCtx = await esbuild.context(packageConfig);
-	await Promise.all([ctx.watch(), pkgCtx.watch()]);
+	const pkgContexts = await Promise.all(packageConfigs.map((c) => esbuild.context(c)));
+	await Promise.all([ctx.watch(), ...pkgContexts.map((c) => c.watch())]);
 	console.log('[esbuild] watching for changes…');
 } else {
-	await Promise.all([esbuild.build(config), esbuild.build(packageConfig)]);
+	await Promise.all([esbuild.build(config), ...packageConfigs.map((c) => esbuild.build(c))]);
 	rewritePackageImports(path.resolve(__dirname, 'build'));
-	console.log(`[esbuild] transpiled ${config.entryPoints.length} + ${packageConfig.entryPoints.length} files → build/`);
+	const pkgCount = packageConfigs.reduce((sum, c) => sum + c.entryPoints.length, 0);
+	console.log(`[esbuild] transpiled ${config.entryPoints.length} + ${pkgCount} files → build/`);
 }

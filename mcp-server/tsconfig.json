@@ -7,7 +7,8 @@
 		"outDir": "./build",
 		"rootDir": ".",
 		"paths": {
-			"@packages/log-consolidation": ["../packages/log-consolidation/src/index.ts"]
+			"@packages/log-consolidation": ["../packages/log-consolidation/src/index.ts"],
+			"@packages/tfidf": ["../packages/tfidf/src/index.ts"]
 		}
 	},
 	"include": ["src/**/*.ts"]

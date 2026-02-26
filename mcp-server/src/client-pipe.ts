@@ -602,10 +602,12 @@ export interface FileSymbol {
 	children: FileSymbol[];
 	detail?: string;
 	exported?: boolean;
+	implementationCount?: number;
 	kind: string;
 	modifiers?: string[];
 	name: string;
 	range: FileSymbolRange;
+	referenceCount?: number;
 }
 
 export interface FileStructureStats {

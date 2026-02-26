@@ -316,10 +316,14 @@ export interface FileSymbol {
 	children: FileSymbol[];
 	detail?: string;
 	exported?: boolean;
+	/** Number of implementations of this symbol (interfaces, abstract members). */
+	implementationCount?: number;
 	kind: string;
 	modifiers?: string[];
 	name: string;
 	range: FileSymbolRange;
+	/** Number of references to this symbol across the codebase. */
+	referenceCount?: number;
 }
 
 export interface FileStructureStats {

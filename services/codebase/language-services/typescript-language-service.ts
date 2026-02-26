@@ -115,30 +115,6 @@ export class TypeScriptLanguageService implements LanguageService {
 		}
 		containerSymbols.push(...importContainers);
 
-		// Filter out inline exports — they duplicate symbols that already have exported=true.
-		// An export is "inline" if its line range overlaps with any code symbol's range
-		// (e.g. "export function activate" is both an export and a function symbol).
-		// Keep only standalone exports (re-export, named-export, export default expr, etc.)
-		// that don't overlap with any symbol.
-		const symbolRangeSet = new Set<number>();
-		for (const sym of result.symbols) {
-			for (let line = sym.range.startLine; line <= sym.range.endLine; line++) {
-				symbolRangeSet.add(line);
-			}
-		}
-		const standaloneExports = result.exports.filter((e) => !symbolRangeSet.has(e.range.start));
-		const exportContainers = buildContainerGroups('exports', 'exports', standaloneExports);
-		if (exportContainers.length > 0) {
-			const exportNodes = toCommentNodes(exportContainers, result.content);
-			const exportIds = getIdentifiers(filePath, result.content, exportNodes);
-			for (let i = 0; i < exportContainers.length; i++) {
-				if (exportIds[i]?.slug) {
-					exportContainers[i] = { ...exportContainers[i], name: exportIds[i].slug };
-				}
-			}
-		}
-		containerSymbols.push(...exportContainers);
-
 		// Split orphan comments into jsdoc, tsdoc, and generic comments
 		const jsdocNodes = result.orphanComments.filter((c) => c.kind === 'jsdoc');
 		const tsdocNodes = result.orphanComments.filter((c) => c.kind === 'tsdoc');
@@ -164,18 +140,6 @@ export class TypeScriptLanguageService implements LanguageService {
 			}
 			containerSymbols.push(...containers);
 		}
-
-		const directiveContainers = buildContainerGroups('directives', 'directives', result.directives);
-		if (directiveContainers.length > 0) {
-			const directiveNodes = toCommentNodes(directiveContainers, result.content);
-			const directiveIds = getIdentifiers(filePath, result.content, directiveNodes);
-			for (let i = 0; i < directiveContainers.length; i++) {
-				if (directiveIds[i]?.slug) {
-					directiveContainers[i] = { ...directiveContainers[i], name: directiveIds[i].slug };
-				}
-			}
-		}
-		containerSymbols.push(...directiveContainers);
 
 		const codeSymbols = result.symbols.map(convertSymbol);
 

@@ -16,10 +16,12 @@ export interface SymbolLikeRange {
 export interface SymbolLike {
 	children: SymbolLike[];
 	exported?: boolean;
+	implementationCount?: number;
 	kind: string;
 	modifiers?: string[];
 	name: string;
 	range: SymbolLikeRange;
+	referenceCount?: number;
 }
 
 /**
