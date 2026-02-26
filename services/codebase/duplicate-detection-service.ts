@@ -6,7 +6,7 @@ import * as crypto from 'node:crypto';
 import * as path from 'node:path';
 import { Node, SyntaxKind } from 'ts-morph';
 
-import { applyIgnoreRules, globToRegex, parseIgnoreRules } from './ignore-rules';
+import { applyIgnoreRules, parseIgnoreRules } from './ignore-rules';
 import { getWorkspaceProject } from './ts-project';
 import { warn } from '../logger';
 
@@ -15,23 +15,13 @@ type FileFilter = (absoluteFilePath: string) => boolean;
 
 const TEST_FILE_PATTERN = /[./](test|spec|__tests__)[./]/i;
 
-function buildFileFilter(rootDir: string, includePatterns?: string[], excludePatterns?: string[]): FileFilter {
+function buildFileFilter(rootDir: string): FileFilter {
 	const ignoreRules = parseIgnoreRules(rootDir);
-	const includeRegexps = includePatterns?.map((p) => globToRegex(p));
-	const excludeRegexps = excludePatterns?.map((p) => globToRegex(p));
 
 	return (absoluteFilePath: string) => {
 		const relativePath = path.relative(rootDir, absoluteFilePath).replaceAll('\\', '/');
 
-		if (includeRegexps && includeRegexps.length > 0) {
-			if (!includeRegexps.some((r) => r.test(relativePath))) return false;
-		}
-
 		if (!applyIgnoreRules(relativePath, ignoreRules)) return false;
-
-		if (excludeRegexps && excludeRegexps.length > 0) {
-			if (excludeRegexps.some((r) => r.test(relativePath))) return false;
-		}
 
 		return true;
 	};
@@ -71,7 +61,7 @@ export async function findDuplicates(params: DuplicateDetectionParams): Promise<
 
 	try {
 		const project = getWorkspaceProject(rootDir);
-		const fileFilter = buildFileFilter(rootDir, params.includePatterns, params.excludePatterns);
+		const fileFilter = buildFileFilter(rootDir);
 
 		// Map from structural hash → list of instances
 		const hashMap = new Map<string, { kind: string; lineCount: number; instances: DuplicateInstance[] }>();

@@ -121,9 +121,7 @@ function getDirectoryExports(dirPath: string, rootDir: string, params: ExportsPa
 	const tsExtGlob = '**/*.{ts,tsx,js,jsx,mts,mjs,cts,cjs}';
 
 	const fileMap = discoverFiles({
-		excludePatterns: params.excludePatterns,
 		includeGlob: tsExtGlob,
-		includePatterns: params.includePatterns,
 		maxResults: 500,
 		rootDir: dirPath
 	});

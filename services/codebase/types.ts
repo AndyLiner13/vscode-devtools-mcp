@@ -61,11 +61,7 @@ export interface OverviewResult {
 // ── Exports Types ────────────────────────────────────────
 
 export interface ExportsParams {
-	/** Glob patterns to exclude (blacklist). Applied after include patterns to further narrow results. */
-	excludePatterns?: string[];
 	includeJSDoc?: boolean;
-	/** Glob patterns to include (whitelist). If specified, only matching files are considered. */
-	includePatterns?: string[];
 	includeTypes?: boolean;
 	kind?: string;
 	path: string;
@@ -93,18 +89,10 @@ export interface ExportsResult {
 // ── Trace Symbol Types ───────────────────────────────────
 
 export interface TraceSymbolParams {
-	column?: number;
 	depth?: number;
-	/** Glob patterns to exclude (blacklist). Added to .devtoolsignore exclusions. */
-	excludePatterns?: string[];
 	file?: string;
-	/** Force invalidate project cache before tracing. Use after adding new files. */
-	forceRefresh?: boolean;
 	include?: string[];
 	includeImpact?: boolean;
-	/** Glob patterns to include (whitelist). If specified, only matching files are considered. */
-	includePatterns?: string[];
-	line?: number;
 	/** Max references to return (default: 500). Prevents runaway scans on large codebases. */
 	maxReferences?: number;
 	rootDir: string;
@@ -237,14 +225,10 @@ export interface TraceSymbolResult {
 // ── Unused Symbol Detection Types ────────────────────────
 
 export interface DeadCodeParams {
-	/** Glob patterns to exclude (blacklist). Added to .devtoolsignore exclusions. */
-	excludePatterns?: string[];
 	/** Exclude test files (files matching *.test.*, *.spec.*, __tests__/*). Default: true */
 	excludeTests?: boolean;
 	/** Only check exported symbols (default: true). When false, also detects unreachable non-exported functions and dead variables. */
 	exportedOnly?: boolean;
-	/** Glob patterns to include (whitelist). If specified, only matching files are considered. */
-	includePatterns?: string[];
 	/** Symbol kinds to check (default: all) */
 	kinds?: string[];
 	/** Max symbols to return (default: 100) */
@@ -407,10 +391,6 @@ export interface ChunkFileResult {
 // ── Import Graph Types ───────────────────────────────────
 
 export interface ImportGraphParams {
-	/** Glob patterns to exclude (blacklist) */
-	excludePatterns?: string[];
-	/** Glob patterns to include (whitelist) */
-	includePatterns?: string[];
 	rootDir: string;
 }
 
@@ -446,10 +426,6 @@ export interface ImportGraphResult {
 // ── Duplicate Detection Types ────────────────────────────
 
 export interface DuplicateDetectionParams {
-	/** Glob patterns to exclude */
-	excludePatterns?: string[];
-	/** Glob patterns to include */
-	includePatterns?: string[];
 	/** Kinds to check for duplicates */
 	kinds?: string[];
 	/** Max results. Default: 50 */

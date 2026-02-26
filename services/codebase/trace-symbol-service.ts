@@ -22,7 +22,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { Node, type Project, type SourceFile, SyntaxKind, ts, type Symbol as TsSymbol } from 'ts-morph';
 
-import { applyIgnoreRules, globToRegex, parseIgnoreRules } from './ignore-rules';
+import { applyIgnoreRules, parseIgnoreRules } from './ignore-rules';
 import { getWorkspaceProject, invalidateWorkspaceProject } from './ts-project';
 import { warn } from '../logger';
 
@@ -32,33 +32,16 @@ import { warn } from '../logger';
 type FileFilter = (absoluteFilePath: string) => boolean;
 
 /**
- * Build a file filter function from .devtoolsignore + per-request include/exclude patterns.
- * Follows VS Code search semantics:
- * - If includePatterns specified → file must match at least one (overrides all excludes)
- * - Otherwise → .devtoolsignore exclusions + excludePatterns are applied
+ * Build a file filter function from .devtoolsignore rules.
+ * Files matching the ignore rules are excluded from analysis.
  */
-function buildFileFilter(rootDir: string, includePatterns?: string[], excludePatterns?: string[]): FileFilter {
+function buildFileFilter(rootDir: string): FileFilter {
 	const ignoreRules = parseIgnoreRules(rootDir);
-
-	if (excludePatterns) {
-		for (const pattern of excludePatterns) {
-			ignoreRules.push({ negated: false, pattern, scope: null });
-		}
-	}
-
-	const includeMatchers = (includePatterns ?? []).map((p) => globToRegex(p));
 
 	return (absoluteFilePath: string): boolean => {
 		const relativePath = path.relative(rootDir, absoluteFilePath).replaceAll('\\', '/');
 
-		// If includePatterns specified, file must match at least one to be considered
-		if (includeMatchers.length > 0) {
-			if (!includeMatchers.some((regex) => regex.test(relativePath))) {
-				return true;
-			}
-		}
-
-		// Then apply .devtoolsignore + excludePatterns to further narrow
+		// Apply .devtoolsignore rules
 		if (ignoreRules.length > 0 && applyIgnoreRules(relativePath, ignoreRules)) {
 			return true;
 		}
@@ -200,15 +183,13 @@ export async function traceSymbol(params: TraceSymbolParams): Promise<TraceSymbo
 			}
 		}
 
-		// Force refresh project cache if requested (e.g., after adding new files)
-		if (params.forceRefresh) {
-			invalidateWorkspaceProject(rootDir);
-		}
+		// Always invalidate project cache so each request uses fresh data
+		invalidateWorkspaceProject(rootDir);
 
 		const project = getWorkspaceProject(rootDir);
 
-		// Build file filter from .devtoolsignore + per-request patterns
-		const isIgnored = buildFileFilter(rootDir, params.includePatterns, params.excludePatterns);
+		// Build file filter from .devtoolsignore
+		const isIgnored = buildFileFilter(rootDir);
 
 		// Calculate dynamic timeout based on project size
 		const sourceFileCount = project.getSourceFiles().length;
@@ -228,9 +209,6 @@ export async function traceSymbol(params: TraceSymbolParams): Promise<TraceSymbo
 		}
 
 		let symbolInfo = findSymbolNode(project, params, rootDir, isIgnored, isTimedOut);
-
-		// Track if line/column hint was provided but didn't match
-		const lineHintIgnored = symbolInfo?.lineHintIgnored ?? false;
 
 		if (!symbolInfo) {
 			const emptyResult = emptyTraceResult(params.symbol);
@@ -348,13 +326,6 @@ export async function traceSymbol(params: TraceSymbolParams): Promise<TraceSymbo
 		result.resolvedRootDir = rootDir;
 		result.diagnostics = buildTraceDiagnostics(result, params);
 
-		// Add warning if line/column hint was provided but didn't match the found symbol
-		if (lineHintIgnored && result.definition) {
-			const msg = `Line ${params.line} hint was ignored — symbol '${params.symbol}' was found at line ${result.definition.line} instead. Verify the line number matches the symbol definition.`;
-			result.diagnostics = result.diagnostics ?? [];
-			result.diagnostics.unshift(msg);
-		}
-
 		return result;
 	} catch (err: unknown) {
 		warn('[traceSymbol] Error:', err);
@@ -370,7 +341,6 @@ export async function traceSymbol(params: TraceSymbolParams): Promise<TraceSymbo
 // ── Find Symbol Node ─────────────────────────────────
 
 interface SymbolNodeResult {
-	lineHintIgnored?: boolean;
 	node: Node;
 	sourceFile: SourceFile;
 	symbol: TsSymbol | undefined;
@@ -403,42 +373,11 @@ function findSymbolNode(project: Project, params: TraceSymbolParams, rootDir: st
 		// Apply include/exclude filter to file-hinted lookups
 		if (isIgnored(sourceFile.getFilePath())) return undefined;
 
-		// Track if line/column lookup was attempted
-		let lineColAttempted = false;
-		let lineColFailed = false;
-
-		if (params.line !== undefined && params.column !== undefined) {
-			lineColAttempted = true;
-			try {
-				const pos = sourceFile.compilerNode.getPositionOfLineAndCharacter(params.line - 1, params.column);
-				let nodeAtPos: Node | undefined = sourceFile.getDescendantAtPos(pos);
-
-				while (nodeAtPos && !isDeclarationNode(nodeAtPos)) {
-					nodeAtPos = nodeAtPos.getParent();
-				}
-
-				if (nodeAtPos) {
-					const actualSourceFile = nodeAtPos.getSourceFile();
-					return { node: nodeAtPos, sourceFile: actualSourceFile, symbol: nodeAtPos.getSymbol() };
-				}
-				lineColFailed = true;
-			} catch (err: unknown) {
-				warn(`[findSymbolNode] Line/col error for '${symbolName}':`, err);
-				lineColFailed = true;
-			}
-		}
-
 		try {
 			const found = findNamedDeclaration(sourceFile, symbolName);
 			if (found) {
 				const actualSourceFile = found.getSourceFile();
-				const foundLine = found.getStartLineNumber();
-
-				// Check if line hint was provided but doesn't match found location
-				const lineHintMismatch = params.line !== undefined && foundLine !== params.line;
-
 				return {
-					lineHintIgnored: (lineColAttempted && lineColFailed) || lineHintMismatch,
 					node: found,
 					sourceFile: actualSourceFile,
 					symbol: found.getSymbol()
@@ -2061,9 +2000,6 @@ function buildSymbolNotFoundMessage(params: TraceSymbolParams, sourceFileCount: 
 
 	if (params.file) {
 		parts.push(`Searched in file: ${params.file}`);
-		if (params.line !== undefined) {
-			parts.push(`at line ${params.line}${params.column !== undefined ? `:${params.column}` : ''}`);
-		}
 		parts.push('. Verify the file is included in tsconfig.json.');
 	} else {
 		parts.push('Try specifying a file path to narrow the search, or check if the symbol is exported.');
@@ -2092,7 +2028,7 @@ function buildErrorMessage(err: unknown, params: TraceSymbolParams): string {
 	}
 
 	if (errorStr.includes('timeout') || errorStr.includes('Timeout')) {
-		return `Operation timed out. The project may be too large. Try increasing timeout or using forceRefresh=false.`;
+		return `Operation timed out. The project may be too large. Try increasing timeout.`;
 	}
 
 	// Fallback with the original error
@@ -2128,11 +2064,6 @@ function buildTraceDiagnostics(result: TraceSymbolResult, params: TraceSymbolPar
 	}
 	if (dtsCount >= NODE_MODULES_DIAGNOSTIC_THRESHOLD) {
 		diagnostics.push(`Found ${dtsCount} references in .d.ts declaration files. Consider adding "**/*.d.ts" to .devtoolsignore to exclude type declarations from analysis.`);
-	}
-
-	// Warn if include patterns matched nothing useful
-	if (params.includePatterns && params.includePatterns.length > 0 && result.references.length === 0 && !result.definition) {
-		diagnostics.push(`Include patterns [${params.includePatterns.join(', ')}] may not match any files in project root "${result.resolvedRootDir ?? '(unknown)'}". Check that patterns are relative to the project root.`);
 	}
 
 	return diagnostics;
@@ -2250,7 +2181,7 @@ export async function findDeadCode(params: DeadCodeParams): Promise<DeadCodeResu
 		const deadCode: DeadCodeItem[] = [];
 		let totalScanned = 0;
 		const byKind: Record<string, number> = {};
-		const isIgnored = buildFileFilter(rootDir, params.includePatterns, params.excludePatterns);
+		const isIgnored = buildFileFilter(rootDir);
 
 		const addDead = (item: DeadCodeItem): void => {
 			deadCode.push(item);

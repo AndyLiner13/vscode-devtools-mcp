@@ -7,13 +7,11 @@ import { applyIgnoreRules, globToRegex, parseIgnoreRules } from './ignore-rules'
 
 interface DiscoverFilesOptions {
 	excludeGlob?: string;
-	excludePatterns?: string[];
 	/** File extensions to include (e.g., Set(['.ts', '.md'])). undefined = all extensions. */
 	fileExtensions?: Set<string>;
 	/** Directory to load .devtoolsignore from (defaults to rootDir). */
 	ignoreRulesRoot?: string;
 	includeGlob?: string;
-	includePatterns?: string[];
 	/** Maximum directory depth to walk. 1 = immediate children only. undefined = unlimited. */
 	maxDepth?: number;
 	maxResults?: number;
@@ -28,21 +26,17 @@ interface DiscoverFilesOptions {
  * Returns a Map of relative path → absolute path (forward-slash normalized).
  */
 export function discoverFiles(options: DiscoverFilesOptions): Map<string, string> {
-	const { excludeGlob, excludePatterns, fileExtensions, ignoreRulesRoot, includeGlob, includePatterns, maxDepth, maxResults = 5000, respectIgnoreRules = true, rootDir, toolScope } = options;
+	const { excludeGlob, fileExtensions, ignoreRulesRoot, includeGlob, maxDepth, maxResults = 5000, respectIgnoreRules = true, rootDir, toolScope } = options;
 
 	const rulesRoot = ignoreRulesRoot ?? rootDir;
 	const ignoreRules = respectIgnoreRules ? parseIgnoreRules(rulesRoot) : [];
 	const includeMatcher = includeGlob ? globToRegex(includeGlob) : null;
 	const excludeMatcher = excludeGlob ? globToRegex(excludeGlob) : null;
-	const callerIncludes = (includePatterns ?? []).map((p) => globToRegex(p));
-	const callerExcludes = (excludePatterns ?? []).map((p) => globToRegex(p));
 
 	const normalizedRoot = rootDir.replaceAll('\\', '/').replace(/\/+$/, '');
 	const fileMap = new Map<string, string>();
 
 	walkDirectory(rootDir, normalizedRoot, fileMap, {
-		callerExcludes,
-		callerIncludes,
 		excludeMatcher,
 		fileExtensions,
 		ignoreRules,
@@ -56,8 +50,6 @@ export function discoverFiles(options: DiscoverFilesOptions): Map<string, string
 }
 
 interface WalkContext {
-	callerExcludes: RegExp[];
-	callerIncludes: RegExp[];
 	excludeMatcher: null | RegExp;
 	fileExtensions?: Set<string>;
 	ignoreRules: ReturnType<typeof parseIgnoreRules>;
@@ -110,8 +102,6 @@ function walkDirectory(dir: string, normalizedRoot: string, fileMap: Map<string,
 		if (ctx.ignoreRules.length > 0 && applyIgnoreRules(relative, ctx.ignoreRules, ctx.toolScope)) continue;
 		if (ctx.includeMatcher && !ctx.includeMatcher.test(relative)) continue;
 		if (ctx.excludeMatcher && ctx.excludeMatcher.test(relative)) continue;
-		if (ctx.callerIncludes.length > 0 && !ctx.callerIncludes.some((rx) => rx.test(relative))) continue;
-		if (ctx.callerExcludes.length > 0 && ctx.callerExcludes.some((rx) => rx.test(relative))) continue;
 
 		// Extension filtering
 		if (ctx.fileExtensions) {

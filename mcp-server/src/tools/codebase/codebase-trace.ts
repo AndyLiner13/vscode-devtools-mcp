@@ -135,12 +135,10 @@ export const /**
 			'(who calls it / what it calls), type flows (parameter types, return types,\n' +
 			'inheritance), and optionally computes blast-radius impact analysis.\n\n' +
 			'Use this after codebase_map to deep-dive into a specific symbol. Provide\n' +
-			'the symbol name and optionally a file path + line/column for disambiguation.\n\n' +
+			'the symbol name and optionally a file path for disambiguation.\n\n' +
 			'**PARAMETERS:**\n' +
 			'- `symbol` (string, required): Name of the symbol to trace\n' +
 			'- `file` (string): File where the symbol is defined (helps disambiguation)\n' +
-			'- `line` (number): Line number of the symbol (1-based)\n' +
-			'- `column` (number): Column number of the symbol (0-based)\n' +
 			'- `depth` (number, 1-10): Call hierarchy traversal depth. Default: 3\n' +
 			"- `include` (string[]): Which analyses to include. Default: ['all']\n" +
 			'- `includeImpact` (boolean): Compute blast-radius impact analysis. Default: false\n\n' +
@@ -165,16 +163,11 @@ export const /**
 				request.params.symbol,
 				getClientWorkspace(),
 				request.params.file,
-				request.params.line,
-				request.params.column,
 				request.params.depth,
 				request.params.include,
 				request.params.includeImpact,
 				undefined, // maxReferences: removed — no artificial limit
-				dynamicTimeout,
-				request.params.forceRefresh,
-				request.params.includePatterns,
-				request.params.excludePatterns
+				dynamicTimeout
 			);
 
 			// Adjust dynamic timeout with actual file count now that we have it
@@ -219,7 +212,7 @@ export const /**
 						...scaling,
 						estimatedTokens: estimateTokens(output)
 					},
-					suggestions: ["Use include: ['references'] or include: ['calls'] to focus on one analysis mode", `Reduce depth from ${request.params.depth} to limit call hierarchy size`, 'Use includePatterns to restrict analysis to specific files'],
+					suggestions: ["Use include: ['references'] or include: ['calls'] to focus on one analysis mode", `Reduce depth from ${request.params.depth} to limit call hierarchy size`],
 					summary: result.summary,
 					symbol: result.symbol
 				};
@@ -231,7 +224,6 @@ export const /**
 		},
 		name: 'codebase_trace',
 		schema: {
-			column: zod.number().int().min(0).optional().describe('Column number of the symbol (0-based). Use with file and line.'),
 			depth: zod
 				.number()
 				.int()
@@ -240,19 +232,10 @@ export const /**
 				.optional()
 				.default(3)
 				.describe('Call hierarchy traversal depth. Higher values find deeper call chains ' + 'but take longer. Default: 3.'),
-			excludePatterns: zod
-				.array(zod.string())
-				.optional()
-				.describe('Glob patterns to exclude files from analysis. ' + 'Applied in addition to .devtoolsignore rules. ' + "Example: ['**/*.test.ts', '**/fixtures/**']"),
 			file: zod
 				.string()
 				.optional()
 				.describe('File path where the symbol is defined. ' + 'Helps disambiguate when multiple symbols share the same name. ' + 'Can be relative or absolute.'),
-			forceRefresh: zod
-				.boolean()
-				.optional()
-				.default(false)
-				.describe('Force invalidate project cache before tracing. Use after adding new files ' + 'or when the project structure has changed. Default: false.'),
 			include: zod
 				.array(zod.enum(['all', 'definitions', 'references', 'reexports', 'calls', 'type-flows', 'hierarchy']))
 				.min(1)
@@ -264,11 +247,6 @@ export const /**
 				.optional()
 				.default(false)
 				.describe('Compute blast-radius impact analysis. Shows direct and transitive ' + 'dependents with risk level assessment. Default: false.'),
-			includePatterns: zod
-				.array(zod.string())
-				.optional()
-				.describe('Glob patterns to restrict analysis to matching files only. ' + 'When provided, only files matching at least one pattern are analyzed. ' + 'excludePatterns further narrow within the included set.'),
-			line: zod.number().int().positive().optional().describe('Line number of the symbol (1-based). Use with file for precise location.'),
 			symbol: zod.string().describe('Name of the symbol to trace (function, class, variable, etc.).')
 		}
 	});

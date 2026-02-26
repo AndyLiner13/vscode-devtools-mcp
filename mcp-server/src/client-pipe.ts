@@ -351,18 +351,13 @@ export async function codebaseTraceSymbol(
 	symbol: string,
 	rootDir?: string,
 	file?: string,
-	line?: number,
-	column?: number,
 	depth?: number,
 	include?: string[],
 	includeImpact?: boolean,
 	maxReferences?: number,
-	timeout?: number,
-	forceRefresh?: boolean,
-	includePatterns?: string[],
-	excludePatterns?: string[]
+	timeout?: number
 ): Promise<CodebaseTraceSymbolResult> {
-	const result = await sendClientRequest('codebase.traceSymbol', { column, depth, excludePatterns, file, forceRefresh, include, includeImpact, includePatterns, line, maxReferences, rootDir, symbol, timeout }, Math.max(60_000, (timeout ?? 30_000) + 5_000));
+	const result = await sendClientRequest('codebase.traceSymbol', { depth, file, include, includeImpact, maxReferences, rootDir, symbol, timeout }, Math.max(60_000, (timeout ?? 30_000) + 5_000));
 	assertResult<CodebaseTraceSymbolResult>(result, 'codebase.traceSymbol');
 	return result;
 }
@@ -402,11 +397,9 @@ export async function codebaseFindDeadCode(
 	excludeTests?: boolean,
 	kinds?: string[],
 	limit?: number,
-	includePatterns?: string[],
-	excludePatterns?: string[],
 	timeout?: number
 ): Promise<DeadCodeResult> {
-	const result = await sendClientRequest('codebase.findDeadCode', { excludePatterns, excludeTests, exportedOnly, includePatterns, kinds, limit, pattern, rootDir }, timeout ?? 60_000);
+	const result = await sendClientRequest('codebase.findDeadCode', { excludeTests, exportedOnly, kinds, limit, pattern, rootDir }, timeout ?? 60_000);
 	assertResult<DeadCodeResult>(result, 'codebase.findDeadCode');
 	return result;
 }
@@ -439,8 +432,8 @@ export interface ImportGraphResult {
 /**
  * Get the import graph for a codebase: module dependencies, circular chains, orphans.
  */
-export async function codebaseGetImportGraph(rootDir?: string, includePatterns?: string[], excludePatterns?: string[], timeout?: number): Promise<ImportGraphResult> {
-	const result = await sendClientRequest('codebase.getImportGraph', { excludePatterns, includePatterns, rootDir }, timeout ?? 60_000);
+export async function codebaseGetImportGraph(rootDir?: string, timeout?: number): Promise<ImportGraphResult> {
+	const result = await sendClientRequest('codebase.getImportGraph', { rootDir }, timeout ?? 60_000);
 	assertResult<ImportGraphResult>(result, 'codebase.getImportGraph');
 	return result;
 }
@@ -477,8 +470,8 @@ export interface DuplicateDetectionResult {
 /**
  * Find structurally duplicate code in the codebase using AST hashing.
  */
-export async function codebaseFindDuplicates(rootDir?: string, kinds?: string[], limit?: number, includePatterns?: string[], excludePatterns?: string[], timeout?: number): Promise<DuplicateDetectionResult> {
-	const result = await sendClientRequest('codebase.findDuplicates', { excludePatterns, includePatterns, kinds, limit, rootDir }, timeout ?? 60_000);
+export async function codebaseFindDuplicates(rootDir?: string, kinds?: string[], limit?: number, timeout?: number): Promise<DuplicateDetectionResult> {
+	const result = await sendClientRequest('codebase.findDuplicates', { kinds, limit, rootDir }, timeout ?? 60_000);
 	assertResult<DuplicateDetectionResult>(result, 'codebase.findDuplicates');
 	return result;
 }
@@ -508,8 +501,8 @@ export interface DiagnosticsResult {
 /**
  * Get live diagnostics (errors/warnings) from VS Code's language services.
  */
-export async function codebaseGetDiagnostics(severityFilter?: string[], includePatterns?: string[], excludePatterns?: string[], limit?: number, timeout?: number): Promise<DiagnosticsResult> {
-	const result = await sendClientRequest('codebase.getDiagnostics', { excludePatterns, includePatterns, limit, severityFilter }, timeout ?? 30_000);
+export async function codebaseGetDiagnostics(severityFilter?: string[], limit?: number, timeout?: number): Promise<DiagnosticsResult> {
+	const result = await sendClientRequest('codebase.getDiagnostics', { limit, severityFilter }, timeout ?? 30_000);
 	assertResult<DiagnosticsResult>(result, 'codebase.getDiagnostics');
 	return result;
 }

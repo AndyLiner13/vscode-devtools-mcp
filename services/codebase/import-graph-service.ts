@@ -5,31 +5,18 @@ import type { SourceFile } from 'ts-morph';
 // Pure Node.js — no VS Code API dependency.
 import * as path from 'node:path';
 
-import { applyIgnoreRules, globToRegex, parseIgnoreRules } from './ignore-rules';
+import { applyIgnoreRules, parseIgnoreRules } from './ignore-rules';
 import { getWorkspaceProject } from './ts-project';
 
 type FileFilter = (absoluteFilePath: string) => boolean;
 
-function buildFileFilter(rootDir: string, includePatterns?: string[], excludePatterns?: string[]): FileFilter {
+function buildFileFilter(rootDir: string): FileFilter {
 	const ignoreRules = parseIgnoreRules(rootDir);
-
-	const includeRegexps = includePatterns?.map((p) => globToRegex(p));
-	const excludeRegexps = excludePatterns?.map((p) => globToRegex(p));
 
 	return (absoluteFilePath: string) => {
 		const relativePath = path.relative(rootDir, absoluteFilePath).replaceAll('\\', '/');
 
-		if (includeRegexps && includeRegexps.length > 0) {
-			const matches = includeRegexps.some((r) => r.test(relativePath));
-			if (!matches) return false;
-		}
-
 		if (!applyIgnoreRules(relativePath, ignoreRules)) return false;
-
-		if (excludeRegexps && excludeRegexps.length > 0) {
-			const excluded = excludeRegexps.some((r) => r.test(relativePath));
-			if (excluded) return false;
-		}
 
 		return true;
 	};
@@ -51,7 +38,7 @@ export async function getImportGraph(params: ImportGraphParams): Promise<ImportG
 	}
 
 	const project = getWorkspaceProject(rootDir);
-	const fileFilter = buildFileFilter(rootDir, params.includePatterns, params.excludePatterns);
+	const fileFilter = buildFileFilter(rootDir);
 
 	// Build adjacency list from source files
 	const importMap = new Map<string, Set<string>>();

@@ -339,9 +339,7 @@ async function handleCodebaseGetExports(params: Record<string, unknown>) {
 	}
 
 	return getExports({
-		excludePatterns: paramStrArray(params, 'excludePatterns'),
 		includeJSDoc: paramBool(params, 'includeJSDoc') ?? true,
-		includePatterns: paramStrArray(params, 'includePatterns'),
 		includeTypes: paramBool(params, 'includeTypes') ?? true,
 		kind: paramStr(params, 'kind') ?? 'all',
 		path: pathParam,
@@ -357,15 +355,10 @@ async function handleCodebaseTraceSymbol(params: Record<string, unknown>) {
 
 	try {
 		return await traceSymbol({
-			column: paramNum(params, 'column'),
 			depth: paramNum(params, 'depth') ?? 3,
-			excludePatterns: paramStrArray(params, 'excludePatterns'),
 			file: paramStr(params, 'file'),
-			forceRefresh: paramBool(params, 'forceRefresh') ?? false,
 			include: paramStrArray(params, 'include') ?? ['all'],
 			includeImpact: paramBool(params, 'includeImpact') ?? false,
-			includePatterns: paramStrArray(params, 'includePatterns'),
-			line: paramNum(params, 'line'),
 			maxReferences: undefined,
 			rootDir: resolveRootDir(params),
 			symbol,
@@ -388,10 +381,8 @@ async function handleCodebaseTraceSymbol(params: Record<string, unknown>) {
 async function handleCodebaseFindDeadCode(params: Record<string, unknown>) {
 	try {
 		return await findDeadCode({
-			excludePatterns: paramStrArray(params, 'excludePatterns'),
 			excludeTests: paramBool(params, 'excludeTests') ?? true,
 			exportedOnly: paramBool(params, 'exportedOnly') ?? true,
-			includePatterns: paramStrArray(params, 'includePatterns'),
 			kinds: paramStrArray(params, 'kinds'),
 			limit: paramNum(params, 'limit') ?? 100,
 			pattern: paramStr(params, 'pattern'),
@@ -410,8 +401,6 @@ async function handleCodebaseFindDeadCode(params: Record<string, unknown>) {
 async function handleCodebaseGetImportGraph(params: Record<string, unknown>) {
 	try {
 		return await getImportGraph({
-			excludePatterns: paramStrArray(params, 'excludePatterns'),
-			includePatterns: paramStrArray(params, 'includePatterns'),
 			rootDir: resolveRootDir(params)
 		});
 	} catch (err: unknown) {
@@ -429,8 +418,6 @@ async function handleCodebaseGetImportGraph(params: Record<string, unknown>) {
 async function handleCodebaseFindDuplicates(params: Record<string, unknown>) {
 	try {
 		return await findDuplicates({
-			excludePatterns: paramStrArray(params, 'excludePatterns'),
-			includePatterns: paramStrArray(params, 'includePatterns'),
 			kinds: paramStrArray(params, 'kinds'),
 			limit: paramNum(params, 'limit') ?? 50,
 			rootDir: resolveRootDir(params)
@@ -448,8 +435,6 @@ async function handleCodebaseFindDuplicates(params: Record<string, unknown>) {
 async function handleCodebaseGetDiagnostics(params: Record<string, unknown>) {
 	try {
 		const severityFilter = paramStrArray(params, 'severityFilter');
-		const includePatterns = paramStrArray(params, 'includePatterns');
-		const excludePatterns = paramStrArray(params, 'excludePatterns');
 		const limit = paramNum(params, 'limit') ?? 100;
 
 		const allDiagnostics = vscode.languages.getDiagnostics();
@@ -469,25 +454,6 @@ async function handleCodebaseGetDiagnostics(params: Record<string, unknown>) {
 		}> = [];
 
 		for (const [uri, diagnostics] of allDiagnostics) {
-			const filePath = uri.fsPath;
-
-			// Apply include/exclude pattern filters
-			if (includePatterns && includePatterns.length > 0) {
-				const matchesInclude = includePatterns.some((pattern) => {
-					const regex = globToRegex(pattern);
-					return regex.test(filePath);
-				});
-				if (!matchesInclude) continue;
-			}
-
-			if (excludePatterns && excludePatterns.length > 0) {
-				const matchesExclude = excludePatterns.some((pattern) => {
-					const regex = globToRegex(pattern);
-					return regex.test(filePath);
-				});
-				if (matchesExclude) continue;
-			}
-
 			for (const diag of diagnostics) {
 				const severity = diagSeverityToString(diag.severity);
 				if (severity === 'error' && !wantErrors) continue;
@@ -545,16 +511,6 @@ function diagSeverityToString(severity: vscode.DiagnosticSeverity): string {
 		default:
 			return 'unknown';
 	}
-}
-
-function globToRegex(pattern: string): RegExp {
-	const escaped = pattern
-		.replaceAll(/[.+^${}()|[\]\\]/g, '\\$&')
-		.replaceAll('**', '<<<GLOBSTAR>>>')
-		.replaceAll('*', '[^/\\\\]*')
-		.replaceAll('<<<GLOBSTAR>>>', '.*')
-		.replaceAll('?', '[^/\\\\]');
-	return new RegExp(escaped, 'i');
 }
 
 // ── File Service Handlers ────────────────────────────────────────────────────

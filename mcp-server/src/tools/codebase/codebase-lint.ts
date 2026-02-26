@@ -85,7 +85,7 @@ export const /**
 			// ── Compute Dynamic Timeout ──────────────────────────
 			// Scales with the number of checks and scope breadth.
 			const checksCount = [runErrors || runWarnings, runDeadCode, runDuplicates, runCircularDeps].filter(Boolean).length;
-			const isBroadScope = !params.includePatterns?.length || params.includePatterns.some((p) => p.includes('**'));
+			const isBroadScope = true;
 			const dynamicTimeout = TIMEOUT_BASE_MS + checksCount * TIMEOUT_PER_CHECK_MS + (isBroadScope ? TIMEOUT_BROAD_SCOPE_MS : 0);
 
 			const sections: LintSection[] = [];
@@ -96,7 +96,7 @@ export const /**
 					if (runErrors) severityFilter.push('error');
 					if (runWarnings) severityFilter.push('warning');
 
-					const result = await codebaseGetDiagnostics(severityFilter, params.includePatterns, params.excludePatterns, params.limit, dynamicTimeout);
+					const result = await codebaseGetDiagnostics(severityFilter, params.limit, dynamicTimeout);
 					sections.push({ check: 'diagnostics', diagnosticsResult: result });
 				} catch {
 					// Diagnostics not available — silently skip
@@ -104,18 +104,18 @@ export const /**
 			}
 
 			if (runDeadCode) {
-				const result = await codebaseFindDeadCode(getClientWorkspace(), undefined, params.exportedOnly, params.excludeTests, params.kinds, params.limit, params.includePatterns, params.excludePatterns, dynamicTimeout);
+				const result = await codebaseFindDeadCode(getClientWorkspace(), undefined, params.exportedOnly, params.excludeTests, params.kinds, params.limit, dynamicTimeout);
 				sections.push({ check: 'dead-code', deadCodeResult: result });
 			}
 
 			if (runDuplicates) {
-				const result = await codebaseFindDuplicates(getClientWorkspace(), params.kinds, params.limit, params.includePatterns, params.excludePatterns, dynamicTimeout);
+				const result = await codebaseFindDuplicates(getClientWorkspace(), params.kinds, params.limit, dynamicTimeout);
 				sections.push({ check: 'duplicates', duplicatesResult: result });
 			}
 
 			if (runCircularDeps) {
 				try {
-					const result = await codebaseGetImportGraph(getClientWorkspace(), params.includePatterns, params.excludePatterns, dynamicTimeout);
+					const result = await codebaseGetImportGraph(getClientWorkspace(), dynamicTimeout);
 					sections.push({ check: 'circular-deps', circularDepsResult: result });
 				} catch {
 					// Import graph not available — silently skip
@@ -149,20 +149,12 @@ export const /**
 				.optional()
 				.default(0.75)
 				.describe('Minimum similarity score for duplicate detection. ' + '1.0 = exact structural match only. Default: 0.75.'),
-			excludePatterns: zod
-				.array(zod.string())
-				.optional()
-				.describe('Glob patterns to exclude files from analysis. ' + 'Applied in addition to .devtoolsignore rules.'),
 			excludeTests: zod.boolean().optional().default(true).describe('Skip test files (*.test.*, *.spec.*, __tests__/*). Default: true.'),
 			exportedOnly: zod
 				.boolean()
 				.optional()
 				.default(true)
 				.describe('Only check exported symbols. Default: true. ' + 'Set to false to also find unreachable functions, dead variables, unused types, etc.'),
-			includePatterns: zod
-				.array(zod.string())
-				.optional()
-				.describe('Glob patterns to restrict analysis to matching files only. ' + 'excludePatterns further narrow within the included set.'),
 			kinds: zod
 				.array(zod.enum(['function', 'class', 'interface', 'type', 'variable', 'constant', 'enum']))
 				.optional()
