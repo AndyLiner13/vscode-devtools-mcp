@@ -290,18 +290,23 @@ function formatContentWithBodyStubs(allLines: string[], symbol: SymbolLike, star
 
 	const emitted = new Set<SymbolLike>();
 	const result: string[] = [];
+	let consumedUntil = startLine - 1;
 
 	for (let lineNum = startLine; lineNum <= endLine; lineNum++) {
+		if (lineNum <= consumedUntil) continue;
+
 		const child = childMap.get(lineNum);
 		if (child) {
 			if (!emitted.has(child)) {
 				emitted.add(child);
+				const effectiveStart = Math.max(child.range.startLine, consumedUntil + 1);
+				consumedUntil = Math.max(consumedUntil, child.range.endLine);
 				const shouldStub = BODY_BEARING_KINDS.has(child.kind) && !isDeepestLeaf(child);
 				if (shouldStub) {
 					result.push(`${buildSymbolMeta(child)} ${formatSymbolLabel(child)}`);
 				} else {
 					// Non-body-bearing or deepest leaf — show full raw content
-					result.push(addLineNumbers(getContentSlice(allLines, child.range.startLine, child.range.endLine), child.range.startLine, lineNumbers));
+					result.push(addLineNumbers(getContentSlice(allLines, effectiveStart, child.range.endLine), effectiveStart, lineNumbers));
 				}
 			}
 		} else {
@@ -503,14 +508,20 @@ function formatContentAtNesting(allLines: string[], symbol: SymbolLike, startLin
 
 	const emitted = new Set<SymbolLike>();
 	const result: string[] = [];
+	let consumedUntil = startLine - 1;
 
 	for (let lineNum = startLine; lineNum <= endLine; lineNum++) {
+		if (lineNum <= consumedUntil) continue;
+
 		const child = childMap.get(lineNum);
 		if (child) {
 			if (!emitted.has(child)) {
 				emitted.add(child);
+				// Avoid re-emitting lines already covered by a prior sibling
+				const effectiveStart = Math.max(child.range.startLine, consumedUntil + 1);
+				consumedUntil = Math.max(consumedUntil, child.range.endLine);
 				if (currentDepth < maxChildNesting) {
-					result.push(formatContentAtNesting(allLines, child, child.range.startLine, child.range.endLine, maxChildNesting, currentDepth + 1, lineNumbers));
+					result.push(formatContentAtNesting(allLines, child, effectiveStart, child.range.endLine, maxChildNesting, currentDepth + 1, lineNumbers));
 				} else {
 					result.push(`${buildSymbolMeta(child)} ${formatSymbolLabel(child)}`);
 				}
@@ -615,14 +626,29 @@ export const /**
 
 			// ── Root-level mode (no symbol target) ────────────────────
 			if (!hasTarget) {
-				const content = await fileReadContent(filePath);
-				const result = compressFullFileOutput(content.content, structure, allLines, content.startLine + 1, lineNumbers);
+				if (structure) {
+					// Structured file: show only navigable symbols (skeleton hierarchy)
+					const maxNesting = getMaxSymbolNesting(structure.symbols);
+					const skeletonLines: string[] = [];
+					for (const sym of structure.symbols) {
+						skeletonLines.push(...formatSkeletonEntry(sym, '', maxNesting));
+					}
 
-				fileHighlightReadRange(filePath, content.startLine, content.endLine, result.collapsedRanges, result.sourceRanges);
+					const content = await fileReadContent(filePath);
+					fileHighlightReadRange(filePath, content.startLine, content.endLine, [], []);
 
-				const header = formatCompressionHeader(result);
-				if (header) response.appendResponseLine(header);
-				response.appendResponseLine(result.output);
+					response.appendResponseLine(skeletonLines.join('\n'));
+				} else {
+					// Non-structured file: show raw content
+					const content = await fileReadContent(filePath);
+					const result = compressFullFileOutput(content.content, structure, allLines, content.startLine + 1, lineNumbers);
+
+					fileHighlightReadRange(filePath, content.startLine, content.endLine, result.collapsedRanges, result.sourceRanges);
+
+					const header = formatCompressionHeader(result);
+					if (header) response.appendResponseLine(header);
+					response.appendResponseLine(result.output);
+				}
 				return;
 			}
 

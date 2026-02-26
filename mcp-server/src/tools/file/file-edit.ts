@@ -7,16 +7,167 @@
 import path from 'node:path';
 import { z as zod } from 'zod';
 
-import { fileExtractStructure, fileReadContent } from '../../client-pipe.js';
+import { fileApplyEdit, fileExtractStructure, fileReadContent, fileShowEditDiff, type FileStructure, type FileSymbol } from '../../client-pipe.js';
 import { getClientWorkspace } from '../../config.js';
 import { ToolCategory } from '../categories.js';
 import { defineTool } from '../ToolDefinition.js';
-import { executeEditWithSafetyLayer } from './safety-layer.js';
 import { resolveSymbolTarget } from './symbol-resolver.js';
+
+/**
+ * Body-bearing kinds whose content is collapsed when viewing a parent symbol.
+ * Edits scoped to a parent will NOT match against content inside these children.
+ * Mirrors the same set used in file-read.ts.
+ */
+const BODY_BEARING_KINDS: ReadonlySet<string> = new Set([
+	'function', 'method', 'constructor', 'getter', 'setter',
+	'class', 'interface', 'enum',
+]);
+
+const RAW_CODE_KINDS: ReadonlySet<string> = new Set(['imports']);
+const CONTROL_FLOW_KINDS: ReadonlySet<string> = new Set([
+	'if', 'else', 'for', 'for-in', 'for-of', 'while', 'do-while',
+	'switch', 'case', 'default', 'try', 'try-catch', 'catch', 'finally',
+]);
 
 function resolveFilePath(file: string): string {
 	if (path.isAbsolute(file)) return file;
 	return path.resolve(getClientWorkspace(), file);
+}
+
+function isStandaloneSymbol(symbol: FileSymbol): boolean {
+	if (CONTROL_FLOW_KINDS.has(symbol.kind)) return false;
+	if (RAW_CODE_KINDS.has(symbol.kind)) return false;
+	return symbol.range.endLine > symbol.range.startLine;
+}
+
+/**
+ * Whether a child symbol would be collapsed (body-bearing with grandchildren).
+ * Deepest-leaf body-bearing symbols are NOT collapsed — their content is shown inline.
+ */
+function isCollapsedChild(child: FileSymbol): boolean {
+	if (!BODY_BEARING_KINDS.has(child.kind)) return false;
+	return child.children !== undefined && child.children.length > 0;
+}
+
+interface LineRange {
+	startLine: number;
+	endLine: number;
+}
+
+/**
+ * Compute the "visible scope" lines for a symbol — lines NOT covered by collapsed children.
+ * Mirrors what file_read shows when you request a symbol.
+ */
+function computeVisibleRanges(startLine: number, endLine: number, children: readonly FileSymbol[]): LineRange[] {
+	const excludedRanges: LineRange[] = [];
+	for (const child of children) {
+		if (isCollapsedChild(child)) {
+			excludedRanges.push({ startLine: child.range.startLine, endLine: child.range.endLine });
+		}
+	}
+	excludedRanges.sort((a, b) => a.startLine - b.startLine);
+
+	const visible: LineRange[] = [];
+	let cursor = startLine;
+
+	for (const excluded of excludedRanges) {
+		if (excluded.startLine > cursor) {
+			visible.push({ startLine: cursor, endLine: excluded.startLine - 1 });
+		}
+		cursor = Math.max(cursor, excluded.endLine + 1);
+	}
+
+	if (cursor <= endLine) {
+		visible.push({ startLine: cursor, endLine });
+	}
+
+	return visible;
+}
+
+/**
+ * Compute root-level visible ranges — lines NOT covered by standalone top-level symbols.
+ * Mirrors what file_read shows at root level.
+ */
+function computeRootVisibleRanges(totalLines: number, symbols: readonly FileSymbol[]): LineRange[] {
+	const excludedRanges: LineRange[] = [];
+	for (const sym of symbols) {
+		if (isStandaloneSymbol(sym)) {
+			excludedRanges.push({ startLine: sym.range.startLine, endLine: sym.range.endLine });
+		}
+	}
+	excludedRanges.sort((a, b) => a.startLine - b.startLine);
+
+	const visible: LineRange[] = [];
+	let cursor = 1;
+
+	for (const excluded of excludedRanges) {
+		if (excluded.startLine > cursor) {
+			visible.push({ startLine: cursor, endLine: excluded.startLine - 1 });
+		}
+		cursor = Math.max(cursor, excluded.endLine + 1);
+	}
+
+	if (cursor <= totalLines) {
+		visible.push({ startLine: cursor, endLine: totalLines });
+	}
+
+	return visible;
+}
+
+interface OffsetMapping {
+	line: number;
+	char: number;
+}
+
+/**
+ * Build the visible text from line ranges, with a mapping from character offsets
+ * back to absolute file positions.
+ */
+function buildVisibleText(allLines: string[], ranges: LineRange[]): { text: string; offsetToPosition: (offset: number) => OffsetMapping } {
+	const segments: Array<{ text: string; startLine: number; startOffset: number }> = [];
+	let totalOffset = 0;
+
+	for (const range of ranges) {
+		const lines = allLines.slice(range.startLine - 1, range.endLine);
+		const text = lines.join('\n');
+		segments.push({ text, startLine: range.startLine, startOffset: totalOffset });
+		totalOffset += text.length + 1;
+	}
+
+	const fullText = segments.map(s => s.text).join('\n');
+
+	function offsetToPosition(offset: number): OffsetMapping {
+		for (let i = segments.length - 1; i >= 0; i--) {
+			if (offset >= segments[i].startOffset) {
+				const localOffset = offset - segments[i].startOffset;
+				const segLines = segments[i].text.split('\n');
+				let remaining = localOffset;
+				for (let lineIdx = 0; lineIdx < segLines.length; lineIdx++) {
+					if (remaining <= segLines[lineIdx].length) {
+						return { line: segments[i].startLine + lineIdx, char: remaining };
+					}
+					remaining -= segLines[lineIdx].length + 1;
+				}
+				const lastLineIdx = segLines.length - 1;
+				return { line: segments[i].startLine + lastLineIdx, char: segLines[lastLineIdx].length };
+			}
+		}
+		return { line: segments[0]?.startLine ?? 1, char: 0 };
+	}
+
+	return { text: fullText, offsetToPosition };
+}
+
+function findAllOccurrences(haystack: string, needle: string): number[] {
+	const offsets: number[] = [];
+	let start = 0;
+	for (;;) {
+		const idx = haystack.indexOf(needle, start);
+		if (idx === -1) break;
+		offsets.push(idx);
+		start = idx + 1;
+	}
+	return offsets;
 }
 
 export const /**
@@ -33,188 +184,177 @@ export const /**
 			title: 'File Edit'
 		},
 		description:
-			'Direct model-to-code editing with an intelligent safety layer.\n\n' +
-			'The model you selected writes the code, this tool applies it directly — ' +
-			'no GPT-4.1 CodeMapper middleware reinterpreting your output.\n\n' +
-			'The safety layer automatically:\n' +
-			'- Detects renames, deletions, additions via DocumentSymbol diff\n' +
-			'- Propagates renames across the workspace via VS Code rename provider\n' +
-			'- Auto-fixes cascading errors via Code Actions\n' +
-			'- Reports what it could not fix\n\n' +
-			'**Targeting Priority:** `target` > `startLine/endLine` > full file\n\n' +
+			'Symbol-scoped text replacement for precise code edits.\n\n' +
+			'Scopes the `oldString` → `newString` replacement to the visible content of a specific symbol, ' +
+			'matching only against the code you can see at that level of the hierarchy (collapsed children are excluded from matching). ' +
+			'This eliminates ambiguity — the same string in two different methods will never collide.\n\n' +
 			'**Parameters:**\n' +
 			'- `file` (required) — Path to file\n' +
-			'- `code` (required) — Complete new content for the targeted region\n' +
-			'- `target` — Symbol name to scope: `"UserService.findById"`\n' +
-			'- `startLine` / `endLine` — Fallback line-based range (1-indexed)\n\n' +
+			'- `oldString` (required) — Exact text to find within the scoped region\n' +
+			'- `newString` (required) — Replacement text\n' +
+			'- `symbol` (optional) — Symbol to scope the edit to (dot notation for nested: "UserService.findById")\n\n' +
+			'**Scoping behavior:**\n' +
+			'- With `symbol`: matches only within that symbol\'s visible content (body-bearing children with grandchildren are excluded)\n' +
+			'- Without `symbol`: matches only within root-level content (top-level collapsed symbols are excluded)\n' +
+			'- If `oldString` matches 0 or 2+ times within scope → edit is rejected\n\n' +
 			'**EXAMPLES:**\n' +
-			'- Edit a method: `{ file: "src/service.ts", target: "UserService.findById", code: "..." }`\n' +
-			'- Edit a section: `{ file: "README.md", target: "Installation", code: "..." }`\n' +
-			'- Edit by lines: `{ file: "src/config.ts", startLine: 10, endLine: 25, code: "..." }`\n' +
-			'- Replace full file: `{ file: "src/types.ts", code: "..." }`',
+			'- Edit a method body: `{ file: "src/service.ts", symbol: "UserService.findById", oldString: "return null;", newString: "return undefined;" }`\n' +
+			'- Edit root-level code: `{ file: "src/config.ts", oldString: "const PORT = 3000;", newString: "const PORT = 8080;" }`\n' +
+			'- Edit a nested symbol: `{ file: "src/app.ts", symbol: "Geometry.Shapes.Circle", oldString: "...", newString: "..." }`',
 		handler: async (request, response) => {
 			const { params } = request;
 			const filePath = resolveFilePath(params.file);
-			const { code } = params;
+			const oldString = params.oldString.replaceAll('\r\n', '\n');
+			const newString = params.newString.replaceAll('\r\n', '\n');
+			const symbolTarget = params.symbol?.trim() || '';
 			const relativePath = path.relative(getClientWorkspace(), filePath).replaceAll('\\', '/');
 
 			// ── Input validation ──────────────────────────────────────────
 
-			// Bug #5: startLine > endLine
-			if (params.startLine !== undefined && params.endLine !== undefined && params.startLine > params.endLine) {
-				response.appendResponseLine(`❌ Invalid line range: startLine (${params.startLine}) is greater than endLine (${params.endLine}).`);
+			if (oldString.length === 0) {
+				response.appendResponseLine('❌ `oldString` cannot be empty.');
 				return;
 			}
 
-			// Bug #2: Empty code targeting a symbol = accidental deletion
-			if (params.target && code.trim().length === 0) {
-				response.appendResponseLine(`❌ Refusing to apply empty code to symbol "${params.target}" — this would delete it. ` + `If deletion is intended, remove the symbol explicitly or use startLine/endLine.`);
+			if (oldString === newString) {
+				response.appendResponseLine('❌ `oldString` and `newString` are identical — nothing to change.');
 				return;
 			}
 
-			// Bug #6: Validate line ranges are within file bounds
-			if (params.startLine !== undefined || params.endLine !== undefined) {
-				try {
-					const contentResult = await fileReadContent(filePath);
-					const { totalLines } = contentResult;
+			// ── Load file content and structure ──────────────────────────
 
-					if (params.startLine !== undefined && (params.startLine < 1 || params.startLine > totalLines)) {
-						response.appendResponseLine(`❌ startLine ${params.startLine} is out of bounds (file has ${totalLines} lines).`);
-						return;
-					}
-					if (params.endLine !== undefined && (params.endLine < 1 || params.endLine > totalLines)) {
-						response.appendResponseLine(`❌ endLine ${params.endLine} is out of bounds (file has ${totalLines} lines).`);
-						return;
-					}
-				} catch {
-					// File might not exist yet; proceed and let the edit fail naturally
-				}
+			let structure: FileStructure | undefined;
+
+			try {
+				structure = await fileExtractStructure(filePath);
+			} catch {
+				// Non-structured file — fall through
 			}
-			let editStartLine: number;
-			let editEndLine: number;
-			let targetLabel: string | undefined;
 
-			if (params.target) {
-				// Symbol targeting: resolve via registered language service
-				const structure = await fileExtractStructure(filePath);
+			const contentResult = await fileReadContent(filePath);
+			const allLines = contentResult.content.replaceAll('\r\n', '\n').split('\n');
+
+			// ── Compute visible scope ────────────────────────────────────
+
+			let visibleRanges: LineRange[];
+			let scopeLabel: string;
+
+			if (symbolTarget.length > 0) {
 				if (!structure) {
-					const ext = path.extname(filePath).slice(1).toLowerCase();
-					response.appendResponseLine(`❌ Symbol targeting is not supported for .${ext} files.\n\n` + `Use \`startLine\`/\`endLine\` instead.`);
+					response.appendResponseLine('❌ Symbol targeting requires structured file extraction. ' +
+						'This file type does not support symbol-based editing.');
 					return;
 				}
 
-				const match = resolveSymbolTarget(structure.symbols, params.target);
-
+				const match = resolveSymbolTarget(structure.symbols, symbolTarget);
 				if (!match) {
-					const available = structure.symbols.map((s) => `${s.kind} ${s.name}`).join(', ');
-					response.appendResponseLine(`❌ Symbol "${params.target}" not found in ${relativePath}.\n\n` + `Available symbols: ${available || 'none'}`);
+					const available = structure.symbols
+						.filter(s => BODY_BEARING_KINDS.has(s.kind) || s.range.endLine > s.range.startLine)
+						.map(s => s.name)
+						.slice(0, 20);
+					response.appendResponseLine(`❌ Symbol "${symbolTarget}" not found in ${relativePath}.\n`);
+					if (available.length > 0) {
+						response.appendResponseLine(`Available symbols: ${available.join(', ')}`);
+					}
 					return;
 				}
 
-				// Ranges are 1-indexed; safety layer expects 0-indexed
-				editStartLine = match.symbol.range.startLine - 1;
-				editEndLine = match.symbol.range.endLine - 1;
-				targetLabel = params.target;
-			} else if (params.startLine !== undefined && params.endLine !== undefined) {
-				// Line-based targeting (convert 1-indexed to 0-indexed)
-				editStartLine = params.startLine - 1;
-				editEndLine = params.endLine - 1;
+				const { symbol } = match;
+				visibleRanges = computeVisibleRanges(
+					symbol.range.startLine,
+					symbol.range.endLine,
+					symbol.children ?? [],
+				);
+				scopeLabel = symbolTarget;
 			} else {
-				// Full file replacement
-				const contentResult = await fileReadContent(filePath);
-				editStartLine = 0;
-				editEndLine = contentResult.totalLines - 1;
+				if (structure) {
+					visibleRanges = computeRootVisibleRanges(allLines.length, structure.symbols);
+				} else {
+					visibleRanges = [{ startLine: 1, endLine: allLines.length }];
+				}
+				scopeLabel = 'root';
 			}
 
-			// Execute with safety layer
-			const result = await executeEditWithSafetyLayer(filePath, editStartLine, editEndLine, code);
+			// ── Search for oldString within visible scope ────────────────
 
-			// Format output
-			if (result.success) {
-				const title = targetLabel ? `## file_edit: Applied edit to ${targetLabel}` : `## file_edit: Applied edit to ${relativePath}`;
+			const visible = buildVisibleText(allLines, visibleRanges);
+			const occurrences = findAllOccurrences(visible.text, oldString);
 
-				response.appendResponseLine(title);
-				response.appendResponseLine('');
+			if (occurrences.length === 0) {
+				response.appendResponseLine(`❌ \`oldString\` not found within scope "${scopeLabel}".\n`);
+				response.appendResponseLine('The text does not match any content in the visible region. ' +
+					'Ensure `oldString` exactly matches the source (including whitespace and indentation).');
+				return;
+			}
 
-				if (result.detectedIntents.length > 0) {
-					response.appendResponseLine('**Detected Intent:**');
-					for (const intent of result.detectedIntents) {
-						const label =
-							intent.type === 'rename' ? `Rename \`${intent.symbol}\` ${intent.details ?? ''}` : intent.type === 'delete' ? `Delete \`${intent.symbol}\`` : intent.type === 'add' ? `Add \`${intent.symbol}\`` : `Body change in \`${intent.symbol}\``;
-						response.appendResponseLine(`- ${label}`);
+			if (occurrences.length > 1) {
+				response.appendResponseLine(`❌ \`oldString\` matched ${occurrences.length} times within scope "${scopeLabel}".\n`);
+				response.appendResponseLine('Include more surrounding context in `oldString` to make the match unique.');
+				return;
+			}
+
+			// ── Exactly one match — compute edit range ───────────────────
+
+			const matchStart = visible.offsetToPosition(occurrences[0]);
+			const matchEnd = visible.offsetToPosition(occurrences[0] + oldString.length);
+
+			// fileApplyEdit uses 0-indexed lines
+			const editStartLine = matchStart.line - 1;
+			const editEndLine = matchEnd.line - 1;
+			const editStartChar = matchStart.char;
+			const editEndChar = matchEnd.char;
+
+			// ── Apply the edit ───────────────────────────────────────────
+
+			try {
+				const result = await fileApplyEdit(
+					filePath,
+					editStartLine,
+					editEndLine,
+					newString,
+					editStartChar,
+					editEndChar,
+				);
+
+				if (result.success) {
+					try {
+						await fileShowEditDiff(filePath, editStartLine);
+					} catch {
+						// Non-critical — diff display is best-effort
 					}
-					response.appendResponseLine('');
-				}
 
-				if (result.propagated.length > 0) {
-					response.appendResponseLine('**Auto-Propagated:**');
-					for (const p of result.propagated) {
-						response.appendResponseLine(`- ${p.type}: ${p.totalEdits} edits across ${p.filesAffected.length} files`);
-						for (const f of p.filesAffected.slice(0, 10)) {
-							response.appendResponseLine(`  - ${f}`);
-						}
-						if (p.filesAffected.length > 10) {
-							response.appendResponseLine(`  - ... and ${p.filesAffected.length - 10} more`);
-						}
-					}
-					response.appendResponseLine('');
-				}
+					const title = symbolTarget
+						? `Applied edit to **${symbolTarget}** in ${relativePath}`
+						: `Applied edit to ${relativePath}`;
+					response.appendResponseLine(`✅ ${title}`);
 
-				if (result.autoFixed.length > 0) {
-					response.appendResponseLine('**Auto-Fixed:**');
-					for (const fix of result.autoFixed) {
-						response.appendResponseLine(`- ${fix.file}: ${fix.fix}`);
+					const oldLines = oldString.split('\n').length;
+					const newLines = newString.split('\n').length;
+					if (oldLines === 1 && newLines === 1) {
+						response.appendResponseLine(`Line ${matchStart.line}: replaced inline text`);
+					} else {
+						response.appendResponseLine(`Lines ${matchStart.line}–${matchEnd.line}: replaced ${oldLines} line(s) with ${newLines} line(s)`);
 					}
-					response.appendResponseLine('');
-				}
-
-				const errors = result.remainingErrors.filter((r) => r.severity === 'error');
-				const warnings = result.remainingErrors.filter((r) => r.severity === 'warning');
-
-				if (errors.length > 0) {
-					response.appendResponseLine(`**Remaining Errors (${errors.length}):**`);
-					for (const err of errors.slice(0, 10)) {
-						response.appendResponseLine(`- ${err.file}:${err.line} — ${err.message}`);
-					}
-					if (errors.length > 10) {
-						response.appendResponseLine(`- ... and ${errors.length - 10} more`);
-					}
-					response.appendResponseLine('');
-				}
-
-				if (warnings.length > 0) {
-					response.appendResponseLine(`**Warnings (${warnings.length}):**`);
-					for (const w of warnings.slice(0, 5)) {
-						response.appendResponseLine(`- ${w.file}:${w.line} — ${w.message}`);
-					}
-					if (warnings.length > 5) {
-						response.appendResponseLine(`- ... and ${warnings.length - 5} more`);
-					}
-					response.appendResponseLine('');
-				}
-
-				const errorCount = errors.length;
-				if (errorCount === 0) {
-					response.appendResponseLine('✅ **Safety Check:** 0 new errors detected');
 				} else {
-					response.appendResponseLine(`⚠️ **Safety Check:** ${errorCount} error(s) remain`);
+					response.appendResponseLine('❌ Edit failed to apply.');
+					if ('error' in result && typeof result.error === 'string') {
+						response.appendResponseLine(result.error);
+					}
 				}
-			} else {
-				response.appendResponseLine(`## file_edit: Failed`);
-				response.appendResponseLine('');
-				response.appendResponseLine(`❌ ${result.summary}`);
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : String(err);
+				response.appendResponseLine(`❌ Edit failed: ${msg}`);
 			}
 		},
 		name: 'file_edit',
 		schema: {
-			code: zod.string().describe('The complete new content for the targeted region. ' + 'When targeting a symbol, this replaces the entire symbol body.'),
-			endLine: zod.number().int().optional().describe('Fallback: end line (1-indexed). Used when target is not specified.'),
 			file: zod.string().describe('Path to file (relative to workspace root or absolute).'),
-			startLine: zod.number().int().optional().describe('Fallback: start line (1-indexed). Used when target is not specified.'),
-			target: zod
-				.string()
-				.optional()
-				.describe('Symbol name to scope the edit: "UserService.findById". ' + 'Supported for TS/JS, Markdown (.md, .markdown), and JSON (.json, .jsonc, .json5, .jsonl) files.')
+			newString: zod.string().describe('The replacement text. Can be multi-line.'),
+			oldString: zod.string().describe('Exact text to find within the scoped region. Must match exactly once. Include enough context (3+ lines) to ensure uniqueness.'),
+			symbol: zod.string().optional().describe(
+				'Symbol to scope the edit to. Use dot notation for nested symbols (e.g. "UserService.findById"). ' +
+				'When omitted, the edit is scoped to root-level content (top-level collapsed symbols are excluded from matching).'
+			),
 		},
-		timeoutMs: 30_000
+		timeoutMs: 15_000,
 	});

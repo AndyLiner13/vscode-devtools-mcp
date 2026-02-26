@@ -25,7 +25,57 @@ const INDENT = '  ';
 
 type MetadataMode = 'auto' | boolean;
 
-// ── Formatting ───────────────────────────────────────────
+// ── Symbol formatting (matches file_read skeleton) ───────
+
+/** Abbreviated kind labels matching file_read's routing table. */
+const KIND_ABBREV: Record<string, string> = {
+	'function': 'fn',
+	'method': 'method',
+	'constructor': 'ctor',
+	'getter': 'getter',
+	'setter': 'setter',
+	'class': 'class',
+	'interface': 'iface',
+	'enum': 'enum',
+	'namespace': 'ns',
+	'module': 'mod',
+	'constant': 'const',
+	'variable': 'var',
+	'type': 'type',
+	'property': 'prop',
+	'comment': 'comment',
+	'jsdoc': 'jsdoc',
+	'tsdoc': 'tsdoc',
+};
+
+const BODY_BEARING_KINDS: ReadonlySet<string> = new Set([
+	'function', 'method', 'constructor', 'getter', 'setter',
+	'class', 'interface', 'enum',
+]);
+
+const CONTROL_FLOW_KINDS: ReadonlySet<string> = new Set([
+	'if', 'else', 'for', 'for-in', 'for-of', 'while', 'do-while',
+	'switch', 'case', 'default', 'try', 'try-catch', 'catch', 'finally',
+]);
+
+const RAW_CODE_KINDS: ReadonlySet<string> = new Set(['imports']);
+
+function isVisibleInSkeleton(symbol: CodebaseSymbolNode): boolean {
+	if (CONTROL_FLOW_KINDS.has(symbol.kind)) return false;
+	if (RAW_CODE_KINDS.has(symbol.kind)) return false;
+	if (BODY_BEARING_KINDS.has(symbol.kind)) return true;
+	const lineCount = symbol.range.end - symbol.range.start + 1;
+	return lineCount > 1;
+}
+
+function countVisibleSymbolsDeep(symbols: readonly CodebaseSymbolNode[]): number {
+	let count = 0;
+	for (const s of symbols) {
+		if (isVisibleInSkeleton(s)) count++;
+		if (s.children) count += countVisibleSymbolsDeep(s.children);
+	}
+	return count;
+}
 
 function countSymbolsDeep(symbols: CodebaseSymbolNode[]): number {
 	let count = symbols.length;
@@ -67,13 +117,37 @@ function fileMeta(node: CodebaseTreeNode): string {
 }
 
 function formatSymbol(symbol: CodebaseSymbolNode, depth: number, maxSymbolDepth?: number, currentSymbolDepth = 0): string {
+	// Hide control flow constructs — they add noise to the skeleton
+	if (CONTROL_FLOW_KINDS.has(symbol.kind)) return '';
+
 	const indent = INDENT.repeat(depth);
-	// Show reference/implementation metadata if available
+
+	// Non-visible symbols: show as structural labels only if they have
+	// visible descendants (preserves hierarchy for dot-notation paths).
+	if (!isVisibleInSkeleton(symbol)) {
+		const visibleDescendants = symbol.children ? countVisibleSymbolsDeep(symbol.children) : 0;
+		if (visibleDescendants === 0) return '';
+
+		let output = `${indent}${symbol.name}\n`;
+		if (symbol.children && (maxSymbolDepth === undefined || currentSymbolDepth < maxSymbolDepth)) {
+			for (const child of symbol.children) {
+				output += formatSymbol(child, depth + 1, maxSymbolDepth, currentSymbolDepth + 1);
+			}
+		}
+		return output;
+	}
+
+	// Build compact metadata tag: [30L|5S|fn]
+	const lineCount = symbol.range.end - symbol.range.start + 1;
+	const kind = KIND_ABBREV[symbol.kind] ?? symbol.kind;
 	const metaParts: string[] = [];
-	if ((symbol.referenceCount ?? 0) > 0) metaParts.push(`${symbol.referenceCount}R`);
-	if ((symbol.implementationCount ?? 0) > 0) metaParts.push(`${symbol.implementationCount}I`);
-	const meta = metaParts.length > 0 ? `[${metaParts.join('|')}] ` : '';
-	let output = `${indent}${meta}${symbol.kind} ${symbol.name}\n`;
+	if (lineCount > 1) metaParts.push(`${lineCount}L`);
+	const symCount = symbol.children ? countVisibleSymbolsDeep(symbol.children) : 0;
+	if (symCount > 0) metaParts.push(`${symCount}S`);
+	metaParts.push(kind);
+	const meta = `[${metaParts.join('|')}]`;
+
+	let output = `${indent}${meta} ${symbol.name}\n`;
 	if (symbol.children && (maxSymbolDepth === undefined || currentSymbolDepth < maxSymbolDepth)) {
 		for (const child of symbol.children) {
 			output += formatSymbol(child, depth + 1, maxSymbolDepth, currentSymbolDepth + 1);
