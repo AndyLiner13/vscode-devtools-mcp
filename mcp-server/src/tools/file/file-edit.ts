@@ -11,23 +11,8 @@ import { fileApplyEdit, fileExtractStructure, fileReadContent, fileShowEditDiff,
 import { getClientWorkspace } from '../../config.js';
 import { ToolCategory } from '../categories.js';
 import { defineTool } from '../ToolDefinition.js';
+import { BODY_BEARING_KINDS, CONTROL_FLOW_KINDS, RAW_CODE_KINDS } from './symbol-kinds.js';
 import { resolveSymbolTarget } from './symbol-resolver.js';
-
-/**
- * Body-bearing kinds whose content is collapsed when viewing a parent symbol.
- * Edits scoped to a parent will NOT match against content inside these children.
- * Mirrors the same set used in file-read.ts.
- */
-const BODY_BEARING_KINDS: ReadonlySet<string> = new Set([
-	'function', 'method', 'constructor', 'getter', 'setter',
-	'class', 'interface', 'enum',
-]);
-
-const RAW_CODE_KINDS: ReadonlySet<string> = new Set(['imports']);
-const CONTROL_FLOW_KINDS: ReadonlySet<string> = new Set([
-	'if', 'else', 'for', 'for-in', 'for-of', 'while', 'do-while',
-	'switch', 'case', 'default', 'try', 'try-catch', 'catch', 'finally',
-]);
 
 function resolveFilePath(file: string): string {
 	if (path.isAbsolute(file)) return file;

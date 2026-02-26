@@ -17,13 +17,8 @@ import { getClientWorkspace } from '../../config.js';
 import { ToolCategory } from '../categories.js';
 import { defineTool } from '../ToolDefinition.js';
 import { isStrictLogFile } from './logFile-read.js';
+import { BODY_BEARING_KINDS, CONTAINER_KINDS, CONTROL_FLOW_KINDS, RAW_CODE_KINDS } from './symbol-kinds.js';
 import { collectSymbolKinds, findQualifiedPaths, findSymbolsByKind, resolveByKindAndName, resolveSymbolTarget } from './symbol-resolver.js';
-
-// Container kinds are valid symbol targets even when childless
-const CONTAINER_KINDS = new Set(['comment', 'jsdoc', 'tsdoc']);
-
-// Kinds that are never collapsed — always shown as raw source code
-const RAW_CODE_KINDS = new Set(['imports']);
 
 function resolveFilePath(file: string): string {
 	if (path.isAbsolute(file)) return file;
@@ -403,26 +398,6 @@ function compressTargetContent(symbol: FileSymbol, allLines: string[], structure
 	const ranges = computeContentRanges(symbol, contentMaxNesting);
 	return { ...ranges, compressed: false, label: null, output: maxContent, slugMappings: [], trace: [] };
 }
-
-/**
- * Symbol kinds that represent body-bearing constructs (functions, classes, etc.).
- * In symbol-target mode, body-bearing children with grandchildren are collapsed
- * to stubs — Copilot must request them by name to see their raw body.
- * Canonical source: services/codebase/types.ts → BODY_BEARING_KINDS
- */
-const BODY_BEARING_KINDS: ReadonlySet<string> = new Set([
-	'function', 'method', 'constructor', 'getter', 'setter',
-	'class', 'interface', 'enum',
-]);
-
-/**
- * Control flow constructs are hidden entirely from the skeleton overview.
- * They add noise without helping Copilot navigate the file structure.
- */
-const CONTROL_FLOW_KINDS: ReadonlySet<string> = new Set([
-	'if', 'else', 'for', 'for-in', 'for-of', 'while', 'do-while',
-	'switch', 'case', 'default', 'try', 'try-catch', 'catch', 'finally',
-]);
 
 /**
  * Compress full-file output into a file map with body-bearing symbols as stubs
