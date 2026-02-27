@@ -75,7 +75,12 @@ function buildParsedFile(
 ): ParsedFile {
 	const relativePath = path.relative(workspaceRoot, filePath).replace(/\\/g, '/');
 	const totalLines = sourceFile.getEndLineNumber();
-	const hasSyntaxErrors = sourceFile.getPreEmitDiagnostics().length > 0;
+
+	// Only check syntactic diagnostics — semantic checking crashes without type definitions
+	const project = sourceFile.getProject();
+	const syntacticDiagnostics = project.getProgram().compilerObject
+		.getSyntacticDiagnostics(sourceFile.compilerNode);
+	const hasSyntaxErrors = syntacticDiagnostics.length > 0;
 
 	// Combine declaration symbols and root content
 	const declarations = extractFileSymbols(sourceFile);

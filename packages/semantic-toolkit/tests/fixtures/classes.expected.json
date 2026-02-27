@@ -8,7 +8,7 @@
       "hasChildren": true,
       "exported": true,
       "modifiers": ["abstract", "exported"],
-      "lineRange": [2, 10]
+      "lineRange": [1, 10]
     },
     {
       "name": "name",
@@ -48,7 +48,7 @@
       "hasChildren": true,
       "exported": true,
       "modifiers": ["exported"],
-      "lineRange": [13, 39]
+      "lineRange": [12, 38]
     },
     {
       "name": "users",

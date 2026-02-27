@@ -216,7 +216,7 @@
       "lineRange": [48, 48]
     },
     {
-      "name": "expr:console.log('loaded')",
+      "name": "expr:console.log('loaded');",
       "kind": "expression",
       "depth": 0,
       "parentName": null,
@@ -230,7 +230,7 @@
     { "kind": "import", "name": "import:events", "lineRange": [1, 1] },
     { "kind": "import", "name": "import:stream", "lineRange": [2, 2] },
     { "kind": "re-export", "name": "re-export:events", "lineRange": [4, 4] },
-    { "kind": "expression", "name": "expr:console.log('loaded')", "lineRange": [51, 51] }
+    { "kind": "expression", "name": "expr:console.log('loaded');", "lineRange": [51, 51] }
   ],
   "stats": {
     "totalSymbols": 23,

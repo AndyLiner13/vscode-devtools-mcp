@@ -147,6 +147,7 @@ export function collectPropertyModifiers(node: PropertyDeclaration): string[] {
 export function collectPropertySignatureModifiers(node: PropertySignature): string[] {
 	const mods: string[] = [];
 	if (node.isReadonly()) mods.push('readonly');
+	if (node.hasQuestionToken()) mods.push('optional');
 	return mods;
 }
 

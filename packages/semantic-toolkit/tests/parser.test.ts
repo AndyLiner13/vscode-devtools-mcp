@@ -125,7 +125,8 @@ describe('Parser: data-driven fixtures', () => {
 						s =>
 							s.name === exp.name &&
 							s.kind === exp.kind &&
-							s.depth === exp.depth,
+							s.depth === exp.depth &&
+							s.parentName === exp.parentName,
 					);
 
 					expect(match, `Symbol not found: ${exp.kind} ${exp.name} at depth ${exp.depth}`).toBeDefined();

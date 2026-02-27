@@ -8,7 +8,7 @@
       "hasChildren": false,
       "exported": true,
       "modifiers": ["exported"],
-      "lineRange": [2, 4]
+      "lineRange": [1, 4]
     },
     {
       "name": "fetchUser",
@@ -18,7 +18,7 @@
       "hasChildren": false,
       "exported": true,
       "modifiers": ["async", "exported"],
-      "lineRange": [7, 10]
+      "lineRange": [6, 10]
     },
     {
       "name": "range",
@@ -28,7 +28,7 @@
       "hasChildren": false,
       "exported": true,
       "modifiers": ["generator", "exported"],
-      "lineRange": [13, 17]
+      "lineRange": [12, 17]
     },
     {
       "name": "main",
@@ -38,7 +38,7 @@
       "hasChildren": false,
       "exported": true,
       "modifiers": ["exported", "default"],
-      "lineRange": [20, 22]
+      "lineRange": [19, 22]
     },
     {
       "name": "outer",
@@ -48,7 +48,7 @@
       "hasChildren": true,
       "exported": true,
       "modifiers": ["exported"],
-      "lineRange": [25, 30]
+      "lineRange": [24, 30]
     },
     {
       "name": "inner",
@@ -68,7 +68,7 @@
       "hasChildren": false,
       "exported": true,
       "modifiers": ["exported"],
-      "lineRange": [33, 35]
+      "lineRange": [32, 35]
     }
   ],
   "rootItems": [],

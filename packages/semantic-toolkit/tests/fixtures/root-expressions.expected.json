@@ -49,7 +49,7 @@
       "lineRange": [3, 3]
     },
     {
-      "name": "expr:app.use(cors())",
+      "name": "expr:app.use(cors());",
       "kind": "expression",
       "depth": 0,
       "parentName": null,
@@ -58,7 +58,7 @@
       "lineRange": [5, 5]
     },
     {
-      "name": "expr:app.use(helmet())",
+      "name": "expr:app.use(helmet());",
       "kind": "expression",
       "depth": 0,
       "parentName": null,
@@ -67,7 +67,7 @@
       "lineRange": [6, 6]
     },
     {
-      "name": "expr:app.listen(3000)",
+      "name": "expr:app.listen(3000);",
       "kind": "expression",
       "depth": 0,
       "parentName": null,
@@ -76,7 +76,7 @@
       "lineRange": [8, 8]
     },
     {
-      "name": "expr:console.log('Server started')",
+      "name": "expr:console.log('Server started');",
       "kind": "expression",
       "depth": 0,
       "parentName": null,
@@ -86,10 +86,10 @@
     }
   ],
   "rootItems": [
-    { "kind": "expression", "name": "expr:app.use(cors())", "lineRange": [5, 5] },
-    { "kind": "expression", "name": "expr:app.use(helmet())", "lineRange": [6, 6] },
-    { "kind": "expression", "name": "expr:app.listen(3000)", "lineRange": [8, 8] },
-    { "kind": "expression", "name": "expr:console.log('Server started')", "lineRange": [10, 10] }
+    { "kind": "expression", "name": "expr:app.use(cors());", "lineRange": [5, 5] },
+    { "kind": "expression", "name": "expr:app.use(helmet());", "lineRange": [6, 6] },
+    { "kind": "expression", "name": "expr:app.listen(3000);", "lineRange": [8, 8] },
+    { "kind": "expression", "name": "expr:console.log('Server started');", "lineRange": [10, 10] }
   ],
   "stats": {
     "totalSymbols": 9,

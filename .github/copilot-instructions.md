@@ -75,6 +75,36 @@ Only add dependencies to workspaces when they are:
 - When a tool call fails, crashes, or returns unexpected results, immediately check the output logs before attempting any fix.
 - When the user reports something isn't working, check the output logs before asking them what happened — the answer is usually right there.
 
+## CRITICAL: Log Drill-Down — Use Compressed Logs Properly
+
+- `terminal_read`, `output_read`, and `logFile_read` all return **compressed log overviews** — a table of deduplicated pattern templates with IDs, counts, and severity levels. This is intentional. Do NOT treat compressed output as broken or incomplete.
+- **Never** redirect terminal output to a file (`> output.txt`) to work around log compression. That defeats the purpose entirely and wastes context window.
+- **Never** dump hundreds of raw log lines into context. Use the drill-down mechanism instead.
+- Use `ephemeral: false` on `terminal_execute` when you need to drill down into the output afterward. Ephemeral terminals clear their buffer after completion.
+
+### Drill-Down Workflow
+
+1. **Read the overview first.** Check exit code, severity counts (any errors?), and the pattern table.
+2. **Drill into what matters** using `terminal_read` (or `output_read` / `logFile_read`) with one of these parameters:
+   - `severity: "error"` — show only error lines
+   - `templateId: "t003"` — expand a specific pattern to see raw instances
+   - `pattern: "FAIL"` — free-text search within the output
+   - `minDuration`, `timeRange`, `correlationId` — for performance or tracing
+3. **Iterate if needed.** Drill into a second template or refine with a narrower pattern.
+
+### Example: Checking Test Results
+
+```
+Step 1: terminal_execute("npx vitest run", ephemeral: false)
+        → Overview shows severity: 404 info, 2 error. Exit code 1.
+Step 2: terminal_read(severity: "error")
+        → Shows the 2 error lines: "AssertionError: expected 38 to be 39"
+Step 3: terminal_read(pattern: "FAIL")
+        → Shows which test file and test name failed
+```
+
+This extracts exactly the information needed in 2-3 targeted calls instead of dumping 500+ raw lines.
+
 ## CRITICAL: Ask Questions Formatting
 
 - When using the ask_questions tool, keep the question text SHORT and PLAIN TEXT only.
