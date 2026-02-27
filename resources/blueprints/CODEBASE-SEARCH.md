@@ -121,15 +121,33 @@ The parser must be built and validated before embeddings work begins:
 5. Handle React/JSX component declarations with proper chunking (part of initial parser, not deferred)
 6. Validate on real-world code (TriviaGame.ts, TriviaPhone.ts) before proceeding
 
-### Non-Body-Bearing Content
+### Non-Body-Bearing and Root-Level Content
 
-Not all code lives inside body-bearing symbols. The chunking strategy handles each category:
+Not all code lives inside body-bearing symbols. Every individual item at the file root gets its own chunk — no artificial grouping:
 
-- **Named symbols** (constants, variables, type aliases, interfaces, enums) — each gets its own chunk regardless of whether it has a body. A `const API_URL = '...'` is a 1-line chunk.
-- **File-level root chunk** — everything that ISN'T a named symbol (imports, top-level expressions, export re-exports, side-effect code) gets aggregated into a single chunk at depth 0. This is the "module initialization" code.
-- **Imports tracked per-chunk** — the `relevantImports` field on each chunk records which imports that specific symbol uses. The smart structural snapshot output uses this to include only the imports relevant to the target symbol.
+**Named symbols at root** (constants, variables, type aliases, interfaces, enums):
+- Each gets its own chunk with the standard metadata preamble + source code
+- Example: `export const TOKEN_EXPIRY = 3600` → one chunk
 
-Files that are entirely non-symbolic (e.g., `server.ts` with only `app.use(...)` calls and imports) produce a single file-level root chunk.
+**Non-symbol content at root** (imports, expressions, re-exports, control flow):
+- Each individual statement gets its own chunk with a metadata preamble
+- `import jwt from 'jsonwebtoken'` → one chunk
+- `app.use(cors())` → one chunk
+- `export { X } from './x'` → one chunk
+- Top-level `if`, `for`, `try/catch` blocks → each one chunk
+
+**Why individual chunks instead of groups:** Grouping semantically unrelated content (e.g., merging all imports) adds noise to embeddings. Voyage Code 3 is trained on code and handles small chunks well — even a single import line embeds accurately enough for the reranker to evaluate relevance. Individual chunks mean precise retrieval: searching "jsonwebtoken" finds exactly the import for `jwt`, not an entire block of 15 unrelated imports.
+
+**Metadata preamble** for root-level items follows the same pattern as body-bearing symbols:
+```
+[TypeScript] src/auth/tokenService.ts > import:jsonwebtoken
+---
+import jwt from 'jsonwebtoken';
+```
+
+The `relevantImports` field on each body-bearing chunk still tracks which imports that symbol uses, enabling the smart structural snapshot to include relevant imports in the output.
+
+Files that are entirely non-symbolic (e.g., `server.ts` with only `app.use(...)` calls and imports) produce individual chunks for each statement.
 
 ---
 
