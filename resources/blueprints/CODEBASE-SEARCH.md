@@ -121,6 +121,16 @@ The parser must be built and validated before embeddings work begins:
 5. Handle React/JSX component declarations with proper chunking (part of initial parser, not deferred)
 6. Validate on real-world code (TriviaGame.ts, TriviaPhone.ts) before proceeding
 
+### Non-Body-Bearing Content
+
+Not all code lives inside body-bearing symbols. The chunking strategy handles each category:
+
+- **Named symbols** (constants, variables, type aliases, interfaces, enums) — each gets its own chunk regardless of whether it has a body. A `const API_URL = '...'` is a 1-line chunk.
+- **File-level root chunk** — everything that ISN'T a named symbol (imports, top-level expressions, export re-exports, side-effect code) gets aggregated into a single chunk at depth 0. This is the "module initialization" code.
+- **Imports tracked per-chunk** — the `relevantImports` field on each chunk records which imports that specific symbol uses. The smart structural snapshot output uses this to include only the imports relevant to the target symbol.
+
+Files that are entirely non-symbolic (e.g., `server.ts` with only `app.use(...)` calls and imports) produce a single file-level root chunk.
+
 ---
 
 ## LanceDB Schema
@@ -251,14 +261,14 @@ All scoring and selection parameters are configurable via settings:
 
 ### MCP Multi-Content Response
 
-Results use MCP's native multi-content response format. The first content item is the **connection graph** (structural metadata overview), followed by individual source code results, each with priority annotations mapped from the `finalScore`:
+Results use MCP's native multi-content response format. The first content item is the **connection graph** (structural metadata overview), followed by **smart structural snapshots** — one per file (same-file results merged). Each content item has priority annotations mapped from the `finalScore`:
 
 ```json
 {
   "content": [
     {
       "type": "text",
-      "text": "Search: \"authentication token validation\" | 5 results across 4 files | 3,240/8,000 tokens\n\n[1] TokenService.validateToken\n src/auth/tokenService.ts\n async method | exported | refs: 8 files\n ...",
+      "text": "Search: \"authentication token validation\" | 5 results across 4 files | 3,240/8,000 tokens\n\n[1] TokenService.validateToken\n src/auth/tokenService.ts\n ...",
       "annotations": {
         "audience": ["assistant"],
         "priority": 1.0
@@ -266,7 +276,7 @@ Results use MCP's native multi-content response format. The first content item i
     },
     {
       "type": "text",
-      "text": "// src/auth/tokenService.ts > TokenService > validateToken\n\nasync validateToken(token: string)...",
+      "text": "// src/auth/tokenService.ts\n\nimport jwt from 'jsonwebtoken';\nimport { JwtPayload } from '../models/auth';\n\nexport class TokenService extends BaseValidator {\n  private secret: string;\n\n  async validateToken(token: string): Promise<JwtPayload | null> {\n    ...\n  }\n}",
       "annotations": {
         "audience": ["assistant"],
         "priority": 0.95
@@ -274,7 +284,7 @@ Results use MCP's native multi-content response format. The first content item i
     },
     {
       "type": "text",
-      "text": "// src/middleware/auth.ts > AuthMiddleware > verify\n\nasync verify(req: Request, ...)...",
+      "text": "// src/middleware/auth.ts\n\nimport { TokenService } from '../auth/tokenService';\n\nexport class AuthMiddleware {\n  ...\n}",
       "annotations": {
         "audience": ["assistant"],
         "priority": 0.80
@@ -360,92 +370,89 @@ TokenService.validateToken
 - Copilot reads the graph first for structural overview, then reads individual results for code
 - Fewer total tokens than repeating metadata headers on each result
 
-### Source Code Results (Subsequent Content Items)
+### Source Code Results: Smart Structural Snapshots
 
-Each source code result contains clean code with a path header comment. No line numbers, no metadata, no separators — the code reads as if copied directly from the source file:
+Each source code result is a **smart structural snapshot** of its file — not an isolated symbol rip. The snapshot shows the target symbol expanded, plus only the file-level and parent-level content that the target symbol actually references. Everything else is omitted entirely (no collapse indicators, no clutter). The connection graph separately provides the full structural picture.
 
-```
-// src/auth/tokenService.ts > TokenService > validateToken
+**How it works:** The TS compiler resolves all identifiers within the target symbol to their declarations. If a declaration lives in the same file (import, constant, class property, type alias), it's included in the snapshot. If it doesn't, it's omitted.
 
-async validateToken(token: string): Promise<JwtPayload | null> {
-  try {
-    return jwt.verify(token, this.secret) as JwtPayload;
-  } catch {
-    return null;
-  }
-}
-```
-
-### Collapsed Children: VS Code Folding Style
-
-Irrelevant body-bearing children within a result are collapsed using block-comment style, preserving the method signature for type context:
+**Single-result example — searching "JWT validation":**
 
 ```
-async start() {
-  const hasExistingState = (this.world as any).triviaGameState !== undefined;
-  if (hasExistingState) {
-    this.handlePreviewModeTransition();
-  }
-  
-  private async initializePhoneManagement(): Promise<void> { /* 38 lines collapsed */ }
-  
-  await this.preloadGameAssets();
-  await this.loadTriviaQuestions();
-  
-  private setupNetworkEvents(): void { /* 48 lines collapsed */ }
-}
-```
+// src/auth/tokenService.ts
 
-### Intelligent Parent-Child Merging
+import jwt from 'jsonwebtoken';
+import { JwtPayload } from '../models/auth';
 
-When both a parent symbol and its child symbol are relevant to the query, they are returned as ONE combined result — the parent's source code with the relevant child EXPANDED inline (not collapsed). The output looks like the raw source code:
+const TOKEN_EXPIRY = 3600;
 
-| Situation | Result |
-|---|---|
-| Parent relevant, child also relevant | Parent with that child expanded inline (one result) |
-| Parent relevant, child not relevant | Parent with child collapsed: `signature() { /* N lines collapsed */ }` |
-| Child relevant, parent not relevant | Child as standalone result |
-| Both parent and child scored high | Merged into one result, no duplicates |
+export class TokenService extends BaseValidator {
+  private secret: string;
 
-**Example — Query: "How does game asset preloading work?"**
-
-Relevant parent (`start`) with relevant child (`preloadGameAssets`) expanded inline:
-
-```
-// src/game/TriviaGame.ts > TriviaGame > start
-
-async start() {
-  const hasExistingState = (this.world as any).triviaGameState !== undefined;
-  if (hasExistingState) {
-    this.handlePreviewModeTransition();
-  }
-  
-  private async initializePhoneManagement(): Promise<void> { /* 38 lines collapsed */ }
-  
-  await this.preloadGameAssets();
-  await this.loadTriviaQuestions();
-  
-  private setupNetworkEvents(): void { /* 48 lines collapsed */ }
-}
-
-private async preloadGameAssets(): Promise<void> {
-  const allQuestions = this.triviaQuestions;
-  const questionImageIds: string[] = [];
-  for (const question of allQuestions) {
-    if (question.image) {
-      const textureId = this.getTextureIdForImage(question.image);
-      if (textureId) {
-        questionImageIds.push(textureId);
-      }
+  async validateToken(token: string): Promise<JwtPayload | null> {
+    try {
+      return jwt.verify(token, this.secret) as JwtPayload;
+    } catch {
+      return null;
     }
   }
-  if (questionImageIds.length > 0) {
-    await this.assetManager.preloadImages(questionImageIds);
+}
+```
+
+**What's shown and why:**
+- `import jwt` — target calls `jwt.verify`
+- `import { JwtPayload }` — target references the type
+- `const TOKEN_EXPIRY` — target references this constant
+- `private secret: string` — target accesses `this.secret`
+- `class TokenService extends BaseValidator` — class declaration provides inheritance context
+- Target method — fully expanded
+
+**What's omitted (no indicators):**
+- 3 imports not used by this method
+- 2 root constants not referenced
+- 4 class properties not accessed by this method
+- 89 sibling methods — not shown at all (connection graph already lists the class members)
+
+**Same-file merging:** When multiple results come from the same file, they merge into ONE snapshot with ALL relevant methods expanded and their combined dependencies shown:
+
+```
+// src/auth/tokenService.ts
+
+import jwt from 'jsonwebtoken';
+import { JwtPayload } from '../models/auth';
+import { RefreshTokenStore } from './refreshStore';
+
+const TOKEN_EXPIRY = 3600;
+
+export class TokenService extends BaseValidator {
+  private secret: string;
+  private store: RefreshTokenStore;
+
+  async validateToken(token: string): Promise<JwtPayload | null> {
+    try {
+      return jwt.verify(token, this.secret) as JwtPayload;
+    } catch {
+      return null;
+    }
+  }
+
+  async refreshToken(token: string): Promise<string> {
+    const payload = await this.validateToken(token);
+    if (!payload) throw new AuthError('Invalid token');
+    return jwt.sign({ userId: payload.userId }, this.secret, { expiresIn: TOKEN_EXPIRY });
   }
 }
 ```
 
-Irrelevant children are collapsed. Relevant children appear in full. The result reads like natural source code.
+Both methods are expanded. The import of `RefreshTokenStore` is included because `refreshToken` uses `this.store`. The `store` property is shown because `refreshToken` accesses it. One file, one snapshot, zero duplication.
+
+**Why smart snapshots instead of isolated symbols:**
+- Imports are naturally visible — Copilot sees exactly where dependencies come from
+- Root-level constants and class properties used by the method are right there in context
+- Reads like actual source code — structurally accurate, just without irrelevant content
+- No risk of Copilot missing a dependency that lives in the same file
+- Copilot edits via `oldString/newString` replacement — hidden code can never be accidentally overwritten since it would need exact text match
+- The connection graph handles everything the snapshot doesn't show (sibling methods, reference counts, cross-file connections)
 
 ---
 
