@@ -23,7 +23,7 @@ VS Code's native semantic search and read tools have three core deficiencies:
 - **Embedding Model:** Voyage Code 3 (1024-dimensional vectors)
 - **Vector Store:** LanceDB (`@lancedb/lancedb` v-next SDK)
 - **Re-ranking:** Voyage Rerank 2.5
-- **Structural Analysis:** TypeScript Language Services (post-rerank hub elevation)
+- **Structural Analysis:** TypeScript Language Services (post-rerank metadata enrichment)
 - **Index Update Strategy:** Incremental re-index of dirty files on each `semantic_search` tool call
 
 ---
@@ -184,28 +184,44 @@ finalScore = (rerankScore * 0.65) + (vectorSimilarity * 0.35)
 
 Re-ranker dominates because it evaluates query-chunk relevance jointly. Vector similarity adds a diversity/recall signal to prevent the re-ranker from being too narrow.
 
-### Stage 3 — Structural Enrichment via TypeScript Language Services (Hub Elevation)
+### Stage 3 — Metadata Enrichment via TypeScript Language Services
 
-After re-ranking produces the top 15 high-confidence results, use the TypeScript Language Services to discover structurally important symbols that the embedding model missed:
+After re-ranking produces the final results, use the TypeScript Language Services to enrich each result with comprehensive structural metadata. Stage 3 does NOT add new results — it annotates the existing results with connection data that Copilot uses to understand the structural landscape and make targeted follow-up searches.
 
-1. For each of the top 15 results, resolve all type references, imports, callers, and callees via the TS compiler
-2. **Connection analysis:** Find symbols that appear as connections to MULTIPLE high-scoring results but didn't score high themselves in vector search
-3. **Hub elevation:** A symbol connected to 8/15 results is clearly critical even if embedding similarity was low (e.g., a generic middleware function that doesn't mention "authentication" but is the hub of the auth system)
-4. **Re-score:** Combine semantic score + structural connectedness for the enriched result set
+For each result, resolve via the TS compiler:
+1. **Kind and modifiers:** async, static, exported, etc.
+2. **Full signature:** complete type signature with parameter types and return type
+3. **Type hierarchy:** extends, implements, subtypes
+4. **Outgoing calls:** immediate symbols this result calls (1 hop)
+5. **Incoming callers:** immediate symbols that call this result (1 hop)
+6. **Reference count:** how many files reference this symbol
+7. **Type flows:** where parameter types come from and return types go (with file paths)
+8. **Members:** for classes/interfaces, the list of methods and properties
+
+Additionally, analyze cross-result patterns:
+- **Shared dependencies:** symbols referenced by 2+ results that were NOT included in the results themselves (marked with `◆`)
+- **Inter-result connections:** when one result calls or references another result (marked with `★`)
+
+This metadata is assembled into a **connection graph** — a centralized structural overview returned as the first content item in the MCP response. Individual source code results contain no inline metadata; all structural context lives in the graph.
 
 **Why this runs AFTER the re-ranker, not before:**
 - Voyage Rerank 2.5 doesn't natively understand custom structural metadata — feeding it edges would add noise
-- TS analysis on 15 precision-filtered results is 3x cheaper than on 40 fuzzy candidates
-- Hub discovery from top 15 outward to the ENTIRE codebase is MORE powerful than connections within 40 vector candidates — it finds symbols that weren't even in the original vector results
-- You need to know which results are high-confidence FIRST before you can find their structural connections
+- TS analysis on precision-filtered results is cheaper than on 40 fuzzy candidates
+- You need to know which results are high-confidence FIRST before resolving their structural connections
 
-**What this bridges:** Embedding models understand what code MEANS (semantic similarity). The TS language server understands how code CONNECTS (type resolution, references, call chains). By running the language server on semantically-validated results, we bridge the gap — discovering structurally important symbols that are semantically non-obvious.
+**Why metadata enrichment instead of hub elevation:**
+- Including full source of hub symbols that didn't pass the semantic relevance gate adds hundreds of tokens of potentially irrelevant code
+- Lightweight metadata (a few dozen tokens per result) provides the same structural insight at a fraction of the token cost
+- The metadata serves as *clues for follow-up searches* — Copilot can immediately see shared dependencies and make a targeted second query rather than falling back to brute-force grep/regex searches
+- The collective metadata across all results naturally covers 2+ hops of structural connections without explicitly requesting deep traversals
+
+**What this bridges:** Embedding models understand what code MEANS (semantic similarity). The TS language server understands how code CONNECTS (type resolution, references, call chains). By annotating semantically-validated results with structural metadata, we bridge the gap — giving Copilot the full picture of both what the code does and how it's connected, without bloating the response with additional source code.
 
 ---
 
 ## Result Selection — Dual Constraint
 
-Results (including any hub-elevated symbols from Stage 3) are selected using two constraints applied simultaneously:
+Results are selected using two constraints applied simultaneously:
 
 1. **Relevance Gate:** Only include results where `finalScore >= minimumRelevanceThreshold`
    - Default: `0.5` (configurable)
@@ -235,14 +251,22 @@ All scoring and selection parameters are configurable via settings:
 
 ### MCP Multi-Content Response
 
-Results use MCP's native multi-content response format. Each result is its own discrete content item with priority annotations mapped from the `finalScore`:
+Results use MCP's native multi-content response format. The first content item is the **connection graph** (structural metadata overview), followed by individual source code results, each with priority annotations mapped from the `finalScore`:
 
 ```json
 {
   "content": [
     {
       "type": "text",
-      "text": "// src/auth/tokenService.ts > TokenService.validateToken\n\nasync validateToken(token: string)...",
+      "text": "Search: \"authentication token validation\" | 5 results across 4 files | 3,240/8,000 tokens\n\n[1] TokenService.validateToken\n src/auth/tokenService.ts\n async method | exported | refs: 8 files\n ...",
+      "annotations": {
+        "audience": ["assistant"],
+        "priority": 1.0
+      }
+    },
+    {
+      "type": "text",
+      "text": "// src/auth/tokenService.ts > TokenService > validateToken\n\nasync validateToken(token: string)...",
       "annotations": {
         "audience": ["assistant"],
         "priority": 0.95
@@ -250,7 +274,7 @@ Results use MCP's native multi-content response format. Each result is its own d
     },
     {
       "type": "text",
-      "text": "// src/config/constants.ts > AUTH_SECRET\n\nconst AUTH_SECRET = ...",
+      "text": "// src/middleware/auth.ts > AuthMiddleware > verify\n\nasync verify(req: Request, ...)...",
       "annotations": {
         "audience": ["assistant"],
         "priority": 0.80
@@ -260,14 +284,88 @@ Results use MCP's native multi-content response format. Each result is its own d
 }
 ```
 
-This is cleaner than concatenating results into one markdown string — the LLM processes each result independently.
+### Connection Graph (First Content Item)
 
-### Content Format: Clean Source Code
+The connection graph is a centralized structural overview of all results — plain text, no decorative characters. It contains all the metadata the TS Language Services resolved for each result, plus cross-result patterns. Individual source code results contain NO inline metadata; all structural context lives here.
 
-Each content item contains clean source code — no line numbers, no artificial separators. The code reads as if copied directly from the source file:
+**Multi-result example:**
 
 ```
-// src/auth/tokenService.ts > TokenService.validateToken
+Search: "authentication token validation" | 5 results across 4 files | 3,240/8,000 tokens
+
+[1] TokenService.validateToken
+ src/auth/tokenService.ts
+ async method | exported | refs: 8 files
+ Signature: async validateToken(token: string): Promise<JwtPayload | null>
+ Extends: BaseValidator (src/base.ts)
+ Calls: jwt.verify, AuthConfig.getSecret ◆
+ Called by: AuthMiddleware.verify ★, LoginController.handle ★
+ Types in: token (string) | Types out: JwtPayload ◆ (src/models/auth.ts)
+
+[2] AuthMiddleware.verify
+ src/middleware/auth.ts
+ async method | exported | refs: 12 files
+ Signature: async verify(req: Request, res: Response, next: NextFunction): Promise<void>
+ Calls: TokenService.validateToken ★, AuthConfig.getSecret ◆
+ Called by: Router.use (src/routes/index.ts)
+ Types in: Request (express), Response (express)
+
+[3] LoginController.handle
+ src/controllers/login.ts
+ async method | exported | refs: 3 files
+ Signature: async handle(req: LoginRequest): Promise<AuthResponse>
+ Calls: TokenService.validateToken ★, UserService.findByEmail
+ Types in: LoginRequest (src/models/auth.ts) | Types out: AuthResponse ◆
+
+[4] AuthConfig
+ src/config/auth.ts
+ class | exported | refs: 14 files
+ Implements: ConfigProvider (src/interfaces/config.ts)
+ Members: getSecret(), getExpiry(), getIssuer()
+ Called by: TokenService.validateToken ★, AuthMiddleware.verify ★
+
+[5] AUTH_TOKEN_EXPIRY
+ src/config/constants.ts
+ const | exported | refs: 6 files
+ Type: number (value: 3600)
+ Used by: AuthConfig.getExpiry ★
+
+★ = in results  ◆ = shared across 2+ results
+
+Shared dependencies not in results:
+ JwtPayload (src/models/auth.ts) — type used by 3/5 results
+ AuthResponse (src/models/auth.ts) — return type for 2/5 results
+ BaseValidator (src/base.ts) — parent class of TokenService
+```
+
+**Single-result example:**
+
+```
+Search: "jwt token validation" | 1 result | 820/8,000 tokens
+
+TokenService.validateToken
+ src/auth/tokenService.ts
+ async method | exported | refs: 8 files
+ Signature: async validateToken(token: string): Promise<JwtPayload | null>
+ Extends: BaseValidator (src/base.ts)
+ Calls: jwt.verify, AuthConfig.getSecret (src/config/auth.ts)
+ Called by: AuthMiddleware.verify (src/middleware/auth.ts), LoginController.handle (src/controllers/login.ts)
+ Types in: token (string) | Types out: JwtPayload (src/models/auth.ts)
+```
+
+**Why a centralized graph instead of per-result metadata:**
+- Individual source code results stay clean — just code, no metadata noise
+- Cross-result patterns (★ and ◆ markers) are visible in one place instead of scattered
+- Shared dependencies stated once instead of repeated across multiple results
+- Copilot reads the graph first for structural overview, then reads individual results for code
+- Fewer total tokens than repeating metadata headers on each result
+
+### Source Code Results (Subsequent Content Items)
+
+Each source code result contains clean code with a path header comment. No line numbers, no metadata, no separators — the code reads as if copied directly from the source file:
+
+```
+// src/auth/tokenService.ts > TokenService > validateToken
 
 async validateToken(token: string): Promise<JwtPayload | null> {
   try {
@@ -356,10 +454,10 @@ Irrelevant children are collapsed. Relevant children appear in full. The result 
 | Signal | Strengths | Blind Spots |
 |---|---|---|
 | Vector search | Semantic equivalence, natural language → code, broad recall | Exact terminology, false positives on superficially similar code |
-| Voyage Rerank 2.5 | Precise query-chunk relevance, exact symbol names, joint evaluation | No structural awareness, can miss structurally critical hubs |
-| TS Language Services | Real structural connections, hub discovery, type resolution | No semantic query understanding — needs high-quality seeds from Stage 2 |
+| Voyage Rerank 2.5 | Precise query-chunk relevance, exact symbol names, joint evaluation | No structural awareness, no connection context |
+| TS Language Services (metadata) | Real structural connections, cross-result patterns, type resolution | No semantic query understanding — needs high-quality seeds from Stage 2 |
 
-The ordering (vector → rerank → TS enrichment) is intentional: vector search casts a wide net, reranking sharpens to high-confidence seeds, TS enrichment discovers structural connections that embeddings can't see. Each stage compensates for the previous stage's blind spots.
+The ordering (vector → rerank → TS metadata enrichment) is intentional: vector search casts a wide net, reranking sharpens to high-confidence results, TS enrichment annotates those results with structural metadata that embeddings can't see. Each stage compensates for the previous stage's blind spots.
 
 ---
 
@@ -371,8 +469,8 @@ The ordering (vector → rerank → TS enrichment) is intentional: vector search
 | Type resolution | Full (TS compiler API) | No | No |
 | File support | .ts, .tsx, .js, .jsx | Multi-language | Multi-language |
 | Embedding model | Voyage Code 3 | Low-grade internal model | Varies |
-| Re-ranking | Voyage Rerank 2.5 + TS hub elevation | None known | None in standard path |
-| Structural enrichment | TS Language Services (post-rerank) | No | Separate navigation tool |
+| Re-ranking | Voyage Rerank 2.5 + TS metadata enrichment | None known | None in standard path |
+| Structural enrichment | TS Language Services (connection graph metadata) | No | Separate navigation tool |
 | Result selection | Dual constraint (relevance gate + token budget) | Fixed count | Fixed count |
 | Result granularity | Concern-level (specific symbols only) | File/chunk level | File/chunk level |
 | Scale target | Single workspace, high fidelity | Millions of repos, breadth | Large multi-language repos |
@@ -380,9 +478,10 @@ The ordering (vector → rerank → TS enrichment) is intentional: vector search
 
 **Key differentiators:**
 1. TypeScript compiler API gives full type resolution unavailable to Tree-sitter-based tools
-2. Three-stage pipeline (vector → rerank → TS structural enrichment) bridges semantic and structural understanding
-3. Concern-level retrieval returns only relevant symbols, not files or arbitrary chunks
-4. Hierarchical AST chunking mirrors the `file_read` tool's proven symbol-scoped navigation model
+2. Three-stage pipeline (vector → rerank → TS metadata enrichment) bridges semantic and structural understanding
+3. Connection graph provides structural context as lightweight metadata instead of bloating results with additional source code
+4. Concern-level retrieval returns only relevant symbols, not files or arbitrary chunks
+5. Hierarchical AST chunking mirrors the `file_read` tool's proven symbol-scoped navigation model
 
 ---
 
@@ -417,11 +516,8 @@ This is deferred until the full-symbol approach is proven reliable. The partial 
 
 ## Open Design Questions
 
-### Context Completeness Guarantee
-How do we ensure that the symbols returned by the search tool provide ALL the context Copilot needs to make correct edits? If Copilot receives 3 symbols but needs a 4th to understand a dependency, the edit may be wrong. The TS structural enrichment (Stage 3) partially addresses this by auto-including connected symbols, but the completeness guarantee needs further validation.
-
-### Structural Enrichment Scoring
-How should hub-elevated symbols from Stage 3 be scored relative to direct vector/rerank results? A hub connected to 8/15 results is clearly important, but it wasn't semantically matched to the query — how should its `finalScore` be computed?
+### Context Completeness Strategy
+The tool aims to provide enough context in a single search that Copilot rarely needs to fall back to brute-force grep/regex. The connection graph metadata provides the "clues" for Copilot to make targeted follow-up searches rather than blind exploration. Validation needed: does the collective metadata across 5-8 results consistently provide enough structural hints to guide follow-up queries? Test against real multi-file workflows.
 
 ### Parser Validation Criteria
 What specific tests and metrics should the AST parser pass before we proceed to embedding? Needs concrete validation criteria against TriviaGame.ts (6,138 lines, 235 symbols) and similar real-world files.
