@@ -19,12 +19,44 @@ VS Code's native semantic search and read tools have three core deficiencies:
 
 - **Language:** TypeScript (Node-based, end to end)
 - **AST Parser:** TypeScript Compiler API (`typescript` npm package) — full type resolution, not Tree-sitter
-- **File Support:** `.ts`, `.tsx`, `.js`, `.jsx` (full web project support)
+- **File Support:** `.ts`, `.tsx`, `.js`, `.jsx`, `.mts`, `.mjs`, `.cts`, `.cjs` (matches existing `TS_PARSEABLE_EXTS`)
 - **Embedding Model:** Voyage Code 3 (1024-dimensional vectors)
 - **Vector Store:** LanceDB (`@lancedb/lancedb` v-next SDK)
 - **Re-ranking:** Voyage Rerank 2.5
 - **Structural Analysis:** TypeScript Language Services (post-rerank metadata enrichment)
-- **Index Update Strategy:** Incremental re-index of dirty files on each `semantic_search` tool call
+- **Index Update Strategy:** Incremental re-index of dirty files on each tool call
+
+---
+
+## MCP Tool Interface
+
+```typescript
+interface CodebaseSearchInput {
+  /** Natural language query OR symbol path (e.g., "TokenService > validateToken").
+   *  Symbol paths use > notation: "ParentSymbol > ChildSymbol".
+   *  When a symbol path is detected, the system does direct lookup (skips vector/rerank). */
+  query: string;
+
+  /** Optional path filters. Supports files, directories, and glob patterns.
+   *  Examples: ["src/auth/"], ["*.ts"], ["config/constants.ts"] */
+  path?: string[];
+
+  /** Optional language filter. TS/JS only in initial implementation.
+   *  Future: ["typescript", "markdown", "json"] */
+  languages?: string[];
+}
+```
+
+**Query mode detection:**
+- Starts with `symbol = ` → direct symbol lookup with same connection graph + smart snapshot output
+- Anything else → natural language, full three-stage pipeline (vector → rerank → metadata enrichment)
+
+**Symbol lookup notation** uses `symbol = ` prefix with `>` for hierarchy:
+- `symbol = validateToken` → find symbol named `validateToken` in any file
+- `symbol = TokenService > validateToken` → find `validateToken` within `TokenService`
+- `symbol = src/auth/tokenService.ts > TokenService > validateToken` → file-scoped lookup
+
+**Long-term vision:** This tool interface is designed to eventually replace `file_read` for code files and partially replace `codebase_trace` for common structural queries. The `symbol` lookup mode provides direct symbol access, and the connection graph metadata provides structural context that covers many `codebase_trace` use cases.
 
 ---
 
@@ -158,7 +190,7 @@ interface CodeChunk {
   id: string;                    // hash of filePath + nodeKind + name + parentChain
   filePath: string;
   relativePath: string;
-  nodeKind: string;              // 'function' | 'method' | 'class' | 'interface' | 'type' | 'enum' | 'component'
+  nodeKind: string;              // 'function' | 'method' | 'class' | 'interface' | 'type' | 'enum' | 'component' | 'variable' | 'const' | 'import' | 'expression' | 're-export' | 'variable' | 'const' | 'import' | 'expression' | 're-export'
   name: string;
   parentName?: string;           // class name if this is a method
   parentChunkId?: string;        // ID of parent chunk for hierarchical navigation
@@ -184,7 +216,7 @@ interface CodeChunk {
 
 On each `semantic_search` tool call:
 
-1. Enumerate all `.ts`/`.tsx`/`.js`/`.jsx` workspace files
+1. Enumerate all `.ts`/`.tsx`/`.js`/`.jsx`/`.mts`/`.mjs`/`.cts`/`.cjs` workspace files
 2. Compare each file's `mtime` against `lastModified` stored in LanceDB
 3. For dirty/new files: delete existing chunks by `filePath`, re-parse and re-embed
 4. **Signature change detection:** if a re-indexed chunk's signature differs from its previous version, find all chunks whose `embeddingText` referenced that signature and re-embed those too (their embedding text referenced the old signature)
@@ -492,7 +524,7 @@ The ordering (vector → rerank → TS metadata enrichment) is intentional: vect
 |---|---|---|---|
 | Chunking | TypeScript AST, hierarchical symbol-level | Character-count arbitrary | Tree-sitter syntactic |
 | Type resolution | Full (TS compiler API) | No | No |
-| File support | .ts, .tsx, .js, .jsx | Multi-language | Multi-language |
+| File support | .ts, .tsx, .js, .jsx + CJS/ESM variants | Multi-language | Multi-language |
 | Embedding model | Voyage Code 3 | Low-grade internal model | Varies |
 | Re-ranking | Voyage Rerank 2.5 + TS metadata enrichment | None known | None in standard path |
 | Structural enrichment | TS Language Services (connection graph metadata) | No | Separate navigation tool |
