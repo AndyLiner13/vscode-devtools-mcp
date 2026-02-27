@@ -1,0 +1,80 @@
+{
+  "symbols": [
+    {
+      "name": "greet",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [2, 4]
+    },
+    {
+      "name": "fetchUser",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["async", "exported"],
+      "lineRange": [7, 10]
+    },
+    {
+      "name": "range",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["generator", "exported"],
+      "lineRange": [13, 17]
+    },
+    {
+      "name": "main",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported", "default"],
+      "lineRange": [20, 22]
+    },
+    {
+      "name": "outer",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [25, 30]
+    },
+    {
+      "name": "inner",
+      "kind": "function",
+      "depth": 1,
+      "parentName": "outer",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [26, 28]
+    },
+    {
+      "name": "merge",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [33, 35]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 7,
+    "totalRootItems": 0,
+    "maxDepth": 1
+  }
+}

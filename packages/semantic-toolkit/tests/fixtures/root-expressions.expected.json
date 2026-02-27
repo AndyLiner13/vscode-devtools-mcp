@@ -1,0 +1,99 @@
+{
+  "symbols": [
+    {
+      "name": "app",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [1, 1]
+    },
+    {
+      "name": "use",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "app",
+      "hasChildren": false,
+      "exported": false,
+      "lineRange": [1, 1]
+    },
+    {
+      "name": "listen",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "app",
+      "hasChildren": false,
+      "exported": false,
+      "lineRange": [1, 1]
+    },
+    {
+      "name": "cors",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [2, 2]
+    },
+    {
+      "name": "helmet",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [3, 3]
+    },
+    {
+      "name": "expr:app.use(cors())",
+      "kind": "expression",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "lineRange": [5, 5]
+    },
+    {
+      "name": "expr:app.use(helmet())",
+      "kind": "expression",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "lineRange": [6, 6]
+    },
+    {
+      "name": "expr:app.listen(3000)",
+      "kind": "expression",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "lineRange": [8, 8]
+    },
+    {
+      "name": "expr:console.log('Server started')",
+      "kind": "expression",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "lineRange": [10, 10]
+    }
+  ],
+  "rootItems": [
+    { "kind": "expression", "name": "expr:app.use(cors())", "lineRange": [5, 5] },
+    { "kind": "expression", "name": "expr:app.use(helmet())", "lineRange": [6, 6] },
+    { "kind": "expression", "name": "expr:app.listen(3000)", "lineRange": [8, 8] },
+    { "kind": "expression", "name": "expr:console.log('Server started')", "lineRange": [10, 10] }
+  ],
+  "stats": {
+    "totalSymbols": 9,
+    "totalRootItems": 4,
+    "maxDepth": 1
+  }
+}

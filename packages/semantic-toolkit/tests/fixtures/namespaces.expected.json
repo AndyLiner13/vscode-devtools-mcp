@@ -1,0 +1,120 @@
+{
+  "symbols": [
+    {
+      "name": "Validation",
+      "kind": "namespace",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [1, 18]
+    },
+    {
+      "name": "Rule",
+      "kind": "interface",
+      "depth": 1,
+      "parentName": "Validation",
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [2, 5]
+    },
+    {
+      "name": "name",
+      "kind": "property",
+      "depth": 2,
+      "parentName": "Rule",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [3, 3]
+    },
+    {
+      "name": "validate",
+      "kind": "method",
+      "depth": 2,
+      "parentName": "Rule",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [4, 4]
+    },
+    {
+      "name": "createRule",
+      "kind": "function",
+      "depth": 1,
+      "parentName": "Validation",
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [7, 9]
+    },
+    {
+      "name": "Errors",
+      "kind": "namespace",
+      "depth": 1,
+      "parentName": "Validation",
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [11, 17]
+    },
+    {
+      "name": "ValidationError",
+      "kind": "class",
+      "depth": 2,
+      "parentName": "Errors",
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [12, 16]
+    },
+    {
+      "name": "constructor",
+      "kind": "constructor",
+      "depth": 3,
+      "parentName": "ValidationError",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [13, 15]
+    },
+    {
+      "name": "'express'",
+      "kind": "module",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [20, 24]
+    },
+    {
+      "name": "Request",
+      "kind": "interface",
+      "depth": 1,
+      "parentName": "'express'",
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [21, 23]
+    },
+    {
+      "name": "userId",
+      "kind": "property",
+      "depth": 2,
+      "parentName": "Request",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": ["optional"],
+      "lineRange": [22, 22]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 11,
+    "totalRootItems": 0,
+    "maxDepth": 3
+  }
+}

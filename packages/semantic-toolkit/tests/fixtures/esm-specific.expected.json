@@ -1,0 +1,84 @@
+{
+  "symbols": [
+    {
+      "name": "import:node:fs/promises",
+      "kind": "import",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [1, 1]
+    },
+    {
+      "name": "import:node:url",
+      "kind": "import",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [2, 2]
+    },
+    {
+      "name": "__filename",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [4, 4]
+    },
+    {
+      "name": "loadConfig",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["async", "exported"],
+      "lineRange": [6, 9]
+    },
+    {
+      "name": "data",
+      "kind": "const",
+      "depth": 1,
+      "parentName": "loadConfig",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [7, 7]
+    },
+    {
+      "name": "re-export:node:fs/promises",
+      "kind": "re-export",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [11, 11]
+    },
+    {
+      "name": "(default)",
+      "kind": "variable",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported", "default"],
+      "lineRange": [13, 13]
+    }
+  ],
+  "rootItems": [
+    { "kind": "import", "name": "import:node:fs/promises", "lineRange": [1, 1] },
+    { "kind": "import", "name": "import:node:url", "lineRange": [2, 2] },
+    { "kind": "re-export", "name": "re-export:node:fs/promises", "lineRange": [11, 11] }
+  ],
+  "stats": {
+    "totalSymbols": 7,
+    "totalRootItems": 3,
+    "maxDepth": 1
+  }
+}

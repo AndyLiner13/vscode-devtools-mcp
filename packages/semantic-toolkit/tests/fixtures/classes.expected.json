@@ -1,0 +1,130 @@
+{
+  "symbols": [
+    {
+      "name": "BaseService",
+      "kind": "class",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["abstract", "exported"],
+      "lineRange": [2, 10]
+    },
+    {
+      "name": "name",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "BaseService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": ["protected", "readonly"],
+      "lineRange": [3, 3]
+    },
+    {
+      "name": "constructor",
+      "kind": "constructor",
+      "depth": 1,
+      "parentName": "BaseService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [5, 7]
+    },
+    {
+      "name": "process",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "BaseService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": ["abstract"],
+      "lineRange": [9, 9]
+    },
+    {
+      "name": "UserService",
+      "kind": "class",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [13, 39]
+    },
+    {
+      "name": "users",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "UserService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": ["private"],
+      "lineRange": [14, 14]
+    },
+    {
+      "name": "VERSION",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "UserService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": ["static", "readonly"],
+      "lineRange": [15, 15]
+    },
+    {
+      "name": "constructor",
+      "kind": "constructor",
+      "depth": 1,
+      "parentName": "UserService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [17, 19]
+    },
+    {
+      "name": "process",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "UserService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": ["async"],
+      "lineRange": [21, 25]
+    },
+    {
+      "name": "count",
+      "kind": "getter",
+      "depth": 1,
+      "parentName": "UserService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [27, 29]
+    },
+    {
+      "name": "count",
+      "kind": "setter",
+      "depth": 1,
+      "parentName": "UserService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [31, 33]
+    },
+    {
+      "name": "create",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "UserService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": ["static"],
+      "lineRange": [35, 37]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 12,
+    "totalRootItems": 0,
+    "maxDepth": 1
+  }
+}

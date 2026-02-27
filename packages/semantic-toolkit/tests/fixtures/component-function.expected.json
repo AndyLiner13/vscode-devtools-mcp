@@ -1,0 +1,112 @@
+{
+  "symbols": [
+    {
+      "name": "import:react",
+      "kind": "import",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [1, 1]
+    },
+    {
+      "name": "ButtonProps",
+      "kind": "interface",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [3, 7]
+    },
+    {
+      "name": "label",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "ButtonProps",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [4, 4]
+    },
+    {
+      "name": "onClick",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "ButtonProps",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [5, 5]
+    },
+    {
+      "name": "disabled",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "ButtonProps",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": ["optional"],
+      "lineRange": [6, 6]
+    },
+    {
+      "name": "Button",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [9, 34]
+    },
+    {
+      "name": "[clicked, setClicked]",
+      "kind": "const",
+      "depth": 1,
+      "parentName": "Button",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [10, 10]
+    },
+    {
+      "name": "className",
+      "kind": "const",
+      "depth": 1,
+      "parentName": "Button",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [20, 22]
+    },
+    {
+      "name": "handleClick",
+      "kind": "const",
+      "depth": 1,
+      "parentName": "Button",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [24, 27]
+    },
+    {
+      "name": "(default)",
+      "kind": "variable",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported", "default"],
+      "lineRange": [36, 36]
+    }
+  ],
+  "rootItems": [
+    { "kind": "import", "name": "import:react", "lineRange": [1, 1] }
+  ],
+  "stats": {
+    "totalSymbols": 10,
+    "totalRootItems": 1,
+    "maxDepth": 1
+  }
+}

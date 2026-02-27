@@ -1,0 +1,100 @@
+{
+  "symbols": [
+    {
+      "name": "path",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [1, 1]
+    },
+    {
+      "name": "helper",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [3, 5]
+    },
+    {
+      "name": "utils",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [7, 11]
+    },
+    {
+      "name": "format",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "utils",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [8, 10]
+    },
+    {
+      "name": "module.exports",
+      "kind": "variable",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [13, 16]
+    },
+    {
+      "name": "helper",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "module.exports",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [14, 14]
+    },
+    {
+      "name": "utils",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "module.exports",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [15, 15]
+    },
+    {
+      "name": "VERSION",
+      "kind": "variable",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [18, 18]
+    },
+    {
+      "name": "extra",
+      "kind": "variable",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [20, 22]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 9,
+    "totalRootItems": 0,
+    "maxDepth": 1
+  }
+}

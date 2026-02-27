@@ -1,0 +1,50 @@
+{
+  "symbols": [
+    {
+      "name": "level0",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [1, 12]
+    },
+    {
+      "name": "level1",
+      "kind": "function",
+      "depth": 1,
+      "parentName": "level0",
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [2, 10]
+    },
+    {
+      "name": "level2",
+      "kind": "function",
+      "depth": 2,
+      "parentName": "level1",
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [3, 8]
+    },
+    {
+      "name": "level3",
+      "kind": "function",
+      "depth": 3,
+      "parentName": "level2",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [4, 6]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 4,
+    "totalRootItems": 0,
+    "maxDepth": 3
+  }
+}

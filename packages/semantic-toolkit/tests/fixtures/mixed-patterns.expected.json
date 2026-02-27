@@ -1,0 +1,240 @@
+{
+  "symbols": [
+    {
+      "name": "import:events",
+      "kind": "import",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [1, 1]
+    },
+    {
+      "name": "import:stream",
+      "kind": "import",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": ["type-only"],
+      "lineRange": [2, 2]
+    },
+    {
+      "name": "re-export:events",
+      "kind": "re-export",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [4, 4]
+    },
+    {
+      "name": "VERSION",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [6, 6]
+    },
+    {
+      "name": "counter",
+      "kind": "variable",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [7, 7]
+    },
+    {
+      "name": "initialize",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [9, 11]
+    },
+    {
+      "name": "handler",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [13, 15]
+    },
+    {
+      "name": "Config",
+      "kind": "interface",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [17, 20]
+    },
+    {
+      "name": "host",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Config",
+      "hasChildren": false,
+      "exported": false,
+      "lineRange": [18, 18]
+    },
+    {
+      "name": "port",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Config",
+      "hasChildren": false,
+      "exported": false,
+      "lineRange": [19, 19]
+    },
+    {
+      "name": "Result",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [22, 22]
+    },
+    {
+      "name": "Level",
+      "kind": "enum",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [24, 28]
+    },
+    {
+      "name": "Low",
+      "kind": "enumMember",
+      "depth": 1,
+      "parentName": "Level",
+      "hasChildren": false,
+      "exported": false,
+      "lineRange": [25, 25]
+    },
+    {
+      "name": "Medium",
+      "kind": "enumMember",
+      "depth": 1,
+      "parentName": "Level",
+      "hasChildren": false,
+      "exported": false,
+      "lineRange": [26, 26]
+    },
+    {
+      "name": "High",
+      "kind": "enumMember",
+      "depth": 1,
+      "parentName": "Level",
+      "hasChildren": false,
+      "exported": false,
+      "lineRange": [27, 27]
+    },
+    {
+      "name": "Service",
+      "kind": "class",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [30, 45]
+    },
+    {
+      "name": "name",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Service",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": ["private"],
+      "lineRange": [31, 31]
+    },
+    {
+      "name": "constructor",
+      "kind": "constructor",
+      "depth": 1,
+      "parentName": "Service",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [33, 36]
+    },
+    {
+      "name": "getName",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "Service",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [38, 40]
+    },
+    {
+      "name": "create",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "Service",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": ["static"],
+      "lineRange": [42, 44]
+    },
+    {
+      "name": "Internal",
+      "kind": "namespace",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [47, 49]
+    },
+    {
+      "name": "helper",
+      "kind": "function",
+      "depth": 1,
+      "parentName": "Internal",
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [48, 48]
+    },
+    {
+      "name": "expr:console.log('loaded')",
+      "kind": "expression",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [51, 51]
+    }
+  ],
+  "rootItems": [
+    { "kind": "import", "name": "import:events", "lineRange": [1, 1] },
+    { "kind": "import", "name": "import:stream", "lineRange": [2, 2] },
+    { "kind": "re-export", "name": "re-export:events", "lineRange": [4, 4] },
+    { "kind": "expression", "name": "expr:console.log('loaded')", "lineRange": [51, 51] }
+  ],
+  "stats": {
+    "totalSymbols": 23,
+    "totalRootItems": 4,
+    "maxDepth": 1
+  }
+}

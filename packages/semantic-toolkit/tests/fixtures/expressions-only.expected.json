@@ -1,0 +1,55 @@
+{
+  "symbols": [
+    {
+      "name": "expr:console.log('initializing')",
+      "kind": "expression",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [1, 1]
+    },
+    {
+      "name": "expr:process.env.NODE_ENV = 'production'",
+      "kind": "expression",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [2, 2]
+    },
+    {
+      "name": "expr:void Promise.resolve()",
+      "kind": "expression",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [3, 3]
+    },
+    {
+      "name": "expr:(function setup() { return true; })()",
+      "kind": "expression",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [4, 4]
+    }
+  ],
+  "rootItems": [
+    { "kind": "expression", "name": "expr:console.log('initializing')", "lineRange": [1, 1] },
+    { "kind": "expression", "name": "expr:process.env.NODE_ENV = 'production'", "lineRange": [2, 2] },
+    { "kind": "expression", "name": "expr:void Promise.resolve()", "lineRange": [3, 3] },
+    { "kind": "expression", "name": "expr:(function setup() { return true; })()", "lineRange": [4, 4] }
+  ],
+  "stats": {
+    "totalSymbols": 4,
+    "totalRootItems": 4,
+    "maxDepth": 0
+  }
+}

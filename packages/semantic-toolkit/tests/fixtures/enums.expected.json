@@ -1,0 +1,64 @@
+{
+  "symbols": [
+    {
+      "name": "Direction",
+      "kind": "enum",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [1, 6]
+    },
+    { "name": "Up", "kind": "enumMember", "depth": 1, "parentName": "Direction", "hasChildren": false, "lineRange": [2, 2] },
+    { "name": "Down", "kind": "enumMember", "depth": 1, "parentName": "Direction", "hasChildren": false, "lineRange": [3, 3] },
+    { "name": "Left", "kind": "enumMember", "depth": 1, "parentName": "Direction", "hasChildren": false, "lineRange": [4, 4] },
+    { "name": "Right", "kind": "enumMember", "depth": 1, "parentName": "Direction", "hasChildren": false, "lineRange": [5, 5] },
+    {
+      "name": "Color",
+      "kind": "enum",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [8, 12]
+    },
+    { "name": "Red", "kind": "enumMember", "depth": 1, "parentName": "Color", "hasChildren": false, "lineRange": [9, 9] },
+    { "name": "Green", "kind": "enumMember", "depth": 1, "parentName": "Color", "hasChildren": false, "lineRange": [10, 10] },
+    { "name": "Blue", "kind": "enumMember", "depth": 1, "parentName": "Color", "hasChildren": false, "lineRange": [11, 11] },
+    {
+      "name": "HttpStatus",
+      "kind": "enum",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [14, 18]
+    },
+    { "name": "OK", "kind": "enumMember", "depth": 1, "parentName": "HttpStatus", "hasChildren": false, "lineRange": [15, 15] },
+    { "name": "NotFound", "kind": "enumMember", "depth": 1, "parentName": "HttpStatus", "hasChildren": false, "lineRange": [16, 16] },
+    { "name": "ServerError", "kind": "enumMember", "depth": 1, "parentName": "HttpStatus", "hasChildren": false, "lineRange": [17, 17] },
+    {
+      "name": "BitFlag",
+      "kind": "enum",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [20, 25]
+    },
+    { "name": "None", "kind": "enumMember", "depth": 1, "parentName": "BitFlag", "hasChildren": false, "lineRange": [21, 21] },
+    { "name": "Read", "kind": "enumMember", "depth": 1, "parentName": "BitFlag", "hasChildren": false, "lineRange": [22, 22] },
+    { "name": "Write", "kind": "enumMember", "depth": 1, "parentName": "BitFlag", "hasChildren": false, "lineRange": [23, 23] },
+    { "name": "Execute", "kind": "enumMember", "depth": 1, "parentName": "BitFlag", "hasChildren": false, "lineRange": [24, 24] }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 18,
+    "totalRootItems": 0,
+    "maxDepth": 1
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "symbols": [
+    {
+      "name": "MAX_RETRIES",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [1, 1]
+    },
+    {
+      "name": "config",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [3, 9]
+    },
+    {
+      "name": "host",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "config",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [4, 4]
+    },
+    {
+      "name": "port",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "config",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [5, 5]
+    },
+    {
+      "name": "url",
+      "kind": "getter",
+      "depth": 1,
+      "parentName": "config",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [6, 8]
+    },
+    {
+      "name": "counter",
+      "kind": "variable",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [11, 11]
+    },
+    {
+      "name": "[first, second, ...rest]",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [13, 13]
+    },
+    {
+      "name": "{ name: userName, age }",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [15, 15]
+    },
+    {
+      "name": "processItem",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [17, 19]
+    },
+    {
+      "name": "double",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [21, 21]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 10,
+    "totalRootItems": 0,
+    "maxDepth": 1
+  }
+}

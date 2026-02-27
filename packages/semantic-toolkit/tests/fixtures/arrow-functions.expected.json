@@ -1,0 +1,90 @@
+{
+  "symbols": [
+    {
+      "name": "greet",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [1, 1]
+    },
+    {
+      "name": "fetchData",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [3, 6]
+    },
+    {
+      "name": "result",
+      "kind": "const",
+      "depth": 1,
+      "parentName": "fetchData",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [4, 4]
+    },
+    {
+      "name": "identity",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [8, 8]
+    },
+    {
+      "name": "createPair",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [10, 13]
+    },
+    {
+      "name": "handleEvent",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [15, 17]
+    },
+    {
+      "name": "multiLine",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [19, 26]
+    },
+    {
+      "name": "parts",
+      "kind": "const",
+      "depth": 1,
+      "parentName": "multiLine",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [24, 24]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 8,
+    "totalRootItems": 0,
+    "maxDepth": 1
+  }
+}

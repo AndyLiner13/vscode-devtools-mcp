@@ -1,0 +1,122 @@
+{
+  "symbols": [
+    {
+      "name": "import:react",
+      "kind": "import",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [1, 1]
+    },
+    {
+      "name": "CounterProps",
+      "kind": "interface",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [3, 5]
+    },
+    {
+      "name": "initial",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "CounterProps",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [4, 4]
+    },
+    {
+      "name": "CounterState",
+      "kind": "interface",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [7, 9]
+    },
+    {
+      "name": "count",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "CounterState",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [8, 8]
+    },
+    {
+      "name": "Counter",
+      "kind": "class",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [11, 32]
+    },
+    {
+      "name": "defaultProps",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Counter",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": ["static"],
+      "lineRange": [12, 12]
+    },
+    {
+      "name": "state",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Counter",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [14, 14]
+    },
+    {
+      "name": "componentDidMount",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "Counter",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [16, 18]
+    },
+    {
+      "name": "increment",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Counter",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [20, 22]
+    },
+    {
+      "name": "render",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "Counter",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [24, 31]
+    }
+  ],
+  "rootItems": [
+    { "kind": "import", "name": "import:react", "lineRange": [1, 1] }
+  ],
+  "stats": {
+    "totalSymbols": 11,
+    "totalRootItems": 1,
+    "maxDepth": 1
+  }
+}

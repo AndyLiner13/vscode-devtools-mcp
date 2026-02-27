@@ -1,0 +1,80 @@
+{
+  "symbols": [
+    {
+      "name": "EventEmitter",
+      "kind": "class",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": ["exported"],
+      "lineRange": [1, 29]
+    },
+    {
+      "name": "handlers",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "EventEmitter",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": ["private"],
+      "lineRange": [2, 2]
+    },
+    {
+      "name": "on",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "EventEmitter",
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [4, 8]
+    },
+    {
+      "name": "existing",
+      "kind": "const",
+      "depth": 2,
+      "parentName": "on",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [5, 5]
+    },
+    {
+      "name": "emit",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "EventEmitter",
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [10, 20]
+    },
+    {
+      "name": "handlers",
+      "kind": "const",
+      "depth": 2,
+      "parentName": "emit",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [11, 11]
+    },
+    {
+      "name": "createScoped",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "EventEmitter",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [22, 28]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 7,
+    "totalRootItems": 0,
+    "maxDepth": 2
+  }
+}
