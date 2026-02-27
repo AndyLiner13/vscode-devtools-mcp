@@ -9,9 +9,9 @@ VS Code's native semantic search and read tools have three core deficiencies:
 
 **Goal:** A single MCP tool that returns surgically precise, concern-level code context — only the specific symbols relevant to Copilot's current task, enriched with their structural connections, and free of noise. This eliminates manual file reads, grep searches, and context-window waste, allowing Copilot to spend its effort on strategy and logic rather than filtering irrelevant code.
 
-**Long-term vision:** This tool should be so effective that Copilot never needs to manually read file contents. It should fully replace the need for `file_read` when working with code — search once, get exactly what you need, make the edit.
+**Long-term vision:** This tool replaces both `file_read` (for code files) and `codebase_trace` entirely. Search once, get exactly what you need — full symbol context, structural connections, and enough metadata for follow-up queries — then make the edit.
 
-**Integration:** This tool lives in the existing `mcp-server` package as a new MCP tool. Structural exploration (call chains, type hierarchy, references) is handled separately by the existing `codebase_trace` tool — this tool focuses on semantic search, structural enrichment, and retrieval.
+**Package:** Core logic lives in `packages/semantic-toolkit/` — a standalone npm workspace package importable by both the VS Code extension and the MCP server. The MCP tool registration lives in `mcp-server`, which imports from `semantic-toolkit`. The existing `services/codebase/` infrastructure is NOT reused — `semantic-toolkit` is a ground-up implementation based on this blueprint.
 
 ---
 
@@ -69,9 +69,8 @@ The AST parser and chunking system must be built and validated BEFORE any embedd
 The search tool returns only the specific symbols relevant to the query — not files, not full classes. If Copilot is working on authentication and a file has 50 constants, only the 1 constant related to auth is returned. The 49 others are never seen. Every returned symbol is COMPLETE (never partial), but irrelevant symbols at the file/class level are excluded entirely.
 
 ### Separation of Concerns (Current Architecture)
-- **This tool:** Finds relevant code symbols via semantic search + structural enrichment
-- **`codebase_trace` tool:** Explores structural connections (call chains, type hierarchy, references) on-demand
-- **`file_read` tool:** Symbol-scoped navigation with hierarchical collapsing (long-term: this tool aims to absorb file_read's code-reading responsibilities)
+- **This tool:** Finds relevant code symbols via semantic search, enriches them with structural metadata (connection graph), and returns smart structural snapshots
+- **Replaces:** `codebase_trace` (structural exploration) and `file_read` (symbol-scoped navigation) — the connection graph covers structural connections, and smart snapshots cover code reading
 
 ### Quality Over Speed
 When there is a tradeoff between result quality and response speed, prefer correctness. Every token in the output should be relevant to Copilot's current task.
@@ -146,7 +145,7 @@ This was validated against the most extreme real-world code available (6,138-lin
 ### Parser Requirements
 
 The parser must be built and validated before embeddings work begins:
-1. Parse all `.ts`, `.tsx`, `.js`, `.jsx` files using the TypeScript Compiler API
+1. Parse all `.ts`, `.tsx`, `.js`, `.jsx`, `.mts`, `.mjs`, `.cts`, `.cjs` files using the TypeScript Compiler API
 2. Extract hierarchical symbol trees matching the `file_read` tool's symbol model
 3. Apply the "content with children collapsed" rule at every level
 4. Handle edge cases: massive methods, deeply nested UI trees, arrow functions, etc.
@@ -190,7 +189,7 @@ interface CodeChunk {
   id: string;                    // hash of filePath + nodeKind + name + parentChain
   filePath: string;
   relativePath: string;
-  nodeKind: string;              // 'function' | 'method' | 'class' | 'interface' | 'type' | 'enum' | 'component' | 'variable' | 'const' | 'import' | 'expression' | 're-export' | 'variable' | 'const' | 'import' | 'expression' | 're-export'
+  nodeKind: string;              // 'function' | 'method' | 'class' | 'interface' | 'type' | 'enum' | 'component' | 'variable' | 'const' | 'import' | 'expression' | 're-export'
   name: string;
   parentName?: string;           // class name if this is a method
   parentChunkId?: string;        // ID of parent chunk for hierarchical navigation
@@ -204,7 +203,8 @@ interface CodeChunk {
   relevantImports: string[];     // import statements actually used by this chunk
   embeddingText: string;         // metadata preamble + source with children collapsed
   vector: Float32Array;          // 1024-dim Voyage Code 3 embedding
-  lastModified: number;          // file mtime for incremental invalidation
+  contentHash: string;           // SHA-256 of file contents for change detection
+  lastModified: number;          // file mtime for incremental invalidation trigger
 }
 ```
 
@@ -218,9 +218,14 @@ On each `semantic_search` tool call:
 
 1. Enumerate all `.ts`/`.tsx`/`.js`/`.jsx`/`.mts`/`.mjs`/`.cts`/`.cjs` workspace files
 2. Compare each file's `mtime` against `lastModified` stored in LanceDB
-3. For dirty/new files: delete existing chunks by `filePath`, re-parse and re-embed
-4. **Signature change detection:** if a re-indexed chunk's signature differs from its previous version, find all chunks whose `embeddingText` referenced that signature and re-embed those too (their embedding text referenced the old signature)
-5. Run the search query against the now-fresh index
+3. For files where `mtime` has changed: read the file and compute a content hash (SHA-256 of file contents)
+4. Compare the content hash against `contentHash` stored in LanceDB
+5. **If content hash matches:** Update `lastModified` only — skip re-parsing and re-embedding (the file was touched by git but not actually changed)
+6. **If content hash differs (or file is new):** Delete existing chunks by `filePath`, re-parse and re-embed, store the new content hash
+7. **Signature change detection:** if a re-indexed chunk's signature differs from its previous version, find all chunks whose `embeddingText` referenced that signature and re-embed those too (their embedding text referenced the old signature)
+8. Run the search query against the now-fresh index
+
+**Why mtime + content hash:** Using `mtime` alone causes unnecessary re-indexing after git operations (branch switches, rebases, pulls) that touch file timestamps without changing content. The two-phase approach uses `mtime` as a cheap trigger, then validates with a content hash before doing expensive re-parsing and re-embedding. This keeps indexing fast for git-heavy workflows.
 
 **Why the cascade is bounded:** Only signature changes (not implementation changes) trigger neighbor re-embedding. Signature changes are rare. TypeScript rename refactors touch all import sites simultaneously, so those files are already dirty and re-indexed naturally.
 
