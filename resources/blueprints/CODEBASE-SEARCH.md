@@ -737,3 +737,309 @@ Max chunk token count: 14,200 (large-class.ts > LargeClass)
 Max depth observed: 5 (nesting-deep.ts)
 Determinism: ✓ (all IDs stable across 2 runs)
 ```
+
+---
+
+## Implementation Phases
+
+Each phase must pass its validation gate before the next phase begins. No phase may be considered complete until all tests pass and the metrics dashboard shows green.
+
+### Phase 1 — AST Parser
+
+**Goal:** Parse any TS/JS file into a hierarchical symbol tree with accurate ranges, kinds, modifiers, signatures, and JSDoc.
+
+**Input:** Source file (`.ts`, `.tsx`, `.js`, `.jsx`, `.mts`, `.mjs`, `.cts`, `.cjs`)
+**Output:** `ParsedSymbol[]` — hierarchical tree of symbols with:
+- `name`, `kind`, `depth`, `parentName`
+- `range` (1-indexed start/end lines)
+- `signature` (full type signature with params + return type)
+- `modifiers` (async, static, abstract, private, protected, readonly, exported)
+- `jsdoc` (extracted JSDoc comment text, if present)
+- `children` (nested symbols)
+- `exported` (boolean)
+
+**Fixtures:** 1-20 from the Fixture File Plan above (all 20 fixtures test the parser)
+
+**Validation gate:**
+- All 20 fixtures pass symbol extraction assertions
+- Global rules 1 (full coverage), 2 (no overlap), 3 (source fidelity), 4 (hierarchy consistency), 7 (breadcrumb accuracy), 8 (deterministic IDs), 9 (root-level isolation) all pass
+- Every symbol's `signature` matches expected (tested via dedicated fields in `.expected.json`)
+- Every symbol's `modifiers` match expected
+- JSDoc is extracted where present and matches expected
+
+**Dependencies:** None (foundation layer)
+
+---
+
+### Phase 2 — Chunker
+
+**Goal:** Transform the parser's symbol tree into `CodeChunk[]` with the "content with children collapsed" rule, metadata preamble, `embeddingText`, `fullSource`, and `relevantImports`.
+
+**Input:** `ParsedSymbol[]` + source file content
+**Output:** `CodeChunk[]` per the LanceDB schema (minus `vector`, `contentHash`, `lastModified` which come from later phases)
+
+**Key behaviors:**
+- Body-bearing children are collapsed to signature-only stubs in the parent chunk
+- Each root-level statement (import, expression, re-export) becomes its own chunk
+- `embeddingText` = metadata preamble + source with collapsed children
+- `fullSource` = raw complete source of the node
+- `relevantImports` = only the imports this chunk actually references
+
+**Test fixtures:** Same 20 files, but now each `.expected.json` includes `chunks` and `rootItems` arrays with:
+- `embeddingText` samples (at least the metadata preamble prefix)
+- `hasCollapsedChildren` flag
+- `relevantImports` list
+- Verification that `fullSource` extracted from original file at `[startLine, endLine]` matches exactly
+
+**Validation gate:**
+- All global rules pass (1-10)
+- For every parent chunk with body-bearing children: its `embeddingText` contains collapsed child signatures, NOT their bodies
+- For every leaf chunk: `embeddingText` contains the full source (no collapsing)
+- `relevantImports` for each chunk only contains imports where at least one identifier from the import is used in the chunk's source code
+- No chunk's `embeddingText` exceeds 32K tokens
+- Metadata preamble format matches: `[Language] path > parent > name\nPurpose: ...\nSignature: ...\nDependencies: ...\n---\n<code>`
+
+**Dependencies:** Phase 1 (Parser)
+
+---
+
+### Phase 3 — TypeScript Language Services Integration
+
+**Goal:** Use the TS compiler's language services to resolve structural metadata for any given symbol: full signatures, type hierarchy, outgoing calls, incoming callers, reference count, type flows, and class members.
+
+**Input:** Symbol name + file path + ts-morph project
+**Output:** `SymbolMetadata` containing:
+- `signature` (complete type signature)
+- `modifiers` (async, static, exported, etc.)
+- `typeHierarchy` (extends, implements, subtypes)
+- `outgoingCalls` (immediate symbols this symbol calls, 1 hop)
+- `incomingCallers` (immediate symbols that call this symbol, 1 hop)
+- `referenceCount` (how many files reference this symbol)
+- `typeFlows` (where parameter types come from, where return types go)
+- `members` (for classes/interfaces: methods + properties list)
+
+**Test fixtures:** New set of multi-file fixtures (not single-file like Phase 1-2):
+
+- **`ts-ls/call-chain/`** — 3-4 files with A calling B calling C. Verify outgoing/incoming calls resolve correctly.
+- **`ts-ls/type-hierarchy/`** — interface → class → subclass chain. Verify extends/implements/subtypes.
+- **`ts-ls/references/`** — symbol used across 5 files. Verify reference count and file list.
+- **`ts-ls/type-flows/`** — function parameter types imported from file A, return type used in file B. Verify flow resolution.
+- **`ts-ls/members/`** — class with methods/properties. Verify member listing.
+- **`ts-ls/cross-module/`** — re-exports, barrel files, declaration merging. Verify resolution through indirection.
+
+**Validation gate:**
+- Call hierarchy matches expected for all test scenarios (1-hop outgoing + incoming)
+- Type hierarchy resolves extends/implements/subtypes correctly
+- Reference counts are accurate (±0 tolerance)
+- Type flows trace parameter origins and return type destinations correctly
+- Member listings are complete and ordered
+
+**Dependencies:** Phase 1 (Parser creates ts-morph project)
+
+---
+
+### Phase 4 — Smart Structural Snapshots
+
+**Goal:** Given a set of target symbols in a file, produce a dependency-aware snapshot that shows only the target symbols (expanded) plus the file-level content they actually reference (imports, constants, class properties, type aliases). Merge multiple targets from the same file into one snapshot.
+
+**Input:** Target `CodeChunk[]` (from one file) + parsed symbol tree + TS LS reference resolution
+**Output:** String snapshot — valid source code with only referenced content shown, unreferenced content omitted entirely (no collapse indicators)
+
+**Key behaviors:**
+- TS compiler resolves all identifiers within target symbols to their declarations
+- Same-file declarations are included; cross-file declarations are omitted
+- Multiple targets from the same file merge into one snapshot
+- Class declaration wrapper is included when targets are class members
+- No collapse indicators or `...` — just clean code
+
+**Test fixtures:**
+
+- **`snapshot/single-method.ts`** — Class with 10 methods. Target: 1 method. Verify only that method + its referenced imports/properties shown.
+- **`snapshot/two-methods.ts`** — Class with 10 methods. Target: 2 methods that share some imports. Verify merged snapshot with both methods + union of their imports.
+- **`snapshot/root-constant.ts`** — File with imports + constants + functions. Target: 1 function that uses 2 of 5 constants. Verify only those 2 constants + relevant imports shown.
+- **`snapshot/no-dependencies.ts`** — Function that uses no imports or constants. Verify just the function (+ class wrapper if applicable).
+- **`snapshot/cross-reference.ts`** — Method A calls method B in same class. Both are targets. Verify both shown, dependencies are union of both.
+- **`snapshot/expressions-file.ts`** — Target is a root expression. Verify just that expression + its imports shown.
+
+**Validation gate:**
+- Every identifier in each target symbol that resolves to a same-file declaration has that declaration present in the snapshot
+- No unreferenced declarations appear in the snapshot
+- Merged snapshots contain no duplicate content
+- Snapshot is syntactically valid source code (parseable by TypeScript)
+- File header comment (`// src/path/file.ts`) is present
+
+**Dependencies:** Phase 1 (Parser) + Phase 3 (TS LS)
+
+---
+
+### Phase 5 — Connection Graph
+
+**Goal:** Given a set of result symbols (post-retrieval), assemble a connection graph showing each result's metadata and cross-result patterns (★ = in results, ◆ = shared across 2+ results).
+
+**Input:** Result `CodeChunk[]` + `SymbolMetadata` for each result (from Phase 3)
+**Output:** Plain text connection graph matching the format defined in the blueprint
+
+**Key behaviors:**
+- Each result gets a numbered entry with kind, modifiers, signature, type hierarchy, calls, callers, types, reference count
+- Cross-result connections marked with ★
+- Shared dependencies (referenced by 2+ results but not in results themselves) marked with ◆
+- "Shared dependencies not in results" section at the bottom
+- Summary line: `Search: "query" | N results across M files | T/B tokens`
+
+**Test fixtures:**
+
+- **`graph/single-result.json`** — One result symbol + its TS LS metadata. Verify single-result format.
+- **`graph/multi-result.json`** — 5 results with inter-connections. Verify ★ markers, ◆ markers, shared dependencies section.
+- **`graph/no-connections.json`** — 3 results with no cross-references. Verify clean output with no markers.
+- **`graph/shared-type.json`** — 4 results that all reference the same type. Verify ◆ on type references + shared dependencies section.
+
+Input fixtures are JSON (pre-computed metadata), not source files — connection graph assembly is pure data transformation.
+
+**Validation gate:**
+- ★ markers appear on exactly the symbols that are in the result set
+- ◆ markers appear on exactly the symbols referenced by 2+ results that are NOT in the result set
+- Shared dependencies section lists all ◆ symbols with correct usage counts
+- Summary line token count matches actual output length
+- Output matches the exact format from the blueprint examples
+
+**Dependencies:** Phase 3 (TS LS)
+
+---
+
+### Phase 6 — Symbol Lookup
+
+**Goal:** Detect `symbol = ...` prefix in queries and resolve to matching symbols without using vector search or re-ranking.
+
+**Input:** Query string (e.g., `symbol = TokenService > validateToken`)
+**Output:** Matching `CodeChunk[]` with connection graph + smart snapshot (same output format as full pipeline)
+
+**Key behaviors:**
+- Parse `symbol = ` prefix → extract symbol path
+- Split on ` > ` to get hierarchy: `[file?, parent?, name]`
+- Search through parsed symbol trees for matches (exact name match)
+- If file path is specified, scope to that file
+- Return same output format as full pipeline (connection graph + smart snapshots)
+
+**Test cases:**
+
+- `symbol = validateToken` → find in any file
+- `symbol = TokenService > validateToken` → find within TokenService
+- `symbol = src/auth/tokenService.ts > TokenService > validateToken` → file-scoped
+- `symbol = nonExistentSymbol` → empty result
+- `symbol = ambiguousName` (exists in multiple files) → return all matches
+- Query without `symbol = ` prefix → returns `null` (not a symbol lookup)
+
+**Validation gate:**
+- Exact name matches only (no fuzzy matching)
+- File-scoped lookups find only in the specified file
+- Hierarchical lookups verify parent chain
+- Empty results returned gracefully (no errors)
+- Output format matches full pipeline output
+
+**Dependencies:** Phase 1 (Parser)
+
+---
+
+### Phase 7 — Indexing + Sync
+
+**Goal:** Store `CodeChunk[]` in LanceDB with content-hash-based incremental re-indexing. Detect file changes efficiently and only re-parse/re-embed when content actually changes.
+
+**Input:** Workspace file set + LanceDB database
+**Output:** Up-to-date LanceDB index with all CodeChunks + vectors
+
+**Key behaviors:**
+- Enumerate all supported files in workspace
+- mtime-triggered change detection (cheap stat check)
+- Content hash validation (SHA-256 of file contents)
+- Skip re-indexing when mtime changed but content hash matches (git operations)
+- Full re-parse + re-embed when content hash differs
+- Signature change cascade: re-embed chunks that referenced changed signatures
+- Delete chunks for removed files
+
+**Test fixtures:**
+
+- **`index/initial-build/`** — Fresh workspace with 5 files. Verify all files indexed, all chunks created.
+- **`index/no-change/`** — Run indexer twice on same files. Verify zero re-parses on second run.
+- **`index/mtime-only/`** — Touch file mtime without changing content (simulate git checkout). Verify mtime updated but no re-parsing.
+- **`index/content-change/`** — Modify file content. Verify old chunks deleted, new chunks created.
+- **`index/file-added/`** — Add new file to workspace. Verify new file indexed, existing files untouched.
+- **`index/file-removed/`** — Remove file from workspace. Verify its chunks deleted.
+- **`index/signature-cascade/`** — Change function signature in file A. File B references file A's signature in its embeddingText. Verify file B's affected chunks are re-embedded.
+
+**Validation gate:**
+- Content hash correctly identifies unchanged files after git operations
+- Zero unnecessary re-parses when content hasn't changed
+- Signature cascade triggers re-embedding for exactly the chunks that referenced the changed signature
+- No orphaned chunks (every chunk belongs to an existing file)
+- LanceDB schema matches the blueprint's `CodeChunk` interface exactly
+
+**Dependencies:** Phase 2 (Chunker)
+
+---
+
+### Phase 8 — Retrieval Pipeline
+
+**Goal:** Implement the three-stage pipeline: vector search (Voyage Code 3) → re-ranking (Voyage Rerank 2.5) → dual-constraint result selection.
+
+**Input:** Natural language query + LanceDB index
+**Output:** Ranked `CodeChunk[]` passing both relevance gate and token budget
+
+**Key behaviors:**
+- Stage 1: Embed query via Voyage Code 3, ANN search in LanceDB → top 40 candidates
+- Stage 2: Send candidates to Voyage Rerank 2.5, compute blended score: `(rerank * 0.65) + (vector * 0.35)`
+- Result selection: filter by `minimumRelevanceThreshold`, iterate by score descending until `maxTokenBudget` exhausted
+- Path/language filtering via LanceDB `WHERE` clauses
+
+**Test approach:** Mock the Voyage API for unit tests. Integration tests hit the real API with a small fixture set.
+
+**Test cases:**
+
+- **Score blending:** Given mock rerank + vector scores, verify `finalScore` calculation
+- **Relevance gate:** 10 candidates, only 3 pass threshold → return 3
+- **Token budget:** 10 candidates pass threshold, but budget fits only 5 → return 5
+- **Combined constraint:** 10 candidates, 4 pass threshold, budget fits 3 → return 3
+- **Path filter:** 40 candidates, path filter `src/auth/` → only auth-scoped results in Stage 1
+- **Empty results:** Query with no matches → graceful empty response
+- **Single result:** Only 1 candidate passes all constraints → return 1
+
+**Validation gate:**
+- Score blending formula produces correct values for all test scenarios
+- Relevance gate correctly filters below threshold
+- Token budget correctly limits output
+- Path filtering works at the LanceDB query level (not post-filter)
+- Configurable parameters (weights, thresholds, budget) are respected
+
+**Dependencies:** Phase 7 (Indexing)
+
+---
+
+### Phase 9 — Output Formatting + MCP Integration
+
+**Goal:** Assemble the final MCP multi-content response: connection graph (first item) + smart structural snapshots (one per file), with priority annotations.
+
+**Input:** Ranked results (Phase 8) + SymbolMetadata (Phase 3) + smart snapshots (Phase 4) + connection graph (Phase 5)
+**Output:** MCP response matching the blueprint's format specification
+
+**Key behaviors:**
+- Connection graph is first content item with `priority: 1.0`
+- Per-file smart snapshots follow, priority mapped from finalScore
+- Same-file results merged into single snapshot
+- `audience: ["assistant"]` on all content items
+- Summary line includes result count, file count, token usage
+
+**Test cases:**
+
+- **Single result:** Verify connection graph (single-result format) + one snapshot
+- **Multi-file results:** Verify one snapshot per file, connection graph with ★/◆
+- **Same-file merge:** 2 results from same file → 1 snapshot with both expanded
+- **Empty results:** Verify clean "no results" response
+- **Symbol lookup response:** Verify same output format as full pipeline
+
+**Validation gate:**
+- MCP response structure matches the spec (content array, type, text, annotations)
+- Connection graph appears first, snapshots follow in score order
+- Priority values decrease monotonically after the graph
+- Token count in summary matches actual response size
+- All content items have `audience: ["assistant"]`
+
+**Dependencies:** Phase 4 (Snapshots) + Phase 5 (Connection Graph) + Phase 8 (Retrieval)
