@@ -576,10 +576,164 @@ This is deferred until the full-symbol approach is proven reliable. The partial 
 
 ---
 
-## Open Design Questions
+## Parser Validation Criteria
 
-### Context Completeness Strategy
-The tool aims to provide enough context in a single search that Copilot rarely needs to fall back to brute-force grep/regex. The connection graph metadata provides the "clues" for Copilot to make targeted follow-up searches rather than blind exploration. Validation needed: does the collective metadata across 5-8 results consistently provide enough structural hints to guide follow-up queries? Test against real multi-file workflows.
+### Test Infrastructure
 
-### Parser Validation Criteria
-What specific tests and metrics should the AST parser pass before we proceed to embedding? Needs concrete validation criteria against TriviaGame.ts (6,138 lines, 235 symbols) and similar real-world files.
+- **Framework:** Vitest
+- **Approach:** Data-driven testing — each fixture is a real code file paired with a sidecar JSON file containing expected parser output
+- **Location:** `packages/semantic-toolkit/tests/fixtures/` (flat, one folder)
+- **Runner logic:** Glob all fixture files, find matching `.expected.json`, parse fixture, assert output matches expected
+
+### Fixture File Plan
+
+Each fixture is a code file + a `.expected.json` sidecar. The JSON contains the expected symbol tree, chunk list, and metadata. Fixture names indicate their primary test target.
+
+#### 1. `functions.ts`
+Named functions, anonymous default export, async, generator, overloaded signatures, rest params, generic type params
+
+#### 2. `arrow-functions.ts`
+`const` assigned arrows (single-line, multi-line, generic), arrow returning object literal, arrow with destructured params
+
+#### 3. `classes.ts`
+Class with constructor, methods (async, static, abstract, private, protected), properties (readonly, static, private `#field`), getters/setters, `extends`, `implements`, nested class
+
+#### 4. `interfaces.ts`
+Interface with properties (optional, readonly), method signatures, call signatures, construct signatures, index signatures, `extends` (single and multiple), generic interface
+
+#### 5. `types.ts`
+Simple type alias, union, intersection, mapped type, conditional type, template literal type, generic type alias, `infer` keyword
+
+#### 6. `enums.ts`
+Numeric enum (auto-increment), string enum, `const enum`, computed member, enum with explicit values
+
+#### 7. `variables.ts`
+`const` primitive, `let` with object literal (methods, getters), array destructuring, object destructuring, `as const` assertion, multiple declarators in one statement (`const a = 1, b = 2`)
+
+#### 8. `imports.ts`
+Named import, default import, namespace import (`* as`), side-effect import (`import 'polyfill'`), type-only import (`import type`), dynamic import (`import()`), re-export (`export { x } from`), barrel exports (`export * from`), `export type` re-export
+
+#### 9. `root-expressions.ts`
+Top-level function calls (`app.use(cors())`), top-level `if`/`for`/`try-catch`, IIFE, top-level `await` (ESM), assignment expressions (`process.env.NODE_ENV = 'test'`)
+
+#### 10. `nesting-deep.ts`
+4+ levels: `function > inner function > inner inner > callback`. Verifies correct parent-child relationships and depth tracking at every level
+
+#### 11. `class-nesting.ts`
+Class with method containing nested arrow functions, callbacks, and inner class declarations. Tests hierarchy: `class > method > nested arrow > deeper callback`
+
+#### 12. `component-function.tsx`
+React function component (`const MyComponent: React.FC<Props> = ...`), `forwardRef`, hooks (`useState`, `useEffect`, `useMemo`), JSX return, component with children prop
+
+#### 13. `component-class.tsx`
+React class component (`extends React.Component`), lifecycle methods, `state` property, `render()` with JSX, `static defaultProps`
+
+#### 14. `commonjs.cjs`
+`module.exports = { ... }`, `module.exports = function()`, `exports.foo = ...`, `require()` calls, mixed with `const x = require('y')`
+
+#### 15. `namespaces.ts`
+`namespace Foo { ... }`, `declare module 'x' { ... }`, nested namespaces, module augmentation (`declare module './existing' { ... }`)
+
+#### 16. `large-class.ts`
+Simulates TriviaGame scale: class with 50+ methods, 10+ properties, constructor. Verifies:
+- All 50+ methods are extracted as individual chunks
+- Class chunk contains declaration + collapsed method signatures
+- No chunk exceeds 32K tokens
+- Correct parent-child IDs for all methods
+
+#### 17. `expressions-only.ts`
+File with zero named symbols — only imports and expression statements (simulates `server.ts` entry point). Verifies:
+- Each import → individual chunk
+- Each expression → individual chunk
+- No artificial grouping
+
+#### 18. `mixed-patterns.ts`
+Declaration merging (interface + class same name), overloaded function, ambient declaration (`declare function`), `export =`, dynamic import inside a function
+
+#### 19. `minimal.ts`
+Empty file, file with only comments, file with a single `export {}`, file with syntax errors. Verifies graceful handling / empty results.
+
+#### 20. `esm-specific.mts`
+Top-level `await`, `import.meta.url`, `import.meta.resolve()`. Verifies ESM-specific constructs parse correctly.
+
+### Validation Assertions Per Fixture
+
+Each `.expected.json` asserts:
+
+```typescript
+interface FixtureExpectation {
+  /** Expected flat list of all symbols with hierarchy */
+  symbols: Array<{
+    name: string;
+    kind: string;           // 'function' | 'class' | 'method' | 'variable' | 'const' | 'import' | 'expression' | etc.
+    depth: number;          // 0 = root, 1 = class member, 2 = nested, etc.
+    parentName?: string;    // null for root-level
+    hasChildren: boolean;
+    exported?: boolean;
+    modifiers?: string[];   // 'async', 'static', 'abstract', 'private', 'readonly', etc.
+    lineRange: [number, number]; // [startLine, endLine]
+  }>;
+
+  /** Expected chunks (one per symbol + one per root-level statement) */
+  chunks: Array<{
+    breadcrumb: string;     // e.g., "TokenService > validateToken"
+    nodeKind: string;
+    /** Whether the chunk content contains collapsed children (signatures only) */
+    hasCollapsedChildren: boolean;
+    /** Whether the chunk includes the full source (no collapsed children) */
+    isLeaf: boolean;
+    /** Approximate line count of the chunk content */
+    lineCount: number;
+  }>;
+
+  /** Expected root-level items (imports, expressions, re-exports) */
+  rootItems: Array<{
+    kind: string;           // 'import' | 'expression' | 're-export' | 'const' | 'variable'
+    name: string;           // e.g., 'import:jsonwebtoken', 'app.use(cors())'
+    lineRange: [number, number];
+  }>;
+
+  /** Aggregate metrics */
+  stats: {
+    totalSymbols: number;
+    totalChunks: number;
+    totalRootItems: number;
+    maxDepth: number;
+    /** Every source line in the file must be covered by exactly one chunk */
+    fullCoverage: boolean;
+    /** No chunk should exceed 32K tokens (Voyage Code 3 limit) */
+    allChunksUnder32K: boolean;
+  };
+}
+```
+
+### Global Validation Rules (applied to ALL fixtures)
+
+These rules are verified by the test runner on every fixture, in addition to the per-fixture expected output:
+
+1. **Full coverage:** Every non-blank, non-comment line in the source file is covered by at least one chunk. No code is "lost" between chunks.
+2. **No overlap:** No line is covered by two sibling chunks at the same depth level. (Parent chunks CAN cover the same lines as their children — that's the collapsed-children model.)
+3. **Source fidelity:** The `fullSource` of each chunk, when extracted from the original file using the chunk's line range, matches exactly. No off-by-one errors.
+4. **Hierarchy consistency:** Every chunk with a `parentChunkId` has a parent chunk that lists it in `childChunkIds`. Every root chunk has `parentChunkId: null`.
+5. **Token limit:** No chunk's `embeddingText` exceeds 32,000 tokens (estimated at 4 chars/token).
+6. **Collapsed children correctness:** For any chunk with body-bearing children, the chunk's content should show those children as signature-only stubs (no bodies). The children's `fullSource` should contain the complete bodies.
+7. **Breadcrumb accuracy:** Each chunk's breadcrumb matches `file > parent > ... > name` built from the actual hierarchy.
+8. **Deterministic IDs:** Running the parser twice on the same file produces identical chunk IDs.
+9. **Root-level isolation:** Each import, expression, and re-export at root level produces exactly one chunk. No merging of unrelated root-level statements.
+10. **relevantImports tracking:** For body-bearing chunks, `relevantImports` contains only the imports that the chunk's source code actually references (identifiers match).
+
+### Metrics Dashboard
+
+After all fixtures pass, the test runner should print a summary:
+
+```
+Parser Validation Summary
+═══════════════════════════════════
+Fixtures: 20 passed, 0 failed
+Total symbols extracted: 847
+Total chunks produced: 923
+Coverage: 100% (no uncovered lines)
+Max chunk token count: 14,200 (large-class.ts > LargeClass)
+Max depth observed: 5 (nesting-deep.ts)
+Determinism: ✓ (all IDs stable across 2 runs)
+```
