@@ -1,0 +1,277 @@
+{
+  "symbols": [
+    {
+      "name": "'express'",
+      "kind": "module",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        1,
+        6
+      ]
+    },
+    {
+      "name": "Request",
+      "kind": "interface",
+      "depth": 1,
+      "parentName": "'express'",
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        2,
+        5
+      ]
+    },
+    {
+      "name": "userId",
+      "kind": "property",
+      "depth": 2,
+      "parentName": "Request",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "optional"
+      ],
+      "lineRange": [
+        3,
+        3
+      ]
+    },
+    {
+      "name": "sessionId",
+      "kind": "property",
+      "depth": 2,
+      "parentName": "Request",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        4,
+        4
+      ]
+    },
+    {
+      "name": "'*.svg'",
+      "kind": "module",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        8,
+        11
+      ]
+    },
+    {
+      "name": "content",
+      "kind": "const",
+      "depth": 1,
+      "parentName": "'*.svg'",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        9,
+        9
+      ]
+    },
+    {
+      "name": "(default)",
+      "kind": "variable",
+      "depth": 1,
+      "parentName": "'*.svg'",
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported",
+        "default"
+      ],
+      "lineRange": [
+        10,
+        10
+      ]
+    },
+    {
+      "name": "global",
+      "kind": "module",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        13,
+        19
+      ]
+    },
+    {
+      "name": "Window",
+      "kind": "interface",
+      "depth": 1,
+      "parentName": "global",
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        14,
+        16
+      ]
+    },
+    {
+      "name": "__APP_VERSION__",
+      "kind": "property",
+      "depth": 2,
+      "parentName": "Window",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        15,
+        15
+      ]
+    },
+    {
+      "name": "__DEV_LOG__",
+      "kind": "function",
+      "depth": 1,
+      "parentName": "global",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        18,
+        18
+      ]
+    },
+    {
+      "name": "NodeJS",
+      "kind": "namespace",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        21,
+        26
+      ]
+    },
+    {
+      "name": "ProcessEnv",
+      "kind": "interface",
+      "depth": 1,
+      "parentName": "NodeJS",
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        22,
+        25
+      ]
+    },
+    {
+      "name": "NODE_ENV",
+      "kind": "property",
+      "depth": 2,
+      "parentName": "ProcessEnv",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        23,
+        23
+      ]
+    },
+    {
+      "name": "PORT",
+      "kind": "property",
+      "depth": 2,
+      "parentName": "ProcessEnv",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "optional"
+      ],
+      "lineRange": [
+        24,
+        24
+      ]
+    },
+    {
+      "name": "ExternalLib",
+      "kind": "class",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        28,
+        31
+      ]
+    },
+    {
+      "name": "constructor",
+      "kind": "constructor",
+      "depth": 1,
+      "parentName": "ExternalLib",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        29,
+        29
+      ]
+    },
+    {
+      "name": "init",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "ExternalLib",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        30,
+        30
+      ]
+    },
+    {
+      "name": "fetchData",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        33,
+        33
+      ]
+    },
+    {
+      "name": "API_BASE",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        35,
+        35
+      ]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 20,
+    "totalRootItems": 0,
+    "maxDepth": 2
+  }
+}

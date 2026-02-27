@@ -119,19 +119,23 @@ describe('Parser: data-driven fixtures', () => {
 			// ── Individual symbol assertions ──
 			it('should match expected symbols', () => {
 				const flat = flattenSymbols(parsed.symbols);
+				const consumed = new Set<number>();
 
 				for (const exp of expected.symbols) {
-					const match = flat.find(
-						s =>
+					const matchIdx = flat.findIndex(
+						(s, idx) =>
+							!consumed.has(idx) &&
 							s.name === exp.name &&
 							s.kind === exp.kind &&
 							s.depth === exp.depth &&
 							s.parentName === exp.parentName,
 					);
 
-					expect(match, `Symbol not found: ${exp.kind} ${exp.name} at depth ${exp.depth}`).toBeDefined();
+					expect(matchIdx, `Symbol not found: ${exp.kind} ${exp.name} at depth ${exp.depth}`).not.toBe(-1);
 
-					if (!match) continue;
+					if (matchIdx === -1) continue;
+					consumed.add(matchIdx);
+					const match = flat[matchIdx];
 
 					expect(match.parentName).toBe(exp.parentName);
 					expect(match.children.length > 0).toBe(exp.hasChildren);

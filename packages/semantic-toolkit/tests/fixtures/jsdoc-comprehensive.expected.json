@@ -1,0 +1,462 @@
+{
+  "symbols": [
+    {
+      "name": "MAX_RETRIES",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        1,
+        16
+      ]
+    },
+    {
+      "name": "Status",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        18,
+        46
+      ]
+    },
+    {
+      "name": "ACTIVE",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Status",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        40,
+        41
+      ]
+    },
+    {
+      "name": "INACTIVE",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Status",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        42,
+        43
+      ]
+    },
+    {
+      "name": "DISABLED",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Status",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        44,
+        45
+      ]
+    },
+    {
+      "name": "fetchData",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [
+        "async"
+      ],
+      "lineRange": [
+        48,
+        77
+      ]
+    },
+    {
+      "name": "{ method = 'GET', headers = {}, timeout = 5000 }",
+      "kind": "const",
+      "depth": 1,
+      "parentName": "fetchData",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        75,
+        75
+      ]
+    },
+    {
+      "name": "DataBox",
+      "kind": "class",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        79,
+        165
+      ]
+    },
+    {
+      "name": "#value",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "DataBox",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "private"
+      ],
+      "lineRange": [
+        91,
+        96
+      ]
+    },
+    {
+      "name": "count",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "DataBox",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "static"
+      ],
+      "lineRange": [
+        98,
+        104
+      ]
+    },
+    {
+      "name": "constructor",
+      "kind": "constructor",
+      "depth": 1,
+      "parentName": "DataBox",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        106,
+        118
+      ]
+    },
+    {
+      "name": "getValue",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "DataBox",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        120,
+        127
+      ]
+    },
+    {
+      "name": "map",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "DataBox",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        129,
+        138
+      ]
+    },
+    {
+      "name": "equals",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "DataBox",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        140,
+        148
+      ]
+    },
+    {
+      "name": "get",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "DataBox",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        150,
+        156
+      ]
+    },
+    {
+      "name": "[Symbol.iterator]",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "DataBox",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "generator"
+      ],
+      "lineRange": [
+        158,
+        164
+      ]
+    },
+    {
+      "name": "Serializable",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        167,
+        183
+      ]
+    },
+    {
+      "name": "MathUtils",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        185,
+        208
+      ]
+    },
+    {
+      "name": "add",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "MathUtils",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        190,
+        199
+      ]
+    },
+    {
+      "name": "PI",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "MathUtils",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        201,
+        207
+      ]
+    },
+    {
+      "name": "onEvent",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        210,
+        220
+      ]
+    },
+    {
+      "name": "formatName",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        222,
+        235
+      ]
+    },
+    {
+      "name": "name",
+      "kind": "const",
+      "depth": 1,
+      "parentName": "formatName",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        233,
+        233
+      ]
+    },
+    {
+      "name": "APP_NAME",
+      "kind": "variable",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        237,
+        241
+      ]
+    },
+    {
+      "name": "module.exports",
+      "kind": "variable",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        243,
+        243
+      ]
+    },
+    {
+      "name": "MAX_RETRIES",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "module.exports",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        243,
+        243
+      ]
+    },
+    {
+      "name": "Status",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "module.exports",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        243,
+        243
+      ]
+    },
+    {
+      "name": "fetchData",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "module.exports",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        243,
+        243
+      ]
+    },
+    {
+      "name": "DataBox",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "module.exports",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        243,
+        243
+      ]
+    },
+    {
+      "name": "Serializable",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "module.exports",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        243,
+        243
+      ]
+    },
+    {
+      "name": "MathUtils",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "module.exports",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        243,
+        243
+      ]
+    },
+    {
+      "name": "onEvent",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "module.exports",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        243,
+        243
+      ]
+    },
+    {
+      "name": "formatName",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "module.exports",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        243,
+        243
+      ]
+    },
+    {
+      "name": "APP_NAME",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "module.exports",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        243,
+        243
+      ]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 34,
+    "totalRootItems": 0,
+    "maxDepth": 1
+  }
+}

@@ -1,0 +1,405 @@
+{
+  "symbols": [
+    {
+      "name": "LogLevel",
+      "kind": "enum",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        1,
+        25
+      ]
+    },
+    {
+      "name": "Debug",
+      "kind": "enumMember",
+      "depth": 1,
+      "parentName": "LogLevel",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        17,
+        18
+      ]
+    },
+    {
+      "name": "Info",
+      "kind": "enumMember",
+      "depth": 1,
+      "parentName": "LogLevel",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        19,
+        20
+      ]
+    },
+    {
+      "name": "Warn",
+      "kind": "enumMember",
+      "depth": 1,
+      "parentName": "LogLevel",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        21,
+        22
+      ]
+    },
+    {
+      "name": "Error",
+      "kind": "enumMember",
+      "depth": 1,
+      "parentName": "LogLevel",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        23,
+        24
+      ]
+    },
+    {
+      "name": "LogConfig",
+      "kind": "interface",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        27,
+        52
+      ]
+    },
+    {
+      "name": "level",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "LogConfig",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        46,
+        47
+      ]
+    },
+    {
+      "name": "prefix",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "LogConfig",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "optional"
+      ],
+      "lineRange": [
+        48,
+        49
+      ]
+    },
+    {
+      "name": "timestamp",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "LogConfig",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        50,
+        51
+      ]
+    },
+    {
+      "name": "LogEvent",
+      "kind": "interface",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        54,
+        71
+      ]
+    },
+    {
+      "name": "level",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "LogEvent",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "readonly"
+      ],
+      "lineRange": [
+        63,
+        64
+      ]
+    },
+    {
+      "name": "message",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "LogEvent",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "readonly"
+      ],
+      "lineRange": [
+        65,
+        66
+      ]
+    },
+    {
+      "name": "data",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "LogEvent",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "readonly",
+        "optional"
+      ],
+      "lineRange": [
+        67,
+        68
+      ]
+    },
+    {
+      "name": "timestamp",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "LogEvent",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "readonly"
+      ],
+      "lineRange": [
+        69,
+        70
+      ]
+    },
+    {
+      "name": "ExtractEventData",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        73,
+        79
+      ]
+    },
+    {
+      "name": "Logger",
+      "kind": "class",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        81,
+        224
+      ]
+    },
+    {
+      "name": "config",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Logger",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "readonly"
+      ],
+      "lineRange": [
+        110,
+        115
+      ]
+    },
+    {
+      "name": "totalEntries",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Logger",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "static"
+      ],
+      "lineRange": [
+        117,
+        126
+      ]
+    },
+    {
+      "name": "constructor",
+      "kind": "constructor",
+      "depth": 1,
+      "parentName": "Logger",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        128,
+        138
+      ]
+    },
+    {
+      "name": "log",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "Logger",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        140,
+        162
+      ]
+    },
+    {
+      "name": "info",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "Logger",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        164,
+        175
+      ]
+    },
+    {
+      "name": "error",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "Logger",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        177,
+        188
+      ]
+    },
+    {
+      "name": "child",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "Logger",
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        190,
+        207
+      ]
+    },
+    {
+      "name": "combinedPrefix",
+      "kind": "const",
+      "depth": 2,
+      "parentName": "child",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        203,
+        205
+      ]
+    },
+    {
+      "name": "format",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "Logger",
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [
+        "protected"
+      ],
+      "lineRange": [
+        209,
+        223
+      ]
+    },
+    {
+      "name": "parts",
+      "kind": "const",
+      "depth": 2,
+      "parentName": "format",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        219,
+        219
+      ]
+    },
+    {
+      "name": "createDevLogger",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        226,
+        252
+      ]
+    },
+    {
+      "name": "isLogEvent",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        254,
+        270
+      ]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 28,
+    "totalRootItems": 0,
+    "maxDepth": 2
+  }
+}

@@ -1,0 +1,190 @@
+{
+  "symbols": [
+    {
+      "name": "EventName",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "name": "CssProperty",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        3,
+        3
+      ]
+    },
+    {
+      "name": "HttpMethod",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        5,
+        5
+      ]
+    },
+    {
+      "name": "ApiRoute",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        7,
+        7
+      ]
+    },
+    {
+      "name": "Endpoint",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        9,
+        9
+      ]
+    },
+    {
+      "name": "Color",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        11,
+        11
+      ]
+    },
+    {
+      "name": "Size",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        12,
+        12
+      ]
+    },
+    {
+      "name": "Variant",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        13,
+        13
+      ]
+    },
+    {
+      "name": "PropKey",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        15,
+        15
+      ]
+    },
+    {
+      "name": "Split",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        17,
+        19
+      ]
+    },
+    {
+      "name": "Join",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        21,
+        27
+      ]
+    },
+    {
+      "name": "DotPath",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        29,
+        35
+      ]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 12,
+    "totalRootItems": 0,
+    "maxDepth": 0
+  }
+}

@@ -1,0 +1,240 @@
+{
+  "symbols": [
+    {
+      "name": "Box",
+      "kind": "interface",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        1,
+        4
+      ]
+    },
+    {
+      "name": "width",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Box",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "height",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Box",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        3,
+        3
+      ]
+    },
+    {
+      "name": "Box",
+      "kind": "interface",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        6,
+        9
+      ]
+    },
+    {
+      "name": "color",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Box",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        7,
+        7
+      ]
+    },
+    {
+      "name": "label",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Box",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "optional"
+      ],
+      "lineRange": [
+        8,
+        8
+      ]
+    },
+    {
+      "name": "EventEmitter",
+      "kind": "class",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        11,
+        15
+      ]
+    },
+    {
+      "name": "on",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "EventEmitter",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        12,
+        14
+      ]
+    },
+    {
+      "name": "EventEmitter",
+      "kind": "namespace",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        17,
+        25
+      ]
+    },
+    {
+      "name": "Options",
+      "kind": "interface",
+      "depth": 1,
+      "parentName": "EventEmitter",
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        18,
+        20
+      ]
+    },
+    {
+      "name": "maxListeners",
+      "kind": "property",
+      "depth": 2,
+      "parentName": "Options",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        19,
+        19
+      ]
+    },
+    {
+      "name": "create",
+      "kind": "function",
+      "depth": 1,
+      "parentName": "EventEmitter",
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        22,
+        24
+      ]
+    },
+    {
+      "name": "logger",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        27,
+        29
+      ]
+    },
+    {
+      "name": "logger",
+      "kind": "namespace",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        31,
+        37
+      ]
+    },
+    {
+      "name": "level",
+      "kind": "variable",
+      "depth": 1,
+      "parentName": "logger",
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "setLevel",
+      "kind": "function",
+      "depth": 1,
+      "parentName": "logger",
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        34,
+        36
+      ]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 16,
+    "totalRootItems": 0,
+    "maxDepth": 2
+  }
+}

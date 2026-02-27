@@ -1,0 +1,124 @@
+{
+  "symbols": [
+    {
+      "name": "assertDefined",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        1,
+        5
+      ]
+    },
+    {
+      "name": "isString",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        7,
+        9
+      ]
+    },
+    {
+      "name": "assertNonEmpty",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        11,
+        15
+      ]
+    },
+    {
+      "name": "TypeGuard",
+      "kind": "interface",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        17,
+        19
+      ]
+    },
+    {
+      "name": "(call-signature-0)",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "TypeGuard",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        18,
+        18
+      ]
+    },
+    {
+      "name": "Validator",
+      "kind": "class",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        21,
+        31
+      ]
+    },
+    {
+      "name": "assertValid",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "Validator",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        22,
+        26
+      ]
+    },
+    {
+      "name": "isArray",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "Validator",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        28,
+        30
+      ]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 8,
+    "totalRootItems": 0,
+    "maxDepth": 1
+  }
+}

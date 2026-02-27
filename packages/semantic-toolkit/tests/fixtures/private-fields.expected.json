@@ -1,0 +1,135 @@
+{
+  "symbols": [
+    {
+      "name": "Wallet",
+      "kind": "class",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        1,
+        29
+      ]
+    },
+    {
+      "name": "#balance",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Wallet",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "#owner",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Wallet",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "readonly"
+      ],
+      "lineRange": [
+        3,
+        3
+      ]
+    },
+    {
+      "name": "#instanceCount",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Wallet",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "static"
+      ],
+      "lineRange": [
+        4,
+        4
+      ]
+    },
+    {
+      "name": "constructor",
+      "kind": "constructor",
+      "depth": 1,
+      "parentName": "Wallet",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        6,
+        10
+      ]
+    },
+    {
+      "name": "balance",
+      "kind": "getter",
+      "depth": 1,
+      "parentName": "Wallet",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        12,
+        14
+      ]
+    },
+    {
+      "name": "#validate",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "Wallet",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        16,
+        18
+      ]
+    },
+    {
+      "name": "withdraw",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "Wallet",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        20,
+        24
+      ]
+    },
+    {
+      "name": "count",
+      "kind": "getter",
+      "depth": 1,
+      "parentName": "Wallet",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "static"
+      ],
+      "lineRange": [
+        26,
+        28
+      ]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 9,
+    "totalRootItems": 0,
+    "maxDepth": 1
+  }
+}

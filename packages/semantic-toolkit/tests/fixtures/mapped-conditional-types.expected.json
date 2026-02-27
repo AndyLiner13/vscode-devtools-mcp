@@ -1,0 +1,115 @@
+{
+  "symbols": [
+    {
+      "name": "DeepReadonly",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        1,
+        3
+      ]
+    },
+    {
+      "name": "Optional",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        5,
+        5
+      ]
+    },
+    {
+      "name": "ExtractByType",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        7,
+        9
+      ]
+    },
+    {
+      "name": "InferPromise",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        11,
+        15
+      ]
+    },
+    {
+      "name": "UnionToIntersection",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        17,
+        21
+      ]
+    },
+    {
+      "name": "Getters",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        23,
+        25
+      ]
+    },
+    {
+      "name": "RemovePrefix",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        27,
+        29
+      ]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 7,
+    "totalRootItems": 0,
+    "maxDepth": 0
+  }
+}

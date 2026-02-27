@@ -1,0 +1,144 @@
+{
+  "symbols": [
+    {
+      "name": "TAG",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "name": "BRAND",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        3,
+        3
+      ]
+    },
+    {
+      "name": "Tagged",
+      "kind": "interface",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        5,
+        7
+      ]
+    },
+    {
+      "name": "[TAG]",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Tagged",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "readonly"
+      ],
+      "lineRange": [
+        6,
+        6
+      ]
+    },
+    {
+      "name": "Branded",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        9,
+        9
+      ]
+    },
+    {
+      "name": "Registry",
+      "kind": "class",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        11,
+        18
+      ]
+    },
+    {
+      "name": "KEY",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Registry",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "static",
+        "readonly"
+      ],
+      "lineRange": [
+        12,
+        12
+      ]
+    },
+    {
+      "name": "data",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Registry",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "private"
+      ],
+      "lineRange": [
+        13,
+        13
+      ]
+    },
+    {
+      "name": "register",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "Registry",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        15,
+        17
+      ]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 9,
+    "totalRootItems": 0,
+    "maxDepth": 1
+  }
+}

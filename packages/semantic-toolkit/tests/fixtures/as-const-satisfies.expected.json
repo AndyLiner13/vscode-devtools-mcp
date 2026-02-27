@@ -1,0 +1,137 @@
+{
+  "symbols": [
+    {
+      "name": "DIRECTIONS",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "name": "CONFIG",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        3,
+        7
+      ]
+    },
+    {
+      "name": "Theme",
+      "kind": "interface",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        9,
+        13
+      ]
+    },
+    {
+      "name": "primary",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Theme",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        10,
+        10
+      ]
+    },
+    {
+      "name": "secondary",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Theme",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        11,
+        11
+      ]
+    },
+    {
+      "name": "fontSize",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Theme",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        12,
+        12
+      ]
+    },
+    {
+      "name": "darkTheme",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        15,
+        19
+      ]
+    },
+    {
+      "name": "lightTheme",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        21,
+        25
+      ]
+    },
+    {
+      "name": "Direction",
+      "kind": "type",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        27,
+        27
+      ]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 9,
+    "totalRootItems": 0,
+    "maxDepth": 1
+  }
+}
