@@ -6,6 +6,7 @@
  * Item 2: Multi-hop traversal with recursive tree, cycle detection, depth limits.
  * Item 4: Type hierarchy (extends, implements, subtypes).
  * Item 5: isAbstract, rich generics (name+constraint+default), isAbstract on SymbolRef.
+ * Item 7: Type flows — parameter/return type provenance with full generic unwrapping.
  */
 
 /** Configuration for TS Language Services operations. */
@@ -133,6 +134,49 @@ export interface References {
 	files: FileReference[];
 }
 
+// ---------------------------------------------------------------------------
+// Item 7 — Type Flows
+// ---------------------------------------------------------------------------
+
+/** A user-defined type resolved to its definition location. */
+export interface TypeFlowType {
+	/** Type name as written in source (e.g. 'User', 'Role'). */
+	name: string;
+
+	/** Workspace-relative file path where this type is defined (forward slashes). */
+	filePath: string;
+
+	/** 1-indexed line number of the type definition. */
+	line: number;
+}
+
+/** A parameter with its raw type text and resolved user-defined types. */
+export interface TypeFlowParam {
+	/** Parameter name as declared. */
+	name: string;
+
+	/** Raw type annotation text (e.g. 'Promise<User>', 'string | Role'). */
+	type: string;
+
+	/** User-defined types extracted from this parameter's type annotation. */
+	resolvedTypes: TypeFlowType[];
+}
+
+/** Type flow provenance for a function, method, or constructor. */
+export interface TypeFlow {
+	/** The symbol this type flow describes. */
+	symbol: SymbolRef;
+
+	/** Parameter type provenance — each parameter with its resolved types. */
+	parameters: TypeFlowParam[];
+
+	/** Return type provenance. Undefined for constructors or void functions with no annotation. */
+	returnType: TypeFlowParam | undefined;
+
+	/** Deduplicated union of all user-defined types referenced across params and return. */
+	referencedTypes: TypeFlowType[];
+}
+
 /**
  * Structural metadata for a symbol, resolved via TS Language Services.
  *
@@ -142,6 +186,7 @@ export interface References {
  * - Item 4: typeHierarchy
  * - Item 5: isAbstract, typeParameters, isAbstract on SymbolRef
  * - Item 6: references (cross-file reference count + file list)
+ * - Item 7: typeFlows (parameter/return type provenance)
  */
 export interface SymbolMetadata {
 	/** The symbol this metadata describes. */
@@ -158,4 +203,7 @@ export interface SymbolMetadata {
 
 	/** Cross-file references: how many files reference this symbol and where. */
 	references?: References;
+
+	/** Type flows: parameter and return type provenance for functions/methods/constructors. */
+	typeFlows?: TypeFlow;
 }

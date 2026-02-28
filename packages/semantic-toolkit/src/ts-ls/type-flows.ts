@@ -1,0 +1,446 @@
+/**
+ * Phase 3, Item 7 — Type flow resolver.
+ *
+ * Extracts parameter and return type provenance for functions, methods,
+ * and constructors. Recursively unwraps generic type arguments, union/
+ * intersection members, tuple elements, and function-typed parameters
+ * to discover all user-defined types referenced. Cycle-safe via visited set.
+ */
+import { Project, Node, SyntaxKind, Type } from 'ts-morph';
+import type {
+	SourceFile,
+	FunctionDeclaration,
+	MethodDeclaration,
+	ConstructorDeclaration,
+	TypeNode,
+	Symbol as TsMorphSymbol,
+} from 'ts-morph';
+import * as path from 'node:path';
+
+import type { SymbolRef, TypeFlow, TypeFlowParam, TypeFlowType } from './types';
+
+export type { TypeFlow, TypeFlowParam, TypeFlowType } from './types';
+
+// Primitives and built-in types that have no meaningful origin file.
+const BUILTIN_NAMES = new Set([
+	'string', 'number', 'boolean', 'bigint', 'symbol',
+	'undefined', 'null', 'void', 'never', 'unknown', 'any', 'object',
+	'String', 'Number', 'Boolean', 'BigInt', 'Symbol', 'Object',
+	'Promise', 'Array', 'Map', 'Set', 'WeakMap', 'WeakSet', 'WeakRef',
+	'Record', 'Partial', 'Required', 'Readonly', 'Pick', 'Omit',
+	'Exclude', 'Extract', 'NonNullable', 'ReturnType', 'Parameters',
+	'ConstructorParameters', 'InstanceType', 'ThisParameterType',
+	'OmitThisParameter', 'Uppercase', 'Lowercase', 'Capitalize',
+	'Uncapitalize', 'Awaited',
+	'ReadonlyArray', 'ReadonlyMap', 'ReadonlySet',
+	'IterableIterator', 'AsyncIterableIterator', 'Generator',
+	'AsyncGenerator', 'Iterable', 'AsyncIterable',
+	'ArrayLike', 'PromiseLike',
+	'Date', 'RegExp', 'Error', 'TypeError', 'RangeError',
+	'Function',
+]);
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve type flows for a named function, method, or constructor.
+ *
+ * @param project       - ts-morph Project with all relevant source files added.
+ * @param filePath      - Absolute path of the file containing the target symbol.
+ * @param symbolName    - Name of the function, method, or class (for constructors).
+ * @param workspaceRoot - Workspace root for computing relative paths.
+ * @returns TypeFlow with parameter/return type provenance and deduplicated referencedTypes.
+ */
+export function resolveTypeFlows(
+	project: Project,
+	filePath: string,
+	symbolName: string,
+	workspaceRoot: string,
+): TypeFlow {
+	const sourceFile = project.getSourceFileOrThrow(filePath);
+	const declaration = findCallableDeclaration(sourceFile, symbolName);
+
+	if (!declaration) {
+		throw new Error(
+			`Callable symbol "${symbolName}" not found in ${filePath}`,
+		);
+	}
+
+	const symbol = buildSymbolRef(declaration, symbolName, workspaceRoot);
+	const parameters = resolveParameters(declaration, workspaceRoot);
+	const returnType = resolveReturnType(declaration, workspaceRoot);
+	const referencedTypes = deduplicateTypes(parameters, returnType);
+
+	return { symbol, parameters, returnType, referencedTypes };
+}
+
+// ---------------------------------------------------------------------------
+// Declaration lookup
+// ---------------------------------------------------------------------------
+
+type CallableNode = FunctionDeclaration | MethodDeclaration | ConstructorDeclaration;
+
+function findCallableDeclaration(
+	sourceFile: SourceFile,
+	name: string,
+): CallableNode | undefined {
+	const fn = sourceFile.getFunction(name);
+	if (fn) return fn;
+
+	// For classes: look for constructor first, then methods
+	const cls = sourceFile.getClass(name);
+	if (cls) {
+		const ctor = cls.getConstructors()[0];
+		if (ctor) return ctor;
+	}
+
+	// Search methods across all classes
+	for (const cls of sourceFile.getClasses()) {
+		const method = cls.getMethod(name);
+		if (method) return method;
+	}
+
+	return undefined;
+}
+
+// ---------------------------------------------------------------------------
+// SymbolRef builder
+// ---------------------------------------------------------------------------
+
+function buildSymbolRef(
+	declaration: CallableNode,
+	symbolName: string,
+	workspaceRoot: string,
+): SymbolRef {
+	const absPath = declaration.getSourceFile().getFilePath();
+	const relativePath = path.relative(workspaceRoot, absPath).replace(/\\/g, '/');
+	return {
+		name: symbolName,
+		filePath: relativePath,
+		line: declaration.getStartLineNumber(),
+	};
+}
+
+// ---------------------------------------------------------------------------
+// Parameter resolution
+// ---------------------------------------------------------------------------
+
+function resolveParameters(
+	declaration: CallableNode,
+	workspaceRoot: string,
+): TypeFlowParam[] {
+	const params: TypeFlowParam[] = [];
+
+	for (const param of declaration.getParameters()) {
+		const typeNode = param.getTypeNode();
+		const typeText = typeNode ? typeNode.getText() : param.getType().getText();
+		const visited = new Set<string>();
+		const resolvedTypes: TypeFlowType[] = [];
+
+		// TypeNode-based resolution catches type aliases the checker expands
+		if (typeNode) {
+			extractImmediateTypeNames(typeNode, workspaceRoot, visited, resolvedTypes);
+		}
+
+		// Type-based deep traversal (unions, intersections, generics, etc.)
+		extractTypesFromType(param.getType(), workspaceRoot, visited, resolvedTypes);
+
+		params.push({
+			name: param.getName(),
+			type: typeText,
+			resolvedTypes,
+		});
+	}
+
+	return params;
+}
+
+// ---------------------------------------------------------------------------
+// Return type resolution
+// ---------------------------------------------------------------------------
+
+function resolveReturnType(
+	declaration: CallableNode,
+	workspaceRoot: string,
+): TypeFlowParam | undefined {
+	if (Node.isConstructorDeclaration(declaration)) {
+		return undefined;
+	}
+
+	const typeNode = declaration.getReturnTypeNode();
+	const returnType = declaration.getReturnType();
+	const typeText = typeNode ? typeNode.getText() : returnType.getText();
+
+	if (typeText === 'void' && !typeNode) {
+		return undefined;
+	}
+
+	const visited = new Set<string>();
+	const resolvedTypes: TypeFlowType[] = [];
+
+	if (typeNode) {
+		extractImmediateTypeNames(typeNode, workspaceRoot, visited, resolvedTypes);
+	}
+	extractTypesFromType(returnType, workspaceRoot, visited, resolvedTypes);
+
+	return {
+		name: 'return',
+		type: typeText,
+		resolvedTypes,
+	};
+}
+
+// ---------------------------------------------------------------------------
+// TypeNode-based immediate resolution — catches type aliases & enum names
+// that the TypeChecker expands away (UserId → number, Status → union).
+// Only resolves names visible in the source annotation; deep traversal is
+// handled by extractTypesFromType.
+// ---------------------------------------------------------------------------
+
+function extractImmediateTypeNames(
+	typeNode: TypeNode,
+	workspaceRoot: string,
+	visited: Set<string>,
+	results: TypeFlowType[],
+): void {
+	for (const descendant of typeNode.getDescendantsOfKind(SyntaxKind.Identifier)) {
+		const parent = descendant.getParent();
+		if (!parent || parent.getKind() !== SyntaxKind.TypeReference) continue;
+
+		const name = descendant.getText();
+		if (BUILTIN_NAMES.has(name)) continue;
+
+		const symbol = descendant.getSymbol();
+		if (!symbol) continue;
+
+		const declarations = symbol.getDeclarations();
+		if (declarations.length === 0) continue;
+
+		let decl = declarations[0];
+		if (!decl) continue;
+
+		// Follow through import specifiers to the original declaration
+		if (Node.isImportSpecifier(decl)) {
+			const moduleFile = decl.getImportDeclaration().getModuleSpecifierSourceFile();
+			if (moduleFile) {
+				const original = moduleFile.getInterface(name)
+					?? moduleFile.getClass(name)
+					?? moduleFile.getTypeAlias(name)
+					?? moduleFile.getEnum(name)
+					?? moduleFile.getFunction(name)
+					?? moduleFile.getVariableDeclaration(name);
+				if (original) {
+					decl = original;
+				} else {
+					continue;
+				}
+			} else {
+				continue;
+			}
+		}
+
+		const declFile = decl.getSourceFile().getFilePath();
+		if (declFile.endsWith('.d.ts') || declFile.includes('node_modules')) continue;
+
+		const declLine = decl.getStartLineNumber();
+		const visitKey = `${declFile}:${declLine}`;
+		if (visited.has(visitKey)) continue;
+		visited.add(visitKey);
+
+		const relativePath = path.relative(workspaceRoot, declFile).replace(/\\/g, '/');
+		results.push({ name, filePath: relativePath, line: declLine });
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Type extraction — uses TypeChecker's semantic Type objects for reliable
+// unwrapping of unions, intersections, tuples, arrays, generics, and
+// function signatures. Cycle-safe via visited set.
+// ---------------------------------------------------------------------------
+
+function extractTypesFromType(
+	type: Type,
+	workspaceRoot: string,
+	visited: Set<string>,
+	results: TypeFlowType[],
+): void {
+	// Enum literal: Status.Active → resolve to parent enum Status
+	if (type.isEnumLiteral()) {
+		const symbol = type.getSymbol();
+		const parent = symbol?.getDeclarations()[0]?.getParent();
+		if (parent && Node.isEnumDeclaration(parent)) {
+			const enumName = parent.getName();
+			if (enumName && !BUILTIN_NAMES.has(enumName)) {
+				const declFile = parent.getSourceFile().getFilePath();
+				if (!declFile.endsWith('.d.ts') && !declFile.includes('node_modules')) {
+					const declLine = parent.getStartLineNumber();
+					const visitKey = `${declFile}:${declLine}`;
+					if (!visited.has(visitKey)) {
+						visited.add(visitKey);
+						const relativePath = path.relative(workspaceRoot, declFile).replace(/\\/g, '/');
+						results.push({ name: enumName, filePath: relativePath, line: declLine });
+					}
+				}
+			}
+		}
+		return;
+	}
+
+	// Union types: string | User → extract User
+	if (type.isUnion()) {
+		for (const member of type.getUnionTypes()) {
+			extractTypesFromType(member, workspaceRoot, visited, results);
+		}
+		return;
+	}
+
+	// Intersection types: A & B → extract both
+	if (type.isIntersection()) {
+		for (const member of type.getIntersectionTypes()) {
+			extractTypesFromType(member, workspaceRoot, visited, results);
+		}
+		return;
+	}
+
+	// Tuple types: [User, Token] → extract each element
+	if (type.isTuple()) {
+		for (const element of type.getTupleElements()) {
+			extractTypesFromType(element, workspaceRoot, visited, results);
+		}
+		return;
+	}
+
+	// Array types: User[] → extract element type
+	if (type.isArray()) {
+		const elementType = type.getArrayElementType();
+		if (elementType) {
+			extractTypesFromType(elementType, workspaceRoot, visited, results);
+		}
+		return;
+	}
+
+	// Check alias symbol first (handles type aliases like UserId = number)
+	const aliasSymbol = type.getAliasSymbol();
+	if (aliasSymbol) {
+		const aliasName = aliasSymbol.getName();
+		if (!BUILTIN_NAMES.has(aliasName)) {
+			tryResolveSymbolFromType(aliasSymbol, aliasName, workspaceRoot, visited, results);
+		}
+		for (const arg of type.getAliasTypeArguments()) {
+			extractTypesFromType(arg, workspaceRoot, visited, results);
+		}
+		return;
+	}
+
+	// Generic type arguments: Promise<User> → extract User
+	const typeArgs = type.getTypeArguments();
+	const symbol = type.getSymbol();
+	const symbolName = symbol?.getName();
+
+	// Skip anonymous types (__type) from intersection with object literals
+	if (symbolName && symbolName !== '__type' && !BUILTIN_NAMES.has(symbolName)) {
+		tryResolveSymbolFromType(symbol, symbolName, workspaceRoot, visited, results);
+	}
+
+	for (const arg of typeArgs) {
+		extractTypesFromType(arg, workspaceRoot, visited, results);
+	}
+
+	// Function types: (entry: AuditEntry) => Token → extract from call signatures
+	const callSignatures = type.getCallSignatures();
+	for (const sig of callSignatures) {
+		for (const param of sig.getParameters()) {
+			const decls = param.getDeclarations();
+			if (decls.length > 0) {
+				const paramDecl = decls[0];
+				if (paramDecl) {
+					extractTypesFromType(paramDecl.getType(), workspaceRoot, visited, results);
+				}
+			}
+		}
+		const returnType = sig.getReturnType();
+		extractTypesFromType(returnType, workspaceRoot, visited, results);
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Resolution helpers
+// ---------------------------------------------------------------------------
+
+function tryResolveSymbolFromType(
+	symbol: TsMorphSymbol | undefined,
+	symbolName: string,
+	workspaceRoot: string,
+	visited: Set<string>,
+	results: TypeFlowType[],
+): void {
+	if (!symbol) return;
+	if (BUILTIN_NAMES.has(symbolName)) return;
+
+	const declarations = symbol.getDeclarations();
+	if (declarations.length === 0) return;
+
+	const decl = declarations[0];
+	if (!decl) return;
+
+	const declFile = decl.getSourceFile().getFilePath();
+	if (declFile.endsWith('.d.ts') || declFile.includes('node_modules')) return;
+
+	const declLine = decl.getStartLineNumber();
+	const visitKey = `${declFile}:${declLine}`;
+	if (visited.has(visitKey)) return;
+	visited.add(visitKey);
+
+	const relativePath = path.relative(workspaceRoot, declFile).replace(/\\/g, '/');
+	results.push({ name: symbolName, filePath: relativePath, line: declLine });
+}
+
+// ---------------------------------------------------------------------------
+// Deduplication helpers
+// ---------------------------------------------------------------------------
+
+/** Deduplicate a flat array of TypeFlowType by filePath:line. */
+function deduplicateTypeFlowTypes(types: TypeFlowType[]): TypeFlowType[] {
+	const seen = new Map<string, TypeFlowType>();
+	for (const t of types) {
+		const key = `${t.filePath}:${t.line}`;
+		if (!seen.has(key)) {
+			seen.set(key, t);
+		}
+	}
+	return [...seen.values()];
+}
+
+/** Merge all types from params + return into a unique, sorted set. */
+function deduplicateTypes(
+	parameters: TypeFlowParam[],
+	returnType: TypeFlowParam | undefined,
+): TypeFlowType[] {
+	const seen = new Map<string, TypeFlowType>();
+
+	for (const param of parameters) {
+		for (const t of param.resolvedTypes) {
+			const key = `${t.filePath}:${t.line}`;
+			if (!seen.has(key)) {
+				seen.set(key, t);
+			}
+		}
+	}
+
+	if (returnType) {
+		for (const t of returnType.resolvedTypes) {
+			const key = `${t.filePath}:${t.line}`;
+			if (!seen.has(key)) {
+				seen.set(key, t);
+			}
+		}
+	}
+
+	return [...seen.values()].sort((a, b) => {
+		const fileCmp = a.filePath.localeCompare(b.filePath);
+		if (fileCmp !== 0) return fileCmp;
+		return a.line - b.line;
+	});
+}

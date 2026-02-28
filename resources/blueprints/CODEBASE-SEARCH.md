@@ -883,6 +883,19 @@ The definition itself is excluded from references (consumers already know the de
 - Mixin detection: functions returning class expressions extending their base parameter.
 - Full generic instantiation tracking: find all sites where generic types are instantiated with concrete type arguments.
 
+**Type flow resolution:** `resolveTypeFlows()` takes a function, method, or class name (for constructors) and returns a `TypeFlow` with:
+- `symbol` — SymbolRef identifying the callable.
+- `parameters[]` — each parameter has `name`, raw `type` text (from annotation), and `resolvedTypes[]` (user-defined types extracted from the annotation).
+- `returnType` — same structure as a parameter but named 'return'. Undefined for constructors and void functions without explicit annotation.
+- `referencedTypes[]` — deduplicated union of all user-defined types across params and return, sorted by filePath then line.
+
+Resolution uses a hybrid approach:
+1. **TypeNode-based** extraction catches type aliases and enum names that TypeScript's type checker expands (e.g., `UserId = number` → node has `UserId`, checker has `number`). Import specifiers are followed through to the original declaration file.
+2. **Type-based** deep traversal handles unions, intersections, tuples, arrays, nested generics, and function-typed parameters using the TypeChecker's semantic model.
+3. Both paths share a visited set keyed by `filePath:line` for cycle detection and deduplication.
+
+Type categories handled: simple type references, type aliases, enums, union types (`string | User`), intersection types (`User & { admin: boolean }`), generic types with unlimited nesting (`Map<UserId, Set<Permission>>`), tuple types (`[User, Token]`), array types (`User[]`), function-typed parameters (`(entry: AuditEntry) => Token`). Anonymous types (`__type`) from intersection with object literals are filtered out. Primitives and built-in types (Promise, Array, Map, Set, Record, etc.) are skipped.
+
 **Same-name disambiguation:** Outgoing calls are grouped by `filePath:name:line` to avoid merging same-named methods in different classes within the same file.
 
 **User code filtering:** Declarations from `.d.ts` files and `node_modules` are excluded from call resolution.
@@ -895,7 +908,7 @@ The definition itself is excluded from references (consumers already know the de
 - **`ts-ls/constructor/`** — Class with constructor calling helper. Verify `new Foo()` resolves as outgoing call. ✅ Implemented
 - **`ts-ls/type-hierarchy/`** — 5 files: interfaces (Entity, Serializable, Auditable) → models (abstract BaseModel, User, AdminUser) → diamond (AuditedModel) → standalone → generics (Repository\<T extends Entity, ID = string\>, Container\<T\>, Queryable\<T extends Entity\>). Verify extends, implements, subtypes, diamond pattern, standalone, isAbstract on TypeHierarchy and SymbolRef, rich generic type parameters (name+constraint+default), error cases. ✅ Implemented
 - **`ts-ls/references/`** — 5 files: utils (formatDate, formatTime, DateString, Timestamped) → user-service, order-service, report → isolated. Verify cross-file reference count, per-file line breakdown, same-file usage inclusion, definition exclusion, type alias references, interface implements references, zero-reference symbols, class references, error handling. ✅ Implemented
-- **`ts-ls/type-flows/`** — function parameter types imported from file A, return type used in file B. Verify flow resolution.
+- **`ts-ls/type-flows/`** — 3 files: types (User, Role, Token, AuditEntry, Permission, UserId, Status) → functions (14 functions covering simple, union, intersection, generic, nested generic, tuple, array, function-typed params) → service (UserService class with constructor and methods). Verify parameter type provenance, return type provenance, type alias resolution through imports, enum resolution, `__type` anonymous filtering, function-typed callback extraction, deduplication across params/return, constructor handling (no return type), deeply nested generic unwrapping (Map<UserId, Set<Permission>>), union inside generic (Promise<User | null>), error handling. ✅ Implemented
 - **`ts-ls/members/`** — class with methods/properties. Verify member listing.
 - **`ts-ls/cross-module/`** — re-exports, barrel files, declaration merging. Verify resolution through indirection.
 
@@ -906,7 +919,7 @@ The definition itself is excluded from references (consumers already know the de
 - Constructor calls resolve correctly through `new` expressions
 - Type hierarchy resolves extends/implements/subtypes correctly
 - Reference counts are accurate (±0 tolerance)
-- Type flows trace parameter origins and return type destinations correctly
+- Type flows trace parameter origins and return type destinations correctly, including type aliases, enums, nested generics, function-typed params, and deduplication ✅  
 - Member listings are complete and ordered
 
 **Dependencies:** Phase 1 (Parser creates ts-morph project)
