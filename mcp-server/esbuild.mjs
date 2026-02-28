@@ -14,6 +14,7 @@ const watch = process.argv.includes('--watch');
 function rewritePackageImports(buildDir) {
 	const aliases = [
 		{ alias: '@packages/log-consolidation', target: 'packages/log-consolidation/src/index.js' },
+		{ alias: '@packages/semantic-toolkit', target: 'packages/semantic-toolkit/src/index.js' },
 		{ alias: '@packages/tfidf', target: 'packages/tfidf/src/index.js' },
 	];
 
@@ -58,6 +59,7 @@ function findTsFiles(dir) {
 
 // Transpile the shared package files into build/packages/
 const logConsolidationFiles = findTsFiles(path.join(packagesDir, 'log-consolidation', 'src'));
+const semanticToolkitFiles = findTsFiles(path.join(packagesDir, 'semantic-toolkit', 'src'));
 const tfidfFiles = findTsFiles(path.join(packagesDir, 'tfidf', 'src'));
 
 const config = {
@@ -81,6 +83,16 @@ const logConsolidationConfig = {
 	sourcemap: true
 };
 
+const semanticToolkitConfig = {
+	entryPoints: semanticToolkitFiles,
+	outdir: path.join('build', 'packages', 'semantic-toolkit'),
+	outbase: path.join(packagesDir, 'semantic-toolkit'),
+	format: 'esm',
+	platform: 'node',
+	target: 'es2023',
+	sourcemap: true
+};
+
 const tfidfConfig = {
 	entryPoints: tfidfFiles,
 	outdir: path.join('build', 'packages', 'tfidf'),
@@ -91,7 +103,7 @@ const tfidfConfig = {
 	sourcemap: true
 };
 
-const packageConfigs = [logConsolidationConfig, tfidfConfig];
+const packageConfigs = [logConsolidationConfig, semanticToolkitConfig, tfidfConfig];
 
 if (watch) {
 	// Build once initially (with packages + rewrite), then watch src only

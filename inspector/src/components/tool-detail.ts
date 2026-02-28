@@ -386,8 +386,14 @@ function buildValueExample(prop: JsonSchema): unknown {
 	const type = Array.isArray(prop.type) ? prop.type[0] : prop.type;
 
 	switch (type) {
-		case 'string':
+		case 'string': {
+			if (typeof prop.default === 'string') return prop.default;
+			// Pre-fill query fields that use "symbol = " syntax
+			if (prop.description && /symbol\s*=\s/.test(prop.description)) {
+				return 'symbol = ';
+			}
 			return '';
+		}
 		case 'number':
 		case 'integer':
 			return prop.default ?? 0;

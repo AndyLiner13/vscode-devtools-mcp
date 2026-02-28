@@ -31,6 +31,7 @@ import { resolveTypeFlows } from '../ts-ls/type-flows';
 import { resolveMembers } from '../ts-ls/members';
 import { resolveSignature } from '../ts-ls/signature';
 import type { SymbolMetadata, SymbolRef, MemberInfo } from '../ts-ls/types';
+import type { TsLsConfig } from '../ts-ls/types';
 
 import { generateConnectionGraph } from '../graph/index';
 import type { GraphResultEntry, ConnectionGraphResult } from '../graph/types';
@@ -74,6 +75,7 @@ export { resolveSymbol, formatCaseHint, formatPathHint } from './resolve';
  * @param workspaceRoot - Absolute path to the workspace root.
  * @param filePaths     - Absolute paths to all supported source files.
  * @param tokenBudget   - Maximum token budget for the rendered output.
+ * @param tsLsConfig    - Optional TS LS configuration (callDepth, typeDepth).
  * @returns LookupResult (either found symbols or "not a lookup").
  */
 export function lookupSymbol(
@@ -81,6 +83,7 @@ export function lookupSymbol(
 	workspaceRoot: string,
 	filePaths: string[],
 	tokenBudget: number,
+	tsLsConfig?: Partial<TsLsConfig>,
 ): LookupResult {
 	// Step 1: Parse query for symbol lookup prefix
 	const parsed = parseSymbolQuery(query);
@@ -124,6 +127,7 @@ export function lookupSymbol(
 		workspaceRoot,
 		filePaths,
 		tokenBudget,
+		tsLsConfig,
 	);
 }
 
@@ -160,6 +164,7 @@ function renderLookupOutput(
 	workspaceRoot: string,
 	filePaths: string[],
 	tokenBudget: number,
+	tsLsConfig?: Partial<TsLsConfig>,
 ): SymbolLookupResult {
 	// Create a shared ts-morph project for TS LS resolution
 	const project = new Project({ useInMemoryFileSystem: false });
@@ -178,6 +183,7 @@ function renderLookupOutput(
 			project,
 			match.chunk,
 			workspaceRoot,
+			tsLsConfig,
 		);
 		resultEntries.push({ chunk: match.chunk, metadata });
 	}
@@ -236,6 +242,7 @@ function enrichWithMetadata(
 	project: Project,
 	chunk: CodeChunk,
 	workspaceRoot: string,
+	tsLsConfig?: Partial<TsLsConfig>,
 ): SymbolMetadata {
 	const symbolRef: SymbolRef = {
 		name: chunk.parentName ? `${chunk.parentName}.${chunk.name}` : chunk.name,
@@ -266,7 +273,7 @@ function enrichWithMetadata(
 	if (callableKinds.has(chunk.nodeKind)) {
 		try {
 			const callMeta = resolveCallHierarchy(
-				project, absFilePath, lookupName, workspaceRoot,
+				project, absFilePath, lookupName, workspaceRoot, tsLsConfig,
 			);
 			metadata.outgoingCalls = callMeta.outgoingCalls;
 			metadata.incomingCallers = callMeta.incomingCallers;

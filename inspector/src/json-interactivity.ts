@@ -51,6 +51,7 @@ export function setupJsonInteractivity(
 	disposables.push(setupIntegerSelect(editor));
 	disposables.push(setupFilePathIntellisense(editor, schema));
 	disposables.push(setupSymbolIntellisense(editor, schema));
+	disposables.push(setupQuerySymbolIntellisense(editor, schema));
 	disposables.push(setupEnumArrayToggle(editor, schema, trackedActiveValues));
 	disposables.push(setupValueAutoSelect(editor, schema));
 	disposables.push(setupClickableCursorDecorations(editor, schema));
@@ -571,6 +572,116 @@ function setupSymbolIntellisense(
 			return { suggestions };
 		},
 		triggerCharacters: ['"', '.']
+	});
+}
+
+// ── Feature 3b: Query Symbol IntelliSense (for codebase_search) ──────────────
+
+interface SemanticSymbolEntry {
+	kind: string;
+	name: string;
+	parentName?: string;
+}
+
+interface SemanticSymbolsResponse {
+	error?: string;
+	symbols: SemanticSymbolEntry[];
+}
+
+const SYMBOL_PREFIX = 'symbol = ';
+
+/**
+ * Detect if the schema has a `query` property paired with a file-path property.
+ * This is the pattern used by codebase_search.
+ */
+function hasQuerySymbolSchema(schema: JsonSchema): null | string {
+	if (!schema.properties) return null;
+	const propNames = Object.keys(schema.properties);
+	if (!propNames.includes('query')) return null;
+	const fileProp = propNames.find((n) => FILE_DIR_PROPERTY_NAMES.has(n));
+	return fileProp ?? null;
+}
+
+/**
+ * Registers symbol completions for the `query` field in tools like codebase_search.
+ * Detects `symbol = ` prefix and provides semantic symbol suggestions from the
+ * file specified in the `file` parameter.
+ */
+function setupQuerySymbolIntellisense(
+	_editor: monacoNs.editor.IStandaloneCodeEditor,
+	schema: JsonSchema,
+): monacoNs.IDisposable {
+	const fileProp = hasQuerySymbolSchema(schema);
+	if (!fileProp) {
+		return { dispose: noop };
+	}
+
+	const queryProps = new Set(['query']);
+
+	return monacoNs.languages.registerCompletionItemProvider('json', {
+		provideCompletionItems: async (model, position) => {
+			const empty: monacoNs.languages.CompletionList = { suggestions: [] };
+
+			const line = model.getLineContent(position.lineNumber);
+			const valueRange = findStringValueRange(line, position.column, queryProps);
+			if (!valueRange) return empty;
+
+			const currentValue = line.substring(
+				valueRange.contentStart - 1,
+				valueRange.contentEnd - 1,
+			);
+
+			const hasPrefix = currentValue.toLowerCase().startsWith(SYMBOL_PREFIX.toLowerCase());
+			const filterText = hasPrefix
+				? currentValue.slice(SYMBOL_PREFIX.length)
+				: currentValue;
+
+			const filePathValue = readStringPropertyValue(model, fileProp);
+			if (!filePathValue) return empty;
+
+			let symbols: SemanticSymbolEntry[] = [];
+			try {
+				const data = await rpc<SemanticSymbolsResponse>(
+					'editor/semantic-symbols',
+					{ file: filePathValue },
+				);
+				symbols = data.symbols ?? [];
+			} catch {
+				return empty;
+			}
+
+			if (symbols.length === 0) return empty;
+
+			const replaceRange = new monacoNs.Range(
+				position.lineNumber, valueRange.contentStart,
+				position.lineNumber, valueRange.contentEnd,
+			);
+
+			const suggestions: monacoNs.languages.CompletionItem[] = [];
+			for (const [idx, sym] of symbols.entries()) {
+				const displayName = sym.parentName
+					? `${sym.parentName} > ${sym.name}`
+					: sym.name;
+				const insertValue = `${SYMBOL_PREFIX}${displayName}`;
+
+				if (filterText && !displayName.toLowerCase().includes(filterText.toLowerCase())) {
+					continue;
+				}
+
+				suggestions.push({
+					detail: sym.kind,
+					filterText: displayName,
+					insertText: insertValue,
+					kind: symbolKindToCompletionKind(sym.kind),
+					label: displayName,
+					range: replaceRange,
+					sortText: String(idx).padStart(6, '0'),
+				});
+			}
+
+			return { suggestions };
+		},
+		triggerCharacters: ['"', '=', '>', ' '],
 	});
 }
 

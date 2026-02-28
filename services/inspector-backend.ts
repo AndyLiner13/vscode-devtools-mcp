@@ -488,6 +488,87 @@ export function registerInspectorHandlers(
 		}
 	});
 
+	// ── Semantic Symbol Lookup (for codebase_search query IntelliSense) ──
+
+	const SEMANTIC_SYMBOL_KINDS: ReadonlySet<string> = new Set([
+		// Body-bearing kinds
+		'function', 'method', 'constructor', 'getter', 'setter',
+		'class', 'interface', 'enum', 'namespace', 'module', 'staticBlock',
+		// Root-level named symbols that can be looked up via symbol =
+		'variable', 'constant', 'typeAlias',
+	]);
+
+	const SEMANTIC_EXCLUDED_KINDS: ReadonlySet<string> = new Set([
+		'import', 'expression', 're-export', 'comment',
+	]);
+
+	/**
+	 * Flatten FileSymbol tree into semantic symbols using `>` separator
+	 * for parent-child hierarchy (matching `symbol = Parent > Child` format).
+	 * Only includes symbols suitable for symbol lookup.
+	 */
+	function flattenSemanticSymbols(
+		symbols: FileSymbol[],
+		parentName?: string,
+	): Array<{ kind: string; name: string; parentName?: string }> {
+		const out: Array<{ kind: string; name: string; parentName?: string }> = [];
+		for (const sym of symbols) {
+			if (SEMANTIC_EXCLUDED_KINDS.has(sym.kind)) continue;
+
+			const isLookupable = SEMANTIC_SYMBOL_KINDS.has(sym.kind);
+
+			if (isLookupable) {
+				out.push({
+					kind: sym.kind,
+					name: sym.name,
+					parentName: parentName ?? undefined,
+				});
+			}
+
+			if (sym.children.length > 0) {
+				const nextParent = BODY_BEARING_KINDS.has(sym.kind) ? sym.name : parentName;
+				out.push(...flattenSemanticSymbols(sym.children, nextParent));
+			}
+		}
+		return out;
+	}
+
+	register('inspector.editor/semantic-symbols', async (params) => {
+		const { workspaceFolders } = vscode.workspace;
+		const workspaceRoot = workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
+		const requestedFile = typeof params.file === 'string' ? params.file : '';
+
+		log(`[editor/semantic-symbols] requestedFile: ${requestedFile}`);
+
+		let filePath: string;
+		if (!requestedFile) {
+			filePath = '';
+		} else if (requestedFile.startsWith('/') || /^[A-Za-z]:/.test(requestedFile)) {
+			filePath = requestedFile;
+		} else {
+			filePath = resolvePath(workspaceRoot, requestedFile);
+		}
+
+		if (!filePath) {
+			return { symbols: [] };
+		}
+
+		try {
+			const structure = await extractStructure(filePath);
+			if (!structure) {
+				log(`[editor/semantic-symbols] no structure returned for: ${filePath}`);
+				return { symbols: [] };
+			}
+
+			const symbols = flattenSemanticSymbols(structure.symbols);
+			log(`[editor/semantic-symbols] returning ${symbols.length} semantic symbols`);
+			return { symbols };
+		} catch (err) {
+			log(`[editor/semantic-symbols] ERROR: ${err}`);
+			return { error: String(err), symbols: [] };
+		}
+	});
+
 	// ── Logging ──
 
 	register('inspector.log', (params) => {

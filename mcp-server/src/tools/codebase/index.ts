@@ -6,4 +6,5 @@
 
 export { lint } from './codebase-lint.js';
 export { map } from './codebase-map.js';
+export { search } from './codebase-search.js';
 export { trace } from './codebase-trace.js';

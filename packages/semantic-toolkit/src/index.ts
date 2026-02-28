@@ -17,3 +17,14 @@ export type {
 export { chunkFile } from './chunker/index';
 
 export type { CodeChunk, ChunkedFile } from './chunker/types';
+
+export { lookupSymbol } from './lookup/index';
+
+export type {
+	LookupResult,
+	SymbolLookupResult,
+	NotALookupResult,
+} from './lookup/types';
+
+export type { TsLsConfig } from './ts-ls/types';
+export { DEFAULT_TS_LS_CONFIG } from './ts-ls/types';
