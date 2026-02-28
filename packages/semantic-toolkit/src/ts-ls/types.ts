@@ -177,6 +177,44 @@ export interface TypeFlow {
 	referencedTypes: TypeFlowType[];
 }
 
+// ---------------------------------------------------------------------------
+// Item 8 — Members
+// ---------------------------------------------------------------------------
+
+/** The kind of a class/interface member. */
+export type MemberKind =
+	| 'method'
+	| 'property'
+	| 'getter'
+	| 'setter'
+	| 'constructor'
+	| 'indexSignature'
+	| 'callSignature'
+	| 'constructSignature';
+
+/** A member of a class or interface (method, property, accessor, signature). */
+export interface MemberInfo {
+	/** Member name. Empty string for index/call/construct signatures. */
+	name: string;
+
+	/** Kind of the member. */
+	kind: MemberKind;
+
+	/** 1-indexed line number of the member declaration. */
+	line: number;
+
+	/**
+	 * Type text for properties, or return type text for methods/getters.
+	 * Parameter signature for constructors (e.g. '(name: string, age: number)').
+	 * Full signature text for index/call/construct signatures.
+	 * Undefined when no type annotation exists.
+	 */
+	type?: string;
+
+	/** Modifiers: public, private, protected, static, abstract, readonly, async, override. */
+	modifiers: string[];
+}
+
 /**
  * Structural metadata for a symbol, resolved via TS Language Services.
  *
@@ -187,6 +225,7 @@ export interface TypeFlow {
  * - Item 5: isAbstract, typeParameters, isAbstract on SymbolRef
  * - Item 6: references (cross-file reference count + file list)
  * - Item 7: typeFlows (parameter/return type provenance)
+ * - Item 8: members (class/interface member listing)
  */
 export interface SymbolMetadata {
 	/** The symbol this metadata describes. */
@@ -206,4 +245,7 @@ export interface SymbolMetadata {
 
 	/** Type flows: parameter and return type provenance for functions/methods/constructors. */
 	typeFlows?: TypeFlow;
+
+	/** Members: methods, properties, accessors, signatures. Undefined for non-class/interface symbols. */
+	members?: MemberInfo[];
 }

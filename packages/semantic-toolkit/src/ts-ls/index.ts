@@ -8,6 +8,7 @@ export { resolveCallHierarchy } from './call-hierarchy';
 export { resolveTypeHierarchy } from './type-hierarchy';
 export { resolveReferences } from './references';
 export { resolveTypeFlows } from './type-flows';
+export { resolveMembers } from './members';
 
 export type {
 	TsLsConfig,
@@ -22,6 +23,8 @@ export type {
 	TypeFlow,
 	TypeFlowParam,
 	TypeFlowType,
+	MemberInfo,
+	MemberKind,
 } from './types';
 
 export { DEFAULT_TS_LS_CONFIG } from './types';

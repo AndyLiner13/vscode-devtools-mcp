@@ -896,6 +896,15 @@ Resolution uses a hybrid approach:
 
 Type categories handled: simple type references, type aliases, enums, union types (`string | User`), intersection types (`User & { admin: boolean }`), generic types with unlimited nesting (`Map<UserId, Set<Permission>>`), tuple types (`[User, Token]`), array types (`User[]`), function-typed parameters (`(entry: AuditEntry) => Token`). Anonymous types (`__type`) from intersection with object literals are filtered out. Primitives and built-in types (Promise, Array, Map, Set, Record, etc.) are skipped.
 
+**Member resolution:** `resolveMembers()` takes a class or interface name and returns `MemberInfo[]` — an ordered list of all members, sorted by source position. Each `MemberInfo` contains:
+- `name` — member name (empty string for index/call/construct signatures).
+- `kind` — one of: `method`, `property`, `getter`, `setter`, `constructor`, `indexSignature`, `callSignature`, `constructSignature`.
+- `line` — 1-indexed line number of the declaration.
+- `type` — type text (return type for methods/getters, parameter type for setters, parameter signature for constructors, full signature text for index/call/construct signatures). Undefined when no annotation exists.
+- `modifiers[]` — visibility and other modifiers: `public`, `private`, `protected`, `static`, `abstract`, `readonly`, `async`, `override`.
+
+Supported for both classes and interfaces. Class members include: constructors (with parameter signature), properties (including ECMAScript private `#field`), methods, get/set accessors, and index signatures. Interface members include: property signatures, method signatures, index signatures, call signatures, and construct signatures.
+
 **Same-name disambiguation:** Outgoing calls are grouped by `filePath:name:line` to avoid merging same-named methods in different classes within the same file.
 
 **User code filtering:** Declarations from `.d.ts` files and `node_modules` are excluded from call resolution.
@@ -909,7 +918,8 @@ Type categories handled: simple type references, type aliases, enums, union type
 - **`ts-ls/type-hierarchy/`** — 5 files: interfaces (Entity, Serializable, Auditable) → models (abstract BaseModel, User, AdminUser) → diamond (AuditedModel) → standalone → generics (Repository\<T extends Entity, ID = string\>, Container\<T\>, Queryable\<T extends Entity\>). Verify extends, implements, subtypes, diamond pattern, standalone, isAbstract on TypeHierarchy and SymbolRef, rich generic type parameters (name+constraint+default), error cases. ✅ Implemented
 - **`ts-ls/references/`** — 5 files: utils (formatDate, formatTime, DateString, Timestamped) → user-service, order-service, report → isolated. Verify cross-file reference count, per-file line breakdown, same-file usage inclusion, definition exclusion, type alias references, interface implements references, zero-reference symbols, class references, error handling. ✅ Implemented
 - **`ts-ls/type-flows/`** — 3 files: types (User, Role, Token, AuditEntry, Permission, UserId, Status) → functions (14 functions covering simple, union, intersection, generic, nested generic, tuple, array, function-typed params) → service (UserService class with constructor and methods). Verify parameter type provenance, return type provenance, type alias resolution through imports, enum resolution, `__type` anonymous filtering, function-typed callback extraction, deduplication across params/return, constructor handling (no return type), deeply nested generic unwrapping (Map<UserId, Set<Permission>>), union inside generic (Promise<User | null>), error handling. ✅ Implemented
-- **`ts-ls/members/`** — class with methods/properties. Verify member listing.
+- **`ts-ls/members/`** — class with methods/properties. Verify member listing. ✅ Implemented
+  - 2 files: user-service (abstract class UserService extending BaseService with constructor, public/private/protected/static/readonly/abstract/override/async methods, properties, ECMAScript private fields, getters, setters, index signature) + repository (generic interface Repository with readonly/regular properties, method signatures, index signature, call signature, construct signature). Also tests Empty interface (zero members) and Config interface (properties only). 36 tests covering all member kinds, modifiers, types, error handling.
 - **`ts-ls/cross-module/`** — re-exports, barrel files, declaration merging. Verify resolution through indirection.
 
 **Validation gate:**
@@ -920,7 +930,7 @@ Type categories handled: simple type references, type aliases, enums, union type
 - Type hierarchy resolves extends/implements/subtypes correctly
 - Reference counts are accurate (±0 tolerance)
 - Type flows trace parameter origins and return type destinations correctly, including type aliases, enums, nested generics, function-typed params, and deduplication ✅  
-- Member listings are complete and ordered
+- Member listings are complete and ordered ✅
 
 **Dependencies:** Phase 1 (Parser creates ts-morph project)
 
