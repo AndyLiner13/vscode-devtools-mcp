@@ -19,6 +19,7 @@ export { resolveGuardCallbacks } from './guard-callbacks';
 export { resolveAdvancedTypes } from './advanced-types';
 export { resolveEnumMembers } from './enum-members';
 export { resolveUnicodeIdentifiers } from './unicode-identifiers';
+export { resolveSideEffects } from './side-effects';
 
 export type {
 	TsLsConfig,
@@ -70,6 +71,9 @@ export type {
 	UnicodeIdentifierAnalysis,
 	UnicodeIdentifierSeverity,
 	ConfusablePair,
+	SideEffectKind,
+	SideEffectEntry,
+	SideEffectAnalysis,
 } from './types';
 
 export { DEFAULT_TS_LS_CONFIG } from './types';

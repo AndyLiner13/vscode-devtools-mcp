@@ -18,6 +18,7 @@
  * Item 17: Advanced types — conditional, mapped, template literal, utility type structure.
  * Item 18: Enum members — enum member value/kind extraction.
  * Item 19: Unicode/confusable identifiers — homoglyph, Bidi, zero-width detection.
+ * Item 20: Module-level side effects — IIFE, top-level calls, side-effect imports, await, assignments.
  */
 
 /** Configuration for TS Language Services operations. */
@@ -301,6 +302,9 @@ export interface SymbolMetadata {
 
 	/** Unicode identifier analysis: confusable/homoglyph/Bidi/zero-width detection. */
 	unicodeIdentifiers?: UnicodeIdentifierAnalysis;
+
+	/** Module-level side effect analysis: IIFE, top-level calls, side-effect imports, await, assignments. */
+	sideEffects?: SideEffectAnalysis;
 }
 
 // ---------------------------------------------------------------------------
@@ -396,6 +400,45 @@ export interface UnicodeIdentifierAnalysis {
 
 	/** Pairs of identifiers that are visually confusable within the file. */
 	confusablePairs: ConfusablePair[];
+}
+
+// ---------------------------------------------------------------------------
+// Item 20: Module-level side effects
+// ---------------------------------------------------------------------------
+
+/** The kind of module-level side effect. */
+export type SideEffectKind =
+	| 'iife'                // Immediately Invoked Function Expression
+	| 'call'                // Top-level function/method call
+	| 'side-effect-import'  // import 'polyfill' (no bindings)
+	| 'top-level-await'     // await expression at module scope
+	| 'assignment';         // Top-level assignment (process.env.X = 'y')
+
+/** A single side effect that executes when the module loads. */
+export interface SideEffectEntry {
+	/** Kind of side effect. */
+	kind: SideEffectKind;
+
+	/** Source text excerpt of the side effect. */
+	text: string;
+
+	/** 1-indexed line number. */
+	line: number;
+
+	/** Name of the called function/method, if applicable. */
+	targetName?: string;
+
+	/** True when inside a top-level conditional (if/try/switch). */
+	isConditional: boolean;
+}
+
+/** Full module-level side effect analysis for a file. */
+export interface SideEffectAnalysis {
+	/** Workspace-relative file path. */
+	filePath: string;
+
+	/** All side effects in source order. */
+	effects: SideEffectEntry[];
 }
 
 // ---------------------------------------------------------------------------
