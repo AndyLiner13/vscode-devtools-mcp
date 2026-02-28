@@ -12,6 +12,7 @@ export { resolveMembers } from './members';
 export { resolveSignature } from './signature';
 export { resolveAliases } from './aliases';
 export { resolveAmbients } from './ambients';
+export { resolveProjectStructure } from './project-structure';
 
 export type {
 	TsLsConfig,
@@ -38,6 +39,8 @@ export type {
 	ModuleAugmentation,
 	AmbientDeclaration,
 	AmbientMember,
+	ProjectInfo,
+	ProjectStructure,
 } from './types';
 
 export { DEFAULT_TS_LS_CONFIG } from './types';

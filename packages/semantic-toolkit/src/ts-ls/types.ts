@@ -11,6 +11,7 @@
  * Item 9: Signature + modifiers.
  * Item 11: Alias tracking — import/export alias graph resolution.
  * Item 12: Ambient/global augmentations — declare global, declare module, .d.ts.
+ * Item 13: Multi-project tsconfig — project references, composite, solution-style.
  */
 
 /** Configuration for TS Language Services operations. */
@@ -406,4 +407,44 @@ export interface AmbientInfo {
 
 	/** Ambient declarations from .d.ts files (excluding node_modules). */
 	ambientDeclarations: AmbientDeclaration[];
+}
+
+// ---------------------------------------------------------------------------
+// Item 13: Multi-project tsconfig / project references
+// ---------------------------------------------------------------------------
+
+/** Information about a single TypeScript project (tsconfig.json). */
+export interface ProjectInfo {
+	/** Workspace-relative path to the tsconfig.json file. */
+	configPath: string;
+
+	/** Whether this project uses `composite: true`. */
+	composite: boolean;
+
+	/** Paths this tsconfig extends from (resolved, relative). */
+	extendedFrom?: string;
+
+	/** Project references declared in this tsconfig. */
+	references: string[];
+
+	/** Source files included in this project (workspace-relative). */
+	sourceFiles: string[];
+
+	/** Root directory of this project (workspace-relative). */
+	rootDir: string;
+
+	/** Output directory if specified. */
+	outDir?: string;
+}
+
+/** Full project structure for a workspace with potentially multiple tsconfig files. */
+export interface ProjectStructure {
+	/** All discovered TypeScript projects in the workspace. */
+	projects: ProjectInfo[];
+
+	/** Solution-style tsconfig (if any) — a tsconfig with only references, no files. */
+	solutionConfig?: string;
+
+	/** Map of project → projects that reference it (reverse dependency graph). */
+	referencedBy: Map<string, string[]>;
 }
