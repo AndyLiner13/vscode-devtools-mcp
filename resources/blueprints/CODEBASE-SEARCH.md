@@ -905,6 +905,23 @@ Type categories handled: simple type references, type aliases, enums, union type
 
 Supported for both classes and interfaces. Class members include: constructors (with parameter signature), properties (including ECMAScript private `#field`), methods, get/set accessors, and index signatures. Interface members include: property signatures, method signatures, index signatures, call signatures, and construct signatures.
 
+**Signature + Modifier resolution:** `resolveSignature()` takes any named symbol and returns a `SignatureInfo` with:
+- `signature` — complete type signature text, format varies by kind:
+  - Functions/methods: `name<T>(param: Type): ReturnType` (includes type parameters, parameter types, return type)
+  - Classes: `class Name<T> extends Base implements IFace` (includes heritage clauses)
+  - Interfaces: `interface Name<T> extends Parent` (includes heritage clauses)
+  - Type aliases: `type Name<T> = UnderlyingType` (includes type parameter and full type body)
+  - Enums: `enum Name` or `const enum Name`
+  - Variables: `const/let/var name: Type`
+  - Properties: `name: Type`
+  - Get accessors: `get name(): Type`
+  - Set accessors: `set name(value: Type)`
+- `modifiers[]` — keyword modifiers plus semantic `exported` flag: `public`, `private`, `protected`, `static`, `abstract`, `readonly`, `async`, `override`, `declare`, `default`, `exported`.
+
+Supported symbol kinds: functions, methods (class + interface), classes, interfaces, type aliases, enums, variables, properties (class + interface), get/set accessors. Declaration lookup searches top-level declarations first, then scans all classes and interfaces for nested members.
+
+The `exported` modifier is a semantic flag (not a keyword modifier) — derived from `isExported()` for most declarations and from the parent `VariableStatement` for variable declarations.
+
 **Same-name disambiguation:** Outgoing calls are grouped by `filePath:name:line` to avoid merging same-named methods in different classes within the same file.
 
 **User code filtering:** Declarations from `.d.ts` files and `node_modules` are excluded from call resolution.
@@ -920,6 +937,8 @@ Supported for both classes and interfaces. Class members include: constructors (
 - **`ts-ls/type-flows/`** — 3 files: types (User, Role, Token, AuditEntry, Permission, UserId, Status) → functions (14 functions covering simple, union, intersection, generic, nested generic, tuple, array, function-typed params) → service (UserService class with constructor and methods). Verify parameter type provenance, return type provenance, type alias resolution through imports, enum resolution, `__type` anonymous filtering, function-typed callback extraction, deduplication across params/return, constructor handling (no return type), deeply nested generic unwrapping (Map<UserId, Set<Permission>>), union inside generic (Promise<User | null>), error handling. ✅ Implemented
 - **`ts-ls/members/`** — class with methods/properties. Verify member listing. ✅ Implemented
   - 2 files: user-service (abstract class UserService extending BaseService with constructor, public/private/protected/static/readonly/abstract/override/async methods, properties, ECMAScript private fields, getters, setters, index signature) + repository (generic interface Repository with readonly/regular properties, method signatures, index signature, call signature, construct signature). Also tests Empty interface (zero members) and Config interface (properties only). 36 tests covering all member kinds, modifiers, types, error handling.
+- **`ts-ls/signature/`** — 1 file: all-kinds (exported/non-exported functions, generic functions, async functions, classes with heritage, interfaces with extends, type aliases, const enums, regular enums, const/let/var variables, class methods, class properties, get/set accessors, interface methods, interface properties). Verify complete signature text and modifier extraction for every symbol kind. ✅ Implemented
+  - 34 tests covering: function signatures (params + return type), generic type parameters, class heritage clauses (extends + implements), interface extends clauses, type alias bodies, enum const detection, variable declaration kinds, accessor signatures, modifier detection (async, static, exported, abstract, readonly, override, declare, default, private, protected), exported detection for all declaration types, error handling for non-existent symbols.
 - **`ts-ls/cross-module/`** — re-exports, barrel files, declaration merging. Verify resolution through indirection.
 
 **Validation gate:**
@@ -931,6 +950,7 @@ Supported for both classes and interfaces. Class members include: constructors (
 - Reference counts are accurate (±0 tolerance)
 - Type flows trace parameter origins and return type destinations correctly, including type aliases, enums, nested generics, function-typed params, and deduplication ✅  
 - Member listings are complete and ordered ✅
+- Signature text is accurate for every supported symbol kind, modifier lists are complete ✅
 
 **Dependencies:** Phase 1 (Parser creates ts-morph project)
 

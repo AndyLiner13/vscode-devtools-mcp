@@ -9,6 +9,7 @@ export { resolveTypeHierarchy } from './type-hierarchy';
 export { resolveReferences } from './references';
 export { resolveTypeFlows } from './type-flows';
 export { resolveMembers } from './members';
+export { resolveSignature } from './signature';
 
 export type {
 	TsLsConfig,

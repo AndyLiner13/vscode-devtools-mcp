@@ -226,10 +226,17 @@ export interface MemberInfo {
  * - Item 6: references (cross-file reference count + file list)
  * - Item 7: typeFlows (parameter/return type provenance)
  * - Item 8: members (class/interface member listing)
+ * - Item 9: signature + modifiers
  */
 export interface SymbolMetadata {
 	/** The symbol this metadata describes. */
 	symbol: SymbolRef;
+
+	/** Complete type signature of the declaration (e.g. 'async fetchUser(id: number): Promise<string>'). */
+	signature?: string;
+
+	/** Modifiers on the declaration (e.g. ['async', 'exported', 'public']). */
+	modifiers?: string[];
 
 	/** Symbols this symbol calls (recursive tree up to configured callDepth). */
 	outgoingCalls: OutgoingCall[];
