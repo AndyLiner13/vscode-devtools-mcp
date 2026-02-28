@@ -17,6 +17,7 @@
  * Item 16: Guard callbacks — type guard functions used as callbacks with narrowing metadata.
  * Item 17: Advanced types — conditional, mapped, template literal, utility type structure.
  * Item 18: Enum members — enum member value/kind extraction.
+ * Item 19: Unicode/confusable identifiers — homoglyph, Bidi, zero-width detection.
  */
 
 /** Configuration for TS Language Services operations. */
@@ -297,6 +298,9 @@ export interface SymbolMetadata {
 
 	/** Enum member analysis: member names, values, const/declare flags. */
 	enumMembers?: EnumAnalysis;
+
+	/** Unicode identifier analysis: confusable/homoglyph/Bidi/zero-width detection. */
+	unicodeIdentifiers?: UnicodeIdentifierAnalysis;
 }
 
 // ---------------------------------------------------------------------------
@@ -331,6 +335,67 @@ export interface EnumAnalysis {
 
 	/** All members in declaration order. */
 	members: EnumMemberEntry[];
+}
+
+// ---------------------------------------------------------------------------
+// Item 19: Unicode / Confusable Identifiers
+// ---------------------------------------------------------------------------
+
+/** Severity of a Unicode identifier finding. */
+export type UnicodeIdentifierSeverity = 'info' | 'warning' | 'critical';
+
+/** A single identifier that contains non-ASCII or suspicious characters. */
+export interface UnicodeIdentifierEntry {
+	/** The identifier as written in source code. */
+	name: string;
+
+	/** NFC-normalized form of the identifier. */
+	normalizedName: string;
+
+	/** Unicode scripts detected in this identifier (e.g. ['Latin', 'Cyrillic']). */
+	scripts: string[];
+
+	/** True when the identifier mixes multiple Unicode scripts. */
+	isMixedScript: boolean;
+
+	/** True when any Bidi override characters (U+202A–U+202E, U+2066–U+2069) are present. */
+	hasBidiOverride: boolean;
+
+	/** True when any zero-width characters (U+200B–U+200D, U+2060, U+FEFF) are present. */
+	hasZeroWidth: boolean;
+
+	/** Severity: info (non-ASCII single-script), warning (mixed-script), critical (homoglyph/Bidi/zero-width). */
+	severity: UnicodeIdentifierSeverity;
+
+	/** Scope enclosing the identifier (e.g. 'file', 'function:foo', 'class:Bar'). */
+	scope: string;
+
+	/** 1-indexed line number. */
+	line: number;
+}
+
+/** A pair of identifiers that are visually confusable. */
+export interface ConfusablePair {
+	/** First identifier. */
+	a: string;
+
+	/** Second identifier. */
+	b: string;
+
+	/** Human-readable reason (e.g. 'Cyrillic а vs Latin a'). */
+	reason: string;
+}
+
+/** Full Unicode identifier analysis for a file. */
+export interface UnicodeIdentifierAnalysis {
+	/** Workspace-relative file path. */
+	filePath: string;
+
+	/** All identifiers with non-ASCII or suspicious characters. */
+	identifiers: UnicodeIdentifierEntry[];
+
+	/** Pairs of identifiers that are visually confusable within the file. */
+	confusablePairs: ConfusablePair[];
 }
 
 // ---------------------------------------------------------------------------

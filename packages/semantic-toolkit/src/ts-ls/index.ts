@@ -18,6 +18,7 @@ export { resolveCallbacks } from './callbacks';
 export { resolveGuardCallbacks } from './guard-callbacks';
 export { resolveAdvancedTypes } from './advanced-types';
 export { resolveEnumMembers } from './enum-members';
+export { resolveUnicodeIdentifiers } from './unicode-identifiers';
 
 export type {
 	TsLsConfig,
@@ -65,6 +66,10 @@ export type {
 	AdvancedTypeAnalysis,
 	EnumMemberEntry,
 	EnumAnalysis,
+	UnicodeIdentifierEntry,
+	UnicodeIdentifierAnalysis,
+	UnicodeIdentifierSeverity,
+	ConfusablePair,
 } from './types';
 
 export { DEFAULT_TS_LS_CONFIG } from './types';
