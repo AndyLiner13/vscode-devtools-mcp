@@ -12,6 +12,7 @@
  * Item 11: Alias tracking — import/export alias graph resolution.
  * Item 12: Ambient/global augmentations — declare global, declare module, .d.ts.
  * Item 13: Multi-project tsconfig — project references, composite, solution-style.
+ * Item 14: Type guards — narrowing construct detection in function bodies.
  */
 
 /** Configuration for TS Language Services operations. */
@@ -234,6 +235,7 @@ export interface MemberInfo {
  * - Item 9: signature + modifiers
  * - Item 11: aliases (import/export alias graph)
  * - Item 12: ambients (declare global, declare module, .d.ts)
+ * - Item 14: typeGuards (narrowing constructs in function bodies)
  */
 export interface SymbolMetadata {
 	/** The symbol this metadata describes. */
@@ -265,6 +267,9 @@ export interface SymbolMetadata {
 
 	/** Alias graph: all import/export aliases pointing to this symbol across the project. */
 	aliases?: AliasGraph;
+
+	/** Type guard analysis: narrowing constructs found in this function/method body. */
+	typeGuards?: TypeGuardAnalysis;
 }
 
 // ---------------------------------------------------------------------------
@@ -407,6 +412,55 @@ export interface AmbientInfo {
 
 	/** Ambient declarations from .d.ts files (excluding node_modules). */
 	ambientDeclarations: AmbientDeclaration[];
+}
+
+// ---------------------------------------------------------------------------
+// Item 14: Type Guards / Narrowing
+// ---------------------------------------------------------------------------
+
+/** The kind of type narrowing construct. */
+export type TypeGuardKind =
+	| 'user-defined'      // function isUser(x: any): x is User
+	| 'assertion'         // function assertUser(x: any): asserts x is User
+	| 'typeof'            // if (typeof x === 'string')
+	| 'instanceof'        // if (x instanceof Error)
+	| 'in-operator'       // if ('kind' in x)
+	| 'discriminant'      // if (x.kind === 'circle')
+	| 'nullish'           // if (x != null), if (x), x ?? fallback
+	| 'equality'          // if (x === 'foo')
+	| 'array-isarray'     // if (Array.isArray(x))
+	| 'early-return'      // if (!x) return; (guard clause)
+	| 'exhaustive'        // const _: never = x (exhaustiveness check)
+	| 'compound';         // typeof x === 'string' || typeof x === 'number'
+
+/** A single type guard / narrowing entry found in a function body. */
+export interface TypeGuardEntry {
+	/** What kind of narrowing construct. */
+	kind: TypeGuardKind;
+
+	/** 1-indexed line number where this guard occurs. */
+	line: number;
+
+	/** Source text of the guard expression (e.g. "typeof x === 'string'"). */
+	guardText: string;
+
+	/** The variable or parameter name being narrowed. */
+	narrowedName: string;
+
+	/** Target type if resolvable (e.g. 'string', 'User'). Undefined when not determinable. */
+	narrowedTo?: string;
+
+	/** True for return-type guards: `x is T` or `asserts x is T` on the function itself. */
+	isReturnTypeGuard?: boolean;
+}
+
+/** Type guard analysis result for a function or method. */
+export interface TypeGuardAnalysis {
+	/** The symbol this analysis describes. */
+	symbol: SymbolRef;
+
+	/** All narrowing constructs found, ordered by line number. */
+	guards: TypeGuardEntry[];
 }
 
 // ---------------------------------------------------------------------------

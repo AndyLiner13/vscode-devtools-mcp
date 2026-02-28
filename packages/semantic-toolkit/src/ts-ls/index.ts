@@ -13,6 +13,7 @@ export { resolveSignature } from './signature';
 export { resolveAliases } from './aliases';
 export { resolveAmbients } from './ambients';
 export { resolveProjectStructure } from './project-structure';
+export { resolveTypeGuards } from './type-guards';
 
 export type {
 	TsLsConfig,
@@ -41,6 +42,9 @@ export type {
 	AmbientMember,
 	ProjectInfo,
 	ProjectStructure,
+	TypeGuardKind,
+	TypeGuardEntry,
+	TypeGuardAnalysis,
 } from './types';
 
 export { DEFAULT_TS_LS_CONFIG } from './types';
