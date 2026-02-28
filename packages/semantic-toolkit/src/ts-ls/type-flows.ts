@@ -14,6 +14,7 @@ import type {
 	ConstructorDeclaration,
 	TypeNode,
 	Symbol as TsMorphSymbol,
+	ImportSpecifier,
 } from 'ts-morph';
 import * as path from 'node:path';
 
@@ -223,19 +224,9 @@ function extractImmediateTypeNames(
 
 		// Follow through import specifiers to the original declaration
 		if (Node.isImportSpecifier(decl)) {
-			const moduleFile = decl.getImportDeclaration().getModuleSpecifierSourceFile();
-			if (moduleFile) {
-				const original = moduleFile.getInterface(name)
-					?? moduleFile.getClass(name)
-					?? moduleFile.getTypeAlias(name)
-					?? moduleFile.getEnum(name)
-					?? moduleFile.getFunction(name)
-					?? moduleFile.getVariableDeclaration(name);
-				if (original) {
-					decl = original;
-				} else {
-					continue;
-				}
+			const original = resolveImportedDeclaration(decl, name);
+			if (original) {
+				decl = original;
 			} else {
 				continue;
 			}
@@ -252,6 +243,61 @@ function extractImmediateTypeNames(
 		const relativePath = path.relative(workspaceRoot, declFile).replace(/\\/g, '/');
 		results.push({ name, filePath: relativePath, line: declLine });
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Import specifier resolution — follows barrel re-export chains
+// (`export * from`, `export { name } from`) to find the original declaration.
+// ---------------------------------------------------------------------------
+
+function resolveImportedDeclaration(
+	importSpec: ImportSpecifier,
+	name: string,
+): Node | undefined {
+	const moduleFile = importSpec.getImportDeclaration().getModuleSpecifierSourceFile();
+	if (!moduleFile) return undefined;
+	return findInFileRecursive(moduleFile, name, new Set());
+}
+
+function findInFileRecursive(
+	file: SourceFile,
+	name: string,
+	visited: Set<string>,
+): Node | undefined {
+	const filePath = file.getFilePath();
+	if (visited.has(filePath)) return undefined;
+	visited.add(filePath);
+
+	const direct = file.getInterface(name)
+		?? file.getClass(name)
+		?? file.getTypeAlias(name)
+		?? file.getEnum(name)
+		?? file.getFunction(name)
+		?? file.getVariableDeclaration(name);
+	if (direct) return direct;
+
+	for (const exportDecl of file.getExportDeclarations()) {
+		const targetFile = exportDecl.getModuleSpecifierSourceFile();
+		if (!targetFile) continue;
+
+		const namedExports = exportDecl.getNamedExports();
+		if (namedExports.length === 0) {
+			// export * from './module' — follow through
+			const found = findInFileRecursive(targetFile, name, visited);
+			if (found) return found;
+		} else {
+			const matchingExport = namedExports.find(
+				e => (e.getAliasNode()?.getText() ?? e.getName()) === name,
+			);
+			if (matchingExport) {
+				const originalName = matchingExport.getName();
+				const found = findInFileRecursive(targetFile, originalName, visited);
+				if (found) return found;
+			}
+		}
+	}
+
+	return undefined;
 }
 
 // ---------------------------------------------------------------------------

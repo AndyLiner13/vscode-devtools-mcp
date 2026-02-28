@@ -890,7 +890,7 @@ The definition itself is excluded from references (consumers already know the de
 - `referencedTypes[]` — deduplicated union of all user-defined types across params and return, sorted by filePath then line.
 
 Resolution uses a hybrid approach:
-1. **TypeNode-based** extraction catches type aliases and enum names that TypeScript's type checker expands (e.g., `UserId = number` → node has `UserId`, checker has `number`). Import specifiers are followed through to the original declaration file.
+1. **TypeNode-based** extraction catches type aliases and enum names that TypeScript's type checker expands (e.g., `UserId = number` → node has `UserId`, checker has `number`). Import specifiers are followed through to the original declaration file, including through multi-level barrel re-export chains (`export *`, named re-exports).
 2. **Type-based** deep traversal handles unions, intersections, tuples, arrays, nested generics, and function-typed parameters using the TypeChecker's semantic model.
 3. Both paths share a visited set keyed by `filePath:line` for cycle detection and deduplication.
 
@@ -918,7 +918,7 @@ Supported for both classes and interfaces. Class members include: constructors (
   - Set accessors: `set name(value: Type)`
 - `modifiers[]` — keyword modifiers plus semantic `exported` flag: `public`, `private`, `protected`, `static`, `abstract`, `readonly`, `async`, `override`, `declare`, `default`, `exported`.
 
-Supported symbol kinds: functions, methods (class + interface), classes, interfaces, type aliases, enums, variables, properties (class + interface), get/set accessors. Declaration lookup searches top-level declarations first, then scans all classes and interfaces for nested members.
+Supported symbol kinds: functions, methods (class + interface), classes, interfaces, type aliases, enums, variables, properties (class + interface), get/set accessors. Declaration lookup searches top-level declarations first, then scans all classes and interfaces for nested members, then scans namespace/module declarations for namespace-scoped symbols.
 
 The `exported` modifier is a semantic flag (not a keyword modifier) — derived from `isExported()` for most declarations and from the parent `VariableStatement` for variable declarations.
 
@@ -939,7 +939,8 @@ The `exported` modifier is a semantic flag (not a keyword modifier) — derived 
   - 2 files: user-service (abstract class UserService extending BaseService with constructor, public/private/protected/static/readonly/abstract/override/async methods, properties, ECMAScript private fields, getters, setters, index signature) + repository (generic interface Repository with readonly/regular properties, method signatures, index signature, call signature, construct signature). Also tests Empty interface (zero members) and Config interface (properties only). 36 tests covering all member kinds, modifiers, types, error handling.
 - **`ts-ls/signature/`** — 1 file: all-kinds (exported/non-exported functions, generic functions, async functions, classes with heritage, interfaces with extends, type aliases, const enums, regular enums, const/let/var variables, class methods, class properties, get/set accessors, interface methods, interface properties). Verify complete signature text and modifier extraction for every symbol kind. ✅ Implemented
   - 34 tests covering: function signatures (params + return type), generic type parameters, class heritage clauses (extends + implements), interface extends clauses, type alias bodies, enum const detection, variable declaration kinds, accessor signatures, modifier detection (async, static, exported, abstract, readonly, override, declare, default, private, protected), exported detection for all declaration types, error handling for non-existent symbols.
-- **`ts-ls/cross-module/`** — re-exports, barrel files, declaration merging. Verify resolution through indirection.
+- **`ts-ls/cross-module/`** — re-exports, barrel files, declaration merging. Verify resolution through indirection. ✅ Implemented
+  - 7 files: types (Entity, EntityId, Status, BaseService) → user (User, UserService, createDefaultUser, default export createUser) → config (declaration merging: Config interface + Config namespace) → config-ext (cross-file augmentation via `declare module`) → sub-barrel (`export *` wildcard + named re-exports) → index (multi-level barrel: `export *` from sub-barrel, namespace re-export `export * as configNs`, default-as-named `export { default as createUser }`, type-only renamed re-export `export type { Entity as IEntity }`) → consumer (imports everything through top-level barrel). 38 tests verifying all 6 resolvers through multi-level barrel indirection: call hierarchy (outgoing/incoming through barrel, multi-hop), type hierarchy (extends/implements through imports, abstract, type parameters), references (cross-file counts through wildcard and named re-exports), type flows (type alias resolution through barrel chain, type-only re-exports), members (class/interface members), signature (all symbol kinds), declaration merging (interface+namespace, cross-file augmentation), namespace re-export (namespace member signature and references), and default-as-named re-export (call hierarchy through barrel).
 
 **Validation gate:**
 - Call hierarchy matches expected for all test scenarios at all configured depths
@@ -951,6 +952,7 @@ The `exported` modifier is a semantic flag (not a keyword modifier) — derived 
 - Type flows trace parameter origins and return type destinations correctly, including type aliases, enums, nested generics, function-typed params, and deduplication ✅  
 - Member listings are complete and ordered ✅
 - Signature text is accurate for every supported symbol kind, modifier lists are complete ✅
+- All resolvers work correctly through multi-level barrel re-exports, wildcard re-exports, namespace re-exports, default-as-named re-exports, declaration merging, and type-only re-exports ✅
 
 **Dependencies:** Phase 1 (Parser creates ts-morph project)
 

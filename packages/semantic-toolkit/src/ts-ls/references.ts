@@ -123,5 +123,26 @@ function findNamedDeclaration(
 		if (prop) return prop;
 	}
 
+	// Search inside namespace/module declarations
+	for (const ns of sourceFile.getModules()) {
+		const fn = ns.getFunction(name);
+		if (fn) return fn;
+
+		const varDecl = ns.getVariableDeclaration(name);
+		if (varDecl) return varDecl;
+
+		const cls = ns.getClass(name);
+		if (cls) return cls;
+
+		const iface = ns.getInterface(name);
+		if (iface) return iface;
+
+		const typeAlias = ns.getTypeAlias(name);
+		if (typeAlias) return typeAlias;
+
+		const enumDecl = ns.getEnum(name);
+		if (enumDecl) return enumDecl;
+	}
+
 	return undefined;
 }
