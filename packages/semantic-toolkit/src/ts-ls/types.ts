@@ -13,6 +13,7 @@
  * Item 12: Ambient/global augmentations — declare global, declare module, .d.ts.
  * Item 13: Multi-project tsconfig — project references, composite, solution-style.
  * Item 14: Type guards — narrowing construct detection in function bodies.
+ * Item 15: Callbacks — higher-order function and callback tracking.
  */
 
 /** Configuration for TS Language Services operations. */
@@ -236,6 +237,7 @@ export interface MemberInfo {
  * - Item 11: aliases (import/export alias graph)
  * - Item 12: ambients (declare global, declare module, .d.ts)
  * - Item 14: typeGuards (narrowing constructs in function bodies)
+ * - Item 15: callbacks (higher-order function and callback tracking)
  */
 export interface SymbolMetadata {
 	/** The symbol this metadata describes. */
@@ -270,6 +272,9 @@ export interface SymbolMetadata {
 
 	/** Type guard analysis: narrowing constructs found in this function/method body. */
 	typeGuards?: TypeGuardAnalysis;
+
+	/** Callback analysis: where this function is used as a callback and HOF parameter info. */
+	callbacks?: CallbackAnalysis;
 }
 
 // ---------------------------------------------------------------------------
@@ -412,6 +417,61 @@ export interface AmbientInfo {
 
 	/** Ambient declarations from .d.ts files (excluding node_modules). */
 	ambientDeclarations: AmbientDeclaration[];
+}
+
+// ---------------------------------------------------------------------------
+// Item 15: Callbacks / Higher-Order Function tracking
+// ---------------------------------------------------------------------------
+
+/** A site where a named function is passed as a callback argument. */
+export interface CallbackUsage {
+	/** Name of the function being passed as a callback. */
+	callbackName: string;
+
+	/** Name of the function/method receiving the callback (e.g. 'map', 'retry'). */
+	calledBy: string;
+
+	/** Workspace-relative file path where this usage occurs. */
+	filePath: string;
+
+	/** 1-indexed line number of the callback usage. */
+	line: number;
+
+	/** 0-based parameter position the callback occupies. */
+	parameterIndex: number;
+
+	/** True when the callback is wrapped in .bind() (e.g. this.handler.bind(this)). */
+	boundWithBind?: boolean;
+}
+
+/** A parameter of a higher-order function that accepts a callback. */
+export interface CallbackParameter {
+	/** Parameter name (e.g. 'fn', 'callback', 'predicate'). */
+	name: string;
+
+	/** 0-based position in the parameter list. */
+	parameterIndex: number;
+
+	/** Type text of the callback parameter (e.g. '(item: T) => boolean'). */
+	type: string;
+}
+
+/** Full callback analysis for a function or method. */
+export interface CallbackAnalysis {
+	/** The symbol this analysis describes. */
+	symbol: SymbolRef;
+
+	/** Sites across the project where this function is passed as a callback. */
+	usedAsCallbackIn: CallbackUsage[];
+
+	/** If this function is a HOF: parameters that accept callback functions. */
+	callbackParameters: CallbackParameter[];
+
+	/** Whether this function’s return type is a function. */
+	returnsFunction: boolean;
+
+	/** Return function type text (e.g. '(e: Event) => void'). Undefined if not a function return. */
+	returnFunctionType?: string;
 }
 
 // ---------------------------------------------------------------------------

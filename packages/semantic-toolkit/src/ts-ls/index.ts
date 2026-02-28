@@ -14,6 +14,7 @@ export { resolveAliases } from './aliases';
 export { resolveAmbients } from './ambients';
 export { resolveProjectStructure } from './project-structure';
 export { resolveTypeGuards } from './type-guards';
+export { resolveCallbacks } from './callbacks';
 
 export type {
 	TsLsConfig,
@@ -45,6 +46,9 @@ export type {
 	TypeGuardKind,
 	TypeGuardEntry,
 	TypeGuardAnalysis,
+	CallbackUsage,
+	CallbackParameter,
+	CallbackAnalysis,
 } from './types';
 
 export { DEFAULT_TS_LS_CONFIG } from './types';
