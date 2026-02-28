@@ -4,10 +4,10 @@ import type { ParsedFile } from '../parser/types';
  * A code chunk ready for embedding. Represents a single embeddable unit
  * derived from the parser's symbol tree.
  *
- * Blueprint deviation: embeddingText contains raw source code with collapsed
- * children only — no metadata preamble. The embedding model (Voyage Code 3)
- * is code-trained and derives semantic meaning directly from source code.
- * This eliminates cascade re-embedding when referenced symbol signatures change.
+ * embeddingText contains raw source code with body-bearing children collapsed
+ * to signature stubs only — no metadata preamble. All metadata (file path,
+ * breadcrumb, depth, etc.) is stored in separate LanceDB schema fields.
+ * This maximizes the semantic signal per token for the embedding model.
  */
 export interface CodeChunk {
 	/** Deterministic ID: hash of filePath + nodeKind + name + parentChain. */

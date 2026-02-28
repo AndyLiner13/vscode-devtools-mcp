@@ -1,0 +1,34 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "export-only.ts > comment:// File with only an empty export statement",
+      "nodeKind": "comment",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "export-only.ts > comment:// Tests graceful handling of minimal content",
+      "nodeKind": "comment",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "export-only.ts > re-export:local",
+      "nodeKind": "re-export",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 3,
+    "maxDepth": 0,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

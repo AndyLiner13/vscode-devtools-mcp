@@ -96,18 +96,19 @@ This means:
 
 ### Embedding Text Construction
 
-Each chunk embeds a **metadata preamble + full source code** (with children collapsed). The code-trained embedding model (Voyage Code 3) gets the actual code to understand semantic intent, patterns, and relationships — not a text summary that throws away the code semantics.
+Each chunk's `embeddingText` contains **raw source code only** (with body-bearing children collapsed to signature stubs). No metadata preamble, no file path, no breadcrumb — just the actual code. The code-trained embedding model (Voyage Code 3) derives semantic meaning directly from source code patterns, not from boilerplate metadata.
 
-```
-[TypeScript] src/auth/tokenService.ts > TokenService > validateToken
-Purpose: Validates a JWT token and returns the decoded payload
-Signature: async validateToken(token: string): Promise<JwtPayload | null>
-Dependencies: jsonwebtoken, ../models/auth
+```typescript
+// embeddingText for a class with methods:
+export class TokenService {
+  private secret: string;
+  
+  constructor(secret: string);
+  async validateToken(token: string): Promise<JwtPayload | null>;
+  refreshToken(token: string): string;
+}
 
-Referenced symbols:
-- JwtPayload: interface { userId: string; exp: number; iat: number; }
-
----
+// embeddingText for the validateToken method (leaf, no children):
 async validateToken(token: string): Promise<JwtPayload | null> {
   try {
     return jwt.verify(token, this.secret) as JwtPayload;
@@ -117,12 +118,13 @@ async validateToken(token: string): Promise<JwtPayload | null> {
 }
 ```
 
-For parent/container chunks (e.g., a class), the embedding text includes the declaration + collapsed method signatures — giving the embedding model the structural overview while staying within Voyage Code 3's 32K token-per-document limit.
+For parent/container chunks (e.g., a class), the embedding text includes the declaration + collapsed method signatures (each body-bearing child replaced by `signature;`). For leaf chunks, `embeddingText` equals `fullSource`.
 
 **Key rules:**
-- Include *signatures* of referenced symbols (one hop only), not their full source
-- The `embeddingText` field (metadata + source with collapsed children) is separate from `fullSource` (raw complete source)
-- The embedding model always receives actual code, never just text summaries
+- `embeddingText` = raw source with body-bearing children collapsed to signature stubs
+- `fullSource` = complete unmodified source of the node
+- **No metadata preamble** — all metadata (file path, breadcrumb, depth, etc.) is stored in separate LanceDB schema fields
+- The embedding model receives actual code, maximizing semantic signal per token
 
 ### Handling Large Symbols
 
@@ -157,26 +159,29 @@ The parser must be built and validated before embeddings work begins:
 Not all code lives inside body-bearing symbols. Every individual item at the file root gets its own chunk — no artificial grouping:
 
 **Named symbols at root** (constants, variables, type aliases, interfaces, enums):
-- Each gets its own chunk with the standard metadata preamble + source code
+- Each gets its own chunk containing just the source code
 - Example: `export const TOKEN_EXPIRY = 3600` → one chunk
 
 **Non-symbol content at root** (imports, expressions, re-exports, control flow):
-- Each individual statement gets its own chunk with a metadata preamble
+- Each individual statement gets its own chunk
 - `import jwt from 'jsonwebtoken'` → one chunk
 - `app.use(cors())` → one chunk
 - `export { X } from './x'` → one chunk
 - Top-level `if`, `for`, `try/catch` blocks → each one chunk
 
+**Standalone comments at root** (comments not attached to any AST node):
+- Each standalone comment or contiguous comment block gets its own chunk with `nodeKind: 'comment'`
+- `// Section header comment` → one chunk
+- A multi-line `/* ... */` block comment → one chunk
+- JSDoc comments attached to a declaration are NOT standalone — they are part of that declaration's range
+- Only comments that exist between declarations (or at the start/end of a file with no adjacent declaration) become standalone comment chunks
+- `relevantImports` is always `[]` for comment chunks (comments don't reference imports)
+
+**Full coverage rule:** Every non-blank line in a source file must be covered by at least one root-level chunk (depth 0). Blank lines between symbols do not require coverage. Standalone comments that would otherwise be uncovered are extracted as their own chunks to satisfy this rule.
+
 **Why individual chunks instead of groups:** Grouping semantically unrelated content (e.g., merging all imports) adds noise to embeddings. Voyage Code 3 is trained on code and handles small chunks well — even a single import line embeds accurately enough for the reranker to evaluate relevance. Individual chunks mean precise retrieval: searching "jsonwebtoken" finds exactly the import for `jwt`, not an entire block of 15 unrelated imports.
 
-**Metadata preamble** for root-level items follows the same pattern as body-bearing symbols:
-```
-[TypeScript] src/auth/tokenService.ts > import:jsonwebtoken
----
-import jwt from 'jsonwebtoken';
-```
-
-The `relevantImports` field on each body-bearing chunk still tracks which imports that symbol uses, enabling the smart structural snapshot to include relevant imports in the output.
+The `relevantImports` field on each body-bearing chunk tracks which imports that symbol uses, enabling the smart structural snapshot to include relevant imports in the output.
 
 Files that are entirely non-symbolic (e.g., `server.ts` with only `app.use(...)` calls and imports) produce individual chunks for each statement.
 
@@ -186,10 +191,10 @@ Files that are entirely non-symbolic (e.g., `server.ts` with only `app.use(...)`
 
 ```typescript
 interface CodeChunk {
-  id: string;                    // hash of filePath + nodeKind + name + parentChain
+  id: string;                    // hash of filePath + nodeKind + name + startLine + parentChain
   filePath: string;
   relativePath: string;
-  nodeKind: string;              // 'function' | 'method' | 'class' | 'interface' | 'type' | 'enum' | 'component' | 'variable' | 'const' | 'import' | 'expression' | 're-export'
+  nodeKind: string;              // 'function' | 'method' | 'class' | 'interface' | 'type' | 'enum' | 'component' | 'variable' | 'const' | 'import' | 'expression' | 're-export' | 'comment'
   name: string;
   parentName?: string;           // class name if this is a method
   parentChunkId?: string;        // ID of parent chunk for hierarchical navigation
@@ -201,10 +206,11 @@ interface CodeChunk {
   endLine: number;
   jsdoc?: string;
   relevantImports: string[];     // import statements actually used by this chunk
-  embeddingText: string;         // metadata preamble + source with children collapsed
-  vector: Float32Array;          // 1024-dim Voyage Code 3 embedding
-  contentHash: string;           // SHA-256 of file contents for change detection
-  lastModified: number;          // file mtime for incremental invalidation trigger
+  embeddingText: string;         // raw source with body-bearing children collapsed to signature stubs
+  breadcrumb: string;            // "file > parent > ... > name" for display/debugging
+  vector: Float32Array;          // 1024-dim Voyage Code 3 embedding (Phase 3)
+  contentHash: string;           // SHA-256 of file contents for change detection (Phase 3)
+  lastModified: number;          // file mtime for incremental invalidation trigger (Phase 3)
 }
 ```
 
@@ -711,16 +717,16 @@ interface FixtureExpectation {
 
 These rules are verified by the test runner on every fixture, in addition to the per-fixture expected output:
 
-1. **Full coverage:** Every non-blank, non-comment line in the source file is covered by at least one chunk. No code is "lost" between chunks.
+1. **Full coverage:** Every line in the source file (including comments and blank lines) is covered by at least one root-level chunk. No content is "lost" between chunks. This ensures the chunked representation is a complete view of the file.
 2. **No overlap:** No line is covered by two sibling chunks at the same depth level. (Parent chunks CAN cover the same lines as their children — that's the collapsed-children model.)
 3. **Source fidelity:** The `fullSource` of each chunk, when extracted from the original file using the chunk's line range, matches exactly. No off-by-one errors.
 4. **Hierarchy consistency:** Every chunk with a `parentChunkId` has a parent chunk that lists it in `childChunkIds`. Every root chunk has `parentChunkId: null`.
 5. **Token limit:** No chunk's `embeddingText` exceeds 32,000 tokens (estimated at 4 chars/token).
-6. **Collapsed children correctness:** For any chunk with body-bearing children, the chunk's content should show those children as signature-only stubs (no bodies). The children's `fullSource` should contain the complete bodies.
+6. **Collapsed children correctness:** For any chunk with body-bearing children, the chunk's `embeddingText` shows those children as signature-only stubs (ending with `;`, no body braces). The children's `fullSource` contains the complete bodies.
 7. **Breadcrumb accuracy:** Each chunk's breadcrumb matches `file > parent > ... > name` built from the actual hierarchy.
 8. **Deterministic IDs:** Running the parser twice on the same file produces identical chunk IDs.
 9. **Root-level isolation:** Each import, expression, and re-export at root level produces exactly one chunk. No merging of unrelated root-level statements.
-10. **relevantImports tracking:** For body-bearing chunks, `relevantImports` contains only the imports that the chunk's source code actually references (identifiers match).
+10. **relevantImports tracking:** For body-bearing chunks, `relevantImports` contains only the imports that the chunk's source code actually references (identifier word boundary match).
 
 ### Metrics Dashboard
 
@@ -773,31 +779,33 @@ Each phase must pass its validation gate before the next phase begins. No phase 
 
 ### Phase 2 — Chunker
 
-**Goal:** Transform the parser's symbol tree into `CodeChunk[]` with the "content with children collapsed" rule, metadata preamble, `embeddingText`, `fullSource`, and `relevantImports`.
+**Goal:** Transform the parser's symbol tree into `CodeChunk[]` with the "content with children collapsed" rule, `embeddingText`, `fullSource`, and `relevantImports`. No metadata preamble — `embeddingText` contains raw source code only.
 
 **Input:** `ParsedSymbol[]` + source file content
-**Output:** `CodeChunk[]` per the LanceDB schema (minus `vector`, `contentHash`, `lastModified` which come from later phases)
+**Output:** `CodeChunk[]` per the LanceDB schema (minus `vector`, `contentHash`, `lastModified` which come from Phase 3)
 
 **Key behaviors:**
-- Body-bearing children are collapsed to signature-only stubs in the parent chunk
+- Body-bearing children are collapsed to signature-only stubs in the parent chunk's `embeddingText`
 - Each root-level statement (import, expression, re-export) becomes its own chunk
-- `embeddingText` = metadata preamble + source with collapsed children
+- `embeddingText` = raw source with body-bearing children collapsed (signature + `;`)
 - `fullSource` = raw complete source of the node
-- `relevantImports` = only the imports this chunk actually references
+- `relevantImports` = only the imports this chunk actually references (identifier word boundary match)
+- Same-line children (line range matches parent exactly) are folded into the parent, not separate chunks
 
-**Test fixtures:** Same 20 files, but now each `.expected.json` includes `chunks` and `rootItems` arrays with:
-- `embeddingText` samples (at least the metadata preamble prefix)
+**Test fixtures:** Same fixture files with `.chunker-expected.json` sidecars containing:
 - `hasCollapsedChildren` flag
+- `isLeaf` flag
+- `lineCount`
 - `relevantImports` list
 - Verification that `fullSource` extracted from original file at `[startLine, endLine]` matches exactly
 
 **Validation gate:**
 - All global rules pass (1-10)
-- For every parent chunk with body-bearing children: its `embeddingText` contains collapsed child signatures, NOT their bodies
-- For every leaf chunk: `embeddingText` contains the full source (no collapsing)
+- For every parent chunk with body-bearing children: its `embeddingText` contains collapsed child signatures (ending with `;`), NOT their bodies
+- For every leaf chunk: `embeddingText` equals `fullSource`
 - `relevantImports` for each chunk only contains imports where at least one identifier from the import is used in the chunk's source code
 - No chunk's `embeddingText` exceeds 32K tokens
-- Metadata preamble format matches: `[Language] path > parent > name\nPurpose: ...\nSignature: ...\nDependencies: ...\n---\n<code>`
+- **No metadata preamble** — `embeddingText` is raw source code only
 
 **Dependencies:** Phase 1 (Parser)
 

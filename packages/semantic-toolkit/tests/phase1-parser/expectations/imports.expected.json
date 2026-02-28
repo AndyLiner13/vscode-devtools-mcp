@@ -8,7 +8,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [1, 1]
+      "lineRange": [
+        1,
+        1
+      ]
     },
     {
       "name": "import:node:path",
@@ -18,7 +21,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [2, 2]
+      "lineRange": [
+        2,
+        2
+      ]
     },
     {
       "name": "import:node:crypto",
@@ -28,7 +34,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [3, 3]
+      "lineRange": [
+        3,
+        3
+      ]
     },
     {
       "name": "import:./types",
@@ -37,8 +46,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": false,
-      "modifiers": ["type-only"],
-      "lineRange": [4, 4]
+      "modifiers": [
+        "type-only"
+      ],
+      "lineRange": [
+        4,
+        4
+      ]
     },
     {
       "name": "import:reflect-metadata",
@@ -48,7 +62,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [5, 5]
+      "lineRange": [
+        5,
+        5
+      ]
     },
     {
       "name": "re-export:node:path",
@@ -57,8 +74,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [7, 7]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        7,
+        7
+      ]
     },
     {
       "name": "re-export:./types",
@@ -67,8 +89,14 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["type-only", "exported"],
-      "lineRange": [8, 8]
+      "modifiers": [
+        "type-only",
+        "exported"
+      ],
+      "lineRange": [
+        8,
+        8
+      ]
     },
     {
       "name": "re-export:./helpers",
@@ -77,8 +105,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [9, 9]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        9,
+        9
+      ]
     },
     {
       "name": "re-export:./utils",
@@ -87,20 +120,88 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [10, 10]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        10,
+        10
+      ]
     }
   ],
   "rootItems": [
-    { "kind": "import", "name": "import:node:fs", "lineRange": [1, 1] },
-    { "kind": "import", "name": "import:node:path", "lineRange": [2, 2] },
-    { "kind": "import", "name": "import:node:crypto", "lineRange": [3, 3] },
-    { "kind": "import", "name": "import:./types", "lineRange": [4, 4] },
-    { "kind": "import", "name": "import:reflect-metadata", "lineRange": [5, 5] },
-    { "kind": "re-export", "name": "re-export:node:path", "lineRange": [7, 7] },
-    { "kind": "re-export", "name": "re-export:./types", "lineRange": [8, 8] },
-    { "kind": "re-export", "name": "re-export:./helpers", "lineRange": [9, 9] },
-    { "kind": "re-export", "name": "re-export:./utils", "lineRange": [10, 10] }
+    {
+      "kind": "import",
+      "name": "import:node:fs",
+      "lineRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "kind": "import",
+      "name": "import:node:path",
+      "lineRange": [
+        2,
+        2
+      ]
+    },
+    {
+      "kind": "import",
+      "name": "import:node:crypto",
+      "lineRange": [
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "import",
+      "name": "import:./types",
+      "lineRange": [
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "import",
+      "name": "import:reflect-metadata",
+      "lineRange": [
+        5,
+        5
+      ]
+    },
+    {
+      "kind": "re-export",
+      "name": "re-export:node:path",
+      "lineRange": [
+        7,
+        7
+      ]
+    },
+    {
+      "kind": "re-export",
+      "name": "re-export:./types",
+      "lineRange": [
+        8,
+        8
+      ]
+    },
+    {
+      "kind": "re-export",
+      "name": "re-export:./helpers",
+      "lineRange": [
+        9,
+        9
+      ]
+    },
+    {
+      "kind": "re-export",
+      "name": "re-export:./utils",
+      "lineRange": [
+        10,
+        10
+      ]
+    }
   ],
   "stats": {
     "totalSymbols": 9,

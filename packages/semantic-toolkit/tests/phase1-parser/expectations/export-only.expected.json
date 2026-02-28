@@ -1,0 +1,60 @@
+{
+  "symbols": [
+    {
+      "name": "comment:// File with only an empty export statement",
+      "kind": "comment",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "name": "comment:// Tests graceful handling of minimal content",
+      "kind": "comment",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "re-export:local",
+      "kind": "re-export",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        4,
+        4
+      ]
+    }
+  ],
+  "rootItems": [
+    {
+      "kind": "re-export",
+      "name": "re-export:local",
+      "lineRange": [
+        4,
+        4
+      ]
+    }
+  ],
+  "stats": {
+    "totalSymbols": 3,
+    "totalRootItems": 1,
+    "maxDepth": 0
+  }
+}

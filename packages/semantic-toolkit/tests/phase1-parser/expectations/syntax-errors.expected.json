@@ -1,0 +1,75 @@
+{
+  "symbols": [
+    {
+      "name": "comment:// File with intentional syntax errors",
+      "kind": "comment",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "name": "comment:// Tests graceful error handling - parser should not crash",
+      "kind": "comment",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "validVar",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        4,
+        4
+      ]
+    },
+    {
+      "name": "comment:// Missing closing brace - syntax error",
+      "kind": "comment",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        6,
+        6
+      ]
+    },
+    {
+      "name": "broken",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        7,
+        17
+      ]
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 5,
+    "totalRootItems": 0,
+    "maxDepth": 0
+  }
+}

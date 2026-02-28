@@ -122,6 +122,37 @@ describe('Chunker: data-driven fixtures', () => {
 				}
 			});
 
+			// ── Global: full coverage ──
+			it('should cover every non-blank line in the source file', () => {
+				const fileLines = source.split('\n');
+				const totalLines = fileLines.length;
+
+				// Collect lines covered by root-level chunks (depth 0)
+				const coveredLines = new Set<number>();
+				for (const chunk of chunks) {
+					if (chunk.depth === 0) {
+						for (let i = chunk.startLine; i <= chunk.endLine; i++) {
+							coveredLines.add(i);
+						}
+					}
+				}
+
+				// Every non-blank line must be covered
+				const uncoveredLines: number[] = [];
+				for (let i = 1; i <= totalLines; i++) {
+					const lineContent = fileLines[i - 1] ?? '';
+					const isBlank = lineContent.trim() === '';
+					if (!isBlank && !coveredLines.has(i)) {
+						uncoveredLines.push(i);
+					}
+				}
+
+				expect(
+					uncoveredLines,
+					`Lines not covered by any root-level chunk: ${uncoveredLines.join(', ')}`,
+				).toEqual([]);
+			});
+
 			// ── Global: source fidelity ──
 			it('should extract fullSource matching file content at line range', () => {
 				const fileLines = source.split('\n');
@@ -229,6 +260,99 @@ describe('Chunker: data-driven fixtures', () => {
 							expect(
 								chunk.embeddingText.includes(child.signature),
 								`Parent ${chunk.breadcrumb} embeddingText should contain signature of ${child.breadcrumb}: "${child.signature}"`,
+							).toBe(true);
+						}
+					}
+				}
+			});
+
+			// ── Global: stub format correctness ──
+			it('should format collapsed stubs with semicolon terminator, no braces', () => {
+				for (const chunk of chunks) {
+					const bodyBearingChildren = chunks.filter(
+						c => c.parentChunkId === chunk.id && BODY_BEARING_KINDS.has(c.nodeKind),
+					);
+
+					for (const child of bodyBearingChildren) {
+						// Find the stub line in the parent's embeddingText
+						// The stub line should match "signature;" pattern, not just contain the signature
+						const embeddingLines = chunk.embeddingText.split('\n');
+						const stubLine = embeddingLines.find(line => {
+							const trimmed = line.trim();
+							// Stub line must start with signature text and end with ;
+							// This avoids matching JSDoc lines that mention the method name
+							return trimmed.includes(child.signature) &&
+								trimmed.endsWith(';') &&
+								!trimmed.startsWith('*') &&
+								!trimmed.startsWith('//');
+						});
+
+						if (stubLine) {
+							// Stub should end with ; (after trimming whitespace)
+							expect(
+								stubLine.trimEnd().endsWith(';'),
+								`Stub for ${child.breadcrumb} should end with semicolon: "${stubLine.trim()}"`,
+							).toBe(true);
+
+							// Stub should NOT contain function body: ") {" or "> {" patterns
+							// (But inline object types like "config: { a: number }" are allowed)
+							const hasBodyOpening = /\)\s*\{[^}]|>\s*\{[^}]/.test(stubLine);
+							expect(
+								hasBodyOpening,
+								`Stub for ${child.breadcrumb} should not contain function body: "${stubLine.trim()}"`,
+							).toBe(false);
+						}
+					}
+				}
+			});
+
+			// ── Global: relevantImports accuracy ──
+			it('should only include imports whose identifiers appear in chunk source', () => {
+				const importChunks = chunks.filter(c => c.nodeKind === 'import');
+
+				for (const chunk of chunks) {
+					if (chunk.nodeKind === 'import' || chunk.nodeKind === 're-export') continue;
+
+					for (const impChunk of importChunks) {
+						const sig = impChunk.signature;
+						const isInRelevant = chunk.relevantImports.includes(sig);
+
+						if (isInRelevant) {
+							// If import is marked relevant, at least one identifier must appear in chunk source
+							// Extract identifiers from import signature
+							const identifiers: string[] = [];
+
+							// Namespace import: import * as Name
+							const nsMatch = sig.match(/\*\s+as\s+(\w+)/);
+							if (nsMatch) identifiers.push(nsMatch[1]);
+
+							// Named imports: { A, B as C }
+							const namedMatch = sig.match(/\{\s*([^}]+)\s*\}/);
+							if (namedMatch) {
+								const names = namedMatch[1].split(',').map(n => n.trim());
+								for (const name of names) {
+									const asMatch = name.match(/\w+\s+as\s+(\w+)/);
+									if (asMatch) {
+										identifiers.push(asMatch[1]);
+									} else {
+										const cleanName = name.replace(/^type\s+/, '').trim();
+										if (cleanName) identifiers.push(cleanName);
+									}
+								}
+							}
+
+							// Default import
+							const defaultMatch = sig.match(/^import\s+(?:type\s+)?([A-Za-z_$]\w*)(?:\s*,|\s+from)/);
+							if (defaultMatch) identifiers.push(defaultMatch[1]);
+
+							const usesAnyIdentifier = identifiers.some(id => {
+								const pattern = new RegExp(`\\b${id}\\b`);
+								return pattern.test(chunk.fullSource);
+							});
+
+							expect(
+								usesAnyIdentifier,
+								`Chunk ${chunk.breadcrumb} has import "${sig}" in relevantImports but doesn't use any of its identifiers: ${identifiers.join(', ')}`,
 							).toBe(true);
 						}
 					}

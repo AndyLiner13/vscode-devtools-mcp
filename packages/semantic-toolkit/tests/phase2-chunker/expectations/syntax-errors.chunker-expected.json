@@ -1,0 +1,50 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "syntax-errors.ts > comment:// File with intentional syntax errors",
+      "nodeKind": "comment",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "syntax-errors.ts > comment:// Tests graceful error handling - parser should not crash",
+      "nodeKind": "comment",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "syntax-errors.ts > validVar",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "syntax-errors.ts > comment:// Missing closing brace - syntax error",
+      "nodeKind": "comment",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "syntax-errors.ts > broken",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 11,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 5,
+    "maxDepth": 0,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

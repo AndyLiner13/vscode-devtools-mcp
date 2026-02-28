@@ -8,7 +8,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [1, 1]
+      "lineRange": [
+        1,
+        1
+      ]
     },
     {
       "name": "ButtonProps",
@@ -18,7 +21,10 @@
       "hasChildren": true,
       "exported": false,
       "modifiers": [],
-      "lineRange": [3, 7]
+      "lineRange": [
+        3,
+        7
+      ]
     },
     {
       "name": "label",
@@ -28,7 +34,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [4, 4]
+      "lineRange": [
+        4,
+        4
+      ]
     },
     {
       "name": "onClick",
@@ -38,7 +47,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [5, 5]
+      "lineRange": [
+        5,
+        5
+      ]
     },
     {
       "name": "disabled",
@@ -47,8 +59,13 @@
       "parentName": "ButtonProps",
       "hasChildren": false,
       "exported": false,
-      "modifiers": ["optional"],
-      "lineRange": [6, 6]
+      "modifiers": [
+        "optional"
+      ],
+      "lineRange": [
+        6,
+        6
+      ]
     },
     {
       "name": "Button",
@@ -57,8 +74,13 @@
       "parentName": null,
       "hasChildren": true,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [9, 34]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        9,
+        34
+      ]
     },
     {
       "name": "[clicked, setClicked]",
@@ -68,7 +90,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [10, 10]
+      "lineRange": [
+        10,
+        10
+      ]
     },
     {
       "name": "className",
@@ -78,7 +103,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [20, 22]
+      "lineRange": [
+        20,
+        22
+      ]
     },
     {
       "name": "handleClick",
@@ -88,7 +116,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [24, 27]
+      "lineRange": [
+        24,
+        27
+      ]
     },
     {
       "name": "(default)",
@@ -97,12 +128,25 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported", "default"],
-      "lineRange": [36, 36]
+      "modifiers": [
+        "exported",
+        "default"
+      ],
+      "lineRange": [
+        36,
+        36
+      ]
     }
   ],
   "rootItems": [
-    { "kind": "import", "name": "import:react", "lineRange": [1, 1] }
+    {
+      "kind": "import",
+      "name": "import:react",
+      "lineRange": [
+        1,
+        1
+      ]
+    }
   ],
   "stats": {
     "totalSymbols": 10,

@@ -113,8 +113,8 @@ function createChunks(
 			if (childId) childChunkIds.push(childId);
 		}
 
-		// Resolve relevant imports (only for non-import/non-re-export symbols)
-		const relevantImports = (sym.kind === 'import' || sym.kind === 're-export')
+		// Resolve relevant imports (only for symbols that reference other code)
+		const relevantImports = (sym.kind === 'import' || sym.kind === 're-export' || sym.kind === 'comment')
 			? []
 			: resolveRelevantImports(fullSource, allImports);
 

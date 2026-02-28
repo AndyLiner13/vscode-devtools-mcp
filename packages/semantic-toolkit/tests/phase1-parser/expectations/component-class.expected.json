@@ -8,7 +8,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [1, 1]
+      "lineRange": [
+        1,
+        1
+      ]
     },
     {
       "name": "CounterProps",
@@ -18,7 +21,10 @@
       "hasChildren": true,
       "exported": false,
       "modifiers": [],
-      "lineRange": [3, 5]
+      "lineRange": [
+        3,
+        5
+      ]
     },
     {
       "name": "initial",
@@ -28,7 +34,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [4, 4]
+      "lineRange": [
+        4,
+        4
+      ]
     },
     {
       "name": "CounterState",
@@ -38,7 +47,10 @@
       "hasChildren": true,
       "exported": false,
       "modifiers": [],
-      "lineRange": [7, 9]
+      "lineRange": [
+        7,
+        9
+      ]
     },
     {
       "name": "count",
@@ -48,7 +60,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [8, 8]
+      "lineRange": [
+        8,
+        8
+      ]
     },
     {
       "name": "Counter",
@@ -57,8 +72,13 @@
       "parentName": null,
       "hasChildren": true,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [11, 32]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        11,
+        32
+      ]
     },
     {
       "name": "defaultProps",
@@ -67,8 +87,13 @@
       "parentName": "Counter",
       "hasChildren": false,
       "exported": false,
-      "modifiers": ["static"],
-      "lineRange": [12, 12]
+      "modifiers": [
+        "static"
+      ],
+      "lineRange": [
+        12,
+        12
+      ]
     },
     {
       "name": "state",
@@ -78,7 +103,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [14, 14]
+      "lineRange": [
+        14,
+        14
+      ]
     },
     {
       "name": "componentDidMount",
@@ -88,7 +116,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [16, 18]
+      "lineRange": [
+        16,
+        18
+      ]
     },
     {
       "name": "increment",
@@ -98,7 +129,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [20, 22]
+      "lineRange": [
+        20,
+        22
+      ]
     },
     {
       "name": "render",
@@ -108,11 +142,21 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [24, 31]
+      "lineRange": [
+        24,
+        31
+      ]
     }
   ],
   "rootItems": [
-    { "kind": "import", "name": "import:react", "lineRange": [1, 1] }
+    {
+      "kind": "import",
+      "name": "import:react",
+      "lineRange": [
+        1,
+        1
+      ]
+    }
   ],
   "stats": {
     "totalSymbols": 11,

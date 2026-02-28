@@ -7,8 +7,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [1, 4]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        1,
+        4
+      ]
     },
     {
       "name": "fetchUser",
@@ -17,8 +22,14 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["async", "exported"],
-      "lineRange": [6, 10]
+      "modifiers": [
+        "async",
+        "exported"
+      ],
+      "lineRange": [
+        6,
+        10
+      ]
     },
     {
       "name": "range",
@@ -27,8 +38,14 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["generator", "exported"],
-      "lineRange": [12, 17]
+      "modifiers": [
+        "generator",
+        "exported"
+      ],
+      "lineRange": [
+        12,
+        17
+      ]
     },
     {
       "name": "main",
@@ -37,8 +54,14 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported", "default"],
-      "lineRange": [19, 22]
+      "modifiers": [
+        "exported",
+        "default"
+      ],
+      "lineRange": [
+        19,
+        22
+      ]
     },
     {
       "name": "outer",
@@ -47,8 +70,13 @@
       "parentName": null,
       "hasChildren": true,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [24, 30]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        24,
+        30
+      ]
     },
     {
       "name": "inner",
@@ -58,7 +86,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [26, 28]
+      "lineRange": [
+        26,
+        28
+      ]
     },
     {
       "name": "merge",
@@ -67,8 +98,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [32, 35]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        32,
+        35
+      ]
     }
   ],
   "rootItems": [],

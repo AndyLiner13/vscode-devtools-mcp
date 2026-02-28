@@ -7,8 +7,13 @@
       "parentName": null,
       "hasChildren": true,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [1, 12]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        1,
+        12
+      ]
     },
     {
       "name": "level1",
@@ -18,7 +23,10 @@
       "hasChildren": true,
       "exported": false,
       "modifiers": [],
-      "lineRange": [2, 10]
+      "lineRange": [
+        2,
+        10
+      ]
     },
     {
       "name": "level2",
@@ -28,7 +36,10 @@
       "hasChildren": true,
       "exported": false,
       "modifiers": [],
-      "lineRange": [3, 8]
+      "lineRange": [
+        3,
+        8
+      ]
     },
     {
       "name": "level3",
@@ -38,7 +49,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [4, 6]
+      "lineRange": [
+        4,
+        6
+      ]
     }
   ],
   "rootItems": [],

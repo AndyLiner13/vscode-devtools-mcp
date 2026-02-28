@@ -1,0 +1,74 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "multiline-signatures.ts > comment:// Tests multi-line function signatures",
+      "nodeKind": "comment",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "multiline-signatures.ts > comment:// Verifies collapse produces correct single-line stubs",
+      "nodeKind": "comment",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "multiline-signatures.ts > complexGenericFunction",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 13,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "multiline-signatures.ts > ServiceWithMultilineMethods",
+      "nodeKind": "class",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 19,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "multiline-signatures.ts > ServiceWithMultilineMethods > processWithManyParams",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 7,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "multiline-signatures.ts > ServiceWithMultilineMethods > transformData",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 9,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "multiline-signatures.ts > arrowWithMultilineSignature",
+      "nodeKind": "const",
+      "hasCollapsedChildren": true,
+      "isLeaf": true,
+      "lineCount": 10,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "multiline-signatures.ts > arrowWithMultilineSignature > result",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 8,
+    "maxDepth": 1,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

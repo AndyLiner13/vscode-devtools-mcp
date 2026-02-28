@@ -1,0 +1,116 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "dynamic-imports.ts > comment:// Tests dynamic import expressions inside functions",
+      "nodeKind": "comment",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "dynamic-imports.ts > comment:// Also includes export= syntax and more mixed patterns",
+      "nodeKind": "comment",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "dynamic-imports.ts > import:fs",
+      "nodeKind": "import",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "dynamic-imports.ts > loadPluginDynamically",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "dynamic-imports.ts > conditionalLoad",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 7,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "dynamic-imports.ts > comment:// Nested dynamic import inside arrow function",
+      "nodeKind": "comment",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "dynamic-imports.ts > lazyLoader",
+      "nodeKind": "const",
+      "hasCollapsedChildren": true,
+      "isLeaf": true,
+      "lineCount": 4,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "dynamic-imports.ts > lazyLoader > mod",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "dynamic-imports.ts > comment:// Dynamic import with destructuring",
+      "nodeKind": "comment",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "dynamic-imports.ts > loadUtils",
+      "nodeKind": "function",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 4,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "dynamic-imports.ts > loadUtils > { helper, formatter }",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "dynamic-imports.ts > comment:// Using a local import to test relevantImports",
+      "nodeKind": "comment",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "dynamic-imports.ts > checkPath",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": [
+        "import { existsSync } from 'fs'"
+      ]
+    }
+  ],
+  "stats": {
+    "totalChunks": 13,
+    "maxDepth": 1,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

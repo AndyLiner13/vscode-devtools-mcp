@@ -8,7 +8,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [1, 1]
+      "lineRange": [
+        1,
+        1
+      ]
     },
     {
       "name": "helper",
@@ -18,7 +21,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [3, 5]
+      "lineRange": [
+        3,
+        5
+      ]
     },
     {
       "name": "utils",
@@ -28,7 +34,10 @@
       "hasChildren": true,
       "exported": false,
       "modifiers": [],
-      "lineRange": [7, 11]
+      "lineRange": [
+        7,
+        11
+      ]
     },
     {
       "name": "format",
@@ -38,7 +47,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [8, 10]
+      "lineRange": [
+        8,
+        10
+      ]
     },
     {
       "name": "module.exports",
@@ -47,8 +59,13 @@
       "parentName": null,
       "hasChildren": true,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [13, 16]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        13,
+        16
+      ]
     },
     {
       "name": "helper",
@@ -58,7 +75,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [14, 14]
+      "lineRange": [
+        14,
+        14
+      ]
     },
     {
       "name": "utils",
@@ -68,7 +88,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [15, 15]
+      "lineRange": [
+        15,
+        15
+      ]
     },
     {
       "name": "VERSION",
@@ -77,8 +100,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [18, 18]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        18,
+        18
+      ]
     },
     {
       "name": "extra",
@@ -87,8 +115,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [20, 22]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        20,
+        22
+      ]
     }
   ],
   "rootItems": [],

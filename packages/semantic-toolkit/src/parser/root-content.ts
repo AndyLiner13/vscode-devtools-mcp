@@ -7,8 +7,8 @@ import { getRange, truncate } from './helpers';
 
 /**
  * Extract root-level non-declaration content from a source file.
- * This covers imports, re-exports, and bare expressions that don't
- * belong to any symbol extractor.
+ * This covers imports, re-exports, bare expressions, and standalone comments
+ * that don't belong to any symbol extractor.
  */
 export function extractRootContent(sourceFile: SourceFile): ParsedSymbol[] {
 	const symbols: ParsedSymbol[] = [];
@@ -24,6 +24,9 @@ export function extractRootContent(sourceFile: SourceFile): ParsedSymbol[] {
 			symbols.push(extractExpression(stmt));
 		}
 	}
+
+	// Extract standalone comment nodes not attached to any statement
+	symbols.push(...extractStandaloneComments(sourceFile));
 
 	return symbols;
 }
@@ -121,6 +124,60 @@ function extractExpression(node: import('ts-morph').ExpressionStatement): Parsed
 		exported: false,
 		children: [],
 	};
+}
+
+// ── Standalone Comments ──
+
+/**
+ * Extract standalone comment nodes at file root.
+ * Uses ts-morph's getStatementsWithComments() to find comment nodes
+ * that are not attached to any AST statement.
+ */
+function extractStandaloneComments(sourceFile: SourceFile): ParsedSymbol[] {
+	const comments: ParsedSymbol[] = [];
+
+	// Lines already covered by regular statements
+	const statementLines = new Set<number>();
+	for (const stmt of sourceFile.getStatements()) {
+		const startLine = stmt.getStartLineNumber();
+		const endLine = stmt.getEndLineNumber();
+		for (let i = startLine; i <= endLine; i++) {
+			statementLines.add(i);
+		}
+	}
+
+	for (const node of sourceFile.getStatementsWithComments()) {
+		if (!Node.isCommentNode(node)) continue;
+
+		const startLine = node.getStartLineNumber();
+		const endLine = node.getEndLineNumber();
+
+		// Skip comments already covered by a statement's range (leading/trailing)
+		let alreadyCovered = false;
+		for (let i = startLine; i <= endLine; i++) {
+			if (statementLines.has(i)) {
+				alreadyCovered = true;
+				break;
+			}
+		}
+		if (alreadyCovered) continue;
+
+		const text = node.getText();
+		comments.push({
+			name: `comment:${truncate(text.replace(/\n/g, ' '), 60)}`,
+			kind: 'comment',
+			depth: 0,
+			parentName: null,
+			range: { startLine, endLine },
+			signature: truncate(text.replace(/\n/g, ' '), 120),
+			modifiers: [],
+			jsdoc: null,
+			exported: false,
+			children: [],
+		});
+	}
+
+	return comments;
 }
 
 // ── CJS Pattern Detection ──

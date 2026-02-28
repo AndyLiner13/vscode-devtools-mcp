@@ -7,8 +7,14 @@
       "parentName": null,
       "hasChildren": true,
       "exported": true,
-      "modifiers": ["abstract", "exported"],
-      "lineRange": [1, 10]
+      "modifiers": [
+        "abstract",
+        "exported"
+      ],
+      "lineRange": [
+        1,
+        10
+      ]
     },
     {
       "name": "name",
@@ -17,8 +23,14 @@
       "parentName": "BaseService",
       "hasChildren": false,
       "exported": false,
-      "modifiers": ["protected", "readonly"],
-      "lineRange": [3, 3]
+      "modifiers": [
+        "readonly",
+        "protected"
+      ],
+      "lineRange": [
+        3,
+        3
+      ]
     },
     {
       "name": "constructor",
@@ -28,7 +40,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [5, 7]
+      "lineRange": [
+        5,
+        7
+      ]
     },
     {
       "name": "process",
@@ -37,8 +52,13 @@
       "parentName": "BaseService",
       "hasChildren": false,
       "exported": false,
-      "modifiers": ["abstract"],
-      "lineRange": [9, 9]
+      "modifiers": [
+        "abstract"
+      ],
+      "lineRange": [
+        9,
+        9
+      ]
     },
     {
       "name": "UserService",
@@ -47,8 +67,13 @@
       "parentName": null,
       "hasChildren": true,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [12, 38]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        12,
+        38
+      ]
     },
     {
       "name": "users",
@@ -57,8 +82,13 @@
       "parentName": "UserService",
       "hasChildren": false,
       "exported": false,
-      "modifiers": ["private"],
-      "lineRange": [14, 14]
+      "modifiers": [
+        "private"
+      ],
+      "lineRange": [
+        14,
+        14
+      ]
     },
     {
       "name": "VERSION",
@@ -67,8 +97,14 @@
       "parentName": "UserService",
       "hasChildren": false,
       "exported": false,
-      "modifiers": ["static", "readonly"],
-      "lineRange": [15, 15]
+      "modifiers": [
+        "static",
+        "readonly"
+      ],
+      "lineRange": [
+        15,
+        15
+      ]
     },
     {
       "name": "constructor",
@@ -78,7 +114,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [17, 19]
+      "lineRange": [
+        17,
+        19
+      ]
     },
     {
       "name": "process",
@@ -87,8 +126,13 @@
       "parentName": "UserService",
       "hasChildren": false,
       "exported": false,
-      "modifiers": ["async"],
-      "lineRange": [21, 25]
+      "modifiers": [
+        "async"
+      ],
+      "lineRange": [
+        21,
+        25
+      ]
     },
     {
       "name": "count",
@@ -98,7 +142,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [27, 29]
+      "lineRange": [
+        27,
+        29
+      ]
     },
     {
       "name": "count",
@@ -108,7 +155,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [31, 33]
+      "lineRange": [
+        31,
+        33
+      ]
     },
     {
       "name": "create",
@@ -117,8 +167,13 @@
       "parentName": "UserService",
       "hasChildren": false,
       "exported": false,
-      "modifiers": ["static"],
-      "lineRange": [35, 37]
+      "modifiers": [
+        "static"
+      ],
+      "lineRange": [
+        35,
+        37
+      ]
     }
   ],
   "rootItems": [],

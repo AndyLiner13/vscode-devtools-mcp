@@ -1,9 +1,23 @@
 {
-  "symbols": [],
+  "symbols": [
+    {
+      "name": "comment:// Empty file — tests graceful handling of no content",
+      "kind": "comment",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        1,
+        1
+      ]
+    }
+  ],
   "rootItems": [],
   "stats": {
-    "totalSymbols": 0,
+    "totalSymbols": 1,
     "totalRootItems": 0,
-    "maxDepth": -1
+    "maxDepth": 0
   }
 }

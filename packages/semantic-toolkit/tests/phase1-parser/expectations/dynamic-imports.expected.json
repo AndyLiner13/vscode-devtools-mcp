@@ -1,0 +1,200 @@
+{
+  "symbols": [
+    {
+      "name": "comment:// Tests dynamic import expressions inside functions",
+      "kind": "comment",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "name": "comment:// Also includes export= syntax and more mixed patterns",
+      "kind": "comment",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "import:fs",
+      "kind": "import",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        4,
+        4
+      ]
+    },
+    {
+      "name": "loadPluginDynamically",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        6,
+        8
+      ]
+    },
+    {
+      "name": "conditionalLoad",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "async",
+        "exported"
+      ],
+      "lineRange": [
+        10,
+        16
+      ]
+    },
+    {
+      "name": "comment:// Nested dynamic import inside arrow function",
+      "kind": "comment",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        18,
+        18
+      ]
+    },
+    {
+      "name": "lazyLoader",
+      "kind": "const",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        19,
+        22
+      ]
+    },
+    {
+      "name": "mod",
+      "kind": "const",
+      "depth": 1,
+      "parentName": "lazyLoader",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        20,
+        20
+      ]
+    },
+    {
+      "name": "comment:// Dynamic import with destructuring",
+      "kind": "comment",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        24,
+        24
+      ]
+    },
+    {
+      "name": "loadUtils",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "async",
+        "exported"
+      ],
+      "lineRange": [
+        25,
+        28
+      ]
+    },
+    {
+      "name": "{ helper, formatter }",
+      "kind": "const",
+      "depth": 1,
+      "parentName": "loadUtils",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        26,
+        26
+      ]
+    },
+    {
+      "name": "comment:// Using a local import to test relevantImports",
+      "kind": "comment",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        30,
+        30
+      ]
+    },
+    {
+      "name": "checkPath",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        31,
+        33
+      ]
+    }
+  ],
+  "rootItems": [
+    {
+      "kind": "import",
+      "name": "import:fs",
+      "lineRange": [
+        4,
+        4
+      ]
+    }
+  ],
+  "stats": {
+    "totalSymbols": 13,
+    "totalRootItems": 1,
+    "maxDepth": 1
+  }
+}

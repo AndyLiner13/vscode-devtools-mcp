@@ -84,8 +84,8 @@ for (const file of codeFiles) {
 	let fullCoverage = true;
 	for (let i = 1; i <= fileLines.length; i++) {
 		const line = fileLines[i - 1];
-		const isBlankOrComment = line.trim() === '' || line.trim().startsWith('//');
-		if (!isBlankOrComment && !coveredLines.has(i)) {
+		const isBlank = line.trim() === '';
+		if (!isBlank && !coveredLines.has(i)) {
 			fullCoverage = false;
 			break;
 		}

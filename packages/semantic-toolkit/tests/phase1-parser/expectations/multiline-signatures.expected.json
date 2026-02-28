@@ -1,8 +1,8 @@
 {
   "symbols": [
     {
-      "name": "import:node:fs/promises",
-      "kind": "import",
+      "name": "comment:// Tests multi-line function signatures",
+      "kind": "comment",
       "depth": 0,
       "parentName": null,
       "hasChildren": false,
@@ -14,8 +14,8 @@
       ]
     },
     {
-      "name": "import:node:url",
-      "kind": "import",
+      "name": "comment:// Verifies collapse produces correct single-line stubs",
+      "kind": "comment",
       "depth": 0,
       "parentName": null,
       "hasChildren": false,
@@ -27,8 +27,8 @@
       ]
     },
     {
-      "name": "__filename",
-      "kind": "const",
+      "name": "complexGenericFunction",
+      "kind": "function",
       "depth": 0,
       "parentName": null,
       "hasChildren": false,
@@ -38,99 +38,85 @@
       ],
       "lineRange": [
         4,
-        4
+        16
       ]
     },
     {
-      "name": "loadConfig",
-      "kind": "function",
+      "name": "ServiceWithMultilineMethods",
+      "kind": "class",
       "depth": 0,
       "parentName": null,
       "hasChildren": true,
       "exported": true,
       "modifiers": [
-        "async",
         "exported"
       ],
       "lineRange": [
-        6,
-        9
+        18,
+        36
       ]
     },
     {
-      "name": "data",
-      "kind": "const",
+      "name": "processWithManyParams",
+      "kind": "method",
       "depth": 1,
-      "parentName": "loadConfig",
+      "parentName": "ServiceWithMultilineMethods",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "async"
+      ],
+      "lineRange": [
+        19,
+        25
+      ]
+    },
+    {
+      "name": "transformData",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "ServiceWithMultilineMethods",
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
       "lineRange": [
-        7,
-        7
+        27,
+        35
       ]
     },
     {
-      "name": "re-export:node:fs/promises",
-      "kind": "re-export",
+      "name": "arrowWithMultilineSignature",
+      "kind": "const",
       "depth": 0,
       "parentName": null,
-      "hasChildren": false,
+      "hasChildren": true,
       "exported": true,
       "modifiers": [
         "exported"
       ],
       "lineRange": [
-        11,
-        11
+        38,
+        47
       ]
     },
     {
-      "name": "(default)",
-      "kind": "variable",
-      "depth": 0,
-      "parentName": null,
+      "name": "result",
+      "kind": "const",
+      "depth": 1,
+      "parentName": "arrowWithMultilineSignature",
       "hasChildren": false,
-      "exported": true,
-      "modifiers": [
-        "exported",
-        "default"
-      ],
+      "exported": false,
+      "modifiers": [],
       "lineRange": [
-        13,
-        13
+        42,
+        42
       ]
     }
   ],
-  "rootItems": [
-    {
-      "kind": "import",
-      "name": "import:node:fs/promises",
-      "lineRange": [
-        1,
-        1
-      ]
-    },
-    {
-      "kind": "import",
-      "name": "import:node:url",
-      "lineRange": [
-        2,
-        2
-      ]
-    },
-    {
-      "kind": "re-export",
-      "name": "re-export:node:fs/promises",
-      "lineRange": [
-        11,
-        11
-      ]
-    }
-  ],
+  "rootItems": [],
   "stats": {
-    "totalSymbols": 7,
-    "totalRootItems": 3,
+    "totalSymbols": 8,
+    "totalRootItems": 0,
     "maxDepth": 1
   }
 }

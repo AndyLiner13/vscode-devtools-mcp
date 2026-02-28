@@ -1,8 +1,17 @@
 {
-  "chunks": [],
+  "chunks": [
+    {
+      "breadcrumb": "minimal.ts > comment:// Empty file — tests graceful handling of no content",
+      "nodeKind": "comment",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    }
+  ],
   "stats": {
-    "totalChunks": 0,
-    "maxDepth": -1,
+    "totalChunks": 1,
+    "maxDepth": 0,
     "allChunksUnder32K": true,
     "fullCoverage": true
   }

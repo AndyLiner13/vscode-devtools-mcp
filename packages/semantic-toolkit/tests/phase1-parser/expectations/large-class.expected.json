@@ -7,33 +7,330 @@
       "parentName": null,
       "hasChildren": true,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [1, 32]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        1,
+        32
+      ]
     },
-    { "name": "data", "kind": "property", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": ["private"], "lineRange": [2, 2] },
-    { "name": "constructor", "kind": "constructor", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [4, 4] },
-    { "name": "method01", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [6, 6] },
-    { "name": "method02", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [7, 7] },
-    { "name": "method03", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [8, 8] },
-    { "name": "method04", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [9, 9] },
-    { "name": "method05", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [10, 10] },
-    { "name": "method06", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [11, 11] },
-    { "name": "method07", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [12, 12] },
-    { "name": "method08", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [13, 13] },
-    { "name": "method09", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [14, 14] },
-    { "name": "method10", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [15, 15] },
-    { "name": "method11", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [16, 16] },
-    { "name": "method12", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [17, 17] },
-    { "name": "method13", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [18, 18] },
-    { "name": "method14", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [19, 19] },
-    { "name": "method15", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [20, 20] },
-    { "name": "method16", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [21, 21] },
-    { "name": "method17", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [22, 22] },
-    { "name": "method18", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [23, 23] },
-    { "name": "method19", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [24, 24] },
-    { "name": "method20", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [25, 25] },
-    { "name": "size", "kind": "getter", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": [], "lineRange": [27, 27] },
-    { "name": "create", "kind": "method", "depth": 1, "parentName": "LargeService", "hasChildren": false, "modifiers": ["static"], "lineRange": [29, 31] }
+    {
+      "name": "data",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "private"
+      ],
+      "lineRange": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "constructor",
+      "kind": "constructor",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        4,
+        4
+      ]
+    },
+    {
+      "name": "method01",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        6,
+        6
+      ]
+    },
+    {
+      "name": "method02",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        7,
+        7
+      ]
+    },
+    {
+      "name": "method03",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        8,
+        8
+      ]
+    },
+    {
+      "name": "method04",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        9,
+        9
+      ]
+    },
+    {
+      "name": "method05",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        10,
+        10
+      ]
+    },
+    {
+      "name": "method06",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        11,
+        11
+      ]
+    },
+    {
+      "name": "method07",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        12,
+        12
+      ]
+    },
+    {
+      "name": "method08",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        13,
+        13
+      ]
+    },
+    {
+      "name": "method09",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        14,
+        14
+      ]
+    },
+    {
+      "name": "method10",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        15,
+        15
+      ]
+    },
+    {
+      "name": "method11",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        16,
+        16
+      ]
+    },
+    {
+      "name": "method12",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        17,
+        17
+      ]
+    },
+    {
+      "name": "method13",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        18,
+        18
+      ]
+    },
+    {
+      "name": "method14",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        19,
+        19
+      ]
+    },
+    {
+      "name": "method15",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        20,
+        20
+      ]
+    },
+    {
+      "name": "method16",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        21,
+        21
+      ]
+    },
+    {
+      "name": "method17",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        22,
+        22
+      ]
+    },
+    {
+      "name": "method18",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        23,
+        23
+      ]
+    },
+    {
+      "name": "method19",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        24,
+        24
+      ]
+    },
+    {
+      "name": "method20",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        25,
+        25
+      ]
+    },
+    {
+      "name": "size",
+      "kind": "getter",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        27,
+        27
+      ]
+    },
+    {
+      "name": "create",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "LargeService",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "static"
+      ],
+      "lineRange": [
+        29,
+        31
+      ]
+    }
   ],
   "rootItems": [],
   "stats": {

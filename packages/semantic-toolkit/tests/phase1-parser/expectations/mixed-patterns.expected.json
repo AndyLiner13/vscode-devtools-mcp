@@ -8,7 +8,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [1, 1]
+      "lineRange": [
+        1,
+        1
+      ]
     },
     {
       "name": "import:stream",
@@ -17,8 +20,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": false,
-      "modifiers": ["type-only"],
-      "lineRange": [2, 2]
+      "modifiers": [
+        "type-only"
+      ],
+      "lineRange": [
+        2,
+        2
+      ]
     },
     {
       "name": "re-export:events",
@@ -27,8 +35,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [4, 4]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        4,
+        4
+      ]
     },
     {
       "name": "VERSION",
@@ -38,7 +51,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [6, 6]
+      "lineRange": [
+        6,
+        6
+      ]
     },
     {
       "name": "counter",
@@ -48,7 +64,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [7, 7]
+      "lineRange": [
+        7,
+        7
+      ]
     },
     {
       "name": "initialize",
@@ -57,8 +76,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [9, 11]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        9,
+        11
+      ]
     },
     {
       "name": "handler",
@@ -67,8 +91,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [13, 15]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        13,
+        15
+      ]
     },
     {
       "name": "Config",
@@ -78,7 +107,10 @@
       "hasChildren": true,
       "exported": false,
       "modifiers": [],
-      "lineRange": [17, 20]
+      "lineRange": [
+        17,
+        20
+      ]
     },
     {
       "name": "host",
@@ -87,7 +119,11 @@
       "parentName": "Config",
       "hasChildren": false,
       "exported": false,
-      "lineRange": [18, 18]
+      "modifiers": [],
+      "lineRange": [
+        18,
+        18
+      ]
     },
     {
       "name": "port",
@@ -96,7 +132,11 @@
       "parentName": "Config",
       "hasChildren": false,
       "exported": false,
-      "lineRange": [19, 19]
+      "modifiers": [],
+      "lineRange": [
+        19,
+        19
+      ]
     },
     {
       "name": "Result",
@@ -106,7 +146,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [22, 22]
+      "lineRange": [
+        22,
+        22
+      ]
     },
     {
       "name": "Level",
@@ -115,8 +158,13 @@
       "parentName": null,
       "hasChildren": true,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [24, 28]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        24,
+        28
+      ]
     },
     {
       "name": "Low",
@@ -125,7 +173,11 @@
       "parentName": "Level",
       "hasChildren": false,
       "exported": false,
-      "lineRange": [25, 25]
+      "modifiers": [],
+      "lineRange": [
+        25,
+        25
+      ]
     },
     {
       "name": "Medium",
@@ -134,7 +186,11 @@
       "parentName": "Level",
       "hasChildren": false,
       "exported": false,
-      "lineRange": [26, 26]
+      "modifiers": [],
+      "lineRange": [
+        26,
+        26
+      ]
     },
     {
       "name": "High",
@@ -143,7 +199,11 @@
       "parentName": "Level",
       "hasChildren": false,
       "exported": false,
-      "lineRange": [27, 27]
+      "modifiers": [],
+      "lineRange": [
+        27,
+        27
+      ]
     },
     {
       "name": "Service",
@@ -152,8 +212,13 @@
       "parentName": null,
       "hasChildren": true,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [30, 45]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        30,
+        45
+      ]
     },
     {
       "name": "name",
@@ -162,8 +227,13 @@
       "parentName": "Service",
       "hasChildren": false,
       "exported": false,
-      "modifiers": ["private"],
-      "lineRange": [31, 31]
+      "modifiers": [
+        "private"
+      ],
+      "lineRange": [
+        31,
+        31
+      ]
     },
     {
       "name": "constructor",
@@ -173,7 +243,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [33, 36]
+      "lineRange": [
+        33,
+        36
+      ]
     },
     {
       "name": "getName",
@@ -183,7 +256,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [38, 40]
+      "lineRange": [
+        38,
+        40
+      ]
     },
     {
       "name": "create",
@@ -192,8 +268,13 @@
       "parentName": "Service",
       "hasChildren": false,
       "exported": false,
-      "modifiers": ["static"],
-      "lineRange": [42, 44]
+      "modifiers": [
+        "static"
+      ],
+      "lineRange": [
+        42,
+        44
+      ]
     },
     {
       "name": "Internal",
@@ -203,7 +284,10 @@
       "hasChildren": true,
       "exported": false,
       "modifiers": [],
-      "lineRange": [47, 49]
+      "lineRange": [
+        47,
+        49
+      ]
     },
     {
       "name": "helper",
@@ -212,8 +296,13 @@
       "parentName": "Internal",
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [48, 48]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        48,
+        48
+      ]
     },
     {
       "name": "expr:console.log('loaded');",
@@ -223,14 +312,45 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [51, 51]
+      "lineRange": [
+        51,
+        51
+      ]
     }
   ],
   "rootItems": [
-    { "kind": "import", "name": "import:events", "lineRange": [1, 1] },
-    { "kind": "import", "name": "import:stream", "lineRange": [2, 2] },
-    { "kind": "re-export", "name": "re-export:events", "lineRange": [4, 4] },
-    { "kind": "expression", "name": "expr:console.log('loaded');", "lineRange": [51, 51] }
+    {
+      "kind": "import",
+      "name": "import:events",
+      "lineRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "kind": "import",
+      "name": "import:stream",
+      "lineRange": [
+        2,
+        2
+      ]
+    },
+    {
+      "kind": "re-export",
+      "name": "re-export:events",
+      "lineRange": [
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "expression",
+      "name": "expr:console.log('loaded');",
+      "lineRange": [
+        51,
+        51
+      ]
+    }
   ],
   "stats": {
     "totalSymbols": 23,

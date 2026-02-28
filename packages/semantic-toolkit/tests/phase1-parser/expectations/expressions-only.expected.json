@@ -8,7 +8,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [1, 1]
+      "lineRange": [
+        1,
+        1
+      ]
     },
     {
       "name": "expr:process.env.NODE_ENV = 'production';",
@@ -18,7 +21,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [2, 2]
+      "lineRange": [
+        2,
+        2
+      ]
     },
     {
       "name": "expr:void Promise.resolve();",
@@ -28,7 +34,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [3, 3]
+      "lineRange": [
+        3,
+        3
+      ]
     },
     {
       "name": "expr:(function setup() { return true; })();",
@@ -38,14 +47,45 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [4, 4]
+      "lineRange": [
+        4,
+        4
+      ]
     }
   ],
   "rootItems": [
-    { "kind": "expression", "name": "expr:console.log('initializing');", "lineRange": [1, 1] },
-    { "kind": "expression", "name": "expr:process.env.NODE_ENV = 'production';", "lineRange": [2, 2] },
-    { "kind": "expression", "name": "expr:void Promise.resolve();", "lineRange": [3, 3] },
-    { "kind": "expression", "name": "expr:(function setup() { return true; })();", "lineRange": [4, 4] }
+    {
+      "kind": "expression",
+      "name": "expr:console.log('initializing');",
+      "lineRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "kind": "expression",
+      "name": "expr:process.env.NODE_ENV = 'production';",
+      "lineRange": [
+        2,
+        2
+      ]
+    },
+    {
+      "kind": "expression",
+      "name": "expr:void Promise.resolve();",
+      "lineRange": [
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "expression",
+      "name": "expr:(function setup() { return true; })();",
+      "lineRange": [
+        4,
+        4
+      ]
+    }
   ],
   "stats": {
     "totalSymbols": 4,

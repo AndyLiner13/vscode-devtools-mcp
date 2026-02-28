@@ -7,8 +7,13 @@
       "parentName": null,
       "hasChildren": true,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [1, 29]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        1,
+        29
+      ]
     },
     {
       "name": "handlers",
@@ -17,8 +22,13 @@
       "parentName": "EventEmitter",
       "hasChildren": false,
       "exported": false,
-      "modifiers": ["private"],
-      "lineRange": [2, 2]
+      "modifiers": [
+        "private"
+      ],
+      "lineRange": [
+        2,
+        2
+      ]
     },
     {
       "name": "on",
@@ -28,7 +38,10 @@
       "hasChildren": true,
       "exported": false,
       "modifiers": [],
-      "lineRange": [4, 8]
+      "lineRange": [
+        4,
+        8
+      ]
     },
     {
       "name": "existing",
@@ -38,7 +51,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [5, 5]
+      "lineRange": [
+        5,
+        5
+      ]
     },
     {
       "name": "emit",
@@ -48,7 +64,10 @@
       "hasChildren": true,
       "exported": false,
       "modifiers": [],
-      "lineRange": [10, 20]
+      "lineRange": [
+        10,
+        20
+      ]
     },
     {
       "name": "handlers",
@@ -58,7 +77,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [11, 11]
+      "lineRange": [
+        11,
+        11
+      ]
     },
     {
       "name": "createScoped",
@@ -68,7 +90,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [22, 28]
+      "lineRange": [
+        22,
+        28
+      ]
     }
   ],
   "rootItems": [],

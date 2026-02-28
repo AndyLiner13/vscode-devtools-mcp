@@ -7,8 +7,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [1, 1]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        1,
+        1
+      ]
     },
     {
       "name": "Result",
@@ -17,8 +22,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [3, 3]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        3,
+        3
+      ]
     },
     {
       "name": "Nullable",
@@ -27,8 +37,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [5, 5]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        5,
+        5
+      ]
     },
     {
       "name": "Keys",
@@ -37,8 +52,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [7, 7]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        7,
+        7
+      ]
     },
     {
       "name": "ReadonlyRecord",
@@ -47,8 +67,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [9, 9]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        9,
+        9
+      ]
     },
     {
       "name": "EventName",
@@ -57,8 +82,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [11, 11]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        11,
+        11
+      ]
     },
     {
       "name": "InferArray",
@@ -67,8 +97,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [13, 13]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        13,
+        13
+      ]
     }
   ],
   "rootItems": [],

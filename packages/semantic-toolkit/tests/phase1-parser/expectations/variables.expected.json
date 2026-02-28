@@ -7,8 +7,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [1, 1]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        1,
+        1
+      ]
     },
     {
       "name": "config",
@@ -17,8 +22,13 @@
       "parentName": null,
       "hasChildren": true,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [3, 9]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        3,
+        9
+      ]
     },
     {
       "name": "host",
@@ -28,7 +38,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [4, 4]
+      "lineRange": [
+        4,
+        4
+      ]
     },
     {
       "name": "port",
@@ -38,7 +51,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [5, 5]
+      "lineRange": [
+        5,
+        5
+      ]
     },
     {
       "name": "url",
@@ -48,7 +64,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [6, 8]
+      "lineRange": [
+        6,
+        8
+      ]
     },
     {
       "name": "counter",
@@ -57,8 +76,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [11, 11]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        11,
+        11
+      ]
     },
     {
       "name": "[first, second, ...rest]",
@@ -68,7 +92,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [13, 13]
+      "lineRange": [
+        13,
+        13
+      ]
     },
     {
       "name": "{ name: userName, age }",
@@ -78,7 +105,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [15, 15]
+      "lineRange": [
+        15,
+        15
+      ]
     },
     {
       "name": "processItem",
@@ -87,8 +117,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [17, 19]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        17,
+        19
+      ]
     },
     {
       "name": "double",
@@ -97,8 +132,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [21, 21]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        21,
+        21
+      ]
     }
   ],
   "rootItems": [],

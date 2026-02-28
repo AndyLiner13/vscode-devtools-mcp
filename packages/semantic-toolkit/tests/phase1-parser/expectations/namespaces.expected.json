@@ -7,8 +7,13 @@
       "parentName": null,
       "hasChildren": true,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [1, 18]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        1,
+        18
+      ]
     },
     {
       "name": "Rule",
@@ -17,8 +22,13 @@
       "parentName": "Validation",
       "hasChildren": true,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [2, 5]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        2,
+        5
+      ]
     },
     {
       "name": "name",
@@ -28,7 +38,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [3, 3]
+      "lineRange": [
+        3,
+        3
+      ]
     },
     {
       "name": "validate",
@@ -38,7 +51,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [4, 4]
+      "lineRange": [
+        4,
+        4
+      ]
     },
     {
       "name": "createRule",
@@ -47,8 +63,13 @@
       "parentName": "Validation",
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [7, 9]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        7,
+        9
+      ]
     },
     {
       "name": "Errors",
@@ -57,8 +78,13 @@
       "parentName": "Validation",
       "hasChildren": true,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [11, 17]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        11,
+        17
+      ]
     },
     {
       "name": "ValidationError",
@@ -67,8 +93,13 @@
       "parentName": "Errors",
       "hasChildren": true,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [12, 16]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        12,
+        16
+      ]
     },
     {
       "name": "constructor",
@@ -78,7 +109,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [13, 15]
+      "lineRange": [
+        13,
+        15
+      ]
     },
     {
       "name": "'express'",
@@ -88,7 +122,10 @@
       "hasChildren": true,
       "exported": false,
       "modifiers": [],
-      "lineRange": [20, 24]
+      "lineRange": [
+        20,
+        24
+      ]
     },
     {
       "name": "Request",
@@ -98,7 +135,10 @@
       "hasChildren": true,
       "exported": false,
       "modifiers": [],
-      "lineRange": [21, 23]
+      "lineRange": [
+        21,
+        23
+      ]
     },
     {
       "name": "userId",
@@ -107,8 +147,13 @@
       "parentName": "Request",
       "hasChildren": false,
       "exported": false,
-      "modifiers": ["optional"],
-      "lineRange": [22, 22]
+      "modifiers": [
+        "optional"
+      ],
+      "lineRange": [
+        22,
+        22
+      ]
     }
   ],
   "rootItems": [],

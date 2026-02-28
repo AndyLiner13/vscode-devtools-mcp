@@ -7,8 +7,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [1, 1]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        1,
+        1
+      ]
     },
     {
       "name": "fetchData",
@@ -17,8 +22,13 @@
       "parentName": null,
       "hasChildren": true,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [3, 6]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        3,
+        6
+      ]
     },
     {
       "name": "result",
@@ -28,7 +38,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [4, 4]
+      "lineRange": [
+        4,
+        4
+      ]
     },
     {
       "name": "identity",
@@ -37,8 +50,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [8, 8]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        8,
+        8
+      ]
     },
     {
       "name": "createPair",
@@ -47,8 +65,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [10, 13]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        10,
+        13
+      ]
     },
     {
       "name": "handleEvent",
@@ -57,8 +80,13 @@
       "parentName": null,
       "hasChildren": false,
       "exported": true,
-      "modifiers": ["exported"],
-      "lineRange": [15, 17]
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        15,
+        17
+      ]
     },
     {
       "name": "multiLine",
@@ -68,7 +96,10 @@
       "hasChildren": true,
       "exported": false,
       "modifiers": [],
-      "lineRange": [19, 26]
+      "lineRange": [
+        19,
+        26
+      ]
     },
     {
       "name": "parts",
@@ -78,7 +109,10 @@
       "hasChildren": false,
       "exported": false,
       "modifiers": [],
-      "lineRange": [24, 24]
+      "lineRange": [
+        24,
+        24
+      ]
     }
   ],
   "rootItems": [],

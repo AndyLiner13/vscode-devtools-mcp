@@ -42,7 +42,8 @@ export interface ParsedSymbol {
 		| 'module'
 		| 'import'
 		| 'expression'
-		| 're-export';
+		| 're-export'
+		| 'comment';
 
 	/** Nesting depth. 0 = file root, 1 = class member, 2 = nested inside member, etc. */
 	depth: number;
