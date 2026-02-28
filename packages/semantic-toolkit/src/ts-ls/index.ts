@@ -5,6 +5,7 @@
  * the TypeScript compiler's language services via ts-morph.
  */
 export { resolveCallHierarchy } from './call-hierarchy';
+export { resolveTypeHierarchy } from './type-hierarchy';
 
 export type {
 	TsLsConfig,
@@ -12,6 +13,7 @@ export type {
 	OutgoingCall,
 	IncomingCaller,
 	SymbolMetadata,
+	TypeHierarchy,
 } from './types';
 
 export { DEFAULT_TS_LS_CONFIG } from './types';

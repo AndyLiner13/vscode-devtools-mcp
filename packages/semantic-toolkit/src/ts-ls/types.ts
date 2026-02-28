@@ -4,6 +4,7 @@
  * Types are added incrementally per implementation item.
  * Item 1: Core call hierarchy (outgoingCalls, incomingCallers).
  * Item 2: Multi-hop traversal with recursive tree, cycle detection, depth limits.
+ * Item 4: Type hierarchy (extends, implements, subtypes).
  */
 
 /** Configuration for TS Language Services operations. */
@@ -69,12 +70,25 @@ export interface IncomingCaller {
 	depthLimited?: boolean;
 }
 
+/** Type hierarchy for a class or interface. */
+export interface TypeHierarchy {
+	/** Parent class this symbol extends (classes only). */
+	extends?: SymbolRef;
+
+	/** Interfaces or parent interfaces this symbol implements/extends. */
+	implements: SymbolRef[];
+
+	/** Classes/interfaces that extend or implement this symbol. */
+	subtypes: SymbolRef[];
+}
+
 /**
  * Structural metadata for a symbol, resolved via TS Language Services.
  *
  * Fields are added incrementally:
  * - Item 1: outgoingCalls, incomingCallers
  * - Item 2: Multi-hop recursive tree with cycle detection
+ * - Item 4: typeHierarchy
  */
 export interface SymbolMetadata {
 	/** The symbol this metadata describes. */
@@ -85,4 +99,7 @@ export interface SymbolMetadata {
 
 	/** Symbols that call this symbol (recursive tree up to configured callDepth). */
 	incomingCallers: IncomingCaller[];
+
+	/** Type hierarchy: extends, implements, subtypes. Undefined for non-class/interface symbols. */
+	typeHierarchy?: TypeHierarchy;
 }

@@ -861,6 +861,12 @@ Each phase must pass its validation gate before the next phase begins. No phase 
 
 **Constructor call resolution:** `new Foo()` expressions are resolved to `Foo`'s explicit constructor declaration. Constructor calls appear in outgoing call trees alongside regular function/method calls.
 
+**Type hierarchy resolution:** `resolveTypeHierarchy()` takes a class/interface name and returns a `TypeHierarchy` with:
+- `extends?` — parent class (classes only). SymbolRef to the declaration.
+- `implements[]` — interfaces the class implements, or parent interfaces an interface extends. Array of SymbolRef.
+- `subtypes[]` — all classes/interfaces in the project that extend or implement this symbol. Resolved by scanning all project source files and verifying heritage clauses resolve to the exact target declaration (prevents same-name collisions across files).
+For standalone classes/interfaces with no hierarchy, all arrays are empty and `extends` is undefined.
+
 **Same-name disambiguation:** Outgoing calls are grouped by `filePath:name:line` to avoid merging same-named methods in different classes within the same file.
 
 **User code filtering:** Declarations from `.d.ts` files and `node_modules` are excluded from call resolution.
@@ -871,7 +877,7 @@ Each phase must pass its validation gate before the next phase begins. No phase 
 - **`ts-ls/multi-hop/`** — 4 files: entry → middleware → service → helper. Verify callDepth 1/2/3/-1, depthLimited markers. ✅ Implemented
 - **`ts-ls/cycle/`** — Mutual recursion (alpha ↔ beta) + self-recursion (factorial). Verify cycle detection at all depths. ✅ Implemented
 - **`ts-ls/constructor/`** — Class with constructor calling helper. Verify `new Foo()` resolves as outgoing call. ✅ Implemented
-- **`ts-ls/type-hierarchy/`** — interface → class → subclass chain. Verify extends/implements/subtypes.
+- **`ts-ls/type-hierarchy/`** — 4 files: interfaces (Entity, Serializable, Auditable) → models (BaseModel, User, AdminUser) → diamond (AuditedModel) → standalone. Verify extends (class→class), implements (class→interface, interface→interface), subtypes (project-wide search), diamond pattern, standalone (no hierarchy), error cases. ✅ Implemented
 - **`ts-ls/references/`** — symbol used across 5 files. Verify reference count and file list.
 - **`ts-ls/type-flows/`** — function parameter types imported from file A, return type used in file B. Verify flow resolution.
 - **`ts-ls/members/`** — class with methods/properties. Verify member listing.
