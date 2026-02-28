@@ -13,7 +13,8 @@
       "lineRange": [
         1,
         5
-      ]
+      ],
+      "signature": "export function assertDefined<T>(value: T | null | undefined): asserts value is T"
     },
     {
       "name": "isString",
@@ -28,7 +29,8 @@
       "lineRange": [
         7,
         9
-      ]
+      ],
+      "signature": "export function isString(value: unknown): value is string"
     },
     {
       "name": "assertNonEmpty",
@@ -43,7 +45,8 @@
       "lineRange": [
         11,
         15
-      ]
+      ],
+      "signature": "export function assertNonEmpty(arr: unknown[]): asserts arr is [unknown, ...unknown[]]"
     },
     {
       "name": "TypeGuard",
@@ -58,7 +61,8 @@
       "lineRange": [
         17,
         19
-      ]
+      ],
+      "signature": "export interface TypeGuard<T>"
     },
     {
       "name": "(call-signature-0)",
@@ -71,7 +75,8 @@
       "lineRange": [
         18,
         18
-      ]
+      ],
+      "signature": "(value: unknown): value is T;"
     },
     {
       "name": "Validator",
@@ -86,7 +91,8 @@
       "lineRange": [
         21,
         31
-      ]
+      ],
+      "signature": "export class Validator"
     },
     {
       "name": "assertValid",
@@ -99,7 +105,8 @@
       "lineRange": [
         22,
         26
-      ]
+      ],
+      "signature": "assertValid(data: unknown): asserts data is Record<string, unknown>"
     },
     {
       "name": "isArray",
@@ -112,13 +119,15 @@
       "lineRange": [
         28,
         30
-      ]
+      ],
+      "signature": "isArray(value: unknown): value is unknown[]"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 8,
     "totalRootItems": 0,
-    "maxDepth": 1
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
   }
 }

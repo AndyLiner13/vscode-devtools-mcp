@@ -11,13 +11,15 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "// Empty file — tests graceful handling of no content"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 1,
     "totalRootItems": 0,
-    "maxDepth": 0
+    "maxDepth": 0,
+    "hasSyntaxErrors": false
   }
 }

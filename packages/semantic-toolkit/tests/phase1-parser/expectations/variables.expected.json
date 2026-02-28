@@ -13,7 +13,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "export const MAX_RETRIES"
     },
     {
       "name": "config",
@@ -28,7 +29,8 @@
       "lineRange": [
         3,
         9
-      ]
+      ],
+      "signature": "export const config"
     },
     {
       "name": "host",
@@ -41,7 +43,8 @@
       "lineRange": [
         4,
         4
-      ]
+      ],
+      "signature": "host: 'localhost'"
     },
     {
       "name": "port",
@@ -54,7 +57,8 @@
       "lineRange": [
         5,
         5
-      ]
+      ],
+      "signature": "port: 3000"
     },
     {
       "name": "url",
@@ -67,7 +71,8 @@
       "lineRange": [
         6,
         8
-      ]
+      ],
+      "signature": "get url()"
     },
     {
       "name": "counter",
@@ -82,7 +87,8 @@
       "lineRange": [
         11,
         11
-      ]
+      ],
+      "signature": "export let counter"
     },
     {
       "name": "[first, second, ...rest]",
@@ -95,7 +101,8 @@
       "lineRange": [
         13,
         13
-      ]
+      ],
+      "signature": "const [first, second, ...rest]"
     },
     {
       "name": "{ name: userName, age }",
@@ -108,7 +115,8 @@
       "lineRange": [
         15,
         15
-      ]
+      ],
+      "signature": "const { name: userName, age }"
     },
     {
       "name": "processItem",
@@ -123,7 +131,8 @@
       "lineRange": [
         17,
         19
-      ]
+      ],
+      "signature": "export const processItem"
     },
     {
       "name": "double",
@@ -138,13 +147,15 @@
       "lineRange": [
         21,
         21
-      ]
+      ],
+      "signature": "export const double"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 10,
     "totalRootItems": 0,
-    "maxDepth": 1
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
   }
 }

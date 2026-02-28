@@ -13,7 +13,8 @@
       "lineRange": [
         1,
         29
-      ]
+      ],
+      "signature": "export class Wallet"
     },
     {
       "name": "#balance",
@@ -26,7 +27,8 @@
       "lineRange": [
         2,
         2
-      ]
+      ],
+      "signature": "#balance: number"
     },
     {
       "name": "#owner",
@@ -41,7 +43,8 @@
       "lineRange": [
         3,
         3
-      ]
+      ],
+      "signature": "readonly #owner: string"
     },
     {
       "name": "#instanceCount",
@@ -56,7 +59,8 @@
       "lineRange": [
         4,
         4
-      ]
+      ],
+      "signature": "static #instanceCount"
     },
     {
       "name": "constructor",
@@ -69,7 +73,8 @@
       "lineRange": [
         6,
         10
-      ]
+      ],
+      "signature": "constructor(owner: string, initialBalance: number)"
     },
     {
       "name": "balance",
@@ -82,7 +87,8 @@
       "lineRange": [
         12,
         14
-      ]
+      ],
+      "signature": "get balance(): number"
     },
     {
       "name": "#validate",
@@ -95,7 +101,8 @@
       "lineRange": [
         16,
         18
-      ]
+      ],
+      "signature": "#validate(amount: number): boolean"
     },
     {
       "name": "withdraw",
@@ -108,7 +115,8 @@
       "lineRange": [
         20,
         24
-      ]
+      ],
+      "signature": "withdraw(amount: number): boolean"
     },
     {
       "name": "count",
@@ -123,13 +131,15 @@
       "lineRange": [
         26,
         28
-      ]
+      ],
+      "signature": "static get count(): number"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 9,
     "totalRootItems": 0,
-    "maxDepth": 1
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
   }
 }

@@ -11,7 +11,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "// File with only an empty export statement"
     },
     {
       "name": "comment:// Tests graceful handling of minimal content",
@@ -24,7 +25,8 @@
       "lineRange": [
         2,
         2
-      ]
+      ],
+      "signature": "// Tests graceful handling of minimal content"
     },
     {
       "name": "re-export:local",
@@ -39,7 +41,8 @@
       "lineRange": [
         4,
         4
-      ]
+      ],
+      "signature": "export *"
     }
   ],
   "rootItems": [
@@ -55,6 +58,7 @@
   "stats": {
     "totalSymbols": 3,
     "totalRootItems": 1,
-    "maxDepth": 0
+    "maxDepth": 0,
+    "hasSyntaxErrors": false
   }
 }

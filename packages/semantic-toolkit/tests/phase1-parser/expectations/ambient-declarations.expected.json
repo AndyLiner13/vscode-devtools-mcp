@@ -11,7 +11,8 @@
       "lineRange": [
         1,
         6
-      ]
+      ],
+      "signature": "declare module 'express'"
     },
     {
       "name": "Request",
@@ -24,7 +25,8 @@
       "lineRange": [
         2,
         5
-      ]
+      ],
+      "signature": "interface Request"
     },
     {
       "name": "userId",
@@ -39,7 +41,8 @@
       "lineRange": [
         3,
         3
-      ]
+      ],
+      "signature": "userId?: string"
     },
     {
       "name": "sessionId",
@@ -52,7 +55,8 @@
       "lineRange": [
         4,
         4
-      ]
+      ],
+      "signature": "sessionId: string"
     },
     {
       "name": "'*.svg'",
@@ -65,7 +69,8 @@
       "lineRange": [
         8,
         11
-      ]
+      ],
+      "signature": "declare module '*.svg'"
     },
     {
       "name": "content",
@@ -78,7 +83,8 @@
       "lineRange": [
         9,
         9
-      ]
+      ],
+      "signature": "const content: string"
     },
     {
       "name": "(default)",
@@ -94,7 +100,8 @@
       "lineRange": [
         10,
         10
-      ]
+      ],
+      "signature": "export default content"
     },
     {
       "name": "global",
@@ -107,7 +114,8 @@
       "lineRange": [
         13,
         19
-      ]
+      ],
+      "signature": "declare module global"
     },
     {
       "name": "Window",
@@ -120,7 +128,8 @@
       "lineRange": [
         14,
         16
-      ]
+      ],
+      "signature": "interface Window"
     },
     {
       "name": "__APP_VERSION__",
@@ -133,7 +142,8 @@
       "lineRange": [
         15,
         15
-      ]
+      ],
+      "signature": "__APP_VERSION__: string"
     },
     {
       "name": "__DEV_LOG__",
@@ -146,7 +156,8 @@
       "lineRange": [
         18,
         18
-      ]
+      ],
+      "signature": "function __DEV_LOG__(message: string): void\nfunction __DEV_LOG__(message: string): void"
     },
     {
       "name": "NodeJS",
@@ -159,7 +170,8 @@
       "lineRange": [
         21,
         26
-      ]
+      ],
+      "signature": "declare namespace NodeJS"
     },
     {
       "name": "ProcessEnv",
@@ -172,7 +184,8 @@
       "lineRange": [
         22,
         25
-      ]
+      ],
+      "signature": "interface ProcessEnv"
     },
     {
       "name": "NODE_ENV",
@@ -185,7 +198,8 @@
       "lineRange": [
         23,
         23
-      ]
+      ],
+      "signature": "NODE_ENV: 'development' | 'production' | 'test'"
     },
     {
       "name": "PORT",
@@ -200,7 +214,8 @@
       "lineRange": [
         24,
         24
-      ]
+      ],
+      "signature": "PORT?: string"
     },
     {
       "name": "ExternalLib",
@@ -213,7 +228,8 @@
       "lineRange": [
         28,
         31
-      ]
+      ],
+      "signature": "class ExternalLib"
     },
     {
       "name": "constructor",
@@ -226,7 +242,8 @@
       "lineRange": [
         29,
         29
-      ]
+      ],
+      "signature": "constructor(config: Record<string, unknown>)\nconstructor(config: Record<string, unknown>)"
     },
     {
       "name": "init",
@@ -239,7 +256,8 @@
       "lineRange": [
         30,
         30
-      ]
+      ],
+      "signature": "init(): Promise<void>\ninit(): Promise<void>"
     },
     {
       "name": "fetchData",
@@ -252,7 +270,8 @@
       "lineRange": [
         33,
         33
-      ]
+      ],
+      "signature": "function fetchData(url: string): Promise<unknown>\nfunction fetchData(url: string): Promise<unknown>"
     },
     {
       "name": "API_BASE",
@@ -265,13 +284,15 @@
       "lineRange": [
         35,
         35
-      ]
+      ],
+      "signature": "const API_BASE: string"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 20,
     "totalRootItems": 0,
-    "maxDepth": 2
+    "maxDepth": 2,
+    "hasSyntaxErrors": false
   }
 }

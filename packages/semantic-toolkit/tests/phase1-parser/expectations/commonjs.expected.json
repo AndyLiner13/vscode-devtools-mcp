@@ -11,7 +11,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "const path"
     },
     {
       "name": "helper",
@@ -24,7 +25,8 @@
       "lineRange": [
         3,
         5
-      ]
+      ],
+      "signature": "function helper(x)"
     },
     {
       "name": "utils",
@@ -37,7 +39,8 @@
       "lineRange": [
         7,
         11
-      ]
+      ],
+      "signature": "const utils"
     },
     {
       "name": "format",
@@ -50,7 +53,8 @@
       "lineRange": [
         8,
         10
-      ]
+      ],
+      "signature": "format(text)"
     },
     {
       "name": "module.exports",
@@ -65,7 +69,8 @@
       "lineRange": [
         13,
         16
-      ]
+      ],
+      "signature": "module.exports = {\r\n\thelper,\r\n\tutils,\r\n}"
     },
     {
       "name": "helper",
@@ -78,7 +83,8 @@
       "lineRange": [
         14,
         14
-      ]
+      ],
+      "signature": "helper"
     },
     {
       "name": "utils",
@@ -91,7 +97,8 @@
       "lineRange": [
         15,
         15
-      ]
+      ],
+      "signature": "utils"
     },
     {
       "name": "VERSION",
@@ -106,7 +113,8 @@
       "lineRange": [
         18,
         18
-      ]
+      ],
+      "signature": "exports.VERSION = '1.0.0'"
     },
     {
       "name": "extra",
@@ -121,13 +129,15 @@
       "lineRange": [
         20,
         22
-      ]
+      ],
+      "signature": "module.exports.extra = function extra() {\r\n\treturn 42;\r\n}"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 9,
     "totalRootItems": 0,
-    "maxDepth": 1
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
   }
 }

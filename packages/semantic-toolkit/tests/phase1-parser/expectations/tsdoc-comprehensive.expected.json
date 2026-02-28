@@ -13,7 +13,8 @@
       "lineRange": [
         1,
         25
-      ]
+      ],
+      "signature": "export enum LogLevel"
     },
     {
       "name": "Debug",
@@ -26,7 +27,8 @@
       "lineRange": [
         17,
         18
-      ]
+      ],
+      "signature": "Debug = 0"
     },
     {
       "name": "Info",
@@ -39,7 +41,8 @@
       "lineRange": [
         19,
         20
-      ]
+      ],
+      "signature": "Info = 1"
     },
     {
       "name": "Warn",
@@ -52,7 +55,8 @@
       "lineRange": [
         21,
         22
-      ]
+      ],
+      "signature": "Warn = 2"
     },
     {
       "name": "Error",
@@ -65,7 +69,8 @@
       "lineRange": [
         23,
         24
-      ]
+      ],
+      "signature": "Error = 3"
     },
     {
       "name": "LogConfig",
@@ -80,7 +85,8 @@
       "lineRange": [
         27,
         52
-      ]
+      ],
+      "signature": "export interface LogConfig"
     },
     {
       "name": "level",
@@ -93,7 +99,8 @@
       "lineRange": [
         46,
         47
-      ]
+      ],
+      "signature": "level: LogLevel"
     },
     {
       "name": "prefix",
@@ -108,7 +115,8 @@
       "lineRange": [
         48,
         49
-      ]
+      ],
+      "signature": "prefix?: string"
     },
     {
       "name": "timestamp",
@@ -121,7 +129,8 @@
       "lineRange": [
         50,
         51
-      ]
+      ],
+      "signature": "timestamp: boolean"
     },
     {
       "name": "LogEvent",
@@ -136,7 +145,8 @@
       "lineRange": [
         54,
         71
-      ]
+      ],
+      "signature": "export interface LogEvent<T = unknown>"
     },
     {
       "name": "level",
@@ -151,7 +161,8 @@
       "lineRange": [
         63,
         64
-      ]
+      ],
+      "signature": "readonly level: LogLevel"
     },
     {
       "name": "message",
@@ -166,7 +177,8 @@
       "lineRange": [
         65,
         66
-      ]
+      ],
+      "signature": "readonly message: string"
     },
     {
       "name": "data",
@@ -182,7 +194,8 @@
       "lineRange": [
         67,
         68
-      ]
+      ],
+      "signature": "readonly data?: T"
     },
     {
       "name": "timestamp",
@@ -197,7 +210,8 @@
       "lineRange": [
         69,
         70
-      ]
+      ],
+      "signature": "readonly timestamp: string"
     },
     {
       "name": "ExtractEventData",
@@ -212,7 +226,8 @@
       "lineRange": [
         73,
         79
-      ]
+      ],
+      "signature": "export type ExtractEventData<E extends LogEvent> = E extends LogEvent<infer D> ? D : never"
     },
     {
       "name": "Logger",
@@ -227,7 +242,8 @@
       "lineRange": [
         81,
         224
-      ]
+      ],
+      "signature": "export class Logger<TData = unknown>"
     },
     {
       "name": "config",
@@ -242,7 +258,8 @@
       "lineRange": [
         110,
         115
-      ]
+      ],
+      "signature": "readonly config: LogConfig"
     },
     {
       "name": "totalEntries",
@@ -257,7 +274,8 @@
       "lineRange": [
         117,
         126
-      ]
+      ],
+      "signature": "static totalEntries"
     },
     {
       "name": "constructor",
@@ -270,7 +288,8 @@
       "lineRange": [
         128,
         138
-      ]
+      ],
+      "signature": "constructor(config: LogConfig)"
     },
     {
       "name": "log",
@@ -283,7 +302,8 @@
       "lineRange": [
         140,
         162
-      ]
+      ],
+      "signature": "log(level: LogLevel, message: string, data?: TData): LogEvent<TData>"
     },
     {
       "name": "info",
@@ -296,7 +316,8 @@
       "lineRange": [
         164,
         175
-      ]
+      ],
+      "signature": "info(message: string, data?: TData): LogEvent<TData>"
     },
     {
       "name": "error",
@@ -309,7 +330,8 @@
       "lineRange": [
         177,
         188
-      ]
+      ],
+      "signature": "error(message: string, data?: TData): LogEvent<TData>"
     },
     {
       "name": "child",
@@ -322,7 +344,8 @@
       "lineRange": [
         190,
         207
-      ]
+      ],
+      "signature": "child(childPrefix: string): Logger<TData>"
     },
     {
       "name": "combinedPrefix",
@@ -335,7 +358,8 @@
       "lineRange": [
         203,
         205
-      ]
+      ],
+      "signature": "const combinedPrefix"
     },
     {
       "name": "format",
@@ -350,7 +374,8 @@
       "lineRange": [
         209,
         223
-      ]
+      ],
+      "signature": "format(event: LogEvent<TData>): string"
     },
     {
       "name": "parts",
@@ -363,7 +388,8 @@
       "lineRange": [
         219,
         219
-      ]
+      ],
+      "signature": "const parts"
     },
     {
       "name": "createDevLogger",
@@ -378,7 +404,8 @@
       "lineRange": [
         226,
         252
-      ]
+      ],
+      "signature": "export function createDevLogger(): Logger"
     },
     {
       "name": "isLogEvent",
@@ -393,13 +420,15 @@
       "lineRange": [
         254,
         270
-      ]
+      ],
+      "signature": "export function isLogEvent(value: unknown): value is LogEvent"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 28,
     "totalRootItems": 0,
-    "maxDepth": 2
+    "maxDepth": 2,
+    "hasSyntaxErrors": false
   }
 }

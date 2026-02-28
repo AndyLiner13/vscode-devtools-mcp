@@ -11,7 +11,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "const app"
     },
     {
       "name": "use",
@@ -24,7 +25,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "use: (_: unknown) => {}"
     },
     {
       "name": "listen",
@@ -37,7 +39,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "listen: (_: number) => {}"
     },
     {
       "name": "cors",
@@ -50,7 +53,8 @@
       "lineRange": [
         2,
         2
-      ]
+      ],
+      "signature": "const cors"
     },
     {
       "name": "helmet",
@@ -63,7 +67,8 @@
       "lineRange": [
         3,
         3
-      ]
+      ],
+      "signature": "const helmet"
     },
     {
       "name": "expr:app.use(cors());",
@@ -76,7 +81,8 @@
       "lineRange": [
         5,
         5
-      ]
+      ],
+      "signature": "app.use(cors());"
     },
     {
       "name": "expr:app.use(helmet());",
@@ -89,7 +95,8 @@
       "lineRange": [
         6,
         6
-      ]
+      ],
+      "signature": "app.use(helmet());"
     },
     {
       "name": "expr:app.listen(3000);",
@@ -102,7 +109,8 @@
       "lineRange": [
         8,
         8
-      ]
+      ],
+      "signature": "app.listen(3000);"
     },
     {
       "name": "expr:console.log('Server started');",
@@ -115,7 +123,8 @@
       "lineRange": [
         10,
         10
-      ]
+      ],
+      "signature": "console.log('Server started');"
     }
   ],
   "rootItems": [
@@ -155,6 +164,7 @@
   "stats": {
     "totalSymbols": 9,
     "totalRootItems": 4,
-    "maxDepth": 1
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
   }
 }

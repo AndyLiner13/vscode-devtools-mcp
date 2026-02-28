@@ -1,0 +1,85 @@
+{
+  "symbols": [
+    {
+      "name": "parse",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        1,
+        13
+      ],
+      "signature": "function parse(value: string): string\nfunction parse(value: number): number\nfunction parse(value: string | number): string | number"
+    },
+    {
+      "name": "format",
+      "kind": "function",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": false,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        15,
+        19
+      ],
+      "signature": "export function format(value: string): string\nexport function format(value: number): string\nexport function format(value: string | number): string"
+    },
+    {
+      "name": "Converter",
+      "kind": "class",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        21,
+        31
+      ],
+      "signature": "export class Converter"
+    },
+    {
+      "name": "convert",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "Converter",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        22,
+        26
+      ],
+      "signature": "convert(input: string): number\nconvert(input: number): string\nconvert(input: string | number): string | number"
+    },
+    {
+      "name": "constructor",
+      "kind": "constructor",
+      "depth": 1,
+      "parentName": "Converter",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        28,
+        30
+      ],
+      "signature": "constructor(name: string)\nconstructor(name: string, version: number)\nconstructor(public name: string, public version: number = 1)"
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 5,
+    "totalRootItems": 0,
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
+  }
+}

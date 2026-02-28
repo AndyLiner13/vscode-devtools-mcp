@@ -11,7 +11,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "// Tests dynamic import expressions inside functions"
     },
     {
       "name": "comment:// Also includes export= syntax and more mixed patterns",
@@ -24,7 +25,8 @@
       "lineRange": [
         2,
         2
-      ]
+      ],
+      "signature": "// Also includes export= syntax and more mixed patterns"
     },
     {
       "name": "import:fs",
@@ -37,7 +39,8 @@
       "lineRange": [
         4,
         4
-      ]
+      ],
+      "signature": "import { existsSync } from 'fs'"
     },
     {
       "name": "loadPluginDynamically",
@@ -52,7 +55,8 @@
       "lineRange": [
         6,
         8
-      ]
+      ],
+      "signature": "export function loadPluginDynamically(pluginName: string): Promise<unknown>"
     },
     {
       "name": "conditionalLoad",
@@ -68,7 +72,8 @@
       "lineRange": [
         10,
         16
-      ]
+      ],
+      "signature": "export async function conditionalLoad(condition: boolean): Promise<unknown>"
     },
     {
       "name": "comment:// Nested dynamic import inside arrow function",
@@ -81,7 +86,8 @@
       "lineRange": [
         18,
         18
-      ]
+      ],
+      "signature": "// Nested dynamic import inside arrow function"
     },
     {
       "name": "lazyLoader",
@@ -96,7 +102,8 @@
       "lineRange": [
         19,
         22
-      ]
+      ],
+      "signature": "export const lazyLoader"
     },
     {
       "name": "mod",
@@ -109,7 +116,8 @@
       "lineRange": [
         20,
         20
-      ]
+      ],
+      "signature": "const mod"
     },
     {
       "name": "comment:// Dynamic import with destructuring",
@@ -122,7 +130,8 @@
       "lineRange": [
         24,
         24
-      ]
+      ],
+      "signature": "// Dynamic import with destructuring"
     },
     {
       "name": "loadUtils",
@@ -138,7 +147,8 @@
       "lineRange": [
         25,
         28
-      ]
+      ],
+      "signature": "export async function loadUtils()"
     },
     {
       "name": "{ helper, formatter }",
@@ -151,7 +161,8 @@
       "lineRange": [
         26,
         26
-      ]
+      ],
+      "signature": "const { helper, formatter }"
     },
     {
       "name": "comment:// Using a local import to test relevantImports",
@@ -164,7 +175,8 @@
       "lineRange": [
         30,
         30
-      ]
+      ],
+      "signature": "// Using a local import to test relevantImports"
     },
     {
       "name": "checkPath",
@@ -179,7 +191,8 @@
       "lineRange": [
         31,
         33
-      ]
+      ],
+      "signature": "export function checkPath(p: string): boolean"
     }
   ],
   "rootItems": [
@@ -195,6 +208,7 @@
   "stats": {
     "totalSymbols": 13,
     "totalRootItems": 1,
-    "maxDepth": 1
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
   }
 }

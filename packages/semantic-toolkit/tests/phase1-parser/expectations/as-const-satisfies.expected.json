@@ -13,7 +13,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "export const DIRECTIONS"
     },
     {
       "name": "CONFIG",
@@ -28,7 +29,8 @@
       "lineRange": [
         3,
         7
-      ]
+      ],
+      "signature": "export const CONFIG"
     },
     {
       "name": "Theme",
@@ -41,7 +43,8 @@
       "lineRange": [
         9,
         13
-      ]
+      ],
+      "signature": "interface Theme"
     },
     {
       "name": "primary",
@@ -54,7 +57,8 @@
       "lineRange": [
         10,
         10
-      ]
+      ],
+      "signature": "primary: string"
     },
     {
       "name": "secondary",
@@ -67,7 +71,8 @@
       "lineRange": [
         11,
         11
-      ]
+      ],
+      "signature": "secondary: string"
     },
     {
       "name": "fontSize",
@@ -80,7 +85,8 @@
       "lineRange": [
         12,
         12
-      ]
+      ],
+      "signature": "fontSize: number"
     },
     {
       "name": "darkTheme",
@@ -95,7 +101,8 @@
       "lineRange": [
         15,
         19
-      ]
+      ],
+      "signature": "export const darkTheme"
     },
     {
       "name": "lightTheme",
@@ -110,7 +117,8 @@
       "lineRange": [
         21,
         25
-      ]
+      ],
+      "signature": "export const lightTheme"
     },
     {
       "name": "Direction",
@@ -125,13 +133,15 @@
       "lineRange": [
         27,
         27
-      ]
+      ],
+      "signature": "export type Direction = (typeof DIRECTIONS)[number]"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 9,
     "totalRootItems": 0,
-    "maxDepth": 1
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
   }
 }

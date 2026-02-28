@@ -11,7 +11,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "console.log('initializing');"
     },
     {
       "name": "expr:process.env.NODE_ENV = 'production';",
@@ -24,7 +25,8 @@
       "lineRange": [
         2,
         2
-      ]
+      ],
+      "signature": "process.env.NODE_ENV = 'production';"
     },
     {
       "name": "expr:void Promise.resolve();",
@@ -37,7 +39,8 @@
       "lineRange": [
         3,
         3
-      ]
+      ],
+      "signature": "void Promise.resolve();"
     },
     {
       "name": "expr:(function setup() { return true; })();",
@@ -50,7 +53,8 @@
       "lineRange": [
         4,
         4
-      ]
+      ],
+      "signature": "(function setup() { return true; })();"
     }
   ],
   "rootItems": [
@@ -90,6 +94,7 @@
   "stats": {
     "totalSymbols": 4,
     "totalRootItems": 4,
-    "maxDepth": 0
+    "maxDepth": 0,
+    "hasSyntaxErrors": false
   }
 }

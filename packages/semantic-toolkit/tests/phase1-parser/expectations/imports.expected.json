@@ -11,7 +11,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "import fs from 'node:fs'"
     },
     {
       "name": "import:node:path",
@@ -24,7 +25,8 @@
       "lineRange": [
         2,
         2
-      ]
+      ],
+      "signature": "import { join, resolve } from 'node:path'"
     },
     {
       "name": "import:node:crypto",
@@ -37,7 +39,8 @@
       "lineRange": [
         3,
         3
-      ]
+      ],
+      "signature": "import * as crypto from 'node:crypto'"
     },
     {
       "name": "import:./types",
@@ -52,7 +55,8 @@
       "lineRange": [
         4,
         4
-      ]
+      ],
+      "signature": "import type { ParsedSymbol } from './types'"
     },
     {
       "name": "import:reflect-metadata",
@@ -65,7 +69,8 @@
       "lineRange": [
         5,
         5
-      ]
+      ],
+      "signature": "import 'reflect-metadata'"
     },
     {
       "name": "re-export:node:path",
@@ -80,7 +85,8 @@
       "lineRange": [
         7,
         7
-      ]
+      ],
+      "signature": "export { join } from 'node:path'"
     },
     {
       "name": "re-export:./types",
@@ -96,7 +102,8 @@
       "lineRange": [
         8,
         8
-      ]
+      ],
+      "signature": "export type { SymbolRange } from './types'"
     },
     {
       "name": "re-export:./helpers",
@@ -111,7 +118,8 @@
       "lineRange": [
         9,
         9
-      ]
+      ],
+      "signature": "export * from './helpers'"
     },
     {
       "name": "re-export:./utils",
@@ -126,7 +134,8 @@
       "lineRange": [
         10,
         10
-      ]
+      ],
+      "signature": "export * as utils from './utils'"
     }
   ],
   "rootItems": [
@@ -206,6 +215,7 @@
   "stats": {
     "totalSymbols": 9,
     "totalRootItems": 9,
-    "maxDepth": 0
+    "maxDepth": 0,
+    "hasSyntaxErrors": false
   }
 }

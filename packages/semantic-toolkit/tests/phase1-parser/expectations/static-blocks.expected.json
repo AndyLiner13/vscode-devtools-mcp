@@ -1,0 +1,133 @@
+{
+  "symbols": [
+    {
+      "name": "Registry",
+      "kind": "class",
+      "depth": 0,
+      "parentName": null,
+      "hasChildren": true,
+      "exported": true,
+      "modifiers": [
+        "exported"
+      ],
+      "lineRange": [
+        1,
+        22
+      ],
+      "signature": "export class Registry"
+    },
+    {
+      "name": "instances",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Registry",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "static"
+      ],
+      "lineRange": [
+        2,
+        2
+      ],
+      "signature": "static instances: Map<string, Registry>"
+    },
+    {
+      "name": "defaultConfig",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Registry",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "static"
+      ],
+      "lineRange": [
+        3,
+        3
+      ],
+      "signature": "static defaultConfig"
+    },
+    {
+      "name": "static-block-0",
+      "kind": "staticBlock",
+      "depth": 1,
+      "parentName": "Registry",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "static"
+      ],
+      "lineRange": [
+        5,
+        7
+      ],
+      "signature": "static { ... }"
+    },
+    {
+      "name": "name",
+      "kind": "property",
+      "depth": 1,
+      "parentName": "Registry",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        9,
+        9
+      ],
+      "signature": "name: string"
+    },
+    {
+      "name": "constructor",
+      "kind": "constructor",
+      "depth": 1,
+      "parentName": "Registry",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        11,
+        13
+      ],
+      "signature": "constructor(name: string)"
+    },
+    {
+      "name": "static-block-1",
+      "kind": "staticBlock",
+      "depth": 1,
+      "parentName": "Registry",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [
+        "static"
+      ],
+      "lineRange": [
+        15,
+        17
+      ],
+      "signature": "static { ... }"
+    },
+    {
+      "name": "register",
+      "kind": "method",
+      "depth": 1,
+      "parentName": "Registry",
+      "hasChildren": false,
+      "exported": false,
+      "modifiers": [],
+      "lineRange": [
+        19,
+        21
+      ],
+      "signature": "register(key: string): void"
+    }
+  ],
+  "rootItems": [],
+  "stats": {
+    "totalSymbols": 8,
+    "totalRootItems": 0,
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
+  }
+}

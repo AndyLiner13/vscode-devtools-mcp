@@ -11,7 +11,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "import React from 'react'"
     },
     {
       "name": "CounterProps",
@@ -24,7 +25,8 @@
       "lineRange": [
         3,
         5
-      ]
+      ],
+      "signature": "interface CounterProps"
     },
     {
       "name": "initial",
@@ -37,7 +39,8 @@
       "lineRange": [
         4,
         4
-      ]
+      ],
+      "signature": "initial: number"
     },
     {
       "name": "CounterState",
@@ -50,7 +53,8 @@
       "lineRange": [
         7,
         9
-      ]
+      ],
+      "signature": "interface CounterState"
     },
     {
       "name": "count",
@@ -63,7 +67,8 @@
       "lineRange": [
         8,
         8
-      ]
+      ],
+      "signature": "count: number"
     },
     {
       "name": "Counter",
@@ -78,7 +83,8 @@
       "lineRange": [
         11,
         32
-      ]
+      ],
+      "signature": "export class Counter extends React.Component<CounterProps, CounterState>"
     },
     {
       "name": "defaultProps",
@@ -93,7 +99,8 @@
       "lineRange": [
         12,
         12
-      ]
+      ],
+      "signature": "static defaultProps"
     },
     {
       "name": "state",
@@ -106,7 +113,8 @@
       "lineRange": [
         14,
         14
-      ]
+      ],
+      "signature": "state: CounterState"
     },
     {
       "name": "componentDidMount",
@@ -119,7 +127,8 @@
       "lineRange": [
         16,
         18
-      ]
+      ],
+      "signature": "componentDidMount(): void"
     },
     {
       "name": "increment",
@@ -132,7 +141,8 @@
       "lineRange": [
         20,
         22
-      ]
+      ],
+      "signature": "increment"
     },
     {
       "name": "render",
@@ -145,7 +155,8 @@
       "lineRange": [
         24,
         31
-      ]
+      ],
+      "signature": "render(): React.ReactNode"
     }
   ],
   "rootItems": [
@@ -161,6 +172,7 @@
   "stats": {
     "totalSymbols": 11,
     "totalRootItems": 1,
-    "maxDepth": 1
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
   }
 }

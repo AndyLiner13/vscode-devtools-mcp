@@ -17,6 +17,7 @@ interface ExpectedSymbol {
 	exported?: boolean;
 	modifiers?: string[];
 	lineRange: [number, number];
+	signature?: string;
 }
 
 interface ExpectedRootItem {
@@ -29,6 +30,7 @@ interface ExpectedStats {
 	totalSymbols: number;
 	totalRootItems: number;
 	maxDepth: number;
+	hasSyntaxErrors: boolean;
 }
 
 interface FixtureExpectation {
@@ -117,6 +119,11 @@ describe('Parser: data-driven fixtures', () => {
 				expect(rootItems.length).toBe(expected.stats.totalRootItems);
 			});
 
+			// ── Syntax error flag ──
+			it('should have the correct hasSyntaxErrors flag', () => {
+				expect(parsed.hasSyntaxErrors).toBe(expected.stats.hasSyntaxErrors);
+			});
+
 			// ── Individual symbol assertions ──
 			it('should match expected symbols', () => {
 				const flat = flattenSymbols(parsed.symbols);
@@ -142,6 +149,13 @@ describe('Parser: data-driven fixtures', () => {
 					expect(match.children.length > 0).toBe(exp.hasChildren);
 					expect(match.range.startLine).toBe(exp.lineRange[0]);
 					expect(match.range.endLine).toBe(exp.lineRange[1]);
+
+					if (exp.signature !== undefined) {
+						expect(
+							match.signature,
+							`Signature mismatch for ${exp.kind} ${exp.name}`,
+						).toBe(exp.signature);
+					}
 
 					if (exp.exported !== undefined) {
 						expect(match.exported).toBe(exp.exported);

@@ -13,7 +13,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "export type EventName = `on${Capitalize<string>}`"
     },
     {
       "name": "CssProperty",
@@ -28,7 +29,8 @@
       "lineRange": [
         3,
         3
-      ]
+      ],
+      "signature": "export type CssProperty = `${string}-${string}`"
     },
     {
       "name": "HttpMethod",
@@ -43,7 +45,8 @@
       "lineRange": [
         5,
         5
-      ]
+      ],
+      "signature": "export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'"
     },
     {
       "name": "ApiRoute",
@@ -58,7 +61,8 @@
       "lineRange": [
         7,
         7
-      ]
+      ],
+      "signature": "export type ApiRoute = `/${string}`"
     },
     {
       "name": "Endpoint",
@@ -73,7 +77,8 @@
       "lineRange": [
         9,
         9
-      ]
+      ],
+      "signature": "export type Endpoint = `${Lowercase<HttpMethod>} ${ApiRoute}`"
     },
     {
       "name": "Color",
@@ -88,7 +93,8 @@
       "lineRange": [
         11,
         11
-      ]
+      ],
+      "signature": "export type Color = 'red' | 'green' | 'blue'"
     },
     {
       "name": "Size",
@@ -103,7 +109,8 @@
       "lineRange": [
         12,
         12
-      ]
+      ],
+      "signature": "export type Size = 'small' | 'medium' | 'large'"
     },
     {
       "name": "Variant",
@@ -118,7 +125,8 @@
       "lineRange": [
         13,
         13
-      ]
+      ],
+      "signature": "export type Variant = `${Color}-${Size}`"
     },
     {
       "name": "PropKey",
@@ -133,7 +141,8 @@
       "lineRange": [
         15,
         15
-      ]
+      ],
+      "signature": "export type PropKey<T extends string> = `${T}Changed`"
     },
     {
       "name": "Split",
@@ -148,7 +157,8 @@
       "lineRange": [
         17,
         19
-      ]
+      ],
+      "signature": "export type Split<S extends string, D extends string> = S extends `${infer H}${D}${infer T}`\r\n\t? [H, ...Split<T, D>]\r\n\t: [S]"
     },
     {
       "name": "Join",
@@ -163,7 +173,8 @@
       "lineRange": [
         21,
         27
-      ]
+      ],
+      "signature": "export type Join<T extends string[], D extends string>"
     },
     {
       "name": "DotPath",
@@ -178,13 +189,15 @@
       "lineRange": [
         29,
         35
-      ]
+      ],
+      "signature": "export type DotPath<T, Prefix extends string = ''>"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 12,
     "totalRootItems": 0,
-    "maxDepth": 0
+    "maxDepth": 0,
+    "hasSyntaxErrors": false
   }
 }

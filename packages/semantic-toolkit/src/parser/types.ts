@@ -6,7 +6,7 @@ export const PARSEABLE_EXTENSIONS = new Set([
 /** Symbol kinds that have bodies which contain nested declarations. */
 export const BODY_BEARING_KINDS = new Set([
 	'function', 'method', 'constructor', 'getter', 'setter',
-	'class', 'interface', 'enum', 'namespace', 'module',
+	'class', 'interface', 'enum', 'namespace', 'module', 'staticBlock',
 ]);
 
 /** Range within a file. Lines are 1-indexed. */
@@ -40,6 +40,7 @@ export interface ParsedSymbol {
 		| 'setter'
 		| 'namespace'
 		| 'module'
+		| 'staticBlock'
 		| 'import'
 		| 'expression'
 		| 're-export'

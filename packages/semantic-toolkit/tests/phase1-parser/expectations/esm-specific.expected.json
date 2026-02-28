@@ -11,7 +11,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "import { readFile } from 'node:fs/promises'"
     },
     {
       "name": "import:node:url",
@@ -24,7 +25,8 @@
       "lineRange": [
         2,
         2
-      ]
+      ],
+      "signature": "import { fileURLToPath } from 'node:url'"
     },
     {
       "name": "__filename",
@@ -39,7 +41,8 @@
       "lineRange": [
         4,
         4
-      ]
+      ],
+      "signature": "export const __filename"
     },
     {
       "name": "loadConfig",
@@ -55,7 +58,8 @@
       "lineRange": [
         6,
         9
-      ]
+      ],
+      "signature": "export async function loadConfig(path: string): Promise<string>"
     },
     {
       "name": "data",
@@ -68,7 +72,8 @@
       "lineRange": [
         7,
         7
-      ]
+      ],
+      "signature": "const data"
     },
     {
       "name": "re-export:node:fs/promises",
@@ -83,7 +88,8 @@
       "lineRange": [
         11,
         11
-      ]
+      ],
+      "signature": "export { readFile as read } from 'node:fs/promises'"
     },
     {
       "name": "(default)",
@@ -99,7 +105,8 @@
       "lineRange": [
         13,
         13
-      ]
+      ],
+      "signature": "export default __filename"
     }
   ],
   "rootItems": [
@@ -131,6 +138,7 @@
   "stats": {
     "totalSymbols": 7,
     "totalRootItems": 3,
-    "maxDepth": 1
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
   }
 }

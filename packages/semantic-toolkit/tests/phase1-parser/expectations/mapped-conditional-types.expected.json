@@ -13,7 +13,8 @@
       "lineRange": [
         1,
         3
-      ]
+      ],
+      "signature": "export type DeepReadonly<T> = {\r\n\treadonly [K in keyof T]: T[K] extends object ? DeepReadonly<T[K]> : T[K];\r\n}"
     },
     {
       "name": "Optional",
@@ -28,7 +29,8 @@
       "lineRange": [
         5,
         5
-      ]
+      ],
+      "signature": "export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>"
     },
     {
       "name": "ExtractByType",
@@ -43,7 +45,8 @@
       "lineRange": [
         7,
         9
-      ]
+      ],
+      "signature": "export type ExtractByType<T, U> = {\r\n\t[K in keyof T as T[K] extends U ? K : never]: T[K];\r\n}"
     },
     {
       "name": "InferPromise",
@@ -58,7 +61,8 @@
       "lineRange": [
         11,
         15
-      ]
+      ],
+      "signature": "export type InferPromise<T> = T extends Promise<infer U>\r\n\t? U extends Promise<infer V>\r\n\t\t? V\r\n\t\t: U\r\n\t: T"
     },
     {
       "name": "UnionToIntersection",
@@ -73,7 +77,8 @@
       "lineRange": [
         17,
         21
-      ]
+      ],
+      "signature": "export type UnionToIntersection<U> = (U extends unknown ? (x: U) => void : never) extends (\r\n\tx: infer I,\r\n) => void\r\n\t? I\r\n\t: never"
     },
     {
       "name": "Getters",
@@ -88,7 +93,8 @@
       "lineRange": [
         23,
         25
-      ]
+      ],
+      "signature": "export type Getters<T> = {\r\n\t[K in keyof T as `get${Capitalize<string & K>}`]: () => T[K];\r\n}"
     },
     {
       "name": "RemovePrefix",
@@ -103,13 +109,15 @@
       "lineRange": [
         27,
         29
-      ]
+      ],
+      "signature": "export type RemovePrefix<S extends string, P extends string> = S extends `${P}${infer Rest}`\r\n\t? Rest\r\n\t: S"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 7,
     "totalRootItems": 0,
-    "maxDepth": 0
+    "maxDepth": 0,
+    "hasSyntaxErrors": false
   }
 }

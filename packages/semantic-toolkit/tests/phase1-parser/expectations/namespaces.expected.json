@@ -13,7 +13,8 @@
       "lineRange": [
         1,
         18
-      ]
+      ],
+      "signature": "export namespace Validation"
     },
     {
       "name": "Rule",
@@ -28,7 +29,8 @@
       "lineRange": [
         2,
         5
-      ]
+      ],
+      "signature": "export interface Rule"
     },
     {
       "name": "name",
@@ -41,7 +43,8 @@
       "lineRange": [
         3,
         3
-      ]
+      ],
+      "signature": "name: string"
     },
     {
       "name": "validate",
@@ -54,7 +57,8 @@
       "lineRange": [
         4,
         4
-      ]
+      ],
+      "signature": "validate(value: unknown): boolean;"
     },
     {
       "name": "createRule",
@@ -69,7 +73,8 @@
       "lineRange": [
         7,
         9
-      ]
+      ],
+      "signature": "export function createRule(name: string, fn: (v: unknown) => boolean): Rule"
     },
     {
       "name": "Errors",
@@ -84,7 +89,8 @@
       "lineRange": [
         11,
         17
-      ]
+      ],
+      "signature": "export namespace Errors"
     },
     {
       "name": "ValidationError",
@@ -99,7 +105,8 @@
       "lineRange": [
         12,
         16
-      ]
+      ],
+      "signature": "export class ValidationError extends Error"
     },
     {
       "name": "constructor",
@@ -112,7 +119,8 @@
       "lineRange": [
         13,
         15
-      ]
+      ],
+      "signature": "constructor(public readonly rule: string)"
     },
     {
       "name": "'express'",
@@ -125,7 +133,8 @@
       "lineRange": [
         20,
         24
-      ]
+      ],
+      "signature": "declare module 'express'"
     },
     {
       "name": "Request",
@@ -138,7 +147,8 @@
       "lineRange": [
         21,
         23
-      ]
+      ],
+      "signature": "interface Request"
     },
     {
       "name": "userId",
@@ -153,13 +163,15 @@
       "lineRange": [
         22,
         22
-      ]
+      ],
+      "signature": "userId?: string"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 11,
     "totalRootItems": 0,
-    "maxDepth": 3
+    "maxDepth": 3,
+    "hasSyntaxErrors": false
   }
 }

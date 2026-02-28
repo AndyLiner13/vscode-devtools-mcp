@@ -11,7 +11,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "import React, { useState, useEffect, useMemo } from 'react'"
     },
     {
       "name": "ButtonProps",
@@ -24,7 +25,8 @@
       "lineRange": [
         3,
         7
-      ]
+      ],
+      "signature": "interface ButtonProps"
     },
     {
       "name": "label",
@@ -37,7 +39,8 @@
       "lineRange": [
         4,
         4
-      ]
+      ],
+      "signature": "label: string"
     },
     {
       "name": "onClick",
@@ -50,7 +53,8 @@
       "lineRange": [
         5,
         5
-      ]
+      ],
+      "signature": "onClick: () => void"
     },
     {
       "name": "disabled",
@@ -65,7 +69,8 @@
       "lineRange": [
         6,
         6
-      ]
+      ],
+      "signature": "disabled?: boolean"
     },
     {
       "name": "Button",
@@ -80,7 +85,8 @@
       "lineRange": [
         9,
         34
-      ]
+      ],
+      "signature": "export const Button: React.FC<ButtonProps>"
     },
     {
       "name": "[clicked, setClicked]",
@@ -93,7 +99,8 @@
       "lineRange": [
         10,
         10
-      ]
+      ],
+      "signature": "const [clicked, setClicked]"
     },
     {
       "name": "className",
@@ -106,7 +113,8 @@
       "lineRange": [
         20,
         22
-      ]
+      ],
+      "signature": "const className"
     },
     {
       "name": "handleClick",
@@ -119,7 +127,8 @@
       "lineRange": [
         24,
         27
-      ]
+      ],
+      "signature": "const handleClick"
     },
     {
       "name": "(default)",
@@ -135,7 +144,8 @@
       "lineRange": [
         36,
         36
-      ]
+      ],
+      "signature": "export default Button"
     }
   ],
   "rootItems": [
@@ -151,6 +161,7 @@
   "stats": {
     "totalSymbols": 10,
     "totalRootItems": 1,
-    "maxDepth": 1
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
   }
 }

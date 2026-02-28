@@ -11,7 +11,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "import { EventEmitter } from 'events'"
     },
     {
       "name": "import:stream",
@@ -26,7 +27,8 @@
       "lineRange": [
         2,
         2
-      ]
+      ],
+      "signature": "import type { Readable } from 'stream'"
     },
     {
       "name": "re-export:events",
@@ -41,7 +43,8 @@
       "lineRange": [
         4,
         4
-      ]
+      ],
+      "signature": "export { EventEmitter as EE } from 'events'"
     },
     {
       "name": "VERSION",
@@ -54,7 +57,8 @@
       "lineRange": [
         6,
         6
-      ]
+      ],
+      "signature": "const VERSION"
     },
     {
       "name": "counter",
@@ -67,7 +71,8 @@
       "lineRange": [
         7,
         7
-      ]
+      ],
+      "signature": "let counter"
     },
     {
       "name": "initialize",
@@ -82,7 +87,8 @@
       "lineRange": [
         9,
         11
-      ]
+      ],
+      "signature": "export function initialize(config: Record<string, unknown>): void"
     },
     {
       "name": "handler",
@@ -97,7 +103,8 @@
       "lineRange": [
         13,
         15
-      ]
+      ],
+      "signature": "export const handler"
     },
     {
       "name": "Config",
@@ -110,7 +117,8 @@
       "lineRange": [
         17,
         20
-      ]
+      ],
+      "signature": "interface Config"
     },
     {
       "name": "host",
@@ -123,7 +131,8 @@
       "lineRange": [
         18,
         18
-      ]
+      ],
+      "signature": "host: string"
     },
     {
       "name": "port",
@@ -136,7 +145,8 @@
       "lineRange": [
         19,
         19
-      ]
+      ],
+      "signature": "port: number"
     },
     {
       "name": "Result",
@@ -149,7 +159,8 @@
       "lineRange": [
         22,
         22
-      ]
+      ],
+      "signature": "type Result<T> = { ok: true; value: T } | { ok: false; error: string }"
     },
     {
       "name": "Level",
@@ -164,7 +175,8 @@
       "lineRange": [
         24,
         28
-      ]
+      ],
+      "signature": "export enum Level"
     },
     {
       "name": "Low",
@@ -177,7 +189,8 @@
       "lineRange": [
         25,
         25
-      ]
+      ],
+      "signature": "Low = 'low'"
     },
     {
       "name": "Medium",
@@ -190,7 +203,8 @@
       "lineRange": [
         26,
         26
-      ]
+      ],
+      "signature": "Medium = 'medium'"
     },
     {
       "name": "High",
@@ -203,7 +217,8 @@
       "lineRange": [
         27,
         27
-      ]
+      ],
+      "signature": "High = 'high'"
     },
     {
       "name": "Service",
@@ -218,7 +233,8 @@
       "lineRange": [
         30,
         45
-      ]
+      ],
+      "signature": "export class Service extends EventEmitter"
     },
     {
       "name": "name",
@@ -233,7 +249,8 @@
       "lineRange": [
         31,
         31
-      ]
+      ],
+      "signature": "name: string"
     },
     {
       "name": "constructor",
@@ -246,7 +263,8 @@
       "lineRange": [
         33,
         36
-      ]
+      ],
+      "signature": "constructor(name: string)"
     },
     {
       "name": "getName",
@@ -259,7 +277,8 @@
       "lineRange": [
         38,
         40
-      ]
+      ],
+      "signature": "getName(): string"
     },
     {
       "name": "create",
@@ -274,7 +293,8 @@
       "lineRange": [
         42,
         44
-      ]
+      ],
+      "signature": "static create(name: string): Service"
     },
     {
       "name": "Internal",
@@ -287,7 +307,8 @@
       "lineRange": [
         47,
         49
-      ]
+      ],
+      "signature": "namespace Internal"
     },
     {
       "name": "helper",
@@ -302,7 +323,8 @@
       "lineRange": [
         48,
         48
-      ]
+      ],
+      "signature": "export function helper(): void"
     },
     {
       "name": "expr:console.log('loaded');",
@@ -315,7 +337,8 @@
       "lineRange": [
         51,
         51
-      ]
+      ],
+      "signature": "console.log('loaded');"
     }
   ],
   "rootItems": [
@@ -355,6 +378,7 @@
   "stats": {
     "totalSymbols": 23,
     "totalRootItems": 4,
-    "maxDepth": 1
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
   }
 }

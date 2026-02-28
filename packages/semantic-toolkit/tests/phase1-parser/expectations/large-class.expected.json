@@ -13,7 +13,8 @@
       "lineRange": [
         1,
         32
-      ]
+      ],
+      "signature": "export class LargeService"
     },
     {
       "name": "data",
@@ -28,7 +29,8 @@
       "lineRange": [
         2,
         2
-      ]
+      ],
+      "signature": "data: Map<string, number>"
     },
     {
       "name": "constructor",
@@ -41,7 +43,8 @@
       "lineRange": [
         4,
         4
-      ]
+      ],
+      "signature": "constructor(private readonly name: string)"
     },
     {
       "name": "method01",
@@ -54,7 +57,8 @@
       "lineRange": [
         6,
         6
-      ]
+      ],
+      "signature": "method01(): void"
     },
     {
       "name": "method02",
@@ -67,7 +71,8 @@
       "lineRange": [
         7,
         7
-      ]
+      ],
+      "signature": "method02(): void"
     },
     {
       "name": "method03",
@@ -80,7 +85,8 @@
       "lineRange": [
         8,
         8
-      ]
+      ],
+      "signature": "method03(): void"
     },
     {
       "name": "method04",
@@ -93,7 +99,8 @@
       "lineRange": [
         9,
         9
-      ]
+      ],
+      "signature": "method04(): void"
     },
     {
       "name": "method05",
@@ -106,7 +113,8 @@
       "lineRange": [
         10,
         10
-      ]
+      ],
+      "signature": "method05(): void"
     },
     {
       "name": "method06",
@@ -119,7 +127,8 @@
       "lineRange": [
         11,
         11
-      ]
+      ],
+      "signature": "method06(): void"
     },
     {
       "name": "method07",
@@ -132,7 +141,8 @@
       "lineRange": [
         12,
         12
-      ]
+      ],
+      "signature": "method07(): void"
     },
     {
       "name": "method08",
@@ -145,7 +155,8 @@
       "lineRange": [
         13,
         13
-      ]
+      ],
+      "signature": "method08(): void"
     },
     {
       "name": "method09",
@@ -158,7 +169,8 @@
       "lineRange": [
         14,
         14
-      ]
+      ],
+      "signature": "method09(): void"
     },
     {
       "name": "method10",
@@ -171,7 +183,8 @@
       "lineRange": [
         15,
         15
-      ]
+      ],
+      "signature": "method10(): void"
     },
     {
       "name": "method11",
@@ -184,7 +197,8 @@
       "lineRange": [
         16,
         16
-      ]
+      ],
+      "signature": "method11(): void"
     },
     {
       "name": "method12",
@@ -197,7 +211,8 @@
       "lineRange": [
         17,
         17
-      ]
+      ],
+      "signature": "method12(): void"
     },
     {
       "name": "method13",
@@ -210,7 +225,8 @@
       "lineRange": [
         18,
         18
-      ]
+      ],
+      "signature": "method13(): void"
     },
     {
       "name": "method14",
@@ -223,7 +239,8 @@
       "lineRange": [
         19,
         19
-      ]
+      ],
+      "signature": "method14(): void"
     },
     {
       "name": "method15",
@@ -236,7 +253,8 @@
       "lineRange": [
         20,
         20
-      ]
+      ],
+      "signature": "method15(): void"
     },
     {
       "name": "method16",
@@ -249,7 +267,8 @@
       "lineRange": [
         21,
         21
-      ]
+      ],
+      "signature": "method16(): void"
     },
     {
       "name": "method17",
@@ -262,7 +281,8 @@
       "lineRange": [
         22,
         22
-      ]
+      ],
+      "signature": "method17(): void"
     },
     {
       "name": "method18",
@@ -275,7 +295,8 @@
       "lineRange": [
         23,
         23
-      ]
+      ],
+      "signature": "method18(): void"
     },
     {
       "name": "method19",
@@ -288,7 +309,8 @@
       "lineRange": [
         24,
         24
-      ]
+      ],
+      "signature": "method19(): void"
     },
     {
       "name": "method20",
@@ -301,7 +323,8 @@
       "lineRange": [
         25,
         25
-      ]
+      ],
+      "signature": "method20(): void"
     },
     {
       "name": "size",
@@ -314,7 +337,8 @@
       "lineRange": [
         27,
         27
-      ]
+      ],
+      "signature": "get size(): number"
     },
     {
       "name": "create",
@@ -329,13 +353,15 @@
       "lineRange": [
         29,
         31
-      ]
+      ],
+      "signature": "static create(name: string): LargeService"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 25,
     "totalRootItems": 0,
-    "maxDepth": 1
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
   }
 }

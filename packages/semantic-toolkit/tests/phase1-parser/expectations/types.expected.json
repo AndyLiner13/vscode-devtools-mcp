@@ -13,7 +13,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "export type ID = string"
     },
     {
       "name": "Result",
@@ -28,7 +29,8 @@
       "lineRange": [
         3,
         3
-      ]
+      ],
+      "signature": "export type Result<T> = { ok: true; value: T } | { ok: false; error: string }"
     },
     {
       "name": "Nullable",
@@ -43,7 +45,8 @@
       "lineRange": [
         5,
         5
-      ]
+      ],
+      "signature": "export type Nullable<T> = T | null | undefined"
     },
     {
       "name": "Keys",
@@ -58,7 +61,8 @@
       "lineRange": [
         7,
         7
-      ]
+      ],
+      "signature": "export type Keys<T> = keyof T"
     },
     {
       "name": "ReadonlyRecord",
@@ -73,7 +77,8 @@
       "lineRange": [
         9,
         9
-      ]
+      ],
+      "signature": "export type ReadonlyRecord<K extends string, V> = Readonly<Record<K, V>>"
     },
     {
       "name": "EventName",
@@ -88,7 +93,8 @@
       "lineRange": [
         11,
         11
-      ]
+      ],
+      "signature": "export type EventName = `on${Capitalize<string>}`"
     },
     {
       "name": "InferArray",
@@ -103,13 +109,15 @@
       "lineRange": [
         13,
         13
-      ]
+      ],
+      "signature": "export type InferArray<T> = T extends Array<infer U> ? U : never"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 7,
     "totalRootItems": 0,
-    "maxDepth": 0
+    "maxDepth": 0,
+    "hasSyntaxErrors": false
   }
 }

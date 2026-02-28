@@ -13,7 +13,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "export const greet"
     },
     {
       "name": "fetchData",
@@ -28,7 +29,8 @@
       "lineRange": [
         3,
         6
-      ]
+      ],
+      "signature": "export const fetchData"
     },
     {
       "name": "result",
@@ -41,7 +43,8 @@
       "lineRange": [
         4,
         4
-      ]
+      ],
+      "signature": "const result"
     },
     {
       "name": "identity",
@@ -56,7 +59,8 @@
       "lineRange": [
         8,
         8
-      ]
+      ],
+      "signature": "export const identity"
     },
     {
       "name": "createPair",
@@ -71,7 +75,8 @@
       "lineRange": [
         10,
         13
-      ]
+      ],
+      "signature": "export const createPair"
     },
     {
       "name": "handleEvent",
@@ -86,7 +91,8 @@
       "lineRange": [
         15,
         17
-      ]
+      ],
+      "signature": "export const handleEvent"
     },
     {
       "name": "multiLine",
@@ -99,7 +105,8 @@
       "lineRange": [
         19,
         26
-      ]
+      ],
+      "signature": "const multiLine"
     },
     {
       "name": "parts",
@@ -112,13 +119,15 @@
       "lineRange": [
         24,
         24
-      ]
+      ],
+      "signature": "const parts"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 8,
     "totalRootItems": 0,
-    "maxDepth": 1
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
   }
 }

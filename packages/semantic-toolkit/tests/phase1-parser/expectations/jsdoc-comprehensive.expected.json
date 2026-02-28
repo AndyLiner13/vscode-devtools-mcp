@@ -11,7 +11,8 @@
       "lineRange": [
         1,
         16
-      ]
+      ],
+      "signature": "const MAX_RETRIES"
     },
     {
       "name": "Status",
@@ -24,7 +25,8 @@
       "lineRange": [
         18,
         46
-      ]
+      ],
+      "signature": "const Status"
     },
     {
       "name": "ACTIVE",
@@ -37,7 +39,8 @@
       "lineRange": [
         40,
         41
-      ]
+      ],
+      "signature": "ACTIVE: 'active'"
     },
     {
       "name": "INACTIVE",
@@ -50,7 +53,8 @@
       "lineRange": [
         42,
         43
-      ]
+      ],
+      "signature": "INACTIVE: 'inactive'"
     },
     {
       "name": "DISABLED",
@@ -63,7 +67,8 @@
       "lineRange": [
         44,
         45
-      ]
+      ],
+      "signature": "DISABLED: 'disabled'"
     },
     {
       "name": "fetchData",
@@ -78,7 +83,8 @@
       "lineRange": [
         48,
         77
-      ]
+      ],
+      "signature": "async function fetchData(url, options = {})"
     },
     {
       "name": "{ method = 'GET', headers = {}, timeout = 5000 }",
@@ -91,7 +97,8 @@
       "lineRange": [
         75,
         75
-      ]
+      ],
+      "signature": "const { method = 'GET', headers = {}, timeout = 5000 }"
     },
     {
       "name": "DataBox",
@@ -104,7 +111,8 @@
       "lineRange": [
         79,
         165
-      ]
+      ],
+      "signature": "class DataBox"
     },
     {
       "name": "#value",
@@ -119,7 +127,8 @@
       "lineRange": [
         91,
         96
-      ]
+      ],
+      "signature": "#value"
     },
     {
       "name": "count",
@@ -134,7 +143,8 @@
       "lineRange": [
         98,
         104
-      ]
+      ],
+      "signature": "static count"
     },
     {
       "name": "constructor",
@@ -147,7 +157,8 @@
       "lineRange": [
         106,
         118
-      ]
+      ],
+      "signature": "constructor(value, meta)"
     },
     {
       "name": "getValue",
@@ -160,7 +171,8 @@
       "lineRange": [
         120,
         127
-      ]
+      ],
+      "signature": "getValue()"
     },
     {
       "name": "map",
@@ -173,7 +185,8 @@
       "lineRange": [
         129,
         138
-      ]
+      ],
+      "signature": "map(mapper)"
     },
     {
       "name": "equals",
@@ -186,7 +199,8 @@
       "lineRange": [
         140,
         148
-      ]
+      ],
+      "signature": "equals(other)"
     },
     {
       "name": "get",
@@ -199,7 +213,8 @@
       "lineRange": [
         150,
         156
-      ]
+      ],
+      "signature": "get()"
     },
     {
       "name": "[Symbol.iterator]",
@@ -214,7 +229,8 @@
       "lineRange": [
         158,
         164
-      ]
+      ],
+      "signature": "*[Symbol.iterator]()"
     },
     {
       "name": "Serializable",
@@ -227,7 +243,8 @@
       "lineRange": [
         167,
         183
-      ]
+      ],
+      "signature": "function Serializable(Base)"
     },
     {
       "name": "MathUtils",
@@ -240,7 +257,8 @@
       "lineRange": [
         185,
         208
-      ]
+      ],
+      "signature": "const MathUtils"
     },
     {
       "name": "add",
@@ -253,7 +271,8 @@
       "lineRange": [
         190,
         199
-      ]
+      ],
+      "signature": "add(a, b)"
     },
     {
       "name": "PI",
@@ -266,7 +285,8 @@
       "lineRange": [
         201,
         207
-      ]
+      ],
+      "signature": "PI: 3.14159265359"
     },
     {
       "name": "onEvent",
@@ -279,7 +299,8 @@
       "lineRange": [
         210,
         220
-      ]
+      ],
+      "signature": "function onEvent(eventName, handler)"
     },
     {
       "name": "formatName",
@@ -292,7 +313,8 @@
       "lineRange": [
         222,
         235
-      ]
+      ],
+      "signature": "function formatName(first, last, options = {})"
     },
     {
       "name": "name",
@@ -305,7 +327,8 @@
       "lineRange": [
         233,
         233
-      ]
+      ],
+      "signature": "const name"
     },
     {
       "name": "APP_NAME",
@@ -318,7 +341,8 @@
       "lineRange": [
         237,
         241
-      ]
+      ],
+      "signature": "var APP_NAME"
     },
     {
       "name": "module.exports",
@@ -333,7 +357,8 @@
       "lineRange": [
         243,
         243
-      ]
+      ],
+      "signature": "module.exports = { MAX_RETRIES, Status, fetchData, DataBox, Serializable, MathUtils, onEvent, ..."
     },
     {
       "name": "MAX_RETRIES",
@@ -346,7 +371,8 @@
       "lineRange": [
         243,
         243
-      ]
+      ],
+      "signature": "MAX_RETRIES"
     },
     {
       "name": "Status",
@@ -359,7 +385,8 @@
       "lineRange": [
         243,
         243
-      ]
+      ],
+      "signature": "Status"
     },
     {
       "name": "fetchData",
@@ -372,7 +399,8 @@
       "lineRange": [
         243,
         243
-      ]
+      ],
+      "signature": "fetchData"
     },
     {
       "name": "DataBox",
@@ -385,7 +413,8 @@
       "lineRange": [
         243,
         243
-      ]
+      ],
+      "signature": "DataBox"
     },
     {
       "name": "Serializable",
@@ -398,7 +427,8 @@
       "lineRange": [
         243,
         243
-      ]
+      ],
+      "signature": "Serializable"
     },
     {
       "name": "MathUtils",
@@ -411,7 +441,8 @@
       "lineRange": [
         243,
         243
-      ]
+      ],
+      "signature": "MathUtils"
     },
     {
       "name": "onEvent",
@@ -424,7 +455,8 @@
       "lineRange": [
         243,
         243
-      ]
+      ],
+      "signature": "onEvent"
     },
     {
       "name": "formatName",
@@ -437,7 +469,8 @@
       "lineRange": [
         243,
         243
-      ]
+      ],
+      "signature": "formatName"
     },
     {
       "name": "APP_NAME",
@@ -450,13 +483,15 @@
       "lineRange": [
         243,
         243
-      ]
+      ],
+      "signature": "APP_NAME"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 34,
     "totalRootItems": 0,
-    "maxDepth": 1
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
   }
 }

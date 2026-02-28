@@ -13,7 +13,8 @@
       "lineRange": [
         1,
         4
-      ]
+      ],
+      "signature": "export function greet(name: string): string"
     },
     {
       "name": "fetchUser",
@@ -29,7 +30,8 @@
       "lineRange": [
         6,
         10
-      ]
+      ],
+      "signature": "export async function fetchUser(id: number, _token: string): Promise<string>"
     },
     {
       "name": "range",
@@ -45,7 +47,8 @@
       "lineRange": [
         12,
         17
-      ]
+      ],
+      "signature": "export function* range(start: number, end: number): Generator<number>"
     },
     {
       "name": "main",
@@ -61,7 +64,8 @@
       "lineRange": [
         19,
         22
-      ]
+      ],
+      "signature": "export default function main(): void"
     },
     {
       "name": "outer",
@@ -76,7 +80,8 @@
       "lineRange": [
         24,
         30
-      ]
+      ],
+      "signature": "export function outer(x: number): number"
     },
     {
       "name": "inner",
@@ -89,7 +94,8 @@
       "lineRange": [
         26,
         28
-      ]
+      ],
+      "signature": "function inner(y: number): number"
     },
     {
       "name": "merge",
@@ -104,13 +110,15 @@
       "lineRange": [
         32,
         35
-      ]
+      ],
+      "signature": "export function merge<T extends object>(...objects: T[]): T"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 7,
     "totalRootItems": 0,
-    "maxDepth": 1
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
   }
 }

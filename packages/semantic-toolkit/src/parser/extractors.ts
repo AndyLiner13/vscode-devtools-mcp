@@ -53,6 +53,8 @@ function extractStatements(
 
 	for (const stmt of statements) {
 		if (Node.isFunctionDeclaration(stmt)) {
+			// Skip overload signatures only when a matching implementation exists
+			if (stmt.isOverload() && stmt.getImplementation()) continue;
 			if (stmt.getName() || stmt.isDefaultExport()) {
 				symbols.push(extractFunction(stmt, parentName, depth));
 			}
@@ -87,15 +89,32 @@ function extractFunction(
 	const mods = collectFunctionModifiers(node);
 	const children = extractBodyChildren(node, name, depth + 1);
 
+	let range = getRange(node);
+	let signature = extractSignature(node);
+	let jsdoc = extractJsDoc(node);
+
+	// Merge overload signatures into a single symbol
+	const overloads = node.getOverloads();
+	if (overloads.length > 0) {
+		const firstOverloadRange = getRange(overloads[0]);
+		range = { startLine: firstOverloadRange.startLine, endLine: range.endLine };
+
+		const overloadSigs = overloads.map(o => extractSignature(o));
+		signature = [...overloadSigs, signature].join('\n');
+
+		const firstJsdoc = extractJsDoc(overloads[0]);
+		if (firstJsdoc && !jsdoc) jsdoc = firstJsdoc;
+	}
+
 	return {
 		name,
 		kind: 'function',
 		depth,
 		parentName,
-		range: getRange(node),
-		signature: extractSignature(node),
+		range,
+		signature,
 		modifiers: mods,
-		jsdoc: extractJsDoc(node),
+		jsdoc,
 		exported: node.isExported(),
 		children,
 	};
@@ -136,35 +155,75 @@ function extractClassChildren(
 	const children: ParsedSymbol[] = [];
 
 	for (const ctor of node.getConstructors()) {
+		// Skip overload signatures only when a matching implementation exists
+		if (ctor.isOverload() && ctor.getImplementation()) continue;
+
 		const ctorMods = collectConstructorModifiers(ctor);
 		const bodyChildren = extractBodyChildren(ctor, 'constructor', childDepth + 1);
+
+		let range = getRange(ctor);
+		let signature = extractSignature(ctor);
+		let jsdoc = extractJsDoc(ctor);
+
+		const overloads = ctor.getOverloads();
+		if (overloads.length > 0) {
+			const firstOverloadRange = getRange(overloads[0]);
+			range = { startLine: firstOverloadRange.startLine, endLine: range.endLine };
+
+			const overloadSigs = overloads.map(o => extractSignature(o));
+			signature = [...overloadSigs, signature].join('\n');
+
+			const firstJsdoc = extractJsDoc(overloads[0]);
+			if (firstJsdoc && !jsdoc) jsdoc = firstJsdoc;
+		}
+
 		children.push({
 			name: 'constructor',
 			kind: 'constructor',
 			depth: childDepth,
 			parentName: className,
-			range: getRange(ctor),
-			signature: extractSignature(ctor),
+			range,
+			signature,
 			modifiers: ctorMods,
-			jsdoc: extractJsDoc(ctor),
+			jsdoc,
 			exported: false,
 			children: bodyChildren,
 		});
 	}
 
 	for (const method of node.getMethods()) {
+		// Skip overload signatures only when a matching implementation exists
+		if (method.isOverload() && method.getImplementation()) continue;
+
 		const mods = collectFunctionModifiers(method);
 		const methodName = method.getName() || '(anonymous)';
 		const bodyChildren = extractBodyChildren(method, methodName, childDepth + 1);
+
+		let range = getRange(method);
+		let signature = extractSignature(method);
+		let jsdoc = extractJsDoc(method);
+
+		const overloads = method.getOverloads();
+		if (overloads.length > 0) {
+			const firstOverloadRange = getRange(overloads[0]);
+			range = { startLine: firstOverloadRange.startLine, endLine: range.endLine };
+
+			const overloadSigs = overloads.map(o => extractSignature(o));
+			signature = [...overloadSigs, signature].join('\n');
+
+			const firstJsdoc = extractJsDoc(overloads[0]);
+			if (firstJsdoc && !jsdoc) jsdoc = firstJsdoc;
+		}
+
 		children.push({
 			name: methodName,
 			kind: 'method',
 			depth: childDepth,
 			parentName: className,
-			range: getRange(method),
-			signature: extractSignature(method),
+			range,
+			signature,
 			modifiers: mods,
-			jsdoc: extractJsDoc(method),
+			jsdoc,
 			exported: false,
 			children: bodyChildren,
 		});
@@ -216,6 +275,25 @@ function extractClassChildren(
 			exported: false,
 			children: [],
 		});
+	}
+
+	// ES2022 static initialization blocks
+	let staticBlockIndex = 0;
+	for (const member of node.getMembers()) {
+		if (Node.isClassStaticBlockDeclaration(member)) {
+			children.push({
+				name: `static-block-${staticBlockIndex++}`,
+				kind: 'staticBlock',
+				depth: childDepth,
+				parentName: className,
+				range: getRange(member),
+				signature: 'static { ... }',
+				modifiers: ['static'],
+				jsdoc: null,
+				exported: false,
+				children: [],
+			});
+		}
 	}
 
 	children.sort((a, b) => a.range.startLine - b.range.startLine);

@@ -13,7 +13,8 @@
       "lineRange": [
         1,
         4
-      ]
+      ],
+      "signature": "export interface Box"
     },
     {
       "name": "width",
@@ -26,7 +27,8 @@
       "lineRange": [
         2,
         2
-      ]
+      ],
+      "signature": "width: number"
     },
     {
       "name": "height",
@@ -39,7 +41,8 @@
       "lineRange": [
         3,
         3
-      ]
+      ],
+      "signature": "height: number"
     },
     {
       "name": "Box",
@@ -54,7 +57,8 @@
       "lineRange": [
         6,
         9
-      ]
+      ],
+      "signature": "export interface Box"
     },
     {
       "name": "color",
@@ -67,7 +71,8 @@
       "lineRange": [
         7,
         7
-      ]
+      ],
+      "signature": "color: string"
     },
     {
       "name": "label",
@@ -82,7 +87,8 @@
       "lineRange": [
         8,
         8
-      ]
+      ],
+      "signature": "label?: string"
     },
     {
       "name": "EventEmitter",
@@ -97,7 +103,8 @@
       "lineRange": [
         11,
         15
-      ]
+      ],
+      "signature": "export class EventEmitter"
     },
     {
       "name": "on",
@@ -110,7 +117,8 @@
       "lineRange": [
         12,
         14
-      ]
+      ],
+      "signature": "on(event: string, listener: Function): void"
     },
     {
       "name": "EventEmitter",
@@ -125,7 +133,8 @@
       "lineRange": [
         17,
         25
-      ]
+      ],
+      "signature": "export namespace EventEmitter"
     },
     {
       "name": "Options",
@@ -140,7 +149,8 @@
       "lineRange": [
         18,
         20
-      ]
+      ],
+      "signature": "export interface Options"
     },
     {
       "name": "maxListeners",
@@ -153,7 +163,8 @@
       "lineRange": [
         19,
         19
-      ]
+      ],
+      "signature": "maxListeners: number"
     },
     {
       "name": "create",
@@ -168,7 +179,8 @@
       "lineRange": [
         22,
         24
-      ]
+      ],
+      "signature": "export function create(opts?: Options): EventEmitter"
     },
     {
       "name": "logger",
@@ -183,7 +195,8 @@
       "lineRange": [
         27,
         29
-      ]
+      ],
+      "signature": "export function logger(message: string): void"
     },
     {
       "name": "logger",
@@ -198,7 +211,8 @@
       "lineRange": [
         31,
         37
-      ]
+      ],
+      "signature": "export namespace logger"
     },
     {
       "name": "level",
@@ -213,7 +227,8 @@
       "lineRange": [
         32,
         32
-      ]
+      ],
+      "signature": "export let level: 'debug' | 'info' | 'warn' | 'error'"
     },
     {
       "name": "setLevel",
@@ -228,13 +243,15 @@
       "lineRange": [
         34,
         36
-      ]
+      ],
+      "signature": "export function setLevel(newLevel: typeof level): void"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 16,
     "totalRootItems": 0,
-    "maxDepth": 2
+    "maxDepth": 2,
+    "hasSyntaxErrors": false
   }
 }

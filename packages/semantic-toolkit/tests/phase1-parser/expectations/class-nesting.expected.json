@@ -13,7 +13,8 @@
       "lineRange": [
         1,
         29
-      ]
+      ],
+      "signature": "export class EventEmitter"
     },
     {
       "name": "handlers",
@@ -28,7 +29,8 @@
       "lineRange": [
         2,
         2
-      ]
+      ],
+      "signature": "handlers: Map<string, Array<() => void>>"
     },
     {
       "name": "on",
@@ -41,7 +43,8 @@
       "lineRange": [
         4,
         8
-      ]
+      ],
+      "signature": "on(event: string, handler: () => void): void"
     },
     {
       "name": "existing",
@@ -54,7 +57,8 @@
       "lineRange": [
         5,
         5
-      ]
+      ],
+      "signature": "const existing"
     },
     {
       "name": "emit",
@@ -67,7 +71,8 @@
       "lineRange": [
         10,
         20
-      ]
+      ],
+      "signature": "emit(event: string): void"
     },
     {
       "name": "handlers",
@@ -80,7 +85,8 @@
       "lineRange": [
         11,
         11
-      ]
+      ],
+      "signature": "const handlers"
     },
     {
       "name": "createScoped",
@@ -93,13 +99,15 @@
       "lineRange": [
         22,
         28
-      ]
+      ],
+      "signature": "createScoped(prefix: string): { on: (e: string, h: () => void) => void }"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 7,
     "totalRootItems": 0,
-    "maxDepth": 2
+    "maxDepth": 2,
+    "hasSyntaxErrors": false
   }
 }

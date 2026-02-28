@@ -13,7 +13,8 @@
       "lineRange": [
         1,
         6
-      ]
+      ],
+      "signature": "export enum Direction"
     },
     {
       "name": "Up",
@@ -26,7 +27,8 @@
       "lineRange": [
         2,
         2
-      ]
+      ],
+      "signature": "Up"
     },
     {
       "name": "Down",
@@ -39,7 +41,8 @@
       "lineRange": [
         3,
         3
-      ]
+      ],
+      "signature": "Down"
     },
     {
       "name": "Left",
@@ -52,7 +55,8 @@
       "lineRange": [
         4,
         4
-      ]
+      ],
+      "signature": "Left"
     },
     {
       "name": "Right",
@@ -65,7 +69,8 @@
       "lineRange": [
         5,
         5
-      ]
+      ],
+      "signature": "Right"
     },
     {
       "name": "Color",
@@ -80,7 +85,8 @@
       "lineRange": [
         8,
         12
-      ]
+      ],
+      "signature": "export enum Color"
     },
     {
       "name": "Red",
@@ -93,7 +99,8 @@
       "lineRange": [
         9,
         9
-      ]
+      ],
+      "signature": "Red = 'red'"
     },
     {
       "name": "Green",
@@ -106,7 +113,8 @@
       "lineRange": [
         10,
         10
-      ]
+      ],
+      "signature": "Green = 'green'"
     },
     {
       "name": "Blue",
@@ -119,7 +127,8 @@
       "lineRange": [
         11,
         11
-      ]
+      ],
+      "signature": "Blue = 'blue'"
     },
     {
       "name": "HttpStatus",
@@ -134,7 +143,8 @@
       "lineRange": [
         14,
         18
-      ]
+      ],
+      "signature": "export const enum HttpStatus"
     },
     {
       "name": "OK",
@@ -147,7 +157,8 @@
       "lineRange": [
         15,
         15
-      ]
+      ],
+      "signature": "OK = 200"
     },
     {
       "name": "NotFound",
@@ -160,7 +171,8 @@
       "lineRange": [
         16,
         16
-      ]
+      ],
+      "signature": "NotFound = 404"
     },
     {
       "name": "ServerError",
@@ -173,7 +185,8 @@
       "lineRange": [
         17,
         17
-      ]
+      ],
+      "signature": "ServerError = 500"
     },
     {
       "name": "BitFlag",
@@ -188,7 +201,8 @@
       "lineRange": [
         20,
         25
-      ]
+      ],
+      "signature": "export enum BitFlag"
     },
     {
       "name": "None",
@@ -201,7 +215,8 @@
       "lineRange": [
         21,
         21
-      ]
+      ],
+      "signature": "None = 0"
     },
     {
       "name": "Read",
@@ -214,7 +229,8 @@
       "lineRange": [
         22,
         22
-      ]
+      ],
+      "signature": "Read = 1 << 0"
     },
     {
       "name": "Write",
@@ -227,7 +243,8 @@
       "lineRange": [
         23,
         23
-      ]
+      ],
+      "signature": "Write = 1 << 1"
     },
     {
       "name": "Execute",
@@ -240,13 +257,15 @@
       "lineRange": [
         24,
         24
-      ]
+      ],
+      "signature": "Execute = 1 << 2"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 18,
     "totalRootItems": 0,
-    "maxDepth": 1
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
   }
 }

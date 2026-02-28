@@ -11,7 +11,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "// File with intentional syntax errors"
     },
     {
       "name": "comment:// Tests graceful error handling - parser should not crash",
@@ -24,7 +25,8 @@
       "lineRange": [
         2,
         2
-      ]
+      ],
+      "signature": "// Tests graceful error handling - parser should not crash"
     },
     {
       "name": "validVar",
@@ -37,7 +39,8 @@
       "lineRange": [
         4,
         4
-      ]
+      ],
+      "signature": "const validVar"
     },
     {
       "name": "comment:// Missing closing brace - syntax error",
@@ -50,7 +53,8 @@
       "lineRange": [
         6,
         6
-      ]
+      ],
+      "signature": "// Missing closing brace - syntax error"
     },
     {
       "name": "broken",
@@ -63,13 +67,15 @@
       "lineRange": [
         7,
         17
-      ]
+      ],
+      "signature": "function broken({\r\n\treturn 1;\r\n}, const, anotherValid = 'hello', const, unclosed = \"this is not closed, export, const, stillExport = true)\nfunction broken({\r\n\treturn 1;\r\n}, const, anotherValid = 'hello', const, unclosed = \"this is not closed, export, const, stillExport = true)"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 5,
     "totalRootItems": 0,
-    "maxDepth": 0
+    "maxDepth": 0,
+    "hasSyntaxErrors": true
   }
 }

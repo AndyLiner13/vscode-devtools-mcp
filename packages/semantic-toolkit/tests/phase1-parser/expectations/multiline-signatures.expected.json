@@ -11,7 +11,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "// Tests multi-line function signatures"
     },
     {
       "name": "comment:// Verifies collapse produces correct single-line stubs",
@@ -24,7 +25,8 @@
       "lineRange": [
         2,
         2
-      ]
+      ],
+      "signature": "// Verifies collapse produces correct single-line stubs"
     },
     {
       "name": "complexGenericFunction",
@@ -39,7 +41,8 @@
       "lineRange": [
         4,
         16
-      ]
+      ],
+      "signature": "export function complexGenericFunction<T extends Record<string, unknown>, U extends keyof T>(param1: T, param2: U, options?: {\r\n\t\tdebug?: boolean;\r\n\t\ttimeout?: number;\r\n\t}): Promise<T[U]>"
     },
     {
       "name": "ServiceWithMultilineMethods",
@@ -54,7 +57,8 @@
       "lineRange": [
         18,
         36
-      ]
+      ],
+      "signature": "export class ServiceWithMultilineMethods"
     },
     {
       "name": "processWithManyParams",
@@ -69,7 +73,8 @@
       "lineRange": [
         19,
         25
-      ]
+      ],
+      "signature": "async processWithManyParams(input: string, config: { a: number; b: number }, callback: (result: string) => void): Promise<void>"
     },
     {
       "name": "transformData",
@@ -82,7 +87,8 @@
       "lineRange": [
         27,
         35
-      ]
+      ],
+      "signature": "transformData<TInput, TOutput>(data: TInput, transformer: (item: TInput) => TOutput): TOutput"
     },
     {
       "name": "arrowWithMultilineSignature",
@@ -97,7 +103,8 @@
       "lineRange": [
         38,
         47
-      ]
+      ],
+      "signature": "export const arrowWithMultilineSignature"
     },
     {
       "name": "result",
@@ -110,13 +117,15 @@
       "lineRange": [
         42,
         42
-      ]
+      ],
+      "signature": "const result: Partial<T>"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 8,
     "totalRootItems": 0,
-    "maxDepth": 1
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
   }
 }

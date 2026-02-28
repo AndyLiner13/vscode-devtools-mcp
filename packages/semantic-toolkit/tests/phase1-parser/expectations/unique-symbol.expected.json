@@ -13,7 +13,8 @@
       "lineRange": [
         1,
         1
-      ]
+      ],
+      "signature": "export const TAG: unique symbol"
     },
     {
       "name": "BRAND",
@@ -28,7 +29,8 @@
       "lineRange": [
         3,
         3
-      ]
+      ],
+      "signature": "export const BRAND: unique symbol"
     },
     {
       "name": "Tagged",
@@ -43,7 +45,8 @@
       "lineRange": [
         5,
         7
-      ]
+      ],
+      "signature": "export interface Tagged"
     },
     {
       "name": "[TAG]",
@@ -58,7 +61,8 @@
       "lineRange": [
         6,
         6
-      ]
+      ],
+      "signature": "readonly [TAG]: true"
     },
     {
       "name": "Branded",
@@ -73,7 +77,8 @@
       "lineRange": [
         9,
         9
-      ]
+      ],
+      "signature": "export type Branded<T, B extends symbol> = T & { readonly [K in B]: true }"
     },
     {
       "name": "Registry",
@@ -88,7 +93,8 @@
       "lineRange": [
         11,
         18
-      ]
+      ],
+      "signature": "export class Registry"
     },
     {
       "name": "KEY",
@@ -104,7 +110,8 @@
       "lineRange": [
         12,
         12
-      ]
+      ],
+      "signature": "static readonly KEY: unique symbol"
     },
     {
       "name": "data",
@@ -119,7 +126,8 @@
       "lineRange": [
         13,
         13
-      ]
+      ],
+      "signature": "data"
     },
     {
       "name": "register",
@@ -132,13 +140,15 @@
       "lineRange": [
         15,
         17
-      ]
+      ],
+      "signature": "register(key: symbol, value: unknown): void"
     }
   ],
   "rootItems": [],
   "stats": {
     "totalSymbols": 9,
     "totalRootItems": 0,
-    "maxDepth": 1
+    "maxDepth": 1,
+    "hasSyntaxErrors": false
   }
 }
