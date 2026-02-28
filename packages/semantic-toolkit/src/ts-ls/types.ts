@@ -15,6 +15,7 @@
  * Item 14: Type guards — narrowing construct detection in function bodies.
  * Item 15: Callbacks — higher-order function and callback tracking.
  * Item 16: Guard callbacks — type guard functions used as callbacks with narrowing metadata.
+ * Item 17: Advanced types — conditional, mapped, template literal, utility type structure.
  */
 
 /** Configuration for TS Language Services operations. */
@@ -26,10 +27,20 @@ export interface TsLsConfig {
 	 * - Any positive integer = that many hops.
 	 */
 	callDepth: number;
+
+	/**
+	 * Maximum nesting depth for advanced type structure extraction.
+	 * Controls how deeply conditional types, mapped types, and nested
+	 * type constructs are recursively expanded.
+	 * - `1` = top-level structure only (default).
+	 * - Any positive integer = that many nesting levels.
+	 */
+	typeDepth: number;
 }
 
 export const DEFAULT_TS_LS_CONFIG: TsLsConfig = {
 	callDepth: 1,
+	typeDepth: 1,
 };
 
 /** A reference to a symbol in a specific file location. */
@@ -279,6 +290,9 @@ export interface SymbolMetadata {
 
 	/** Guard-callback analysis: type guard functions used as callbacks, with narrowing metadata. */
 	guardCallbacks?: GuardCallbackAnalysis;
+
+	/** Advanced type analysis: conditional, mapped, template literal, utility type structure. */
+	advancedType?: AdvancedTypeAnalysis;
 }
 
 // ---------------------------------------------------------------------------
@@ -541,7 +555,131 @@ export interface GuardCallbackAnalysis {
 	guardHofParameters: GuardHofParameter[];
 }
 
-// ---------------------------------------------------------------------------// Item 14: Type Guards / Narrowing
+// ---------------------------------------------------------------------------
+// Item 17: Advanced Types (Conditional, Mapped, Template Literal)
+// ---------------------------------------------------------------------------
+
+/** Classification of an advanced type construct. */
+export type AdvancedTypeKind =
+	| 'conditional'       // T extends U ? X : Y
+	| 'mapped'            // { [K in keyof T]: V }
+	| 'template-literal'  // `get${Capitalize<string>}`
+	| 'utility'           // Partial<T>, Pick<T, K>, etc.
+	| 'intersection'      // A & B
+	| 'union'             // A | B
+	| 'indexed-access'    // T[K]
+	| 'keyof'             // keyof T
+	| 'typeof'            // typeof expr
+	| 'infer'             // infer R (within conditional)
+	| 'simple';           // plain type reference or literal
+
+/** Breakdown of a conditional type: T extends U ? X : Y. */
+export interface ConditionalTypeInfo {
+	/** The check type (T). */
+	checkType: string;
+
+	/** The extends constraint (U). */
+	extendsType: string;
+
+	/** The true branch type (X). Text or nested AdvancedTypeEntry if depth allows. */
+	trueType: string;
+
+	/** The false branch type (Y). Text or nested AdvancedTypeEntry if depth allows. */
+	falseType: string;
+
+	/** Infer declarations found in the extends type (e.g. 'infer R'). */
+	inferTypes: string[];
+}
+
+/** Breakdown of a mapped type: { [K in Source]: V }. */
+export interface MappedTypeInfo {
+	/** The key parameter name (usually K). */
+	keyName: string;
+
+	/** The source constraint (e.g. 'keyof T', 'string', a union). */
+	constraint: string;
+
+	/** The value type expression. */
+	valueType: string;
+
+	/** Optional readonly modifier: '+readonly', '-readonly', or undefined. */
+	readonlyModifier?: '+readonly' | '-readonly';
+
+	/** Optional optionality modifier: '+?', '-?', or undefined. */
+	optionalModifier?: '+?' | '-?';
+
+	/** Key remapping clause (as NewKey), if present. */
+	nameType?: string;
+}
+
+/** Breakdown of a template literal type. */
+export interface TemplateLiteralInfo {
+	/** The full template text (e.g. '`get${string}`'). */
+	templateText: string;
+
+	/** Literal head and span texts. */
+	spans: TemplateLiteralSpan[];
+}
+
+/** A span in a template literal type. */
+export interface TemplateLiteralSpan {
+	/** The type expression in the span (e.g. 'string', 'Capitalize<K>'). */
+	type: string;
+
+	/** The literal text following this span. */
+	literal: string;
+}
+
+/** Information about a recognized utility type. */
+export interface UtilityTypeInfo {
+	/** The utility type name (e.g. 'Partial', 'Pick', 'ReturnType'). */
+	name: string;
+
+	/** The type arguments passed to the utility. */
+	typeArguments: string[];
+}
+
+/** A single advanced type entry extracted from a type alias. */
+export interface AdvancedTypeEntry {
+	/** What kind of advanced type this is. */
+	kind: AdvancedTypeKind;
+
+	/** Full source text of this type construct. */
+	text: string;
+
+	/** Conditional type breakdown (only when kind === 'conditional'). */
+	conditional?: ConditionalTypeInfo;
+
+	/** Mapped type breakdown (only when kind === 'mapped'). */
+	mapped?: MappedTypeInfo;
+
+	/** Template literal breakdown (only when kind === 'template-literal'). */
+	templateLiteral?: TemplateLiteralInfo;
+
+	/** Utility type info (only when kind === 'utility'). */
+	utility?: UtilityTypeInfo;
+
+	/** Nested entries (populated when typeDepth > 1 and this type contains sub-types). */
+	children?: AdvancedTypeEntry[];
+}
+
+/** Full analysis of a type alias declaration's advanced type structure. */
+export interface AdvancedTypeAnalysis {
+	/** The type alias being analyzed. */
+	symbol: SymbolRef;
+
+	/** The full type alias text (right-hand side). */
+	typeText: string;
+
+	/** The top-level type structure. */
+	structure: AdvancedTypeEntry;
+
+	/** Type parameters on this alias (e.g. T, K extends keyof T). */
+	typeParameters: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Item 14: Type Guards / Narrowing
 // ---------------------------------------------------------------------------
 
 /** The kind of type narrowing construct. */

@@ -16,6 +16,7 @@ export { resolveProjectStructure } from './project-structure';
 export { resolveTypeGuards } from './type-guards';
 export { resolveCallbacks } from './callbacks';
 export { resolveGuardCallbacks } from './guard-callbacks';
+export { resolveAdvancedTypes } from './advanced-types';
 
 export type {
 	TsLsConfig,
@@ -53,6 +54,14 @@ export type {
 	GuardCallbackSite,
 	GuardHofParameter,
 	GuardCallbackAnalysis,
+	AdvancedTypeKind,
+	ConditionalTypeInfo,
+	MappedTypeInfo,
+	TemplateLiteralInfo,
+	TemplateLiteralSpan,
+	UtilityTypeInfo,
+	AdvancedTypeEntry,
+	AdvancedTypeAnalysis,
 } from './types';
 
 export { DEFAULT_TS_LS_CONFIG } from './types';
