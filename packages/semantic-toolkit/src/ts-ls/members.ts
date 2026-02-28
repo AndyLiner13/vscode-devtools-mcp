@@ -25,11 +25,16 @@ import type { MemberInfo, MemberKind } from './types';
 
 export type { MemberInfo, MemberKind } from './types';
 
-// Modifiers we track on member declarations.
-const TRACKED_MODIFIERS = new Set([
-	'public', 'private', 'protected',
-	'static', 'abstract', 'readonly',
-	'async', 'override',
+// Map from SyntaxKind to output label for tracked modifiers.
+const TRACKED_MODIFIER_KINDS = new Map<SyntaxKind, string>([
+	[SyntaxKind.PublicKeyword, 'public'],
+	[SyntaxKind.PrivateKeyword, 'private'],
+	[SyntaxKind.ProtectedKeyword, 'protected'],
+	[SyntaxKind.StaticKeyword, 'static'],
+	[SyntaxKind.AbstractKeyword, 'abstract'],
+	[SyntaxKind.ReadonlyKeyword, 'readonly'],
+	[SyntaxKind.AsyncKeyword, 'async'],
+	[SyntaxKind.OverrideKeyword, 'override'],
 ]);
 
 // ---------------------------------------------------------------------------
@@ -274,9 +279,9 @@ function extractModifiers(
 	const modifiers: string[] = [];
 
 	for (const mod of node.getModifiers()) {
-		const text = mod.getText();
-		if (TRACKED_MODIFIERS.has(text)) {
-			modifiers.push(text);
+		const label = TRACKED_MODIFIER_KINDS.get(mod.getKind());
+		if (label) {
+			modifiers.push(label);
 		}
 	}
 

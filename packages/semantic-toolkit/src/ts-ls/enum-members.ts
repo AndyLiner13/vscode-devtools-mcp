@@ -55,8 +55,7 @@ export function resolveEnumMembers(
 
 	const isConst = enumDecl.isConstEnum();
 
-	const modifiers = enumDecl.getModifiers().map(m => m.getText().trim());
-	const isDeclare = modifiers.includes('declare');
+	const isDeclare = enumDecl.getModifiers().some(m => m.getKind() === SyntaxKind.DeclareKeyword);
 
 	const members = extractMembers(enumDecl);
 

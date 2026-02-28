@@ -33,19 +33,38 @@ export type {
 } from './types';
 
 // ---------------------------------------------------------------------------
-// Known utility types
+// Lib file detection for utility types
 // ---------------------------------------------------------------------------
 
-const KNOWN_UTILITY_TYPES = new Set([
-	'Partial', 'Required', 'Readonly', 'Record',
-	'Pick', 'Omit', 'Exclude', 'Extract',
-	'NonNullable', 'ReturnType', 'Parameters',
-	'ConstructorParameters', 'InstanceType',
-	'ThisParameterType', 'OmitThisParameter',
-	'ThisType', 'Uppercase', 'Lowercase',
-	'Capitalize', 'Uncapitalize', 'Awaited',
-	'NoInfer',
-]);
+/**
+ * Check if a file path belongs to TypeScript's lib declaration files.
+ * These contain built-in utility types like Partial, Required, Pick, etc.
+ */
+function isTypescriptLibFile(filePath: string): boolean {
+	const normalized = filePath.replace(/\\/g, '/');
+	return /\/node_modules\/typescript\/lib\/lib\..*\.d\.ts$/.test(normalized) ||
+		/[/\\]lib\..*\.d\.ts$/.test(normalized) && normalized.includes('typescript');
+}
+
+/**
+ * Check if a TypeReference node refers to a built-in utility type
+ * by resolving its declaration to a TypeAliasDeclaration in lib.d.ts.
+ */
+function isBuiltInUtilityType(node: Node): boolean {
+	const ident = node.getFirstChildByKind(SyntaxKind.Identifier);
+	if (!ident) return false;
+
+	const symbol = ident.getSymbol();
+	if (!symbol) return false;
+
+	for (const decl of symbol.getDeclarations()) {
+		if (!Node.isTypeAliasDeclaration(decl)) continue;
+		const sourceFilePath = decl.getSourceFile().getFilePath();
+		if (isTypescriptLibFile(sourceFilePath)) return true;
+	}
+
+	return false;
+}
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -321,8 +340,8 @@ function analyzeTypeReference(
 	const typeName = node.getChildAtIndex(0);
 	const name = typeName?.getText().trim() ?? '';
 
-	// Check if it's a known utility type
-	if (KNOWN_UTILITY_TYPES.has(name)) {
+	// Resolve via the TypeScript compiler to check if this is a lib.d.ts utility type
+	if (isBuiltInUtilityType(node)) {
 		const typeArgNodes = getTypeArguments(node);
 		const typeArguments = typeArgNodes.map(a => a.getText().trim());
 
@@ -336,11 +355,15 @@ function analyzeTypeReference(
 }
 
 function getTypeArguments(node: Node): Node[] {
+	// Use ts-morph's TypeReferenceNode API when available
+	if (Node.isTypeReference(node)) {
+		return [...node.getTypeArguments()];
+	}
+
+	// Fallback: walk children for SyntaxList containing type argument nodes
 	const args: Node[] = [];
 	for (const child of node.getChildren()) {
-		if (child.getKind() === SyntaxKind.TypeArgumentList ||
-			child.getKind() === SyntaxKind.SyntaxList) {
-			// Within the type argument list, collect actual type nodes
+		if (child.getKind() === SyntaxKind.SyntaxList) {
 			for (const typeArg of child.getChildren()) {
 				if (typeArg.getKind() !== SyntaxKind.CommaToken &&
 					typeArg.getKind() !== SyntaxKind.LessThanToken &&

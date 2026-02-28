@@ -23,12 +23,18 @@ import type {
 	ParameterDeclaration,
 } from 'ts-morph';
 
-// Modifiers we track on declarations.
-const TRACKED_MODIFIERS = new Set([
-	'public', 'private', 'protected',
-	'static', 'abstract', 'readonly',
-	'async', 'override', 'declare',
-	'default',
+// Map from SyntaxKind to output label for tracked modifiers.
+const TRACKED_MODIFIER_KINDS = new Map<SyntaxKind, string>([
+	[SyntaxKind.PublicKeyword, 'public'],
+	[SyntaxKind.PrivateKeyword, 'private'],
+	[SyntaxKind.ProtectedKeyword, 'protected'],
+	[SyntaxKind.StaticKeyword, 'static'],
+	[SyntaxKind.AbstractKeyword, 'abstract'],
+	[SyntaxKind.ReadonlyKeyword, 'readonly'],
+	[SyntaxKind.AsyncKeyword, 'async'],
+	[SyntaxKind.OverrideKeyword, 'override'],
+	[SyntaxKind.DeclareKeyword, 'declare'],
+	[SyntaxKind.DefaultKeyword, 'default'],
 ]);
 
 /** Result of resolving a symbol's signature and modifiers. */
@@ -313,9 +319,9 @@ function buildModifiers(node: DeclarationNode, sourceFile: SourceFile): string[]
 	// Extract keyword modifiers from the node
 	if ('getModifiers' in node && typeof node.getModifiers === 'function') {
 		for (const mod of node.getModifiers()) {
-			const text = mod.getText();
-			if (TRACKED_MODIFIERS.has(text)) {
-				modifiers.push(text);
+			const label = TRACKED_MODIFIER_KINDS.get(mod.getKind());
+			if (label) {
+				modifiers.push(label);
 			}
 		}
 	}

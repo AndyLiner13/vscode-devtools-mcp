@@ -11,6 +11,7 @@
 import { Project, Node, SyntaxKind } from 'ts-morph';
 import type { SourceFile } from 'ts-morph';
 import * as path from 'node:path';
+import { confusablesMap } from 'confusables';
 
 import type {
 	UnicodeIdentifierEntry,
@@ -51,118 +52,48 @@ const ZERO_WIDTH_CHARS = new Set([
 ]);
 
 // ---------------------------------------------------------------------------
-// Common confusable mappings (Latin ↔ Cyrillic/Greek)
-//
-// Maps code points to their Latin "skeleton" equivalent for comparison.
-// Subset covering the most commonly exploited homoglyphs.
+// Confusable detection uses the `confusables` npm package which provides
+// the full Unicode confusables.txt data (3300+ entries) via confusablesMap.
 // ---------------------------------------------------------------------------
 
-const CONFUSABLE_TO_LATIN: ReadonlyMap<number, { latin: string; scriptLabel: string }> = new Map([
-	// Cyrillic lookalikes
-	[0x0430, { latin: 'a', scriptLabel: 'Cyrillic а' }],  // а → a
-	[0x0435, { latin: 'e', scriptLabel: 'Cyrillic е' }],  // е → e
-	[0x043E, { latin: 'o', scriptLabel: 'Cyrillic о' }],  // о → o
-	[0x0440, { latin: 'p', scriptLabel: 'Cyrillic р' }],  // р → p
-	[0x0441, { latin: 'c', scriptLabel: 'Cyrillic с' }],  // с → c
-	[0x0443, { latin: 'y', scriptLabel: 'Cyrillic у' }],  // у → y
-	[0x0445, { latin: 'x', scriptLabel: 'Cyrillic х' }],  // х → x
-	[0x0410, { latin: 'A', scriptLabel: 'Cyrillic А' }],  // А → A
-	[0x0412, { latin: 'B', scriptLabel: 'Cyrillic В' }],  // В → B
-	[0x0415, { latin: 'E', scriptLabel: 'Cyrillic Е' }],  // Е → E
-	[0x041A, { latin: 'K', scriptLabel: 'Cyrillic К' }],  // К → K
-	[0x041C, { latin: 'M', scriptLabel: 'Cyrillic М' }],  // М → M
-	[0x041D, { latin: 'H', scriptLabel: 'Cyrillic Н' }],  // Н → H
-	[0x041E, { latin: 'O', scriptLabel: 'Cyrillic О' }],  // О → O
-	[0x0420, { latin: 'P', scriptLabel: 'Cyrillic Р' }],  // Р → P
-	[0x0421, { latin: 'C', scriptLabel: 'Cyrillic С' }],  // С → C
-	[0x0422, { latin: 'T', scriptLabel: 'Cyrillic Т' }],  // Т → T
-	[0x0425, { latin: 'X', scriptLabel: 'Cyrillic Х' }],  // Х → X
-	[0x0427, { latin: 'u', scriptLabel: 'Cyrillic ч' }],  // Special case
-
-	// Greek lookalikes
-	[0x03B1, { latin: 'a', scriptLabel: 'Greek α' }],     // α → a (alpha)
-	[0x03BF, { latin: 'o', scriptLabel: 'Greek ο' }],     // ο → o (omicron)
-	[0x03C1, { latin: 'p', scriptLabel: 'Greek ρ' }],     // ρ → p (rho)
-	[0x0391, { latin: 'A', scriptLabel: 'Greek Α' }],     // Α → A
-	[0x0392, { latin: 'B', scriptLabel: 'Greek Β' }],     // Β → B
-	[0x0395, { latin: 'E', scriptLabel: 'Greek Ε' }],     // Ε → E
-	[0x0397, { latin: 'H', scriptLabel: 'Greek Η' }],     // Η → H
-	[0x0399, { latin: 'I', scriptLabel: 'Greek Ι' }],     // Ι → I
-	[0x039A, { latin: 'K', scriptLabel: 'Greek Κ' }],     // Κ → K
-	[0x039C, { latin: 'M', scriptLabel: 'Greek Μ' }],     // Μ → M
-	[0x039D, { latin: 'N', scriptLabel: 'Greek Ν' }],     // Ν → N
-	[0x039F, { latin: 'O', scriptLabel: 'Greek Ο' }],     // Ο → O
-	[0x03A1, { latin: 'P', scriptLabel: 'Greek Ρ' }],     // Ρ → P (Rho)
-	[0x03A4, { latin: 'T', scriptLabel: 'Greek Τ' }],     // Τ → T
-	[0x03A5, { latin: 'Y', scriptLabel: 'Greek Υ' }],     // Υ → Y
-	[0x03A7, { latin: 'X', scriptLabel: 'Greek Χ' }],     // Χ → X
-	[0x03B5, { latin: 'e', scriptLabel: 'Greek ε' }],     // ε → e (epsilon)
-]);
-
 // ---------------------------------------------------------------------------
-// Unicode script detection (simplified range-based)
+// Unicode script detection via property escapes.
+// Uses the V8 engine's built-in Unicode Character Database, which
+// is always current with the platform's Unicode version.
 // ---------------------------------------------------------------------------
 
-interface ScriptRange {
-	start: number;
-	end: number;
-	script: string;
-}
-
-const SCRIPT_RANGES: readonly ScriptRange[] = [
-	// Basic Latin
-	{ start: 0x0000, end: 0x007F, script: 'Latin' },
-	// Latin Extended (Supplement, Extended-A, Extended-B, Extended Additional)
-	{ start: 0x0080, end: 0x024F, script: 'Latin' },
-	{ start: 0x1E00, end: 0x1EFF, script: 'Latin' },
-	// Latin Extended Additional ranges
-	{ start: 0x2C60, end: 0x2C7F, script: 'Latin' },
-	{ start: 0xA720, end: 0xA7FF, script: 'Latin' },
-
-	// Greek and Coptic
-	{ start: 0x0370, end: 0x03FF, script: 'Greek' },
-	{ start: 0x1F00, end: 0x1FFF, script: 'Greek' },
-
-	// Cyrillic
-	{ start: 0x0400, end: 0x04FF, script: 'Cyrillic' },
-	{ start: 0x0500, end: 0x052F, script: 'Cyrillic' },
-
-	// Armenian
-	{ start: 0x0530, end: 0x058F, script: 'Armenian' },
-
-	// Arabic
-	{ start: 0x0600, end: 0x06FF, script: 'Arabic' },
-	{ start: 0x0750, end: 0x077F, script: 'Arabic' },
-
-	// Devanagari
-	{ start: 0x0900, end: 0x097F, script: 'Devanagari' },
-
-	// CJK Unified Ideographs
-	{ start: 0x4E00, end: 0x9FFF, script: 'CJK' },
-	{ start: 0x3400, end: 0x4DBF, script: 'CJK' },
-
-	// Hiragana
-	{ start: 0x3040, end: 0x309F, script: 'Hiragana' },
-
-	// Katakana
-	{ start: 0x30A0, end: 0x30FF, script: 'Katakana' },
-
-	// Hangul
-	{ start: 0xAC00, end: 0xD7AF, script: 'Hangul' },
-
-	// Emoji and symbols
-	{ start: 0x1F300, end: 0x1F9FF, script: 'Emoji' },
-	{ start: 0x2600, end: 0x26FF, script: 'Symbol' },
-	{ start: 0x2700, end: 0x27BF, script: 'Symbol' },
-
-	// Combining Diacritical Marks
-	{ start: 0x0300, end: 0x036F, script: 'Combining' },
+const SCRIPT_PATTERNS: ReadonlyArray<[RegExp, string]> = [
+	[/\p{Script=Latin}/u, 'Latin'],
+	[/\p{Script=Greek}/u, 'Greek'],
+	[/\p{Script=Cyrillic}/u, 'Cyrillic'],
+	[/\p{Script=Armenian}/u, 'Armenian'],
+	[/\p{Script=Arabic}/u, 'Arabic'],
+	[/\p{Script=Devanagari}/u, 'Devanagari'],
+	[/\p{Script=Han}/u, 'CJK'],
+	[/\p{Script=Hiragana}/u, 'Hiragana'],
+	[/\p{Script=Katakana}/u, 'Katakana'],
+	[/\p{Script=Hangul}/u, 'Hangul'],
+	[/\p{Script=Thai}/u, 'Thai'],
+	[/\p{Script=Hebrew}/u, 'Hebrew'],
+	[/\p{Script=Georgian}/u, 'Georgian'],
+	[/\p{Script=Bengali}/u, 'Bengali'],
+	[/\p{Script=Tamil}/u, 'Tamil'],
+	[/\p{Script=Telugu}/u, 'Telugu'],
+	[/\p{Script=Ethiopic}/u, 'Ethiopic'],
 ];
 
+const COMMON_SCRIPT_RE = /\p{Script=Common}|\p{Script=Inherited}/u;
+const COMBINING_MARK_RE = /\p{General_Category=Mark}/u;
+
 function getScript(codePoint: number): string {
-	for (const range of SCRIPT_RANGES) {
-		if (codePoint >= range.start && codePoint <= range.end) {
-			return range.script;
+	const char = String.fromCodePoint(codePoint);
+
+	if (COMMON_SCRIPT_RE.test(char)) return 'Common';
+	if (COMBINING_MARK_RE.test(char)) return 'Combining';
+
+	for (const [pattern, script] of SCRIPT_PATTERNS) {
+		if (pattern.test(char)) {
+			return script;
 		}
 	}
 	return 'Unknown';
@@ -176,7 +107,7 @@ function getScripts(name: string): Set<string> {
 		// Skip common characters that appear in any script context
 		if (cp === 0x5F /* _ */ || cp === 0x24 /* $ */) continue;
 		const script = getScript(cp);
-		if (script !== 'Combining') {
+		if (script !== 'Combining' && script !== 'Common') {
 			scripts.add(script);
 		}
 	}
@@ -217,23 +148,15 @@ function containsZeroWidth(name: string): boolean {
 
 /**
  * Compute a "skeleton" of an identifier by replacing known confusable
- * characters with their Latin equivalents, then NFC-normalizing.
+ * characters with their canonical equivalents, then NFC-normalizing.
  * Two identifiers with the same skeleton are visually confusable.
+ * Uses the full Unicode confusables.txt data via the confusables package.
  */
 function computeSkeleton(name: string): string {
 	let skeleton = '';
 	for (const char of name) {
-		const cp = char.codePointAt(0);
-		if (cp === undefined) {
-			skeleton += char;
-			continue;
-		}
-		const mapping = CONFUSABLE_TO_LATIN.get(cp);
-		if (mapping) {
-			skeleton += mapping.latin;
-		} else {
-			skeleton += char;
-		}
+		const mapped = confusablesMap.get(char);
+		skeleton += mapped ?? char;
 	}
 	return skeleton.normalize('NFC');
 }
@@ -253,17 +176,17 @@ function buildConfusableReason(a: string, b: string): string {
 		if (aCh === bCh) continue;
 		if (!aCh || !bCh) continue;
 
-		const aCp = aCh.codePointAt(0);
-		const bCp = bCh.codePointAt(0);
-		if (aCp === undefined || bCp === undefined) continue;
+		const aMapping = confusablesMap.get(aCh);
+		const bMapping = confusablesMap.get(bCh);
 
-		const aMap = CONFUSABLE_TO_LATIN.get(aCp);
-		const bMap = CONFUSABLE_TO_LATIN.get(bCp);
-
-		if (aMap) {
-			differences.push(`${aMap.scriptLabel} vs Latin ${aMap.latin}`);
-		} else if (bMap) {
-			differences.push(`${bMap.scriptLabel} vs Latin ${bMap.latin}`);
+		if (aMapping) {
+			const aCp = aCh.codePointAt(0);
+			const script = aCp !== undefined ? getScript(aCp) : 'Unknown';
+			differences.push(`${script} ${aCh} vs Latin ${aMapping}`);
+		} else if (bMapping) {
+			const bCp = bCh.codePointAt(0);
+			const script = bCp !== undefined ? getScript(bCp) : 'Unknown';
+			differences.push(`${script} ${bCh} vs Latin ${bMapping}`);
 		}
 	}
 

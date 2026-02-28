@@ -8,23 +8,20 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { Project } from 'ts-morph';
+import * as ts from 'typescript';
 
 import type { ProjectInfo, ProjectStructure } from './types';
 
 export type { ProjectInfo, ProjectStructure } from './types';
 
-// JSON5-style comment stripping (tsconfig allows comments)
-function stripJsonComments(text: string): string {
-	return text
-		.replace(/\/\/.*$/gm, '')
-		.replace(/\/\*[\s\S]*?\*\//g, '')
-		.replace(/,\s*([}\]])/g, '$1');
-}
-
 function readTsConfig(configPath: string): Record<string, unknown> | undefined {
 	try {
 		const raw = fs.readFileSync(configPath, 'utf-8');
-		return JSON.parse(stripJsonComments(raw)) as Record<string, unknown>;
+		// Use TypeScript's own JSONC parser — handles comments, trailing commas,
+		// and strings containing // without false positives.
+		const result = ts.parseConfigFileTextToJson(configPath, raw);
+		if (result.error) return undefined;
+		return result.config as Record<string, unknown>;
 	} catch {
 		return undefined;
 	}
@@ -45,7 +42,8 @@ function readTsConfig(configPath: string): Record<string, unknown> | undefined {
  * @returns ProjectStructure with all projects, solution config, and reverse references.
  */
 export function resolveProjectStructure(workspaceRoot: string): ProjectStructure {
-	const configPaths = findTsConfigs(workspaceRoot);
+	const rules = parseIgnoredDirRules(workspaceRoot);
+	const configPaths = findTsConfigs(workspaceRoot, rules);
 	const projects: ProjectInfo[] = [];
 	let solutionConfig: string | undefined;
 
@@ -133,15 +131,97 @@ export function resolveProjectStructure(workspaceRoot: string): ProjectStructure
 }
 
 // ---------------------------------------------------------------------------
+// .devtoolsignore integration for tsconfig discovery
+// ---------------------------------------------------------------------------
+
+const TOOL_SCOPE = 'tsconfig_discovery';
+const DEVTOOLS_IGNORE_FILENAME = '.devtoolsignore';
+
+interface IgnoredDirRule {
+	pattern: string;
+	negated: boolean;
+}
+
+/**
+ * Parse .devtoolsignore for directory exclusion rules applicable to
+ * the tsconfig_discovery tool scope (+ global rules).
+ */
+function parseIgnoredDirRules(workspaceRoot: string): IgnoredDirRule[] {
+	const ignorePath = path.join(workspaceRoot, DEVTOOLS_IGNORE_FILENAME);
+	if (!fs.existsSync(ignorePath)) return [];
+
+	let raw: string;
+	try {
+		raw = fs.readFileSync(ignorePath, 'utf-8');
+	} catch {
+		return [];
+	}
+
+	const rules: IgnoredDirRule[] = [];
+	let activeScope: 'preamble' | 'global' | string = 'preamble';
+
+	for (const line of raw.split(/\r?\n/u)) {
+		const trimmed = line.trim();
+		if (!trimmed) continue;
+
+		if (trimmed.startsWith('#')) {
+			const sectionName = trimmed.slice(1).trim().toLowerCase();
+			if (sectionName === 'global') {
+				activeScope = 'global';
+			} else if (sectionName.startsWith('tool:')) {
+				activeScope = sectionName.slice(5).trim();
+			}
+			continue;
+		}
+
+		if (activeScope === 'preamble') continue;
+		if (activeScope !== 'global' && activeScope !== TOOL_SCOPE) continue;
+
+		const negated = trimmed.startsWith('!');
+		const pattern = negated ? trimmed.slice(1).trim() : trimmed;
+		if (pattern) {
+			rules.push({ pattern, negated });
+		}
+	}
+
+	return rules;
+}
+
+/**
+ * Check if a directory name or relative path should be ignored
+ * based on parsed .devtoolsignore rules.
+ */
+function isDirIgnored(dirName: string, dirRelative: string, rules: IgnoredDirRule[]): boolean {
+	if (rules.length === 0) return false;
+
+	let ignored = false;
+	for (const rule of rules) {
+		const raw = rule.pattern.replace(/\\/g, '/');
+		// Directory patterns end with /
+		const basePattern = raw.endsWith('/') ? raw.slice(0, -1) : raw;
+
+		// Simple name match (no path separators) matches at any depth
+		if (!basePattern.includes('/')) {
+			if (dirName === basePattern) {
+				ignored = !rule.negated;
+			}
+		} else {
+			// Path-based pattern — match against relative dir path
+			const normalized = dirRelative.replace(/\\/g, '/');
+			if (normalized === basePattern || normalized.startsWith(basePattern + '/')) {
+				ignored = !rule.negated;
+			}
+		}
+	}
+
+	return ignored;
+}
+
+// ---------------------------------------------------------------------------
 // tsconfig discovery
 // ---------------------------------------------------------------------------
 
-const IGNORED_DIRS = new Set([
-	'node_modules', '.git', 'dist', 'out', 'build', '.next', '.nuxt',
-	'coverage', '.turbo', '.cache',
-]);
-
-function findTsConfigs(dir: string, relativeTo?: string, results: string[] = []): string[] {
+function findTsConfigs(dir: string, rules: IgnoredDirRule[], relativeTo?: string, results: string[] = []): string[] {
 	const root = relativeTo ?? dir;
 
 	let entries: fs.Dirent[];
@@ -153,8 +233,9 @@ function findTsConfigs(dir: string, relativeTo?: string, results: string[] = [])
 
 	for (const entry of entries) {
 		if (entry.isDirectory()) {
-			if (IGNORED_DIRS.has(entry.name)) continue;
-			findTsConfigs(path.join(dir, entry.name), root, results);
+			const dirRelative = toRelative(path.join(dir, entry.name), root);
+			if (isDirIgnored(entry.name, dirRelative, rules)) continue;
+			findTsConfigs(path.join(dir, entry.name), rules, root, results);
 		} else if (entry.isFile() && entry.name === 'tsconfig.json') {
 			results.push(toRelative(path.join(dir, entry.name), root));
 		}
