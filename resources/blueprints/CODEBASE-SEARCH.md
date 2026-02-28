@@ -1129,6 +1129,158 @@ Input fixtures are JSON (pre-computed metadata), not source files — connection
 
 ---
 
+### Phase 6.5 — Prototype MCP Tool (Symbol Lookup Only)
+
+**Goal:** Create a working `codebase_search` MCP tool registered in the MCP server that exposes the Phase 1–6 symbol lookup pipeline as a callable tool. This allows end-to-end testing of the semantic toolkit from the Inspector webapp before the vector search pipeline (Phases 7–8) exists. Only the `symbol = ` query mode is functional; natural language queries return a clear "not yet implemented" message.
+
+**Location:** `mcp-server/src/tools/codebase/codebase-search.ts`
+
+**Package:** The tool handler lives in `mcp-server/` and imports from `semantic-toolkit` (which is an npm workspace dependency). All parsing, chunking, enrichment, snapshot generation, and connection graph rendering is delegated to `semantic-toolkit` — the MCP tool is a thin adapter that maps MCP input params to `lookupSymbol()` and formats the response.
+
+#### Input Schema
+
+Two required params and three optional config params:
+
+```typescript
+schema: {
+  file: zod
+    .string()
+    .describe('Workspace-relative path to the target file. Required. Supports files, directories, and glob patterns.'),
+  query: zod
+    .string()
+    .describe('Symbol lookup query. Use "symbol = Name" for direct lookup, "symbol = Parent > Child" for hierarchy. Natural language search not yet available.'),
+  callDepth: zod
+    .number()
+    .int()
+    .optional()
+    .default(1)
+    .describe('Max call depth for outgoing/incoming call resolution. 1 = immediate only (default). -1 = full transitive.'),
+  typeDepth: zod
+    .number()
+    .int()
+    .optional()
+    .default(1)
+    .describe('Max nesting depth for advanced type structure extraction. 1 = top-level only (default).'),
+  maxTokenBudget: zod
+    .number()
+    .int()
+    .optional()
+    .default(8000)
+    .describe('Maximum token budget for the combined output (connection graph + snapshots). Default: 8000.'),
+}
+```
+
+**Required params:**
+- `file` — Workspace-relative file path. The tool scopes file discovery to this path. When a single file, only that file is parsed. When a directory or glob, all matching supported files are parsed. The Inspector provides file-path IntelliSense for this field.
+- `query` — Must start with `symbol = ` for this prototype. The Inspector pre-fills this field with `symbol = ` so the user only needs to type the symbol name. IntelliSense for the symbol name is provided by the Inspector (server-side filtered to body-bearing and root-level symbols from the semantic toolkit parser).
+
+**Optional config params (functional in this phase):**
+- `callDepth` — Passed through to `TsLsConfig.callDepth`. Controls recursive call tree depth in enrichment.
+- `typeDepth` — Passed through to `TsLsConfig.typeDepth`. Controls nested type structure depth.
+- `maxTokenBudget` — Passed through to `lookupSymbol()` as the token budget for rendered output.
+
+**Pipeline params deferred to Phase 8:** `rerankWeight`, `vectorWeight`, `minimumRelevanceThreshold`, `maxVectorCandidates` are NOT input params on this prototype. They will be added when the vector search pipeline is implemented in Phase 8.
+
+#### Handler Logic
+
+```
+1. Resolve workspace root via getClientWorkspace()
+2. Resolve file paths:
+   - If `file` is a single file: validate it exists, collect as [absolutePath]
+   - If `file` is a directory: enumerate all PARSEABLE_EXTENSIONS files recursively
+   - If `file` is a glob: expand glob against workspace
+3. Validate `query` starts with "symbol = "
+   - If not: return "Natural language search is not yet available. Use 'symbol = Name' for direct symbol lookup."
+4. Build TsLsConfig from optional params (callDepth, typeDepth)
+5. Call lookupSymbol(query, workspaceRoot, filePaths, maxTokenBudget)
+6. Format response:
+   - On success (found: true): append connection graph + snapshots via response.appendResponseLine()
+   - On not found: append the hint or error message
+   - On error: append error details
+7. Set response.setSkipLedger() (output is structured text, not conversational)
+```
+
+#### Tool Registration
+
+Export as `search` from `mcp-server/src/tools/codebase/codebase-search.ts` and add to the codebase barrel export in `mcp-server/src/tools/codebase/index.ts`:
+
+```typescript
+export { search } from './codebase-search.js';
+```
+
+The existing `tools.ts` auto-discovers all exports from the codebase and file index modules, so no changes needed there.
+
+**Tool metadata:**
+- `name`: `codebase_search`
+- `category`: `ToolCategory.CODEBASE_ANALYSIS`
+- `readOnlyHint`: `true`
+- `destructiveHint`: `false`
+- `idempotentHint`: `true`
+- `openWorldHint`: `false`
+- `title`: `Codebase Search`
+
+#### Inspector IntelliSense Integration
+
+The Inspector auto-discovers tools from the MCP server and renders JSON input editors with Monaco. Two IntelliSense features must work for `codebase_search`:
+
+**File path completions (already works):**
+The `file` param name is already in the Inspector's `FILE_DIR_PROPERTY_NAMES` set (used by `setupFilePathIntellisense`). No changes needed — the Inspector recognizes `file` as a file-path property and provides filesystem browse completions via the `fs/browse` RPC.
+
+**Symbol completions for the `query` field (new):**
+The existing `setupSymbolIntellisense` only recognizes properties literally named `symbol`. For `codebase_search`, the symbol name lives inside the `query` string value (after the `symbol = ` prefix). This requires a new IntelliSense handler:
+
+1. **New RPC endpoint: `editor/semantic-symbols`** — Registered in `services/inspector-backend.ts`. Unlike the existing `editor/symbols` (which uses VS Code's document symbol provider), this endpoint imports from `semantic-toolkit` and:
+   - Parses the target file with `parseFile()` from `semantic-toolkit`
+   - Filters to body-bearing symbols and root-level named symbols (constants, variables, type aliases, interfaces, enums) — excludes imports, expressions, re-exports, and comments since those cannot be individually looked up via `symbol = `
+   - Returns `{ symbols: Array<{ name: string; kind: string; parentName?: string }> }` with hierarchy-aware names (e.g., `TokenService > validateToken`) matching the `symbol = ` query format
+
+2. **New completion provider in `json-interactivity.ts`** — A `setupQuerySymbolIntellisense` function that:
+   - Detects when the cursor is inside the `query` string value
+   - Reads the `file` property value from the same JSON model
+   - Calls `rpc<SemanticSymbolsResponse>('editor/semantic-symbols', { file })` to fetch symbols
+   - Filters suggestions based on what the user has typed after `symbol = `
+   - Each suggestion inserts `symbol = SymbolName` (or `symbol = Parent > Child` for nested symbols)
+   - Trigger characters: `"`, `=`, `>`, ` `
+
+3. **Pre-fill behavior:** When the Inspector generates the default JSON input for `codebase_search`, the `query` field should be pre-filled with `"symbol = "` so the user's cursor lands right after the prefix and IntelliSense can immediately offer symbol suggestions. This is achieved by setting `default` in the zod schema or by the Inspector's JSON template generator recognizing a tool-specific hint.
+
+#### File Discovery
+
+The `file` param must support three input shapes. File discovery logic lives in the MCP tool handler (not in `semantic-toolkit`):
+
+1. **Single file:** `"src/auth/tokenService.ts"` — Resolve against workspace root, validate exists, return `[absolutePath]`.
+2. **Directory:** `"src/auth/"` or `"src/auth"` — Recursively enumerate all files matching `PARSEABLE_EXTENSIONS` (`.ts`, `.tsx`, `.js`, `.jsx`, `.mts`, `.mjs`, `.cts`, `.cjs`).
+3. **Glob pattern:** `"src/**/*.ts"` — Expand glob against workspace root, filter to supported extensions.
+
+Use Node.js `fs` and `path` for file resolution. Use a glob library (or simple recursive readdir with extension filter) for directory/glob expansion. Respect `.gitignore` and standard ignore patterns via the existing `ignore-context.ts` helpers if available.
+
+#### Error Handling
+
+- **File not found:** `"File not found: src/auth/missing.ts"` — include workspace root for context.
+- **No supported files:** `"No supported source files found in: src/docs/"` — when directory/glob matches zero parseable files.
+- **Empty query:** `"Query is required. Use 'symbol = Name' for direct symbol lookup."` — if query is empty or whitespace.
+- **Non-symbol query:** `"Natural language search is not yet available. Use 'symbol = Name' for direct symbol lookup."` — clear message explaining the prototype limitation.
+- **Symbol not found:** Delegated to `lookupSymbol()` which already provides case-insensitive hints and path suggestions (Phase 6).
+- **Parse errors:** If `semantic-toolkit` throws during parsing, catch and return `"Failed to parse file: {path}: {error}"`.
+
+#### Validation
+
+No automated tests for this phase. The tool is validated by direct usage through the Inspector:
+
+1. Open Inspector webapp
+2. Select `codebase_search` from the tool list
+3. Enter a file path (verify file IntelliSense works)
+4. Type a symbol name after `symbol = ` in the query field (verify symbol IntelliSense works)
+5. Execute and verify:
+   - Connection graph renders correctly
+   - Smart snapshots show the right code
+   - Config params (callDepth, typeDepth, maxTokenBudget) affect the output
+   - Error messages are clear for invalid inputs
+
+**Dependencies:** Phase 1 (Parser), Phase 2 (Chunker), Phase 3 (TS LS), Phase 4 (Snapshot), Phase 5 (Connection Graph), Phase 6 (Symbol Lookup)
+
+---
+
 ### Phase 7 — Indexing + Sync
 
 **Goal:** Store `CodeChunk[]` in LanceDB with content-hash-based incremental re-indexing. Detect file changes efficiently and only re-parse/re-embed when content actually changes.
@@ -1231,4 +1383,6 @@ Input fixtures are JSON (pre-computed metadata), not source files — connection
 - Token count in summary matches actual response size
 - All content items have `audience: ["assistant"]`
 
-**Dependencies:** Phase 4 (Snapshots) + Phase 5 (Connection Graph) + Phase 8 (Retrieval)
+**Settings migration:** Phase 6.5 introduces `callDepth`, `typeDepth`, and `maxTokenBudget` as optional MCP tool input params. Phase 8 adds `rerankWeight`, `vectorWeight`, `minimumRelevanceThreshold`, and `maxVectorCandidates`. In this phase, ALL configurable params must be migrated from MCP tool input params to the VS Code extension's settings page (`contributes.configuration` in `package.json`). The MCP tool input schema is simplified: config params are removed, and their values are read from `vscode.workspace.getConfiguration()` at tool invocation time. The tool's optional input params become extension settings with the same defaults. This keeps the tool interface clean for Copilot while giving users a persistent settings UI for tuning.
+
+**Dependencies:** Phase 4 (Snapshots) + Phase 5 (Connection Graph) + Phase 8 (Retrieval) + Phase 6.5 (Prototype MCP Tool)
