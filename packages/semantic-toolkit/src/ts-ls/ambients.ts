@@ -8,7 +8,7 @@
  */
 import { Project, SyntaxKind } from 'ts-morph';
 import type { SourceFile, ModuleDeclaration, Node } from 'ts-morph';
-import { toRelativePosixPath } from './paths';
+import { toRelativePosixPath } from './paths.js';
 
 import type {
 	AmbientInfo,
@@ -16,7 +16,7 @@ import type {
 	ModuleAugmentation,
 	AmbientDeclaration,
 	AmbientMember,
-} from './types';
+} from './types.js';
 
 export type {
 	AmbientInfo,
@@ -24,7 +24,7 @@ export type {
 	ModuleAugmentation,
 	AmbientDeclaration,
 	AmbientMember,
-} from './types';
+} from './types.js';
 
 // ---------------------------------------------------------------------------
 // Public API

@@ -7,13 +7,13 @@
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { toPosixPath, toRelativePosixPath } from './paths';
+import { toPosixPath, toRelativePosixPath } from './paths.js';
 import { Project } from 'ts-morph';
 import * as ts from 'typescript';
 
-import type { ProjectInfo, ProjectStructure } from './types';
+import type { ProjectInfo, ProjectStructure } from './types.js';
 
-export type { ProjectInfo, ProjectStructure } from './types';
+export type { ProjectInfo, ProjectStructure } from './types.js';
 
 function readTsConfig(configPath: string): Record<string, unknown> | undefined {
 	try {

@@ -14,20 +14,20 @@ import type {
 	MethodDeclaration,
 	CallExpression,
 } from 'ts-morph';
-import { toRelativePosixPath } from './paths';
+import { toRelativePosixPath } from './paths.js';
 
 import type {
 	SymbolRef,
 	GuardCallbackSite,
 	GuardHofParameter,
 	GuardCallbackAnalysis,
-} from './types';
+} from './types.js';
 
 export type {
 	GuardCallbackSite,
 	GuardHofParameter,
 	GuardCallbackAnalysis,
-} from './types';
+} from './types.js';
 
 // ---------------------------------------------------------------------------
 // Public API

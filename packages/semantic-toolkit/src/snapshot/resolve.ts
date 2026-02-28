@@ -15,8 +15,8 @@ import {
 	type ImportDeclaration,
 } from 'ts-morph';
 
-import type { CodeChunk } from '../chunker/types';
-import type { ResolvedDependency, ResolutionResult, DependencyKind } from './types';
+import type { CodeChunk } from '../chunker/types.js';
+import type { ResolvedDependency, ResolutionResult, DependencyKind } from './types.js';
 
 /**
  * Resolve all same-file dependencies for a set of target chunks.

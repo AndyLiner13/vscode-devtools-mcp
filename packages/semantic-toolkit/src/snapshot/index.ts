@@ -11,14 +11,14 @@
  */
 import { Project } from 'ts-morph';
 
-import type { CodeChunk } from '../chunker/types';
-import type { SnapshotInput, SnapshotResult } from './types';
-import { resolveIdentifiers } from './resolve';
-import { renderSnapshot } from './render';
+import type { CodeChunk } from '../chunker/types.js';
+import type { SnapshotInput, SnapshotResult } from './types.js';
+import { resolveIdentifiers } from './resolve.js';
+import { renderSnapshot } from './render.js';
 
-export type { SnapshotInput, SnapshotResult, ResolvedDependency, ResolutionResult, DependencyKind } from './types';
-export { resolveIdentifiers } from './resolve';
-export { renderSnapshot } from './render';
+export type { SnapshotInput, SnapshotResult, ResolvedDependency, ResolutionResult, DependencyKind } from './types.js';
+export { resolveIdentifiers } from './resolve.js';
+export { renderSnapshot } from './render.js';
 
 /**
  * Generate a smart structural snapshot for a set of target chunks from one file.

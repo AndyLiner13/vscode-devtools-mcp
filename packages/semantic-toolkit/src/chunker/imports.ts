@@ -1,4 +1,4 @@
-import type { ParsedSymbol } from '../parser/types';
+import type { ParsedSymbol } from '../parser/types.js';
 
 /**
  * Parsed representation of an import for identifier matching.

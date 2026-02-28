@@ -16,11 +16,11 @@ import type {
 	Symbol as TsMorphSymbol,
 	ImportSpecifier,
 } from 'ts-morph';
-import { toRelativePosixPath } from './paths';
+import { toRelativePosixPath } from './paths.js';
 
-import type { SymbolRef, TypeFlow, TypeFlowParam, TypeFlowType } from './types';
+import type { SymbolRef, TypeFlow, TypeFlowParam, TypeFlowType } from './types.js';
 
-export type { TypeFlow, TypeFlowParam, TypeFlowType } from './types';
+export type { TypeFlow, TypeFlowParam, TypeFlowType } from './types.js';
 
 // Primitives and built-in types that have no meaningful origin file.
 const BUILTIN_NAMES = new Set([

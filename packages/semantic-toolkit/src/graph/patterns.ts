@@ -8,7 +8,7 @@
  * - Diamonds: two results sharing a common callee through call trees
  */
 
-import type { OutgoingCall, IncomingCaller, SymbolRef } from '../ts-ls/types';
+import type { OutgoingCall, IncomingCaller, SymbolRef } from '../ts-ls/types.js';
 import type {
 	GraphResultEntry,
 	TopologyNode,
@@ -18,7 +18,7 @@ import type {
 	SharedTypePattern,
 	DiamondPattern,
 	PatternsResult,
-} from './types';
+} from './types.js';
 
 /**
  * Build a unique key for a symbol.

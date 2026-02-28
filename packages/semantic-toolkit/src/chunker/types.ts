@@ -1,4 +1,4 @@
-import type { ParsedFile } from '../parser/types';
+import type { ParsedFile } from '../parser/types.js';
 
 /**
  * A code chunk ready for embedding. Represents a single embeddable unit

@@ -15,7 +15,7 @@
  * The prefix is flexible: "symbol=", "symbol =", "Symbol = " all work.
  */
 
-import type { QueryParseResult, ParsedSymbolPath } from './types';
+import type { QueryParseResult, ParsedSymbolPath } from './types.js';
 
 // Matches "symbol" followed by optional whitespace and "="
 const SYMBOL_PREFIX_RE = /^symbol\s*=\s*/i;

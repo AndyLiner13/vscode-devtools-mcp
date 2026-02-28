@@ -9,10 +9,10 @@
  *   const result = generateConnectionGraph({ query, results, tokenBudget });
  */
 
-import type { ConnectionGraphInput, ConnectionGraphResult, GraphResultEntry } from './types';
-import { analyzeTopology } from './topology';
-import { detectPatterns } from './patterns';
-import { renderSingleResult, renderMultiResult } from './render';
+import type { ConnectionGraphInput, ConnectionGraphResult, GraphResultEntry } from './types.js';
+import { analyzeTopology } from './topology.js';
+import { detectPatterns } from './patterns.js';
+import { renderSingleResult, renderMultiResult } from './render.js';
 
 export type {
 	ConnectionGraphInput,
@@ -27,11 +27,11 @@ export type {
 	SharedTypePattern,
 	DiamondPattern,
 	PatternsResult,
-} from './types';
+} from './types.js';
 
-export { analyzeTopology } from './topology';
-export { detectPatterns } from './patterns';
-export { renderSingleResult, renderMultiResult } from './render';
+export { analyzeTopology } from './topology.js';
+export { detectPatterns } from './patterns.js';
+export { renderSingleResult, renderMultiResult } from './render.js';
 
 /**
  * Generate a connection graph for a set of search results.

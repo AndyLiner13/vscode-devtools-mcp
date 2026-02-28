@@ -11,11 +11,11 @@ import type {
 	InterfaceDeclaration,
 	ExpressionWithTypeArguments,
 } from 'ts-morph';
-import { toRelativePosixPath } from './paths';
+import { toRelativePosixPath } from './paths.js';
 
-import type { SymbolRef, TypeHierarchy, TypeParameter } from './types';
+import type { SymbolRef, TypeHierarchy, TypeParameter } from './types.js';
 
-export type { TypeHierarchy, TypeParameter } from './types';
+export type { TypeHierarchy, TypeParameter } from './types.js';
 
 /** Class or interface — valid as type hierarchy target. */
 type TypeDeclaration = ClassDeclaration | InterfaceDeclaration;

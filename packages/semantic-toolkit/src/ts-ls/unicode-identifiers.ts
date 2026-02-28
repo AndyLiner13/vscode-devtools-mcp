@@ -10,7 +10,7 @@
  */
 import { Project, Node, SyntaxKind } from 'ts-morph';
 import type { SourceFile } from 'ts-morph';
-import { toRelativePosixPath } from './paths';
+import { toRelativePosixPath } from './paths.js';
 import { confusablesMap } from 'confusables';
 
 import type {
@@ -18,14 +18,14 @@ import type {
 	UnicodeIdentifierAnalysis,
 	UnicodeIdentifierSeverity,
 	ConfusablePair,
-} from './types';
+} from './types.js';
 
 export type {
 	UnicodeIdentifierEntry,
 	UnicodeIdentifierAnalysis,
 	UnicodeIdentifierSeverity,
 	ConfusablePair,
-} from './types';
+} from './types.js';
 
 // ---------------------------------------------------------------------------
 // Bidi override and zero-width detection via Unicode property escapes.

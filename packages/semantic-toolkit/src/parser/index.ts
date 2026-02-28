@@ -1,18 +1,18 @@
-import type { ParsedFile, ParsedSymbol } from './types';
+import type { ParsedFile, ParsedSymbol } from './types.js';
 
 import { Project } from 'ts-morph';
 import type { SourceFile } from 'ts-morph';
 import * as path from 'node:path';
 
-import { extractFileSymbols } from './extractors';
-import { extractRootContent } from './root-content';
-import { PARSEABLE_EXTENSIONS } from './types';
+import { extractFileSymbols } from './extractors.js';
+import { extractRootContent } from './root-content.js';
+import { PARSEABLE_EXTENSIONS } from './types.js';
 
-export { PARSEABLE_EXTENSIONS } from './types';
-export type { ParsedFile, ParsedSymbol, SymbolRange } from './types';
-export { extractFileSymbols } from './extractors';
-export { extractRootContent } from './root-content';
-export { extractSignature } from './signatures';
+export { PARSEABLE_EXTENSIONS } from './types.js';
+export type { ParsedFile, ParsedSymbol, SymbolRange } from './types.js';
+export { extractFileSymbols } from './extractors.js';
+export { extractRootContent } from './root-content.js';
+export { extractSignature } from './signatures.js';
 
 /**
  * Parse a single TypeScript/JavaScript source file into a ParsedFile.

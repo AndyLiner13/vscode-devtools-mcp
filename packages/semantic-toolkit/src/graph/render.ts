@@ -7,14 +7,14 @@
  * - Multi-result: Summary → Graph → Patterns → Details
  */
 
-import type { SymbolMetadata, OutgoingCall, IncomingCaller } from '../ts-ls/types';
+import type { SymbolMetadata, OutgoingCall, IncomingCaller } from '../ts-ls/types.js';
 import type {
 	GraphResultEntry,
 	GraphLine,
 	TopologyResult,
 	PatternsResult,
 	ConnectionGraphResult,
-} from './types';
+} from './types.js';
 
 /** Estimate token count from character count. */
 function estimateTokens(text: string): number {

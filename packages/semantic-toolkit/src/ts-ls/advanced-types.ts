@@ -7,7 +7,7 @@
  */
 import { Project, Node, SyntaxKind } from 'ts-morph';
 import type { SourceFile, TypeAliasDeclaration } from 'ts-morph';
-import { toPosixPath, toRelativePosixPath } from './paths';
+import { toPosixPath, toRelativePosixPath } from './paths.js';
 
 import type {
 	SymbolRef,
@@ -19,7 +19,7 @@ import type {
 	UtilityTypeInfo,
 	AdvancedTypeEntry,
 	AdvancedTypeAnalysis,
-} from './types';
+} from './types.js';
 
 export type {
 	AdvancedTypeKind,
@@ -30,7 +30,7 @@ export type {
 	UtilityTypeInfo,
 	AdvancedTypeEntry,
 	AdvancedTypeAnalysis,
-} from './types';
+} from './types.js';
 
 // ---------------------------------------------------------------------------
 // Lib file detection for utility types

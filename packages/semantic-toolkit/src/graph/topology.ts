@@ -6,14 +6,14 @@
  * markers. Produces ordered graph lines for rendering.
  */
 
-import type { OutgoingCall, SymbolRef } from '../ts-ls/types';
+import type { OutgoingCall, SymbolRef } from '../ts-ls/types.js';
 import type {
 	GraphResultEntry,
 	TopologyNode,
 	TopologyEdge,
 	TopologyResult,
 	GraphLine,
-} from './types';
+} from './types.js';
 
 /**
  * Build a unique key for a symbol (name + filePath).

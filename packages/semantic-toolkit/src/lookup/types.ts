@@ -6,9 +6,9 @@
  * exact name/path matching through parsed symbol trees.
  */
 
-import type { CodeChunk } from '../chunker/types';
-import type { ConnectionGraphResult, GraphResultEntry } from '../graph/types';
-import type { SnapshotResult } from '../snapshot/types';
+import type { CodeChunk } from '../chunker/types.js';
+import type { ConnectionGraphResult, GraphResultEntry } from '../graph/types.js';
+import type { SnapshotResult } from '../snapshot/types.js';
 
 // ─── Query Parsing ──────────────────────────────────────────────
 

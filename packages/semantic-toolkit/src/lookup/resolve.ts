@@ -15,8 +15,8 @@
 
 import * as path from 'node:path';
 
-import type { CodeChunk, ChunkedFile } from '../chunker/types';
-import type { ParsedSymbolPath, ResolvedMatch, NearMatch, ResolutionResult } from './types';
+import type { CodeChunk, ChunkedFile } from '../chunker/types.js';
+import type { ParsedSymbolPath, ResolvedMatch, NearMatch, ResolutionResult } from './types.js';
 
 /**
  * Resolve a parsed symbol path against a set of chunked files.

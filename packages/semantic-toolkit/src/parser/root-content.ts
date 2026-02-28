@@ -1,9 +1,9 @@
-import type { ParsedSymbol } from './types';
+import type { ParsedSymbol } from './types.js';
 
 import { Node } from 'ts-morph';
 import type { SourceFile } from 'ts-morph';
 
-import { getRange, truncate } from './helpers';
+import { getRange, truncate } from './helpers.js';
 
 /**
  * Extract root-level non-declaration content from a source file.

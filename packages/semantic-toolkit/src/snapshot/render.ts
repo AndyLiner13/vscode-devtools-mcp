@@ -5,8 +5,8 @@
  * a clean source code snapshot containing only the needed content in original
  * file order. Class wrappers are synthesized when targets are class members.
  */
-import type { ResolutionResult, ResolvedDependency, SnapshotResult } from './types';
-import type { CodeChunk } from '../chunker/types';
+import type { ResolutionResult, ResolvedDependency, SnapshotResult } from './types.js';
+import type { CodeChunk } from '../chunker/types.js';
 
 /**
  * Line range with its source text and classification.

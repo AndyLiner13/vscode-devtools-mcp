@@ -1,4 +1,4 @@
-import type { ParsedSymbol } from './types';
+import type { ParsedSymbol } from './types.js';
 
 import { Node } from 'ts-morph';
 import type {
@@ -22,8 +22,8 @@ import {
 	getBodyBlock,
 	getRange,
 	truncate,
-} from './helpers';
-import { extractSignature } from './signatures';
+} from './helpers.js';
+import { extractSignature } from './signatures.js';
 
 /**
  * Extract all symbols from a SourceFile's top-level statements.

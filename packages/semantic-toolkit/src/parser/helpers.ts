@@ -1,4 +1,4 @@
-import type { SymbolRange } from './types';
+import type { SymbolRange } from './types.js';
 
 import { Node, Scope, SyntaxKind } from 'ts-morph';
 import type {

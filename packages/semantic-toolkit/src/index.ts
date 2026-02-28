@@ -6,25 +6,25 @@ export {
 	parseFiles,
 	parseSource,
 	PARSEABLE_EXTENSIONS,
-} from './parser/index';
+} from './parser/index.js';
 
 export type {
 	ParsedFile,
 	ParsedSymbol,
 	SymbolRange,
-} from './parser/index';
+} from './parser/index.js';
 
-export { chunkFile } from './chunker/index';
+export { chunkFile } from './chunker/index.js';
 
-export type { CodeChunk, ChunkedFile } from './chunker/types';
+export type { CodeChunk, ChunkedFile } from './chunker/types.js';
 
-export { lookupSymbol } from './lookup/index';
+export { lookupSymbol } from './lookup/index.js';
 
 export type {
 	LookupResult,
 	SymbolLookupResult,
 	NotALookupResult,
-} from './lookup/types';
+} from './lookup/types.js';
 
-export type { TsLsConfig } from './ts-ls/types';
-export { DEFAULT_TS_LS_CONFIG } from './ts-ls/types';
+export type { TsLsConfig } from './ts-ls/types.js';
+export { DEFAULT_TS_LS_CONFIG } from './ts-ls/types.js';

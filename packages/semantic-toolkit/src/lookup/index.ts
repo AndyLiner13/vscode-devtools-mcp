@@ -19,34 +19,34 @@ import { Project } from 'ts-morph';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-import { parseFile, parseFiles } from '../parser/index';
-import { chunkFile } from '../chunker/index';
-import type { ChunkedFile, CodeChunk } from '../chunker/types';
-import type { ParsedFile } from '../parser/types';
+import { parseFile, parseFiles } from '../parser/index.js';
+import { chunkFile } from '../chunker/index.js';
+import type { ChunkedFile, CodeChunk } from '../chunker/types.js';
+import type { ParsedFile } from '../parser/types.js';
 
-import { resolveCallHierarchy } from '../ts-ls/call-hierarchy';
-import { resolveTypeHierarchy } from '../ts-ls/type-hierarchy';
-import { resolveReferences } from '../ts-ls/references';
-import { resolveTypeFlows } from '../ts-ls/type-flows';
-import { resolveMembers } from '../ts-ls/members';
-import { resolveSignature } from '../ts-ls/signature';
-import type { SymbolMetadata, SymbolRef, MemberInfo } from '../ts-ls/types';
-import type { TsLsConfig } from '../ts-ls/types';
+import { resolveCallHierarchy } from '../ts-ls/call-hierarchy.js';
+import { resolveTypeHierarchy } from '../ts-ls/type-hierarchy.js';
+import { resolveReferences } from '../ts-ls/references.js';
+import { resolveTypeFlows } from '../ts-ls/type-flows.js';
+import { resolveMembers } from '../ts-ls/members.js';
+import { resolveSignature } from '../ts-ls/signature.js';
+import type { SymbolMetadata, SymbolRef, MemberInfo } from '../ts-ls/types.js';
+import type { TsLsConfig } from '../ts-ls/types.js';
 
-import { generateConnectionGraph } from '../graph/index';
-import type { GraphResultEntry, ConnectionGraphResult } from '../graph/types';
+import { generateConnectionGraph } from '../graph/index.js';
+import type { GraphResultEntry, ConnectionGraphResult } from '../graph/types.js';
 
-import { generateSnapshot } from '../snapshot/index';
-import type { SnapshotResult } from '../snapshot/types';
+import { generateSnapshot } from '../snapshot/index.js';
+import type { SnapshotResult } from '../snapshot/types.js';
 
-import { parseSymbolQuery } from './parse-query';
-import { resolveSymbol, formatCaseHint, formatPathHint } from './resolve';
+import { parseSymbolQuery } from './parse-query.js';
+import { resolveSymbol, formatCaseHint, formatPathHint } from './resolve.js';
 import type {
 	LookupResult,
 	SymbolLookupResult,
 	NotALookupResult,
 	ResolvedMatch,
-} from './types';
+} from './types.js';
 
 export type {
 	LookupResult,
@@ -57,10 +57,10 @@ export type {
 	ResolvedMatch,
 	NearMatch,
 	ResolutionResult,
-} from './types';
+} from './types.js';
 
-export { parseSymbolQuery } from './parse-query';
-export { resolveSymbol, formatCaseHint, formatPathHint } from './resolve';
+export { parseSymbolQuery } from './parse-query.js';
+export { resolveSymbol, formatCaseHint, formatPathHint } from './resolve.js';
 
 /**
  * Perform a symbol lookup against the workspace.

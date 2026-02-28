@@ -4,22 +4,22 @@
  * Provides structural metadata resolution for symbols using
  * the TypeScript compiler's language services via ts-morph.
  */
-export { resolveCallHierarchy } from './call-hierarchy';
-export { resolveTypeHierarchy } from './type-hierarchy';
-export { resolveReferences } from './references';
-export { resolveTypeFlows } from './type-flows';
-export { resolveMembers } from './members';
-export { resolveSignature } from './signature';
-export { resolveAliases } from './aliases';
-export { resolveAmbients } from './ambients';
-export { resolveProjectStructure } from './project-structure';
-export { resolveTypeGuards } from './type-guards';
-export { resolveCallbacks } from './callbacks';
-export { resolveGuardCallbacks } from './guard-callbacks';
-export { resolveAdvancedTypes } from './advanced-types';
-export { resolveEnumMembers } from './enum-members';
-export { resolveUnicodeIdentifiers } from './unicode-identifiers';
-export { resolveSideEffects } from './side-effects';
+export { resolveCallHierarchy } from './call-hierarchy.js';
+export { resolveTypeHierarchy } from './type-hierarchy.js';
+export { resolveReferences } from './references.js';
+export { resolveTypeFlows } from './type-flows.js';
+export { resolveMembers } from './members.js';
+export { resolveSignature } from './signature.js';
+export { resolveAliases } from './aliases.js';
+export { resolveAmbients } from './ambients.js';
+export { resolveProjectStructure } from './project-structure.js';
+export { resolveTypeGuards } from './type-guards.js';
+export { resolveCallbacks } from './callbacks.js';
+export { resolveGuardCallbacks } from './guard-callbacks.js';
+export { resolveAdvancedTypes } from './advanced-types.js';
+export { resolveEnumMembers } from './enum-members.js';
+export { resolveUnicodeIdentifiers } from './unicode-identifiers.js';
+export { resolveSideEffects } from './side-effects.js';
 
 export type {
 	TsLsConfig,
@@ -74,6 +74,6 @@ export type {
 	SideEffectKind,
 	SideEffectEntry,
 	SideEffectAnalysis,
-} from './types';
+} from './types.js';
 
-export { DEFAULT_TS_LS_CONFIG } from './types';
+export { DEFAULT_TS_LS_CONFIG } from './types.js';

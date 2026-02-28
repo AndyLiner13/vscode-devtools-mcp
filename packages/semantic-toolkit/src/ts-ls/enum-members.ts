@@ -6,18 +6,18 @@
  */
 import { Project, Node, SyntaxKind } from 'ts-morph';
 import type { SourceFile, EnumDeclaration, EnumMember } from 'ts-morph';
-import { toRelativePosixPath } from './paths';
+import { toRelativePosixPath } from './paths.js';
 
 import type {
 	SymbolRef,
 	EnumMemberEntry,
 	EnumAnalysis,
-} from './types';
+} from './types.js';
 
 export type {
 	EnumMemberEntry,
 	EnumAnalysis,
-} from './types';
+} from './types.js';
 
 // ---------------------------------------------------------------------------
 // Public API

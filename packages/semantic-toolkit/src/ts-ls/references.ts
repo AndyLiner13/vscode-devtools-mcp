@@ -6,11 +6,11 @@
  */
 import { Project, Node } from 'ts-morph';
 import type { SourceFile } from 'ts-morph';
-import { toRelativePosixPath } from './paths';
+import { toRelativePosixPath } from './paths.js';
 
-import type { References, FileReference } from './types';
+import type { References, FileReference } from './types.js';
 
-export type { References, FileReference } from './types';
+export type { References, FileReference } from './types.js';
 
 /**
  * Resolve cross-file references for a named symbol.

@@ -6,8 +6,8 @@
  * showing call chain topology, structural patterns, and per-symbol details.
  */
 
-import type { CodeChunk } from '../chunker/types';
-import type { SymbolMetadata, SymbolRef, OutgoingCall, IncomingCaller } from '../ts-ls/types';
+import type { CodeChunk } from '../chunker/types.js';
+import type { SymbolMetadata, SymbolRef, OutgoingCall, IncomingCaller } from '../ts-ls/types.js';
 
 // ─── Input ───────────────────────────────────────────────────────
 

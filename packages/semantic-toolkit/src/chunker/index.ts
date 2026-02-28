@@ -1,12 +1,12 @@
-import type { ParsedFile, ParsedSymbol } from '../parser/types';
-import { BODY_BEARING_KINDS } from '../parser/types';
-import type { CodeChunk, ChunkedFile } from './types';
-import { collapseChildren } from './collapse';
-import { generateChunkId, buildBreadcrumb } from './ids';
-import { resolveRelevantImports } from './imports';
+import type { ParsedFile, ParsedSymbol } from '../parser/types.js';
+import { BODY_BEARING_KINDS } from '../parser/types.js';
+import type { CodeChunk, ChunkedFile } from './types.js';
+import { collapseChildren } from './collapse.js';
+import { generateChunkId, buildBreadcrumb } from './ids.js';
+import { resolveRelevantImports } from './imports.js';
 
-export type { CodeChunk, ChunkedFile } from './types';
-export { BODY_BEARING_KINDS } from '../parser/types';
+export type { CodeChunk, ChunkedFile } from './types.js';
+export { BODY_BEARING_KINDS } from '../parser/types.js';
 
 /**
  * Chunk a parsed file into embeddable CodeChunk[].

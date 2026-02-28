@@ -14,11 +14,11 @@ import type {
 	ExportSpecifier,
 	ImportEqualsDeclaration,
 } from 'ts-morph';
-import { toRelativePosixPath } from './paths';
+import { toRelativePosixPath } from './paths.js';
 
-import type { SymbolRef, AliasGraph, AliasEntry, AliasKind, AliasChain, AliasHop } from './types';
+import type { SymbolRef, AliasGraph, AliasEntry, AliasKind, AliasChain, AliasHop } from './types.js';
 
-export type { AliasGraph, AliasEntry, AliasKind, AliasChain, AliasHop } from './types';
+export type { AliasGraph, AliasEntry, AliasKind, AliasChain, AliasHop } from './types.js';
 
 // ---------------------------------------------------------------------------
 // Public API

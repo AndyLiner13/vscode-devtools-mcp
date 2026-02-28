@@ -21,9 +21,9 @@ import type {
 	PropertySignature,
 } from 'ts-morph';
 
-import type { MemberInfo, MemberKind } from './types';
+import type { MemberInfo, MemberKind } from './types.js';
 
-export type { MemberInfo, MemberKind } from './types';
+export type { MemberInfo, MemberKind } from './types.js';
 
 // Map from SyntaxKind to output label for tracked modifiers.
 const TRACKED_MODIFIER_KINDS = new Map<SyntaxKind, string>([

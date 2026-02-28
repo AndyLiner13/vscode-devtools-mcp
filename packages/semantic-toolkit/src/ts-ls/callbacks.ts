@@ -14,16 +14,16 @@ import type {
 	ParameterDeclaration,
 	CallExpression,
 } from 'ts-morph';
-import { toRelativePosixPath } from './paths';
+import { toRelativePosixPath } from './paths.js';
 
 import type {
 	SymbolRef,
 	CallbackUsage,
 	CallbackParameter,
 	CallbackAnalysis,
-} from './types';
+} from './types.js';
 
-export type { CallbackUsage, CallbackParameter, CallbackAnalysis } from './types';
+export type { CallbackUsage, CallbackParameter, CallbackAnalysis } from './types.js';
 
 // ---------------------------------------------------------------------------
 // Public API

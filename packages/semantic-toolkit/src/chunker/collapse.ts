@@ -1,5 +1,5 @@
-import type { ParsedSymbol } from '../parser/types';
-import { BODY_BEARING_KINDS } from '../parser/types';
+import type { ParsedSymbol } from '../parser/types.js';
+import { BODY_BEARING_KINDS } from '../parser/types.js';
 
 /**
  * Produce the embedding text for a symbol: its source code with

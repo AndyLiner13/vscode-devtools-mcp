@@ -15,7 +15,7 @@ import type {
 	NewExpression,
 	Identifier,
 } from 'ts-morph';
-import { toRelativePosixPath } from './paths';
+import { toRelativePosixPath } from './paths.js';
 
 import type {
 	TsLsConfig,
@@ -23,11 +23,11 @@ import type {
 	OutgoingCall,
 	IncomingCaller,
 	SymbolMetadata,
-} from './types';
-import { DEFAULT_TS_LS_CONFIG } from './types';
+} from './types.js';
+import { DEFAULT_TS_LS_CONFIG } from './types.js';
 
-export type { TsLsConfig, SymbolRef, OutgoingCall, IncomingCaller, SymbolMetadata } from './types';
-export { DEFAULT_TS_LS_CONFIG } from './types';
+export type { TsLsConfig, SymbolRef, OutgoingCall, IncomingCaller, SymbolMetadata } from './types.js';
+export { DEFAULT_TS_LS_CONFIG } from './types.js';
 
 /** Function or method — valid as top-level query target. */
 type CallableDeclaration = FunctionDeclaration | MethodDeclaration;

@@ -21,11 +21,11 @@ import type {
 	VariableDeclaration,
 	Expression,
 } from 'ts-morph';
-import { toRelativePosixPath } from './paths';
+import { toRelativePosixPath } from './paths.js';
 
-import type { SymbolRef, TypeGuardEntry, TypeGuardAnalysis, TypeGuardKind } from './types';
+import type { SymbolRef, TypeGuardEntry, TypeGuardAnalysis, TypeGuardKind } from './types.js';
 
-export type { TypeGuardEntry, TypeGuardAnalysis, TypeGuardKind } from './types';
+export type { TypeGuardEntry, TypeGuardAnalysis, TypeGuardKind } from './types.js';
 
 // ---------------------------------------------------------------------------
 // Public API

@@ -6,7 +6,7 @@
  * showing only target symbols and their same-file dependencies.
  */
 
-import type { CodeChunk } from '../chunker/types';
+import type { CodeChunk } from '../chunker/types.js';
 
 /** Input for snapshot generation: target chunks from a single file. */
 export interface SnapshotInput {

@@ -10,19 +10,19 @@
  */
 import { Project, Node, SyntaxKind } from 'ts-morph';
 import type { SourceFile, Statement, Expression } from 'ts-morph';
-import { toRelativePosixPath } from './paths';
+import { toRelativePosixPath } from './paths.js';
 
 import type {
 	SideEffectKind,
 	SideEffectEntry,
 	SideEffectAnalysis,
-} from './types';
+} from './types.js';
 
 export type {
 	SideEffectKind,
 	SideEffectEntry,
 	SideEffectAnalysis,
-} from './types';
+} from './types.js';
 
 // ---------------------------------------------------------------------------
 // Public API
