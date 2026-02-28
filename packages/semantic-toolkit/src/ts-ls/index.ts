@@ -6,6 +6,7 @@
  */
 export { resolveCallHierarchy } from './call-hierarchy';
 export { resolveTypeHierarchy } from './type-hierarchy';
+export { resolveReferences } from './references';
 
 export type {
 	TsLsConfig,
@@ -15,6 +16,8 @@ export type {
 	SymbolMetadata,
 	TypeHierarchy,
 	TypeParameter,
+	References,
+	FileReference,
 } from './types';
 
 export { DEFAULT_TS_LS_CONFIG } from './types';

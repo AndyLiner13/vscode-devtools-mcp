@@ -872,6 +872,13 @@ SymbolRef entries in heritage references (extends, implements, subtypes) carry `
 
 For standalone classes/interfaces with no hierarchy, all arrays are empty and `extends` is undefined.
 
+**Cross-file reference resolution:** `resolveReferences()` takes any named symbol (function, class, interface, type alias, enum, variable, method, property) and returns a `References` object:
+- `totalCount` — total number of reference occurrences across all files.
+- `fileCount` — number of distinct files referencing the symbol.
+- `files[]` — per-file breakdown (`filePath` + `lines[]`), sorted by file path, lines sorted ascending.
+
+The definition itself is excluded from references (consumers already know the definition location from `SymbolMetadata.symbol`). Same-file usages ARE included (e.g., a function calling itself or another symbol in the same file). References from `.d.ts` and `node_modules` are filtered out.
+
 **Future enhancements (TODO in code):**
 - Mixin detection: functions returning class expressions extending their base parameter.
 - Full generic instantiation tracking: find all sites where generic types are instantiated with concrete type arguments.
@@ -887,7 +894,7 @@ For standalone classes/interfaces with no hierarchy, all arrays are empty and `e
 - **`ts-ls/cycle/`** — Mutual recursion (alpha ↔ beta) + self-recursion (factorial). Verify cycle detection at all depths. ✅ Implemented
 - **`ts-ls/constructor/`** — Class with constructor calling helper. Verify `new Foo()` resolves as outgoing call. ✅ Implemented
 - **`ts-ls/type-hierarchy/`** — 5 files: interfaces (Entity, Serializable, Auditable) → models (abstract BaseModel, User, AdminUser) → diamond (AuditedModel) → standalone → generics (Repository\<T extends Entity, ID = string\>, Container\<T\>, Queryable\<T extends Entity\>). Verify extends, implements, subtypes, diamond pattern, standalone, isAbstract on TypeHierarchy and SymbolRef, rich generic type parameters (name+constraint+default), error cases. ✅ Implemented
-- **`ts-ls/references/`** — symbol used across 5 files. Verify reference count and file list.
+- **`ts-ls/references/`** — 5 files: utils (formatDate, formatTime, DateString, Timestamped) → user-service, order-service, report → isolated. Verify cross-file reference count, per-file line breakdown, same-file usage inclusion, definition exclusion, type alias references, interface implements references, zero-reference symbols, class references, error handling. ✅ Implemented
 - **`ts-ls/type-flows/`** — function parameter types imported from file A, return type used in file B. Verify flow resolution.
 - **`ts-ls/members/`** — class with methods/properties. Verify member listing.
 - **`ts-ls/cross-module/`** — re-exports, barrel files, declaration merging. Verify resolution through indirection.

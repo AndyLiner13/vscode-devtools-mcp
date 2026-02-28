@@ -112,6 +112,27 @@ export interface TypeHierarchy {
 	// Very high cost (project-wide reference + type inference). Defer to future phase.
 }
 
+/** A file that references a symbol, with the specific lines where it's referenced. */
+export interface FileReference {
+	/** Workspace-relative file path (forward slashes). */
+	filePath: string;
+
+	/** 1-indexed lines where the symbol is referenced in this file. */
+	lines: number[];
+}
+
+/** Cross-file reference summary for a symbol. */
+export interface References {
+	/** Total number of reference occurrences across all files. */
+	totalCount: number;
+
+	/** Number of distinct files that reference this symbol. */
+	fileCount: number;
+
+	/** Per-file breakdown of reference locations, sorted by file path. */
+	files: FileReference[];
+}
+
 /**
  * Structural metadata for a symbol, resolved via TS Language Services.
  *
@@ -120,6 +141,7 @@ export interface TypeHierarchy {
  * - Item 2: Multi-hop recursive tree with cycle detection
  * - Item 4: typeHierarchy
  * - Item 5: isAbstract, typeParameters, isAbstract on SymbolRef
+ * - Item 6: references (cross-file reference count + file list)
  */
 export interface SymbolMetadata {
 	/** The symbol this metadata describes. */
@@ -133,4 +155,7 @@ export interface SymbolMetadata {
 
 	/** Type hierarchy: extends, implements, subtypes. Undefined for non-class/interface symbols. */
 	typeHierarchy?: TypeHierarchy;
+
+	/** Cross-file references: how many files reference this symbol and where. */
+	references?: References;
 }
