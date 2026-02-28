@@ -10,6 +10,7 @@
  * Item 8: Members — class/interface member listing.
  * Item 9: Signature + modifiers.
  * Item 11: Alias tracking — import/export alias graph resolution.
+ * Item 12: Ambient/global augmentations — declare global, declare module, .d.ts.
  */
 
 /** Configuration for TS Language Services operations. */
@@ -231,6 +232,7 @@ export interface MemberInfo {
  * - Item 8: members (class/interface member listing)
  * - Item 9: signature + modifiers
  * - Item 11: aliases (import/export alias graph)
+ * - Item 12: ambients (declare global, declare module, .d.ts)
  */
 export interface SymbolMetadata {
 	/** The symbol this metadata describes. */
@@ -328,4 +330,80 @@ export interface AliasHop {
 
 	/** Line of this alias/re-export. */
 	line: number;
+}
+
+// ---------------------------------------------------------------------------
+// Item 12: Ambient / Global Augmentations
+// ---------------------------------------------------------------------------
+
+/** A member declared inside an ambient block (declare global, declare module, .d.ts). */
+export interface AmbientMember {
+	/** Member name. */
+	name: string;
+
+	/** Kind: 'function', 'variable', 'interface', 'type', 'class', 'enum', 'namespace', 'method', 'property'. */
+	kind: string;
+
+	/** 1-indexed line number. */
+	line: number;
+
+	/** Signature or type text. */
+	signature?: string;
+}
+
+/** A single `declare global { ... }` block. */
+export interface GlobalAugmentation {
+	/** File where the declare global block appears. */
+	filePath: string;
+
+	/** Line where the block starts. */
+	line: number;
+
+	/** Members added to the global scope by this block. */
+	members: AmbientMember[];
+}
+
+/** A single `declare module 'xxx' { ... }` block (module augmentation or ambient module). */
+export interface ModuleAugmentation {
+	/** The module specifier string (e.g. 'express', './my-module'). */
+	moduleName: string;
+
+	/** File where the declare module block appears. */
+	filePath: string;
+
+	/** Line where the block starts. */
+	line: number;
+
+	/** Members added/augmented in this module. */
+	members: AmbientMember[];
+}
+
+/** An ambient declaration from a .d.ts file. */
+export interface AmbientDeclaration {
+	/** Declaration name. */
+	name: string;
+
+	/** Kind: 'function', 'variable', 'interface', 'type', 'class', 'enum', 'namespace'. */
+	kind: string;
+
+	/** File where the declaration lives. */
+	filePath: string;
+
+	/** 1-indexed line number. */
+	line: number;
+
+	/** Signature or type text. */
+	signature?: string;
+}
+
+/** Full ambient information for the project. */
+export interface AmbientInfo {
+	/** All `declare global { ... }` blocks found across the project. */
+	globalAugmentations: GlobalAugmentation[];
+
+	/** All `declare module 'xxx' { ... }` blocks found across the project. */
+	moduleAugmentations: ModuleAugmentation[];
+
+	/** Ambient declarations from .d.ts files (excluding node_modules). */
+	ambientDeclarations: AmbientDeclaration[];
 }

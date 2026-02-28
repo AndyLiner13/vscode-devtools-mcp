@@ -11,6 +11,7 @@ export { resolveTypeFlows } from './type-flows';
 export { resolveMembers } from './members';
 export { resolveSignature } from './signature';
 export { resolveAliases } from './aliases';
+export { resolveAmbients } from './ambients';
 
 export type {
 	TsLsConfig,
@@ -32,6 +33,11 @@ export type {
 	AliasKind,
 	AliasChain,
 	AliasHop,
+	AmbientInfo,
+	GlobalAugmentation,
+	ModuleAugmentation,
+	AmbientDeclaration,
+	AmbientMember,
 } from './types';
 
 export { DEFAULT_TS_LS_CONFIG } from './types';
