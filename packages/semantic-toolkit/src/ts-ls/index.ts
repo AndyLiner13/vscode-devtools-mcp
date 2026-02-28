@@ -15,6 +15,7 @@ export { resolveAmbients } from './ambients';
 export { resolveProjectStructure } from './project-structure';
 export { resolveTypeGuards } from './type-guards';
 export { resolveCallbacks } from './callbacks';
+export { resolveGuardCallbacks } from './guard-callbacks';
 
 export type {
 	TsLsConfig,
@@ -49,6 +50,9 @@ export type {
 	CallbackUsage,
 	CallbackParameter,
 	CallbackAnalysis,
+	GuardCallbackSite,
+	GuardHofParameter,
+	GuardCallbackAnalysis,
 } from './types';
 
 export { DEFAULT_TS_LS_CONFIG } from './types';

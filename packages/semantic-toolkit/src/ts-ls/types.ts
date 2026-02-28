@@ -14,6 +14,7 @@
  * Item 13: Multi-project tsconfig — project references, composite, solution-style.
  * Item 14: Type guards — narrowing construct detection in function bodies.
  * Item 15: Callbacks — higher-order function and callback tracking.
+ * Item 16: Guard callbacks — type guard functions used as callbacks with narrowing metadata.
  */
 
 /** Configuration for TS Language Services operations. */
@@ -275,6 +276,9 @@ export interface SymbolMetadata {
 
 	/** Callback analysis: where this function is used as a callback and HOF parameter info. */
 	callbacks?: CallbackAnalysis;
+
+	/** Guard-callback analysis: type guard functions used as callbacks, with narrowing metadata. */
+	guardCallbacks?: GuardCallbackAnalysis;
 }
 
 // ---------------------------------------------------------------------------
@@ -474,8 +478,70 @@ export interface CallbackAnalysis {
 	returnFunctionType?: string;
 }
 
+// ---------------------------------------------------------------------------// Item 16: Guard Callbacks (type guards used as callbacks)
 // ---------------------------------------------------------------------------
-// Item 14: Type Guards / Narrowing
+
+/** A site where a type guard function is used as a callback argument. */
+export interface GuardCallbackSite {
+	/** Name of the type guard function being passed. */
+	guardName: string;
+
+	/** Name of the function/method receiving the guard as an argument. */
+	calledBy: string;
+
+	/** Workspace-relative file path of the call site. */
+	filePath: string;
+
+	/** 1-indexed line number. */
+	line: number;
+
+	/** Argument position (0-based). */
+	parameterIndex: number;
+
+	/** The type predicate kind: 'is' for `x is T`, 'asserts' for `asserts x is T`. */
+	predicateKind: 'is' | 'asserts';
+
+	/** Target type from the predicate (e.g. 'User' from `x is User`). */
+	predicateType: string;
+
+	/** Inferred input type before narrowing (e.g. 'User | Guest'). Undefined if not determinable. */
+	inputType?: string;
+
+	/** Narrowed result type after the guard is applied (e.g. 'User'). Undefined if not determinable. */
+	narrowedOutputType?: string;
+}
+
+/** A HOF parameter that accepts a type predicate function. */
+export interface GuardHofParameter {
+	/** Parameter name. */
+	name: string;
+
+	/** Argument position (0-based). */
+	parameterIndex: number;
+
+	/** Full type annotation text. */
+	type: string;
+
+	/** Whether the parameter type includes a type predicate. */
+	hasTypePredicate: boolean;
+
+	/** Target type from the predicate, if present. */
+	predicateType?: string;
+}
+
+/** Full analysis of type guard usage in callback contexts. */
+export interface GuardCallbackAnalysis {
+	/** The type guard function being analyzed. */
+	symbol: SymbolRef;
+
+	/** Sites where this guard is used as a callback, with narrowing info. */
+	guardCallbackSites: GuardCallbackSite[];
+
+	/** If this function is a HOF: parameters that accept type predicates. */
+	guardHofParameters: GuardHofParameter[];
+}
+
+// ---------------------------------------------------------------------------// Item 14: Type Guards / Narrowing
 // ---------------------------------------------------------------------------
 
 /** The kind of type narrowing construct. */
