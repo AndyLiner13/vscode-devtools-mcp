@@ -1078,30 +1078,54 @@ Input fixtures are JSON (pre-computed metadata), not source files — connection
 **Input:** Query string (e.g., `symbol = TokenService > validateToken`)
 **Output:** Matching `CodeChunk[]` with connection graph + smart snapshot (same output format as full pipeline)
 
+**Implementation decisions:**
+
+- **Parsing strategy:** Uses fresh parsing (`parseFiles` + `chunkFile`) for now. **TODO: Replace with indexed lookup in Phase 7.** Once the LanceDB index exists (Phase 7), the fresh parsing path must be replaced entirely with indexed chunk retrieval — there should be only one code path, not two parallel systems. Code will include explicit `// TODO(Phase 7): Replace fresh parsing with indexed chunk retrieval` markers.
+- **Case sensitivity:** Strict exact case matching. On zero results, a case-insensitive re-search is performed. If near-matches are found, the error includes a helpful hint (e.g., `No symbol "validatetoken" found. Did you mean "validateToken" (src/auth/tokenService.ts:20)?`). If nothing matches case-insensitively either, a clean "symbol not found" error is returned.
+- **File path matching:** Strict exact relative path matching. On zero results, partial matching (basename/suffix) is performed. If near-matches are found, the error includes hints (e.g., `No file "tokenService.ts" found. Similar paths: src/auth/tokenService.ts, src/legacy/tokenService.ts`). This prevents Copilot from needing manual file searches.
+- **Output format:** Same as the full search pipeline — connection graph + smart snapshot rendered text. No wrapper type. Internal callers that need raw `CodeChunk[]` can call the resolve step directly.
+
 **Key behaviors:**
 - Parse `symbol = ` prefix → extract symbol path
 - Split on ` > ` to get hierarchy: `[file?, parent?, name]`
-- Search through parsed symbol trees for matches (exact name match)
-- If file path is specified, scope to that file
+- Search through parsed symbol trees for matches (exact name match, case-sensitive)
+- If file path is specified, scope to that file (exact match first, partial fallback with hints)
+- On no exact match: case-insensitive fallback search → return helpful hints, not silent failure
+- On no file match: partial path fallback search → return path suggestions
+- Enrich matched chunks with Phase 3 TS LS metadata
+- Generate Phase 5 connection graph + Phase 4 smart snapshot
 - Return same output format as full pipeline (connection graph + smart snapshots)
+
+**Module structure:**
+- `src/lookup/types.ts` — Input/output interfaces, parsed symbol path types
+- `src/lookup/parse-query.ts` — Parse `symbol = ` prefix, split ` > ` hierarchy, detect lookup vs natural language
+- `src/lookup/resolve.ts` — Walk parsed symbol trees for exact matches, handle file/parent scoping, case/path fallback hints
+- `src/lookup/index.ts` — Entry point: parse → resolve → enrich → render → return
 
 **Test cases:**
 
 - `symbol = validateToken` → find in any file
 - `symbol = TokenService > validateToken` → find within TokenService
 - `symbol = src/auth/tokenService.ts > TokenService > validateToken` → file-scoped
-- `symbol = nonExistentSymbol` → empty result
+- `symbol = nonExistentSymbol` → empty result with clean error
 - `symbol = ambiguousName` (exists in multiple files) → return all matches
 - Query without `symbol = ` prefix → returns `null` (not a symbol lookup)
+- `symbol = validatetoken` (wrong case) → error with hint: "Did you mean validateToken?"
+- `symbol = tokenService.ts > validateToken` (partial path) → error with hint: "Similar paths: src/auth/tokenService.ts"
+- `symbol = TokenService > nonExistent` → error (parent exists, child doesn't)
+- `symbol = NonExistentClass > validateToken` → error (parent doesn't exist)
 
 **Validation gate:**
-- Exact name matches only (no fuzzy matching)
+- Exact name matches only (no fuzzy matching) — case fallback is hint-only, not auto-resolve
 - File-scoped lookups find only in the specified file
 - Hierarchical lookups verify parent chain
-- Empty results returned gracefully (no errors)
+- Empty results returned gracefully with helpful hints (no crashes)
+- Case mismatch hints show the correct casing and location
+- Path mismatch hints show similar file paths
 - Output format matches full pipeline output
+- Fresh parsing is used now; explicit TODO markers for Phase 7 indexed replacement
 
-**Dependencies:** Phase 1 (Parser)
+**Dependencies:** Phase 1 (Parser), Phase 2 (Chunker), Phase 3 (TS LS), Phase 4 (Snapshot), Phase 5 (Connection Graph)
 
 ---
 
