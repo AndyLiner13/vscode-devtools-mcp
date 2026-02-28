@@ -591,6 +591,20 @@ interface SemanticSymbolsResponse {
 const SYMBOL_PREFIX = 'symbol = ';
 
 /**
+ * For lines containing `"query": "symbol = ..."`, returns the 1-based column
+ * right after the "symbol = " prefix (where editable content begins).
+ * Returns null if the line doesn't match this pattern.
+ */
+function getQuerySymbolPrefixEndCol(line: string): number | null {
+	const keyMatch = /"query"\s*:\s*"/.exec(line);
+	if (!keyMatch) return null;
+	const valueContentStart0 = keyMatch.index + keyMatch[0].length;
+	const content = line.substring(valueContentStart0);
+	if (!content.toLowerCase().startsWith(SYMBOL_PREFIX.toLowerCase())) return null;
+	return valueContentStart0 + SYMBOL_PREFIX.length + 1; // 1-based
+}
+
+/**
  * Detect if the schema has a `query` property paired with a file-path property.
  * This is the pattern used by codebase_search.
  */
@@ -1666,7 +1680,14 @@ function findJsonValueRange(line: string, column: number): null | { end: number;
 		if (col < 1 || col > line.length + 1) continue;
 
 		const stringRange = findStringLiteralRange(line, col);
-		if (stringRange) return stringRange;
+		if (stringRange) {
+			// Shrink past "symbol = " prefix for query fields so auto-select skips the prefix
+			const prefixEnd = getQuerySymbolPrefixEndCol(line);
+			if (prefixEnd !== null && prefixEnd > stringRange.start && prefixEnd <= stringRange.end) {
+				return { end: stringRange.end, start: prefixEnd };
+			}
+			return stringRange;
+		}
 
 		const numRange = findNumberRange(line, col);
 		if (numRange) return numRange;
@@ -2101,6 +2122,25 @@ function setupTabToggle(
 			}
 		}
 
+		// Tab in a query field with "symbol = " prefix → open IntelliSense
+		const queryFileProp = hasQuerySymbolSchema(schema);
+		if (queryFileProp) {
+			const queryProps = new Set(['query']);
+			const queryRange = findStringValueRange(line, position.column, queryProps);
+			if (queryRange) {
+				const filePath = readStringPropertyValue(model, queryFileProp);
+				if (filePath) {
+					e.preventDefault();
+					e.stopPropagation();
+					log(`[tab] → triggering query symbol suggest!`);
+					queueMicrotask(() => {
+						editor.trigger('tab-intellisense', 'editor.action.triggerSuggest', {});
+					});
+					return;
+				}
+			}
+		}
+
 		// Block Tab from doing anything else (no field jump, no indent)
 		log(`[tab] → no match, blocking Tab`);
 		e.preventDefault();
@@ -2241,8 +2281,12 @@ function computeValueZones(model: monacoNs.editor.ITextModel): ValueZone[] {
 			// String: "key": "value"  →  zone covers content between the quotes
 			const stringMatch = afterColon.match(/^\s*"([^"\\]*)"/);
 			if (stringMatch) {
-				const startCol = colonIdx + 1 + trimOffset + 2; // 1-based; skip opening quote
-				result.push({ endCol: startCol + stringMatch[1].length, endLine: i, startCol, startLine: i, type: 'string' });
+				const contentStartCol = colonIdx + 1 + trimOffset + 2; // 1-based; skip opening quote
+				const contentEndCol = contentStartCol + stringMatch[1].length;
+				// Shrink zone past "symbol = " prefix for query fields so the prefix is structural
+				const prefixEnd = getQuerySymbolPrefixEndCol(line);
+				const startCol = (prefixEnd !== null && prefixEnd > contentStartCol && prefixEnd <= contentEndCol) ? prefixEnd : contentStartCol;
+				result.push({ endCol: contentEndCol, endLine: i, startCol, startLine: i, type: 'string' });
 				continue;
 			}
 
