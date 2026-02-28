@@ -865,7 +865,16 @@ Each phase must pass its validation gate before the next phase begins. No phase 
 - `extends?` — parent class (classes only). SymbolRef to the declaration.
 - `implements[]` — interfaces the class implements, or parent interfaces an interface extends. Array of SymbolRef.
 - `subtypes[]` — all classes/interfaces in the project that extend or implement this symbol. Resolved by scanning all project source files and verifying heritage clauses resolve to the exact target declaration (prevents same-name collisions across files).
+- `isAbstract?` — true when the queried class is abstract. Undefined for concrete classes and interfaces.
+- `typeParameters[]` — rich generic type parameter list. Each entry has `name` (e.g. 'T'), optional `constraint` (e.g. 'Entity'), optional `default` (e.g. 'string'). Empty array for non-generic types.
+
+SymbolRef entries in heritage references (extends, implements, subtypes) carry `isAbstract?: boolean` when the referenced class is abstract, enabling consumers to immediately identify abstract parents/subtypes without additional lookups.
+
 For standalone classes/interfaces with no hierarchy, all arrays are empty and `extends` is undefined.
+
+**Future enhancements (TODO in code):**
+- Mixin detection: functions returning class expressions extending their base parameter.
+- Full generic instantiation tracking: find all sites where generic types are instantiated with concrete type arguments.
 
 **Same-name disambiguation:** Outgoing calls are grouped by `filePath:name:line` to avoid merging same-named methods in different classes within the same file.
 
@@ -877,7 +886,7 @@ For standalone classes/interfaces with no hierarchy, all arrays are empty and `e
 - **`ts-ls/multi-hop/`** — 4 files: entry → middleware → service → helper. Verify callDepth 1/2/3/-1, depthLimited markers. ✅ Implemented
 - **`ts-ls/cycle/`** — Mutual recursion (alpha ↔ beta) + self-recursion (factorial). Verify cycle detection at all depths. ✅ Implemented
 - **`ts-ls/constructor/`** — Class with constructor calling helper. Verify `new Foo()` resolves as outgoing call. ✅ Implemented
-- **`ts-ls/type-hierarchy/`** — 4 files: interfaces (Entity, Serializable, Auditable) → models (BaseModel, User, AdminUser) → diamond (AuditedModel) → standalone. Verify extends (class→class), implements (class→interface, interface→interface), subtypes (project-wide search), diamond pattern, standalone (no hierarchy), error cases. ✅ Implemented
+- **`ts-ls/type-hierarchy/`** — 5 files: interfaces (Entity, Serializable, Auditable) → models (abstract BaseModel, User, AdminUser) → diamond (AuditedModel) → standalone → generics (Repository\<T extends Entity, ID = string\>, Container\<T\>, Queryable\<T extends Entity\>). Verify extends, implements, subtypes, diamond pattern, standalone, isAbstract on TypeHierarchy and SymbolRef, rich generic type parameters (name+constraint+default), error cases. ✅ Implemented
 - **`ts-ls/references/`** — symbol used across 5 files. Verify reference count and file list.
 - **`ts-ls/type-flows/`** — function parameter types imported from file A, return type used in file B. Verify flow resolution.
 - **`ts-ls/members/`** — class with methods/properties. Verify member listing.

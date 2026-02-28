@@ -5,6 +5,7 @@
  * Item 1: Core call hierarchy (outgoingCalls, incomingCallers).
  * Item 2: Multi-hop traversal with recursive tree, cycle detection, depth limits.
  * Item 4: Type hierarchy (extends, implements, subtypes).
+ * Item 5: isAbstract, rich generics (name+constraint+default), isAbstract on SymbolRef.
  */
 
 /** Configuration for TS Language Services operations. */
@@ -32,6 +33,21 @@ export interface SymbolRef {
 
 	/** 1-indexed line number of the call/reference. */
 	line: number;
+
+	/** True when the referenced class is abstract. Only set for class declarations. */
+	isAbstract?: boolean;
+}
+
+/** A generic type parameter with optional constraint and default. */
+export interface TypeParameter {
+	/** Parameter name (e.g. 'T', 'K'). */
+	name: string;
+
+	/** Constraint type text (e.g. 'Entity', 'string | number'). Undefined if unconstrained. */
+	constraint?: string;
+
+	/** Default type text (e.g. 'User'). Undefined if no default. */
+	default?: string;
 }
 
 /** Outgoing call: a symbol that this symbol calls (recursive tree). */
@@ -80,6 +96,20 @@ export interface TypeHierarchy {
 
 	/** Classes/interfaces that extend or implement this symbol. */
 	subtypes: SymbolRef[];
+
+	/** True when the queried class is abstract. */
+	isAbstract?: boolean;
+
+	/** Generic type parameters with constraints and defaults. Empty for non-generic types. */
+	typeParameters: TypeParameter[];
+
+	// TODO: Mixin detection — detect functions that return class expressions extending
+	// their base parameter (e.g. `function Timestamped<T>(Base: T) { return class extends Base {...} }`).
+	// Add `mixins?: SymbolRef[]` field. Moderate effort, uncommon pattern.
+
+	// TODO: Full generic instantiation tracking — find all sites where this generic
+	// class/interface is instantiated with concrete type arguments (e.g. `Repository<User>`).
+	// Very high cost (project-wide reference + type inference). Defer to future phase.
 }
 
 /**
@@ -89,6 +119,7 @@ export interface TypeHierarchy {
  * - Item 1: outgoingCalls, incomingCallers
  * - Item 2: Multi-hop recursive tree with cycle detection
  * - Item 4: typeHierarchy
+ * - Item 5: isAbstract, typeParameters, isAbstract on SymbolRef
  */
 export interface SymbolMetadata {
 	/** The symbol this metadata describes. */

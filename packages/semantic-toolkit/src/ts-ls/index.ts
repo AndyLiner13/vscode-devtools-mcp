@@ -14,6 +14,7 @@ export type {
 	IncomingCaller,
 	SymbolMetadata,
 	TypeHierarchy,
+	TypeParameter,
 } from './types';
 
 export { DEFAULT_TS_LS_CONFIG } from './types';

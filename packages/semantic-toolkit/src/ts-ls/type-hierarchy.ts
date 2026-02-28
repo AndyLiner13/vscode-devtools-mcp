@@ -1,7 +1,8 @@
 /**
- * Phase 3, Item 4 — Type hierarchy resolver.
+ * Phase 3, Items 4+5 — Type hierarchy resolver.
  *
- * Resolves extends, implements, and subtypes for classes and interfaces.
+ * Item 4: Resolves extends, implements, and subtypes for classes and interfaces.
+ * Item 5: isAbstract detection, isAbstract on SymbolRef, rich generics (name+constraint+default).
  */
 import { Project, Node } from 'ts-morph';
 import type {
@@ -12,9 +13,9 @@ import type {
 } from 'ts-morph';
 import * as path from 'node:path';
 
-import type { SymbolRef, TypeHierarchy } from './types';
+import type { SymbolRef, TypeHierarchy, TypeParameter } from './types';
 
-export type { TypeHierarchy } from './types';
+export type { TypeHierarchy, TypeParameter } from './types';
 
 /** Class or interface — valid as type hierarchy target. */
 type TypeDeclaration = ClassDeclaration | InterfaceDeclaration;
@@ -95,11 +96,15 @@ function buildClassHierarchy(
 	}
 
 	const subtypes = findSubtypes(cls, project, workspaceRoot);
+	const isAbstract = cls.isAbstract() || undefined;
+	const typeParameters = extractTypeParameters(cls);
 
 	return {
 		extends: extendsRef,
 		implements: implementsRefs,
 		subtypes,
+		isAbstract,
+		typeParameters,
 	};
 }
 
@@ -115,10 +120,12 @@ function buildInterfaceHierarchy(
 	}
 
 	const subtypes = findSubtypes(iface, project, workspaceRoot);
+	const typeParameters = extractTypeParameters(iface);
 
 	return {
 		implements: implementsRefs,
 		subtypes,
+		typeParameters,
 	};
 }
 
@@ -245,5 +252,38 @@ function buildTypeSymbolRef(
 	const relativePath = path.relative(workspaceRoot, absolutePath).replace(/\\/g, '/');
 	const name = declaration.getName() ?? '<anonymous>';
 
-	return { name, filePath: relativePath, line: declaration.getStartLineNumber() };
+	const ref: SymbolRef = { name, filePath: relativePath, line: declaration.getStartLineNumber() };
+
+	if (Node.isClassDeclaration(declaration) && declaration.isAbstract()) {
+		ref.isAbstract = true;
+	}
+
+	return ref;
+}
+
+// ---------------------------------------------------------------------------
+// Generic type parameter extraction
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract type parameters with optional constraint and default from a
+ * class or interface declaration.
+ */
+function extractTypeParameters(declaration: TypeDeclaration): TypeParameter[] {
+	const params = declaration.getTypeParameters();
+	const result: TypeParameter[] = [];
+
+	for (const param of params) {
+		const tp: TypeParameter = { name: param.getName() };
+
+		const constraint = param.getConstraint();
+		if (constraint) tp.constraint = constraint.getText();
+
+		const defaultType = param.getDefault();
+		if (defaultType) tp.default = defaultType.getText();
+
+		result.push(tp);
+	}
+
+	return result;
 }

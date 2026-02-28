@@ -213,6 +213,106 @@ describe('Phase 3 — Type Hierarchy (Item 4)', () => {
 	// -------------------------------------------------------------------
 	// Error handling
 	// -------------------------------------------------------------------
+	// Item 5: isAbstract detection
+	// -------------------------------------------------------------------
+
+	describe('isAbstract on TypeHierarchy', () => {
+		it('should mark abstract class BaseModel as isAbstract', () => {
+			const th = resolveTypeHierarchy(project, rel('models.ts'), 'BaseModel', WORKSPACE_ROOT);
+			expect(th.isAbstract).toBe(true);
+		});
+
+		it('should not set isAbstract for concrete class User', () => {
+			const th = resolveTypeHierarchy(project, rel('models.ts'), 'User', WORKSPACE_ROOT);
+			expect(th.isAbstract).toBeUndefined();
+		});
+
+		it('should not set isAbstract for interfaces', () => {
+			const th = resolveTypeHierarchy(project, rel('interfaces.ts'), 'Entity', WORKSPACE_ROOT);
+			expect(th.isAbstract).toBeUndefined();
+		});
+	});
+
+	describe('isAbstract on SymbolRef (heritage refs)', () => {
+		it('should set isAbstract on extends ref when parent is abstract', () => {
+			const th = resolveTypeHierarchy(project, rel('models.ts'), 'User', WORKSPACE_ROOT);
+			expect(th.extends).toBeDefined();
+			expect(th.extends!.isAbstract).toBe(true);
+		});
+
+		it('should not set isAbstract on extends ref when parent is concrete', () => {
+			const th = resolveTypeHierarchy(project, rel('models.ts'), 'AdminUser', WORKSPACE_ROOT);
+			expect(th.extends).toBeDefined();
+			expect(th.extends!.isAbstract).toBeUndefined();
+		});
+
+		it('should set isAbstract on abstract subtype refs', () => {
+			const th = resolveTypeHierarchy(project, rel('interfaces.ts'), 'Entity', WORKSPACE_ROOT);
+			const baseModelRef = th.subtypes.find(s => s.name === 'BaseModel');
+			expect(baseModelRef).toBeDefined();
+			expect(baseModelRef!.isAbstract).toBe(true);
+		});
+
+		it('should not set isAbstract on interface SymbolRefs', () => {
+			const th = resolveTypeHierarchy(project, rel('interfaces.ts'), 'Entity', WORKSPACE_ROOT);
+			const auditableRef = th.subtypes.find(s => s.name === 'Auditable');
+			expect(auditableRef).toBeDefined();
+			expect(auditableRef!.isAbstract).toBeUndefined();
+		});
+	});
+
+	// -------------------------------------------------------------------
+	// Item 5: Generic type parameters
+	// -------------------------------------------------------------------
+
+	describe('generic type parameters', () => {
+		it('should extract constrained + defaulted params from Repository<T extends Entity, ID = string>', () => {
+			const th = resolveTypeHierarchy(project, rel('generics.ts'), 'Repository', WORKSPACE_ROOT);
+			expect(th.typeParameters).toHaveLength(2);
+
+			expect(th.typeParameters[0].name).toBe('T');
+			expect(th.typeParameters[0].constraint).toBe('Entity');
+			expect(th.typeParameters[0].default).toBeUndefined();
+
+			expect(th.typeParameters[1].name).toBe('ID');
+			expect(th.typeParameters[1].constraint).toBeUndefined();
+			expect(th.typeParameters[1].default).toBe('string');
+		});
+
+		it('should extract unconstrained param from Container<T>', () => {
+			const th = resolveTypeHierarchy(project, rel('generics.ts'), 'Container', WORKSPACE_ROOT);
+			expect(th.typeParameters).toHaveLength(1);
+			expect(th.typeParameters[0].name).toBe('T');
+			expect(th.typeParameters[0].constraint).toBeUndefined();
+			expect(th.typeParameters[0].default).toBeUndefined();
+		});
+
+		it('should extract constrained param from generic interface Queryable<T extends Entity>', () => {
+			const th = resolveTypeHierarchy(project, rel('generics.ts'), 'Queryable', WORKSPACE_ROOT);
+			expect(th.typeParameters).toHaveLength(1);
+			expect(th.typeParameters[0].name).toBe('T');
+			expect(th.typeParameters[0].constraint).toBe('Entity');
+		});
+
+		it('should return empty typeParameters for non-generic class', () => {
+			const th = resolveTypeHierarchy(project, rel('generics.ts'), 'SimpleService', WORKSPACE_ROOT);
+			expect(th.typeParameters).toHaveLength(0);
+		});
+
+		it('should return empty typeParameters for non-generic interface', () => {
+			const th = resolveTypeHierarchy(project, rel('standalone.ts'), 'Isolated', WORKSPACE_ROOT);
+			expect(th.typeParameters).toHaveLength(0);
+		});
+
+		it('should return empty typeParameters for existing non-generic classes', () => {
+			const th = resolveTypeHierarchy(project, rel('models.ts'), 'User', WORKSPACE_ROOT);
+			expect(th.typeParameters).toHaveLength(0);
+		});
+	});
+
+	// -------------------------------------------------------------------
+	// Error handling
+	// -------------------------------------------------------------------
 
 	describe('error cases', () => {
 		it('should throw for non-existent symbol', () => {
