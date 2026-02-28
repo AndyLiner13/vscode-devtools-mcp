@@ -263,8 +263,8 @@ For each result, resolve via the TS compiler:
 1. **Kind and modifiers:** async, static, exported, etc.
 2. **Full signature:** complete type signature with parameter types and return type
 3. **Type hierarchy:** extends, implements, subtypes
-4. **Outgoing calls:** immediate symbols this result calls (1 hop)
-5. **Incoming callers:** immediate symbols that call this result (1 hop)
+4. **Outgoing calls:** recursive tree of symbols this result calls (configurable `callDepth`, default 1 hop; cycle detection with `[cycle]` markers; `[depth limit]` markers at boundary)
+5. **Incoming callers:** recursive tree of symbols that call this result (same `callDepth` config, includes constructor call resolution via `new Foo()`)
 6. **Reference count:** how many files reference this symbol
 7. **Type flows:** where parameter types come from and return types go (with file paths)
 8. **Members:** for classes/interfaces, the list of methods and properties
@@ -357,56 +357,79 @@ Results use MCP's native multi-content response format. The first content item i
 
 ### Connection Graph (First Content Item)
 
-The connection graph is a centralized structural overview of all results — plain text, no decorative characters. It contains all the metadata the TS Language Services resolved for each result, plus cross-result patterns. Individual source code results contain NO inline metadata; all structural context lives here.
+The connection graph is a centralized structural overview of all results — plain text, no decorative characters. It uses a **graph-first topology** layout: the call/dependency topology comes first (so Copilot understands relationships immediately), followed by structural patterns, then per-symbol details. Individual source code results contain NO inline metadata; all structural context lives here.
+
+**Layout order:**
+1. **Graph section** — compact topology showing how results connect (call chains, dependencies)
+2. **Patterns section** — explicit structural insights (hubs, shared deps, diamonds)
+3. **Details section** — per-symbol metadata (kind, modifiers, signature, types, reference count)
 
 **Multi-result example:**
 
 ```
 Search: "authentication token validation" | 5 results across 4 files | 3,240/8,000 tokens
 
-[1] TokenService.validateToken
- src/auth/tokenService.ts
- async method | exported | refs: 8 files
- Signature: async validateToken(token: string): Promise<JwtPayload | null>
- Extends: BaseValidator (src/base.ts)
- Calls: jwt.verify, AuthConfig.getSecret ◆
- Called by: AuthMiddleware.verify ★, LoginController.handle ★
- Types in: token (string) | Types out: JwtPayload ◆ (src/models/auth.ts)
+Graph:
+  [2] AuthMiddleware.verify → [1] TokenService.validateToken → [4] AuthConfig.getSecret
+  [3] LoginController.handle → [1] TokenService.validateToken
+  [5] AUTH_TOKEN_EXPIRY (standalone constant)
 
-[2] AuthMiddleware.verify
- src/middleware/auth.ts
- async method | exported | refs: 12 files
- Signature: async verify(req: Request, res: Response, next: NextFunction): Promise<void>
- Calls: TokenService.validateToken ★, AuthConfig.getSecret ◆
- Called by: Router.use (src/routes/index.ts)
- Types in: Request (express), Response (express)
+Patterns:
+  Hub: [1] TokenService.validateToken — called by [2], [3]
+  Shared dep: [4] AuthConfig.getSecret — used by [1], [2]
+  Shared type: JwtPayload (src/models/auth.ts) — used by 3/5 results
 
-[3] LoginController.handle
- src/controllers/login.ts
- async method | exported | refs: 3 files
- Signature: async handle(req: LoginRequest): Promise<AuthResponse>
- Calls: TokenService.validateToken ★, UserService.findByEmail
- Types in: LoginRequest (src/models/auth.ts) | Types out: AuthResponse ◆
+[1] TokenService.validateToken — src/auth/tokenService.ts
+    async method | exported | refs: 8 files
+    Signature: async validateToken(token: string): Promise<JwtPayload | null>
+    Extends: BaseValidator (src/base.ts)
+    Types in: token (string) | Types out: JwtPayload (src/models/auth.ts)
 
-[4] AuthConfig
- src/config/auth.ts
- class | exported | refs: 14 files
- Implements: ConfigProvider (src/interfaces/config.ts)
- Members: getSecret(), getExpiry(), getIssuer()
- Called by: TokenService.validateToken ★, AuthMiddleware.verify ★
+[2] AuthMiddleware.verify — src/middleware/auth.ts
+    async method | exported | refs: 12 files
+    Signature: async verify(req: Request, res: Response, next: NextFunction): Promise<void>
+    Types in: Request (express), Response (express)
 
-[5] AUTH_TOKEN_EXPIRY
- src/config/constants.ts
- const | exported | refs: 6 files
- Type: number (value: 3600)
- Used by: AuthConfig.getExpiry ★
+[3] LoginController.handle — src/controllers/login.ts
+    async method | exported | refs: 3 files
+    Signature: async handle(req: LoginRequest): Promise<AuthResponse>
+    Types in: LoginRequest (src/models/auth.ts) | Types out: AuthResponse (src/models/auth.ts)
 
-★ = in results  ◆ = shared across 2+ results
+[4] AuthConfig — src/config/auth.ts
+    class | exported | refs: 14 files
+    Implements: ConfigProvider (src/interfaces/config.ts)
+    Members: getSecret(), getExpiry(), getIssuer()
 
-Shared dependencies not in results:
- JwtPayload (src/models/auth.ts) — type used by 3/5 results
- AuthResponse (src/models/auth.ts) — return type for 2/5 results
- BaseValidator (src/base.ts) — parent class of TokenService
+[5] AUTH_TOKEN_EXPIRY — src/config/constants.ts
+    const | exported | refs: 6 files
+    Type: number (value: 3600)
+```
+
+**Multi-hop call tree example (callDepth: 2):**
+
+When `callDepth > 1`, the Graph section shows the recursive call tree:
+```
+Graph:
+  [1] processRequest (service.ts)
+    → validate (validator.ts) ★
+      → sanitize (helper.ts) ◆
+    → format (formatter.ts) ★
+      → sanitize (helper.ts) ◆
+```
+
+With cycle detection:
+```
+Graph:
+  [1] alpha (alpha.ts)
+    → beta (beta.ts)
+      → alpha (alpha.ts) [cycle]
+```
+
+With depth limit markers:
+```
+Graph:
+  [1] handle (entry.ts)
+    → process (middleware.ts) [depth limit]
 ```
 
 **Single-result example:**
@@ -414,21 +437,20 @@ Shared dependencies not in results:
 ```
 Search: "jwt token validation" | 1 result | 820/8,000 tokens
 
-TokenService.validateToken
- src/auth/tokenService.ts
- async method | exported | refs: 8 files
- Signature: async validateToken(token: string): Promise<JwtPayload | null>
- Extends: BaseValidator (src/base.ts)
- Calls: jwt.verify, AuthConfig.getSecret (src/config/auth.ts)
- Called by: AuthMiddleware.verify (src/middleware/auth.ts), LoginController.handle (src/controllers/login.ts)
- Types in: token (string) | Types out: JwtPayload (src/models/auth.ts)
+TokenService.validateToken — src/auth/tokenService.ts
+    async method | exported | refs: 8 files
+    Signature: async validateToken(token: string): Promise<JwtPayload | null>
+    Extends: BaseValidator (src/base.ts)
+    Calls: jwt.verify, AuthConfig.getSecret (src/config/auth.ts)
+    Called by: AuthMiddleware.verify (src/middleware/auth.ts), LoginController.handle (src/controllers/login.ts)
+    Types in: token (string) | Types out: JwtPayload (src/models/auth.ts)
 ```
 
-**Why a centralized graph instead of per-result metadata:**
+**Why graph-first topology:**
+- Copilot reads the topology first and immediately understands how results connect
+- When reading per-symbol details afterward, each symbol is contextualized by its role in the topology
+- Cross-result patterns (hubs, shared deps, diamonds) are explicit — no mental assembly needed
 - Individual source code results stay clean — just code, no metadata noise
-- Cross-result patterns (★ and ◆ markers) are visible in one place instead of scattered
-- Shared dependencies stated once instead of repeated across multiple results
-- Copilot reads the graph first for structural overview, then reads individual results for code
 - Fewer total tokens than repeating metadata headers on each result
 
 ### Source Code Results: Smart Structural Snapshots
@@ -813,22 +835,42 @@ Each phase must pass its validation gate before the next phase begins. No phase 
 
 ### Phase 3 — TypeScript Language Services Integration
 
-**Goal:** Use the TS compiler's language services to resolve structural metadata for any given symbol: full signatures, type hierarchy, outgoing calls, incoming callers, reference count, type flows, and class members.
+**Goal:** Use the TS compiler's language services to resolve structural metadata for any given symbol: full signatures, type hierarchy, outgoing calls (multi-hop recursive tree), incoming callers (multi-hop recursive tree), reference count, type flows, and class members.
 
-**Input:** Symbol name + file path + ts-morph project
+**Input:** Symbol name + file path + ts-morph project + `TsLsConfig` (configurable `callDepth`)
 **Output:** `SymbolMetadata` containing:
 - `signature` (complete type signature)
 - `modifiers` (async, static, exported, etc.)
 - `typeHierarchy` (extends, implements, subtypes)
-- `outgoingCalls` (immediate symbols this symbol calls, 1 hop)
-- `incomingCallers` (immediate symbols that call this symbol, 1 hop)
+- `outgoingCalls` (recursive tree of symbols this symbol calls — depth controlled by `callDepth`)
+- `incomingCallers` (recursive tree of symbols that call this symbol — depth controlled by `callDepth`)
 - `referenceCount` (how many files reference this symbol)
 - `typeFlows` (where parameter types come from, where return types go)
 - `members` (for classes/interfaces: methods + properties list)
 
-**Test fixtures:** New set of multi-file fixtures (not single-file like Phase 1-2):
+**Call depth configuration (`callDepth`):**
+- `1` (default) — immediate callers/callees only (backward compatible with single-hop behavior)
+- `2`, `3`, etc. — that many hops of recursive traversal
+- `-1` — full transitive traversal (follow all hops, with cycle detection)
 
-- **`ts-ls/call-chain/`** — 3-4 files with A calling B calling C. Verify outgoing/incoming calls resolve correctly.
+**Recursive tree structure:** Each `OutgoingCall` entry contains a nested `outgoingCalls: OutgoingCall[]` array, forming a tree. Each `IncomingCaller` entry contains a nested `incomingCallers: IncomingCaller[]` array. This preserves full path context (which symbol calls which through which chain).
+
+**Cycle detection:** When a target symbol appears as an ancestor in the current call chain (back-edge), the entry is marked `cyclic: true` with empty children. Rendered as `[cycle]` in the connection graph. Handles self-recursion, mutual recursion, and multi-level cycles.
+
+**Depth limit markers:** When traversal stops at the `callDepth` boundary and the target has further resolvable calls, the entry is marked `depthLimited: true`. This tells consumers there are unexpanded calls beyond what's shown.
+
+**Constructor call resolution:** `new Foo()` expressions are resolved to `Foo`'s explicit constructor declaration. Constructor calls appear in outgoing call trees alongside regular function/method calls.
+
+**Same-name disambiguation:** Outgoing calls are grouped by `filePath:name:line` to avoid merging same-named methods in different classes within the same file.
+
+**User code filtering:** Declarations from `.d.ts` files and `node_modules` are excluded from call resolution.
+
+**Test fixtures:** Multi-file fixtures:
+
+- **`ts-ls/call-chain/`** — 4 files: service → validator/formatter → helper. Verify 1-hop outgoing/incoming calls. ✅ Implemented
+- **`ts-ls/multi-hop/`** — 4 files: entry → middleware → service → helper. Verify callDepth 1/2/3/-1, depthLimited markers. ✅ Implemented
+- **`ts-ls/cycle/`** — Mutual recursion (alpha ↔ beta) + self-recursion (factorial). Verify cycle detection at all depths. ✅ Implemented
+- **`ts-ls/constructor/`** — Class with constructor calling helper. Verify `new Foo()` resolves as outgoing call. ✅ Implemented
 - **`ts-ls/type-hierarchy/`** — interface → class → subclass chain. Verify extends/implements/subtypes.
 - **`ts-ls/references/`** — symbol used across 5 files. Verify reference count and file list.
 - **`ts-ls/type-flows/`** — function parameter types imported from file A, return type used in file B. Verify flow resolution.
@@ -836,7 +878,10 @@ Each phase must pass its validation gate before the next phase begins. No phase 
 - **`ts-ls/cross-module/`** — re-exports, barrel files, declaration merging. Verify resolution through indirection.
 
 **Validation gate:**
-- Call hierarchy matches expected for all test scenarios (1-hop outgoing + incoming)
+- Call hierarchy matches expected for all test scenarios at all configured depths
+- Cycle detection terminates correctly without infinite loops
+- Depth limit markers appear only on targets with further resolvable calls
+- Constructor calls resolve correctly through `new` expressions
 - Type hierarchy resolves extends/implements/subtypes correctly
 - Reference counts are accurate (±0 tolerance)
 - Type flows trace parameter origins and return type destinations correctly
@@ -882,16 +927,22 @@ Each phase must pass its validation gate before the next phase begins. No phase 
 
 ### Phase 5 — Connection Graph
 
-**Goal:** Given a set of result symbols (post-retrieval), assemble a connection graph showing each result's metadata and cross-result patterns (★ = in results, ◆ = shared across 2+ results).
+**Goal:** Given a set of result symbols (post-retrieval), assemble a graph-first connection graph showing topology, patterns, and per-symbol details. Uses ★ for in-result symbols and ◆ for shared dependencies across 2+ results.
 
 **Input:** Result `CodeChunk[]` + `SymbolMetadata` for each result (from Phase 3)
-**Output:** Plain text connection graph matching the format defined in the blueprint
+**Output:** Plain text connection graph in graph-first topology format:
+1. **Graph section** — call chain topology (rendered from recursive `OutgoingCall` tree)
+2. **Patterns section** — hubs, shared deps, diamonds, cycles
+3. **Details section** — per-symbol metadata (kind, modifiers, signature, types)
 
 **Key behaviors:**
-- Each result gets a numbered entry with kind, modifiers, signature, type hierarchy, calls, callers, types, reference count
-- Cross-result connections marked with ★
-- Shared dependencies (referenced by 2+ results but not in results themselves) marked with ◆
-- "Shared dependencies not in results" section at the bottom
+- Graph section renders the recursive call tree (multi-hop when `callDepth > 1`)
+- Cycle entries rendered with `[cycle]` marker
+- Depth-limited entries rendered with `[depth limit]` marker
+- Constructor calls (`new Foo()`) appear in the call tree
+- Cross-result connections marked with ★ in the graph section
+- Shared dependencies (referenced by 2+ results but not in results) marked with ◆
+- Patterns section explicitly names structural insights (hubs, shared deps, diamonds)
 - Summary line: `Search: "query" | N results across M files | T/B tokens`
 
 **Test fixtures:**
