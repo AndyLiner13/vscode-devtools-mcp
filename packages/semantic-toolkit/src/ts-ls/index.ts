@@ -10,6 +10,7 @@ export { resolveReferences } from './references';
 export { resolveTypeFlows } from './type-flows';
 export { resolveMembers } from './members';
 export { resolveSignature } from './signature';
+export { resolveAliases } from './aliases';
 
 export type {
 	TsLsConfig,
@@ -26,6 +27,11 @@ export type {
 	TypeFlowType,
 	MemberInfo,
 	MemberKind,
+	AliasGraph,
+	AliasEntry,
+	AliasKind,
+	AliasChain,
+	AliasHop,
 } from './types';
 
 export { DEFAULT_TS_LS_CONFIG } from './types';

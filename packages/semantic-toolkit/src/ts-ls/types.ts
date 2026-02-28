@@ -7,6 +7,9 @@
  * Item 4: Type hierarchy (extends, implements, subtypes).
  * Item 5: isAbstract, rich generics (name+constraint+default), isAbstract on SymbolRef.
  * Item 7: Type flows — parameter/return type provenance with full generic unwrapping.
+ * Item 8: Members — class/interface member listing.
+ * Item 9: Signature + modifiers.
+ * Item 11: Alias tracking — import/export alias graph resolution.
  */
 
 /** Configuration for TS Language Services operations. */
@@ -227,6 +230,7 @@ export interface MemberInfo {
  * - Item 7: typeFlows (parameter/return type provenance)
  * - Item 8: members (class/interface member listing)
  * - Item 9: signature + modifiers
+ * - Item 11: aliases (import/export alias graph)
  */
 export interface SymbolMetadata {
 	/** The symbol this metadata describes. */
@@ -255,4 +259,73 @@ export interface SymbolMetadata {
 
 	/** Members: methods, properties, accessors, signatures. Undefined for non-class/interface symbols. */
 	members?: MemberInfo[];
+
+	/** Alias graph: all import/export aliases pointing to this symbol across the project. */
+	aliases?: AliasGraph;
+}
+
+// ---------------------------------------------------------------------------
+// Item 11: Alias tracking
+// ---------------------------------------------------------------------------
+
+/** The kind of alias relationship. */
+export type AliasKind =
+	| 'import-rename'       // import { Foo as Bar }
+	| 'export-rename'       // export { Foo as Bar } from './module'
+	| 'namespace'           // import * as ns from './module'
+	| 'default-as-named'    // export { default as Foo } from './module'  OR  import Foo from './module'
+	| 'type-only'           // import type { Foo as Bar } or export type { Foo as Bar }
+	| 'namespace-alias'     // import Foo = SomeNamespace.Bar
+	| 'dynamic-import';     // const mod = await import('./module') → mod.Foo
+
+/** A single alias entry in the alias graph. */
+export interface AliasEntry {
+	/** The alias name used at this site. */
+	name: string;
+
+	/** File where the alias appears. */
+	filePath: string;
+
+	/** Line where the alias is declared. */
+	line: number;
+
+	/** What kind of alias relationship. */
+	kind: AliasKind;
+
+	/** The original exported name being aliased. */
+	originalName: string;
+}
+
+/** Full alias graph for a symbol: canonical declaration + all aliases + optional alias chain. */
+export interface AliasGraph {
+	/** The canonical (original) declaration of the symbol. */
+	canonical: SymbolRef;
+
+	/** All aliases discovered across the project. */
+	aliases: AliasEntry[];
+
+	/**
+	 * Multi-hop alias chains where a symbol is renamed through successive re-exports.
+	 * Each chain is an ordered array from original → final consumer alias.
+	 * Only populated when there are multi-hop renames (not just direct aliases).
+	 */
+	chains: AliasChain[];
+}
+
+/** A single multi-hop alias chain, e.g. Entity → IEntity → BaseEntity. */
+export interface AliasChain {
+	/** Ordered list of hops from original to final alias. */
+	hops: AliasHop[];
+}
+
+/** One hop in a multi-hop alias chain. */
+export interface AliasHop {
+	/** The name at this point in the chain. */
+	name: string;
+
+	/** File where this hop occurs. */
+	filePath: string;
+
+	/** Line of this alias/re-export. */
+	line: number;
 }
