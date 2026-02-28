@@ -16,6 +16,7 @@
  * Item 15: Callbacks — higher-order function and callback tracking.
  * Item 16: Guard callbacks — type guard functions used as callbacks with narrowing metadata.
  * Item 17: Advanced types — conditional, mapped, template literal, utility type structure.
+ * Item 18: Enum members — enum member value/kind extraction.
  */
 
 /** Configuration for TS Language Services operations. */
@@ -293,6 +294,43 @@ export interface SymbolMetadata {
 
 	/** Advanced type analysis: conditional, mapped, template literal, utility type structure. */
 	advancedType?: AdvancedTypeAnalysis;
+
+	/** Enum member analysis: member names, values, const/declare flags. */
+	enumMembers?: EnumAnalysis;
+}
+
+// ---------------------------------------------------------------------------
+// Item 18: Enum Members
+// ---------------------------------------------------------------------------
+
+/** A single enum member with its resolved value. */
+export interface EnumMemberEntry {
+	/** Member name (e.g. 'Red', 'OK'). */
+	name: string;
+
+	/** Resolved value as source text (e.g. '0', '"RED"', '1 + 2'). */
+	value: string;
+
+	/** True when the initializer is not a simple numeric/string literal. */
+	isComputed: boolean;
+
+	/** 1-indexed line number. */
+	line: number;
+}
+
+/** Full analysis of an enum declaration. */
+export interface EnumAnalysis {
+	/** The enum being analyzed. */
+	symbol: SymbolRef;
+
+	/** True for `const enum`. */
+	isConst: boolean;
+
+	/** True for `declare enum` (ambient). */
+	isDeclare: boolean;
+
+	/** All members in declaration order. */
+	members: EnumMemberEntry[];
 }
 
 // ---------------------------------------------------------------------------
