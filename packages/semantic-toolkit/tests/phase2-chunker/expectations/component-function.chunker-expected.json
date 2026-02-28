@@ -1,0 +1,96 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "component-function.tsx > import:react",
+      "nodeKind": "import",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "component-function.tsx > ButtonProps",
+      "nodeKind": "interface",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 5,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "component-function.tsx > ButtonProps > label",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "component-function.tsx > ButtonProps > onClick",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "component-function.tsx > ButtonProps > disabled",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "component-function.tsx > Button",
+      "nodeKind": "const",
+      "hasCollapsedChildren": true,
+      "isLeaf": true,
+      "lineCount": 26,
+      "relevantImports": [
+        "import React, { useState, useEffect, useMemo } from 'react'"
+      ]
+    },
+    {
+      "breadcrumb": "component-function.tsx > Button > [clicked, setClicked]",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": [
+        "import React, { useState, useEffect, useMemo } from 'react'"
+      ]
+    },
+    {
+      "breadcrumb": "component-function.tsx > Button > className",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": [
+        "import React, { useState, useEffect, useMemo } from 'react'"
+      ]
+    },
+    {
+      "breadcrumb": "component-function.tsx > Button > handleClick",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 4,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "component-function.tsx > (default)",
+      "nodeKind": "variable",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 10,
+    "maxDepth": 1,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

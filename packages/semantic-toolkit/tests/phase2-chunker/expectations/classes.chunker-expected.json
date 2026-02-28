@@ -1,0 +1,106 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "classes.ts > BaseService",
+      "nodeKind": "class",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 10,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "classes.ts > BaseService > name",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "classes.ts > BaseService > constructor",
+      "nodeKind": "constructor",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "classes.ts > BaseService > process",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "classes.ts > UserService",
+      "nodeKind": "class",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 27,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "classes.ts > UserService > users",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "classes.ts > UserService > VERSION",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "classes.ts > UserService > constructor",
+      "nodeKind": "constructor",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "classes.ts > UserService > process",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 5,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "classes.ts > UserService > count",
+      "nodeKind": "getter",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "classes.ts > UserService > count",
+      "nodeKind": "setter",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "classes.ts > UserService > create",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 12,
+    "maxDepth": 1,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

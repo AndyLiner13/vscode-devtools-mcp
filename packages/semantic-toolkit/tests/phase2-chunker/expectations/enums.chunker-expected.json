@@ -1,0 +1,154 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "enums.ts > Direction",
+      "nodeKind": "enum",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 6,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "enums.ts > Direction > Up",
+      "nodeKind": "enumMember",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "enums.ts > Direction > Down",
+      "nodeKind": "enumMember",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "enums.ts > Direction > Left",
+      "nodeKind": "enumMember",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "enums.ts > Direction > Right",
+      "nodeKind": "enumMember",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "enums.ts > Color",
+      "nodeKind": "enum",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 5,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "enums.ts > Color > Red",
+      "nodeKind": "enumMember",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "enums.ts > Color > Green",
+      "nodeKind": "enumMember",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "enums.ts > Color > Blue",
+      "nodeKind": "enumMember",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "enums.ts > HttpStatus",
+      "nodeKind": "enum",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 5,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "enums.ts > HttpStatus > OK",
+      "nodeKind": "enumMember",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "enums.ts > HttpStatus > NotFound",
+      "nodeKind": "enumMember",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "enums.ts > HttpStatus > ServerError",
+      "nodeKind": "enumMember",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "enums.ts > BitFlag",
+      "nodeKind": "enum",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 6,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "enums.ts > BitFlag > None",
+      "nodeKind": "enumMember",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "enums.ts > BitFlag > Read",
+      "nodeKind": "enumMember",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "enums.ts > BitFlag > Write",
+      "nodeKind": "enumMember",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "enums.ts > BitFlag > Execute",
+      "nodeKind": "enumMember",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 18,
+    "maxDepth": 1,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

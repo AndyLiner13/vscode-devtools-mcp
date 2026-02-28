@@ -1,0 +1,72 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "esm-specific.mts > import:node:fs/promises",
+      "nodeKind": "import",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "esm-specific.mts > import:node:url",
+      "nodeKind": "import",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "esm-specific.mts > __filename",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": [
+        "import { fileURLToPath } from 'node:url'"
+      ]
+    },
+    {
+      "breadcrumb": "esm-specific.mts > loadConfig",
+      "nodeKind": "function",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 4,
+      "relevantImports": [
+        "import { readFile } from 'node:fs/promises'"
+      ]
+    },
+    {
+      "breadcrumb": "esm-specific.mts > loadConfig > data",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": [
+        "import { readFile } from 'node:fs/promises'"
+      ]
+    },
+    {
+      "breadcrumb": "esm-specific.mts > re-export:node:fs/promises",
+      "nodeKind": "re-export",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "esm-specific.mts > (default)",
+      "nodeKind": "variable",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 7,
+    "maxDepth": 1,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

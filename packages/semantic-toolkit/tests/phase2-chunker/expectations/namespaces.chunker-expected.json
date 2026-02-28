@@ -1,0 +1,98 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "namespaces.ts > Validation",
+      "nodeKind": "namespace",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 18,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "namespaces.ts > Validation > Rule",
+      "nodeKind": "interface",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 4,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "namespaces.ts > Validation > Rule > name",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "namespaces.ts > Validation > Rule > validate",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "namespaces.ts > Validation > createRule",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "namespaces.ts > Validation > Errors",
+      "nodeKind": "namespace",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 7,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "namespaces.ts > Validation > Errors > ValidationError",
+      "nodeKind": "class",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 5,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "namespaces.ts > Validation > Errors > ValidationError > constructor",
+      "nodeKind": "constructor",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "namespaces.ts > 'express'",
+      "nodeKind": "module",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 5,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "namespaces.ts > 'express' > Request",
+      "nodeKind": "interface",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "namespaces.ts > 'express' > Request > userId",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 11,
+    "maxDepth": 3,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

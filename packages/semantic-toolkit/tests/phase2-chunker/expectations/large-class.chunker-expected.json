@@ -1,0 +1,210 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "large-class.ts > LargeService",
+      "nodeKind": "class",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 32,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > data",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > constructor",
+      "nodeKind": "constructor",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method01",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method02",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method03",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method04",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method05",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method06",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method07",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method08",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method09",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method10",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method11",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method12",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method13",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method14",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method15",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method16",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method17",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method18",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method19",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > method20",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > size",
+      "nodeKind": "getter",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "large-class.ts > LargeService > create",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 25,
+    "maxDepth": 1,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "types.ts > ID",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "types.ts > Result",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "types.ts > Nullable",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "types.ts > Keys",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "types.ts > ReadonlyRecord",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "types.ts > EventName",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "types.ts > InferArray",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 7,
+    "maxDepth": 0,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

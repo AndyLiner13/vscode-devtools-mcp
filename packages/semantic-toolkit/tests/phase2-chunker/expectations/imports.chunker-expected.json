@@ -1,0 +1,82 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "imports.ts > import:node:fs",
+      "nodeKind": "import",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "imports.ts > import:node:path",
+      "nodeKind": "import",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "imports.ts > import:node:crypto",
+      "nodeKind": "import",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "imports.ts > import:./types",
+      "nodeKind": "import",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "imports.ts > import:reflect-metadata",
+      "nodeKind": "import",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "imports.ts > re-export:node:path",
+      "nodeKind": "re-export",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "imports.ts > re-export:./types",
+      "nodeKind": "re-export",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "imports.ts > re-export:./helpers",
+      "nodeKind": "re-export",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "imports.ts > re-export:./utils",
+      "nodeKind": "re-export",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 9,
+    "maxDepth": 0,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

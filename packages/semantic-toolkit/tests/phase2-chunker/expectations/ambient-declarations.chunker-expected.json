@@ -1,0 +1,170 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "ambient-declarations.ts > 'express'",
+      "nodeKind": "module",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 6,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > 'express' > Request",
+      "nodeKind": "interface",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 4,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > 'express' > Request > userId",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > 'express' > Request > sessionId",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > '*.svg'",
+      "nodeKind": "module",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 4,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > '*.svg' > content",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > '*.svg' > (default)",
+      "nodeKind": "variable",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > global",
+      "nodeKind": "module",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 7,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > global > Window",
+      "nodeKind": "interface",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > global > Window > __APP_VERSION__",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > global > __DEV_LOG__",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > NodeJS",
+      "nodeKind": "namespace",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 6,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > NodeJS > ProcessEnv",
+      "nodeKind": "interface",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 4,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > NodeJS > ProcessEnv > NODE_ENV",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > NodeJS > ProcessEnv > PORT",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > ExternalLib",
+      "nodeKind": "class",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 4,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > ExternalLib > constructor",
+      "nodeKind": "constructor",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > ExternalLib > init",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > fetchData",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "ambient-declarations.ts > API_BASE",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 20,
+    "maxDepth": 2,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

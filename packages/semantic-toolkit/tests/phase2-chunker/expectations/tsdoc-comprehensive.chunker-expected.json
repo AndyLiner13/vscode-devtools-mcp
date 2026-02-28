@@ -1,0 +1,234 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > LogLevel",
+      "nodeKind": "enum",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 25,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > LogLevel > Debug",
+      "nodeKind": "enumMember",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 2,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > LogLevel > Info",
+      "nodeKind": "enumMember",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 2,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > LogLevel > Warn",
+      "nodeKind": "enumMember",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 2,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > LogLevel > Error",
+      "nodeKind": "enumMember",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 2,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > LogConfig",
+      "nodeKind": "interface",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 26,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > LogConfig > level",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 2,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > LogConfig > prefix",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 2,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > LogConfig > timestamp",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 2,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > LogEvent",
+      "nodeKind": "interface",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 18,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > LogEvent > level",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 2,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > LogEvent > message",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 2,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > LogEvent > data",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 2,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > LogEvent > timestamp",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 2,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > ExtractEventData",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 7,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > Logger",
+      "nodeKind": "class",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 144,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > Logger > config",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 6,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > Logger > totalEntries",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 10,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > Logger > constructor",
+      "nodeKind": "constructor",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 11,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > Logger > log",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 23,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > Logger > info",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 12,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > Logger > error",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 12,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > Logger > child",
+      "nodeKind": "method",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 18,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > Logger > child > combinedPrefix",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > Logger > format",
+      "nodeKind": "method",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 15,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > Logger > format > parts",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > createDevLogger",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 27,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "tsdoc-comprehensive.ts > isLogEvent",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 17,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 28,
+    "maxDepth": 2,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

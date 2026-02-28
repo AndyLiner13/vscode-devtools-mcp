@@ -1,0 +1,82 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "as-const-satisfies.ts > DIRECTIONS",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "as-const-satisfies.ts > CONFIG",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 5,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "as-const-satisfies.ts > Theme",
+      "nodeKind": "interface",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 5,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "as-const-satisfies.ts > Theme > primary",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "as-const-satisfies.ts > Theme > secondary",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "as-const-satisfies.ts > Theme > fontSize",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "as-const-satisfies.ts > darkTheme",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 5,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "as-const-satisfies.ts > lightTheme",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 5,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "as-const-satisfies.ts > Direction",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 9,
+    "maxDepth": 1,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

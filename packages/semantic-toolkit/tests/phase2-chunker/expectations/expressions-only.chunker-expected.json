@@ -1,0 +1,42 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "expressions-only.ts > expr:console.log('initializing');",
+      "nodeKind": "expression",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "expressions-only.ts > expr:process.env.NODE_ENV = 'production';",
+      "nodeKind": "expression",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "expressions-only.ts > expr:void Promise.resolve();",
+      "nodeKind": "expression",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "expressions-only.ts > expr:(function setup() { return true; })();",
+      "nodeKind": "expression",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 4,
+    "maxDepth": 0,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

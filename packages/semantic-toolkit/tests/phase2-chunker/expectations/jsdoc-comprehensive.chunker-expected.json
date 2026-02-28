@@ -1,0 +1,210 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > MAX_RETRIES",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 16,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > Status",
+      "nodeKind": "const",
+      "hasCollapsedChildren": true,
+      "isLeaf": true,
+      "lineCount": 29,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > Status > ACTIVE",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 2,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > Status > INACTIVE",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 2,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > Status > DISABLED",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 2,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > fetchData",
+      "nodeKind": "function",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 30,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > fetchData > { method = 'GET', headers = {}, timeout = 5000 }",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > DataBox",
+      "nodeKind": "class",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 87,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > DataBox > #value",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 6,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > DataBox > count",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 7,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > DataBox > constructor",
+      "nodeKind": "constructor",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 13,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > DataBox > getValue",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 8,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > DataBox > map",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 10,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > DataBox > equals",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 9,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > DataBox > get",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 7,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > DataBox > [Symbol.iterator]",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 7,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > Serializable",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 17,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > MathUtils",
+      "nodeKind": "const",
+      "hasCollapsedChildren": true,
+      "isLeaf": true,
+      "lineCount": 24,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > MathUtils > add",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 10,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > MathUtils > PI",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 7,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > onEvent",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 11,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > formatName",
+      "nodeKind": "function",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 14,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > formatName > name",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > APP_NAME",
+      "nodeKind": "variable",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 5,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "jsdoc-comprehensive.js > module.exports",
+      "nodeKind": "variable",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 25,
+    "maxDepth": 1,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "template-literal-types.ts > EventName",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "template-literal-types.ts > CssProperty",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "template-literal-types.ts > HttpMethod",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "template-literal-types.ts > ApiRoute",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "template-literal-types.ts > Endpoint",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "template-literal-types.ts > Color",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "template-literal-types.ts > Size",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "template-literal-types.ts > Variant",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "template-literal-types.ts > PropKey",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "template-literal-types.ts > Split",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "template-literal-types.ts > Join",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 7,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "template-literal-types.ts > DotPath",
+      "nodeKind": "type",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 7,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 12,
+    "maxDepth": 0,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

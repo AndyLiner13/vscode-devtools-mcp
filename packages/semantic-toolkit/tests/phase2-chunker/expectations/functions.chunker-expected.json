@@ -1,0 +1,66 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "functions.ts > greet",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 4,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "functions.ts > fetchUser",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 5,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "functions.ts > range",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 6,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "functions.ts > main",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 4,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "functions.ts > outer",
+      "nodeKind": "function",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 7,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "functions.ts > outer > inner",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "functions.ts > merge",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 4,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 7,
+    "maxDepth": 1,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

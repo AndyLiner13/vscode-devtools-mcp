@@ -1,0 +1,9 @@
+{
+  "chunks": [],
+  "stats": {
+    "totalChunks": 0,
+    "maxDepth": -1,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "nesting-deep.ts > level0",
+      "nodeKind": "function",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 12,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "nesting-deep.ts > level0 > level1",
+      "nodeKind": "function",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 9,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "nesting-deep.ts > level0 > level1 > level2",
+      "nodeKind": "function",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 6,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "nesting-deep.ts > level0 > level1 > level2 > level3",
+      "nodeKind": "function",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 4,
+    "maxDepth": 3,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

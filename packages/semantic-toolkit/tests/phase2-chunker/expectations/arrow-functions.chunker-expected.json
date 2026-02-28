@@ -1,0 +1,74 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "arrow-functions.ts > greet",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "arrow-functions.ts > fetchData",
+      "nodeKind": "const",
+      "hasCollapsedChildren": true,
+      "isLeaf": true,
+      "lineCount": 4,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "arrow-functions.ts > fetchData > result",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "arrow-functions.ts > identity",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "arrow-functions.ts > createPair",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 4,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "arrow-functions.ts > handleEvent",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "arrow-functions.ts > multiLine",
+      "nodeKind": "const",
+      "hasCollapsedChildren": true,
+      "isLeaf": true,
+      "lineCount": 8,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "arrow-functions.ts > multiLine > parts",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 8,
+    "maxDepth": 1,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

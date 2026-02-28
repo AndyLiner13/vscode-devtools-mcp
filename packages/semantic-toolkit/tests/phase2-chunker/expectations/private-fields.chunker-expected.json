@@ -1,0 +1,82 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "private-fields.ts > Wallet",
+      "nodeKind": "class",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 29,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "private-fields.ts > Wallet > #balance",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "private-fields.ts > Wallet > #owner",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "private-fields.ts > Wallet > #instanceCount",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "private-fields.ts > Wallet > constructor",
+      "nodeKind": "constructor",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 5,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "private-fields.ts > Wallet > balance",
+      "nodeKind": "getter",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "private-fields.ts > Wallet > #validate",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "private-fields.ts > Wallet > withdraw",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 5,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "private-fields.ts > Wallet > count",
+      "nodeKind": "getter",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 9,
+    "maxDepth": 1,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

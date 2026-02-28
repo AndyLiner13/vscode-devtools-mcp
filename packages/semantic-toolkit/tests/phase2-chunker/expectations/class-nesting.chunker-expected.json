@@ -1,0 +1,66 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "class-nesting.ts > EventEmitter",
+      "nodeKind": "class",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 29,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "class-nesting.ts > EventEmitter > handlers",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "class-nesting.ts > EventEmitter > on",
+      "nodeKind": "method",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 5,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "class-nesting.ts > EventEmitter > on > existing",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "class-nesting.ts > EventEmitter > emit",
+      "nodeKind": "method",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 11,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "class-nesting.ts > EventEmitter > emit > handlers",
+      "nodeKind": "const",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "class-nesting.ts > EventEmitter > createScoped",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 7,
+      "relevantImports": []
+    }
+  ],
+  "stats": {
+    "totalChunks": 7,
+    "maxDepth": 2,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

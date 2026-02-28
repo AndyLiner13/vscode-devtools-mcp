@@ -13,3 +13,7 @@ export type {
 	ParsedSymbol,
 	SymbolRange,
 } from './parser/index';
+
+export { chunkFile } from './chunker/index';
+
+export type { CodeChunk, ChunkedFile } from './chunker/types';

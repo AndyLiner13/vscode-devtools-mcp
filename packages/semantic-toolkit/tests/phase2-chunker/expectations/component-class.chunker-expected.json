@@ -1,0 +1,102 @@
+{
+  "chunks": [
+    {
+      "breadcrumb": "component-class.tsx > import:react",
+      "nodeKind": "import",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "component-class.tsx > CounterProps",
+      "nodeKind": "interface",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "component-class.tsx > CounterProps > initial",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "component-class.tsx > CounterState",
+      "nodeKind": "interface",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "component-class.tsx > CounterState > count",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "component-class.tsx > Counter",
+      "nodeKind": "class",
+      "hasCollapsedChildren": true,
+      "isLeaf": false,
+      "lineCount": 22,
+      "relevantImports": [
+        "import React from 'react'"
+      ]
+    },
+    {
+      "breadcrumb": "component-class.tsx > Counter > defaultProps",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "component-class.tsx > Counter > state",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 1,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "component-class.tsx > Counter > componentDidMount",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "component-class.tsx > Counter > increment",
+      "nodeKind": "property",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 3,
+      "relevantImports": []
+    },
+    {
+      "breadcrumb": "component-class.tsx > Counter > render",
+      "nodeKind": "method",
+      "hasCollapsedChildren": false,
+      "isLeaf": true,
+      "lineCount": 8,
+      "relevantImports": [
+        "import React from 'react'"
+      ]
+    }
+  ],
+  "stats": {
+    "totalChunks": 11,
+    "maxDepth": 1,
+    "allChunksUnder32K": true,
+    "fullCoverage": true
+  }
+}

@@ -1,16 +1,17 @@
 /**
  * Generate .expected.json for fixture files that don't have one yet.
- * Run from semantic-toolkit root: npx tsx tests/generate-expected.ts
+ * Run from semantic-toolkit root: npx tsx tests/phase1-parser/generate-expected.ts
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseSource } from '../src/parser/index';
-import type { ParsedSymbol } from '../src/parser/types';
+import { parseSource } from '../../src/parser/index';
+import type { ParsedSymbol } from '../../src/parser/types';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const FIXTURES_DIR = path.join(__dirname, 'fixtures');
+const FIXTURES_DIR = path.join(__dirname, '..', 'fixtures');
+const EXPECTATIONS_DIR = path.join(__dirname, 'expectations');
 
 interface ExpectedSymbol {
 	name: string;
@@ -50,16 +51,16 @@ function flattenSymbols(symbols: ParsedSymbol[]): ParsedSymbol[] {
 	return flat;
 }
 
-const files = fs.readdirSync(FIXTURES_DIR);
+const codeFiles = fs.readdirSync(FIXTURES_DIR);
+const existingExpected = new Set(fs.readdirSync(EXPECTATIONS_DIR));
 const newFixtures: string[] = [];
 
-for (const file of files) {
-	if (file.endsWith('.expected.json')) continue;
+for (const file of codeFiles) {
 	const ext = path.extname(file);
 	if (!['.ts', '.tsx', '.js', '.jsx', '.mts', '.mjs', '.cts', '.cjs'].includes(ext)) continue;
 
 	const expectedFile = file.replace(/\.[^.]+$/, '.expected.json');
-	if (files.includes(expectedFile)) continue;
+	if (existingExpected.has(expectedFile)) continue;
 
 	newFixtures.push(file);
 }
@@ -73,7 +74,7 @@ console.log(`Generating expected JSON for ${newFixtures.length} fixture(s):`);
 
 for (const file of newFixtures) {
 	const codePath = path.join(FIXTURES_DIR, file);
-	const expectedPath = path.join(FIXTURES_DIR, file.replace(/\.[^.]+$/, '.expected.json'));
+	const expectedPath = path.join(EXPECTATIONS_DIR, file.replace(/\.[^.]+$/, '.expected.json'));
 	const source = fs.readFileSync(codePath, 'utf-8');
 
 	const parsed = parseSource(source, codePath, FIXTURES_DIR);

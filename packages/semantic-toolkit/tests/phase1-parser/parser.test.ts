@@ -2,10 +2,11 @@ import { describe, it, expect } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-import { parseSource } from '../src/parser/index';
-import type { ParsedFile, ParsedSymbol } from '../src/parser/types';
+import { parseSource } from '../../src/parser/index';
+import type { ParsedFile, ParsedSymbol } from '../../src/parser/types';
 
-const FIXTURES_DIR = path.join(__dirname, 'fixtures');
+const FIXTURES_DIR = path.join(__dirname, '..', 'fixtures');
+const EXPECTATIONS_DIR = path.join(__dirname, 'expectations');
 
 interface ExpectedSymbol {
 	name: string;
@@ -36,21 +37,21 @@ interface FixtureExpectation {
 	stats: ExpectedStats;
 }
 
-// Glob fixture pairs: code file + .expected.json
+// Discover fixture pairs: source code in FIXTURES_DIR + expectations in EXPECTATIONS_DIR
 function discoverFixtures(): Array<{ name: string; codePath: string; expectedPath: string }> {
-	if (!fs.existsSync(FIXTURES_DIR)) return [];
+	if (!fs.existsSync(FIXTURES_DIR) || !fs.existsSync(EXPECTATIONS_DIR)) return [];
 
-	const files = fs.readdirSync(FIXTURES_DIR);
+	const codeFiles = fs.readdirSync(FIXTURES_DIR);
+	const expectedFiles = fs.readdirSync(EXPECTATIONS_DIR);
 	const fixtures: Array<{ name: string; codePath: string; expectedPath: string }> = [];
 
-	for (const file of files) {
-		if (file.endsWith('.expected.json')) continue;
+	for (const file of codeFiles) {
 		const expectedFile = file.replace(/\.[^.]+$/, '.expected.json');
-		if (files.includes(expectedFile)) {
+		if (expectedFiles.includes(expectedFile)) {
 			fixtures.push({
 				name: file,
 				codePath: path.join(FIXTURES_DIR, file),
-				expectedPath: path.join(FIXTURES_DIR, expectedFile),
+				expectedPath: path.join(EXPECTATIONS_DIR, expectedFile),
 			});
 		}
 	}
