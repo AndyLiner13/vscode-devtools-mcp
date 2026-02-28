@@ -15,7 +15,7 @@ import type {
 	NewExpression,
 	Identifier,
 } from 'ts-morph';
-import * as path from 'node:path';
+import { toRelativePosixPath } from './paths';
 
 import type {
 	TsLsConfig,
@@ -134,7 +134,7 @@ function findCallableDeclaration(
 function buildSymbolRef(declaration: ResolvableDeclaration, workspaceRoot: string): SymbolRef {
 	const sourceFile = declaration.getSourceFile();
 	const absolutePath = sourceFile.getFilePath();
-	const relativePath = path.relative(workspaceRoot, absolutePath).replace(/\\/g, '/');
+	const relativePath = toRelativePosixPath(workspaceRoot, absolutePath);
 
 	let name: string;
 	if (Node.isConstructorDeclaration(declaration)) {

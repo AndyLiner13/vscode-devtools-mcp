@@ -11,7 +11,7 @@ import type {
 	InterfaceDeclaration,
 	ExpressionWithTypeArguments,
 } from 'ts-morph';
-import * as path from 'node:path';
+import { toRelativePosixPath } from './paths';
 
 import type { SymbolRef, TypeHierarchy, TypeParameter } from './types';
 
@@ -249,7 +249,7 @@ function buildTypeSymbolRef(
 ): SymbolRef {
 	const sourceFile = declaration.getSourceFile();
 	const absolutePath = sourceFile.getFilePath();
-	const relativePath = path.relative(workspaceRoot, absolutePath).replace(/\\/g, '/');
+	const relativePath = toRelativePosixPath(workspaceRoot, absolutePath);
 	const name = declaration.getName() ?? '<anonymous>';
 
 	const ref: SymbolRef = { name, filePath: relativePath, line: declaration.getStartLineNumber() };

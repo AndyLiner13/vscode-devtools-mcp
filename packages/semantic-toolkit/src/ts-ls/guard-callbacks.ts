@@ -14,7 +14,7 @@ import type {
 	MethodDeclaration,
 	CallExpression,
 } from 'ts-morph';
-import * as path from 'node:path';
+import { toRelativePosixPath } from './paths';
 
 import type {
 	SymbolRef,
@@ -61,7 +61,7 @@ export function resolveGuardCallbacks(
 		);
 	}
 
-	const relativePath = path.relative(workspaceRoot, filePath).replace(/\\/g, '/');
+	const relativePath = toRelativePosixPath(workspaceRoot, filePath);
 	const symbol: SymbolRef = {
 		name: symbolName,
 		filePath: relativePath,
@@ -198,7 +198,7 @@ function classifyAsGuardCallback(
 	const calledBy = extractCallName(callExpr);
 	if (!calledBy) return undefined;
 
-	const relativePath = path.relative(workspaceRoot, refFilePath).replace(/\\/g, '/');
+	const relativePath = toRelativePosixPath(workspaceRoot, refFilePath);
 
 	// Determine input and narrowed output types
 	const { inputType, narrowedOutputType } = resolveNarrowingTypes(parent, calledBy, predicate);

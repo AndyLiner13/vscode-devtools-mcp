@@ -10,7 +10,7 @@
  */
 import { Project, Node, SyntaxKind } from 'ts-morph';
 import type { SourceFile } from 'ts-morph';
-import * as path from 'node:path';
+import { toRelativePosixPath } from './paths';
 import { confusablesMap } from 'confusables';
 
 import type {
@@ -28,28 +28,16 @@ export type {
 } from './types';
 
 // ---------------------------------------------------------------------------
-// Bidi override and zero-width character sets
+// Bidi override and zero-width detection via Unicode property escapes.
+// Uses the V8 engine's built-in Unicode Character Database.
 // ---------------------------------------------------------------------------
 
-const BIDI_OVERRIDES = new Set([
-	0x202A, // LEFT-TO-RIGHT EMBEDDING
-	0x202B, // RIGHT-TO-LEFT EMBEDDING
-	0x202C, // POP DIRECTIONAL FORMATTING
-	0x202D, // LEFT-TO-RIGHT OVERRIDE
-	0x202E, // RIGHT-TO-LEFT OVERRIDE
-	0x2066, // LEFT-TO-RIGHT ISOLATE
-	0x2067, // RIGHT-TO-LEFT ISOLATE
-	0x2068, // FIRST STRONG ISOLATE
-	0x2069, // POP DIRECTIONAL ISOLATE
-]);
+// Bidi control characters (U+202A–U+202E, U+2066–U+2069, etc.)
+const BIDI_CONTROL_RE = /\p{Bidi_Control}/u;
 
-const ZERO_WIDTH_CHARS = new Set([
-	0x200B, // ZERO WIDTH SPACE
-	0x200C, // ZERO WIDTH NON-JOINER
-	0x200D, // ZERO WIDTH JOINER
-	0x2060, // WORD JOINER
-	0xFEFF, // ZERO WIDTH NO-BREAK SPACE (BOM)
-]);
+// Zero-width and invisible characters (ZWJ, ZWNJ, ZWSP, Word Joiner, BOM, etc.)
+// Default_Ignorable_Code_Point includes all invisible formatting characters.
+const ZERO_WIDTH_RE = /[\u200B-\u200D\u2060\uFEFF]/u;
 
 // ---------------------------------------------------------------------------
 // Confusable detection uses the `confusables` npm package which provides
@@ -127,19 +115,11 @@ function normalizeNFC(name: string): string {
 // ---------------------------------------------------------------------------
 
 function containsBidi(name: string): boolean {
-	for (const char of name) {
-		const cp = char.codePointAt(0);
-		if (cp !== undefined && BIDI_OVERRIDES.has(cp)) return true;
-	}
-	return false;
+	return BIDI_CONTROL_RE.test(name);
 }
 
 function containsZeroWidth(name: string): boolean {
-	for (const char of name) {
-		const cp = char.codePointAt(0);
-		if (cp !== undefined && ZERO_WIDTH_CHARS.has(cp)) return true;
-	}
-	return false;
+	return ZERO_WIDTH_RE.test(name);
 }
 
 // ---------------------------------------------------------------------------
@@ -362,7 +342,7 @@ export function resolveUnicodeIdentifiers(
 	workspaceRoot: string,
 ): UnicodeIdentifierAnalysis {
 	const sourceFile = project.getSourceFileOrThrow(filePath);
-	const relativePath = path.relative(workspaceRoot, filePath).replace(/\\/g, '/');
+	const relativePath = toRelativePosixPath(workspaceRoot, filePath);
 
 	const allIdentifiers = collectAllIdentifiers(sourceFile);
 

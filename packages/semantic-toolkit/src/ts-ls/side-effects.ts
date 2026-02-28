@@ -10,7 +10,7 @@
  */
 import { Project, Node, SyntaxKind } from 'ts-morph';
 import type { SourceFile, Statement, Expression } from 'ts-morph';
-import * as path from 'node:path';
+import { toRelativePosixPath } from './paths';
 
 import type {
 	SideEffectKind,
@@ -43,7 +43,7 @@ export function resolveSideEffects(
 	workspaceRoot: string,
 ): SideEffectAnalysis {
 	const sourceFile = project.getSourceFileOrThrow(filePath);
-	const relativePath = path.relative(workspaceRoot, filePath).replace(/\\/g, '/');
+	const relativePath = toRelativePosixPath(workspaceRoot, filePath);
 
 	const effects: SideEffectEntry[] = [];
 

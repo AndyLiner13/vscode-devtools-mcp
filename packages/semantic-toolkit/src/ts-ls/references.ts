@@ -6,7 +6,7 @@
  */
 import { Project, Node } from 'ts-morph';
 import type { SourceFile } from 'ts-morph';
-import * as path from 'node:path';
+import { toRelativePosixPath } from './paths';
 
 import type { References, FileReference } from './types';
 
@@ -69,7 +69,7 @@ export function resolveReferences(
 	const sortedEntries = [...fileMap.entries()].sort(([a], [b]) => a.localeCompare(b));
 
 	for (const [, { absolutePath, lines }] of sortedEntries) {
-		const relativePath = path.relative(workspaceRoot, absolutePath).replace(/\\/g, '/');
+		const relativePath = toRelativePosixPath(workspaceRoot, absolutePath);
 		const sortedLines = [...lines].sort((a, b) => a - b);
 		files.push({ filePath: relativePath, lines: sortedLines });
 		totalCount += sortedLines.length;

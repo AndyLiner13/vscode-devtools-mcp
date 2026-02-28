@@ -14,7 +14,7 @@ import type {
 	ParameterDeclaration,
 	CallExpression,
 } from 'ts-morph';
-import * as path from 'node:path';
+import { toRelativePosixPath } from './paths';
 
 import type {
 	SymbolRef,
@@ -58,7 +58,7 @@ export function resolveCallbacks(
 		);
 	}
 
-	const relativePath = path.relative(workspaceRoot, filePath).replace(/\\/g, '/');
+	const relativePath = toRelativePosixPath(workspaceRoot, filePath);
 	const symbol: SymbolRef = {
 		name: symbolName,
 		filePath: relativePath,
@@ -184,7 +184,7 @@ function classifyAsCallback(
 	// Now check if `current` is a direct argument to a call
 	const directResult = findCallExpressionParent(current);
 	if (directResult) {
-		const relativePath = path.relative(workspaceRoot, refFilePath).replace(/\\/g, '/');
+		const relativePath = toRelativePosixPath(workspaceRoot, refFilePath);
 		return {
 			callbackName: symbolName,
 			calledBy: directResult.calledBy,

@@ -16,7 +16,7 @@ import type {
 	Symbol as TsMorphSymbol,
 	ImportSpecifier,
 } from 'ts-morph';
-import * as path from 'node:path';
+import { toRelativePosixPath } from './paths';
 
 import type { SymbolRef, TypeFlow, TypeFlowParam, TypeFlowType } from './types';
 
@@ -116,7 +116,7 @@ function buildSymbolRef(
 	workspaceRoot: string,
 ): SymbolRef {
 	const absPath = declaration.getSourceFile().getFilePath();
-	const relativePath = path.relative(workspaceRoot, absPath).replace(/\\/g, '/');
+	const relativePath = toRelativePosixPath(workspaceRoot, absPath);
 	return {
 		name: symbolName,
 		filePath: relativePath,
@@ -240,7 +240,7 @@ function extractImmediateTypeNames(
 		if (visited.has(visitKey)) continue;
 		visited.add(visitKey);
 
-		const relativePath = path.relative(workspaceRoot, declFile).replace(/\\/g, '/');
+		const relativePath = toRelativePosixPath(workspaceRoot, declFile);
 		results.push({ name, filePath: relativePath, line: declLine });
 	}
 }
@@ -325,7 +325,7 @@ function extractTypesFromType(
 					const visitKey = `${declFile}:${declLine}`;
 					if (!visited.has(visitKey)) {
 						visited.add(visitKey);
-						const relativePath = path.relative(workspaceRoot, declFile).replace(/\\/g, '/');
+						const relativePath = toRelativePosixPath(workspaceRoot, declFile);
 						results.push({ name: enumName, filePath: relativePath, line: declLine });
 					}
 				}
@@ -439,7 +439,7 @@ function tryResolveSymbolFromType(
 	if (visited.has(visitKey)) return;
 	visited.add(visitKey);
 
-	const relativePath = path.relative(workspaceRoot, declFile).replace(/\\/g, '/');
+	const relativePath = toRelativePosixPath(workspaceRoot, declFile);
 	results.push({ name: symbolName, filePath: relativePath, line: declLine });
 }
 

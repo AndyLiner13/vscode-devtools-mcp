@@ -8,7 +8,7 @@
  */
 import { Project, SyntaxKind } from 'ts-morph';
 import type { SourceFile, ModuleDeclaration, Node } from 'ts-morph';
-import * as path from 'node:path';
+import { toRelativePosixPath } from './paths';
 
 import type {
 	AmbientInfo,
@@ -308,5 +308,5 @@ function buildVariableSignature(decl: Node & { getName(): string }): string {
 // ---------------------------------------------------------------------------
 
 function toRelative(absolutePath: string, workspaceRoot: string): string {
-	return path.relative(workspaceRoot, absolutePath).replace(/\\/g, '/');
+	return toRelativePosixPath(workspaceRoot, absolutePath);
 }

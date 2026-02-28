@@ -6,7 +6,7 @@
  */
 import { Project, Node, SyntaxKind } from 'ts-morph';
 import type { SourceFile, EnumDeclaration, EnumMember } from 'ts-morph';
-import * as path from 'node:path';
+import { toRelativePosixPath } from './paths';
 
 import type {
 	SymbolRef,
@@ -46,7 +46,7 @@ export function resolveEnumMembers(
 		);
 	}
 
-	const relativePath = path.relative(workspaceRoot, filePath).replace(/\\/g, '/');
+	const relativePath = toRelativePosixPath(workspaceRoot, filePath);
 	const symbol: SymbolRef = {
 		name: enumName,
 		filePath: relativePath,

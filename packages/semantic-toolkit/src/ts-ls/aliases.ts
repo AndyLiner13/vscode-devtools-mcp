@@ -14,7 +14,7 @@ import type {
 	ExportSpecifier,
 	ImportEqualsDeclaration,
 } from 'ts-morph';
-import * as path from 'node:path';
+import { toRelativePosixPath } from './paths';
 
 import type { SymbolRef, AliasGraph, AliasEntry, AliasKind, AliasChain, AliasHop } from './types';
 
@@ -528,5 +528,5 @@ function findNamedDeclaration(
 }
 
 function toRelative(absolutePath: string, workspaceRoot: string): string {
-	return path.relative(workspaceRoot, absolutePath).replace(/\\/g, '/');
+	return toRelativePosixPath(workspaceRoot, absolutePath);
 }

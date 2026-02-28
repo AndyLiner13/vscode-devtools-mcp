@@ -7,7 +7,7 @@
  */
 import { Project, Node, SyntaxKind } from 'ts-morph';
 import type { SourceFile, TypeAliasDeclaration } from 'ts-morph';
-import * as path from 'node:path';
+import { toPosixPath, toRelativePosixPath } from './paths';
 
 import type {
 	SymbolRef,
@@ -42,7 +42,7 @@ export type {
  * Matches paths like `.../typescript/lib/lib.es5.d.ts`.
  */
 function isTypescriptLibFile(filePath: string): boolean {
-	const normalized = filePath.replace(/\\/g, '/');
+	const normalized = toPosixPath(filePath);
 	const segments = normalized.split('/');
 	const fileName = segments[segments.length - 1] ?? '';
 	if (!fileName.startsWith('lib.') || !fileName.endsWith('.d.ts')) return false;
@@ -99,7 +99,7 @@ export function resolveAdvancedTypes(
 		);
 	}
 
-	const relativePath = path.relative(workspaceRoot, filePath).replace(/\\/g, '/');
+	const relativePath = toRelativePosixPath(workspaceRoot, filePath);
 	const symbol: SymbolRef = {
 		name: symbolName,
 		filePath: relativePath,

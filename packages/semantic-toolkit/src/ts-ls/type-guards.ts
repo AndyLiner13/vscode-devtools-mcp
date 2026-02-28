@@ -21,7 +21,7 @@ import type {
 	VariableDeclaration,
 	Expression,
 } from 'ts-morph';
-import * as path from 'node:path';
+import { toRelativePosixPath } from './paths';
 
 import type { SymbolRef, TypeGuardEntry, TypeGuardAnalysis, TypeGuardKind } from './types';
 
@@ -55,7 +55,7 @@ export function resolveTypeGuards(
 		);
 	}
 
-	const relativePath = path.relative(workspaceRoot, filePath).replace(/\\/g, '/');
+	const relativePath = toRelativePosixPath(workspaceRoot, filePath);
 	const symbol: SymbolRef = {
 		name: symbolName,
 		filePath: relativePath,

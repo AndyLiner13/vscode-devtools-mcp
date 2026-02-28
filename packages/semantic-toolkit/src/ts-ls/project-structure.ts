@@ -7,6 +7,7 @@
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { toPosixPath, toRelativePosixPath } from './paths';
 import { Project } from 'ts-morph';
 import * as ts from 'typescript';
 
@@ -196,7 +197,7 @@ function isDirIgnored(dirName: string, dirRelative: string, rules: IgnoredDirRul
 
 	let ignored = false;
 	for (const rule of rules) {
-		const raw = rule.pattern.replace(/\\/g, '/');
+		const raw = toPosixPath(rule.pattern);
 		// Directory patterns end with /
 		const basePattern = raw.endsWith('/') ? raw.slice(0, -1) : raw;
 
@@ -207,7 +208,7 @@ function isDirIgnored(dirName: string, dirRelative: string, rules: IgnoredDirRul
 			}
 		} else {
 			// Path-based pattern — match against relative dir path
-			const normalized = dirRelative.replace(/\\/g, '/');
+			const normalized = toPosixPath(dirRelative);
 			if (normalized === basePattern || normalized.startsWith(basePattern + '/')) {
 				ignored = !rule.negated;
 			}
@@ -299,5 +300,5 @@ function buildReverseDependencyGraph(projects: ProjectInfo[]): Map<string, strin
 // ---------------------------------------------------------------------------
 
 function toRelative(absolutePath: string, workspaceRoot: string): string {
-	return path.relative(workspaceRoot, absolutePath).replace(/\\/g, '/');
+	return toRelativePosixPath(workspaceRoot, absolutePath);
 }
