@@ -102,6 +102,7 @@ function findCallable(
 
 // ---------------------------------------------------------------------------
 // Type predicate extraction from a function declaration
+// Uses TypePredicateNode API instead of regex parsing.
 // ---------------------------------------------------------------------------
 
 interface PredicateInfo {
@@ -113,26 +114,16 @@ function extractPredicate(declaration: CallableNode): PredicateInfo | undefined 
 	const returnTypeNode = declaration.getReturnTypeNode();
 	if (!returnTypeNode) return undefined;
 
-	const text = returnTypeNode.getText().trim();
+	if (!Node.isTypePredicate(returnTypeNode)) return undefined;
 
-	// `asserts x is T`
-	const assertsMatch = /^asserts\s+\w+\s+is\s+(.+)$/.exec(text);
-	if (assertsMatch) {
-		return { kind: 'asserts', type: assertsMatch[1].trim() };
-	}
+	const hasAsserts = returnTypeNode.hasAssertsModifier();
+	const typeNode = returnTypeNode.getTypeNode();
+	const predicateType = typeNode?.getText().trim() ?? 'unknown';
 
-	// `asserts x` (without target type — still an asserts predicate)
-	if (/^asserts\s+\w+$/.test(text)) {
-		return { kind: 'asserts', type: 'unknown' };
-	}
-
-	// `x is T`
-	const isMatch = /^\w+\s+is\s+(.+)$/.exec(text);
-	if (isMatch) {
-		return { kind: 'is', type: isMatch[1].trim() };
-	}
-
-	return undefined;
+	return {
+		kind: hasAsserts ? 'asserts' : 'is',
+		type: predicateType,
+	};
 }
 
 // ---------------------------------------------------------------------------
@@ -298,23 +289,20 @@ function resolveNarrowingTypes(
 
 /**
  * Extract the element type from an array-like type.
+ * Uses the TS type checker's type argument API rather than regex parsing.
  * e.g. `(User | Guest)[]` → `User | Guest`
  */
 function extractElementType(type: Type): string | undefined {
-	// Check array type argument
 	const typeArgs = type.getTypeArguments();
 	if (typeArgs.length > 0) {
 		return cleanTypeText(typeArgs[0].getText());
 	}
 
-	// Check Array<T> pattern
-	const text = type.getText();
-	const arrayMatch = /^Array<(.+)>$/.exec(text);
-	if (arrayMatch) return arrayMatch[1];
-
-	// Check T[] pattern
-	const bracketMatch = /^(.+)\[\]$/.exec(text);
-	if (bracketMatch) return bracketMatch[1];
+	// For tuple or other array-like types, check number index type
+	const numberIndexType = type.getNumberIndexType();
+	if (numberIndexType) {
+		return cleanTypeText(numberIndexType.getText());
+	}
 
 	return undefined;
 }
@@ -348,33 +336,16 @@ function findGuardHofParameters(declaration: CallableNode): GuardHofParameter[] 
 		let predicateType: string | undefined;
 
 		for (const sig of callSigs) {
-			const returnTypeText = sig.getReturnType().getText();
-			// ts-morph reports type predicates in the return type text
-			// Check the declaration's return type node for `is` predicate
+			// Use the TypePredicateNode API on the declaration's return type node
 			const sigDecl = sig.getDeclaration();
-			if (sigDecl) {
-				const retNode = 'getReturnTypeNode' in sigDecl
-					? (sigDecl as { getReturnTypeNode: () => Node | undefined }).getReturnTypeNode()
-					: undefined;
-				if (retNode) {
-					const retText = retNode.getText().trim();
-					const isMatch = /^\w+\s+is\s+(.+)$/.exec(retText);
-					if (isMatch) {
-						hasTypePredicate = true;
-						predicateType = isMatch[1].trim();
-						break;
-					}
+			if (sigDecl && 'getReturnTypeNode' in sigDecl) {
+				const retNode = (sigDecl as { getReturnTypeNode: () => Node | undefined }).getReturnTypeNode();
+				if (retNode && Node.isTypePredicate(retNode)) {
+					hasTypePredicate = true;
+					const predTypeNode = retNode.getTypeNode();
+					predicateType = predTypeNode?.getText().trim();
+					break;
 				}
-			}
-
-			// Fallback: check if the type text contains `is ` pattern
-			if (typeText.includes(' is ') && !typeText.startsWith('asserts')) {
-				hasTypePredicate = true;
-				const isMatch = /\)\s*=>\s*\w+\s+is\s+(\w+)/.exec(typeText);
-				if (isMatch) {
-					predicateType = isMatch[1];
-				}
-				break;
 			}
 		}
 

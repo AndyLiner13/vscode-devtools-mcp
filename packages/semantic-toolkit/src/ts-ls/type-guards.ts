@@ -107,6 +107,7 @@ function findCallable(
 
 // ---------------------------------------------------------------------------
 // Return type guard detection (x is T / asserts x is T)
+// Uses TypePredicateNode API instead of regex parsing.
 // ---------------------------------------------------------------------------
 
 function collectReturnTypeGuards(
@@ -116,44 +117,32 @@ function collectReturnTypeGuards(
 	const returnTypeNode = declaration.getReturnTypeNode();
 	if (!returnTypeNode) return;
 
-	const returnText = returnTypeNode.getText().trim();
-	const line = returnTypeNode.getStartLineNumber();
+	if (!Node.isTypePredicate(returnTypeNode)) return;
 
-	// "x is Type" pattern
-	const isMatch = returnText.match(/^(\w+)\s+is\s+(.+)$/);
-	if (isMatch) {
+	const line = returnTypeNode.getStartLineNumber();
+	const guardText = returnTypeNode.getText().trim();
+	const paramNameNode = returnTypeNode.getParameterNameNode();
+	const narrowedName = paramNameNode.getText();
+	const hasAsserts = returnTypeNode.hasAssertsModifier();
+	const typeNode = returnTypeNode.getTypeNode();
+	const narrowedTo = typeNode?.getText().trim();
+
+	if (hasAsserts) {
+		guards.push({
+			kind: 'assertion',
+			line,
+			guardText,
+			narrowedName,
+			narrowedTo,
+			isReturnTypeGuard: true,
+		});
+	} else {
 		guards.push({
 			kind: 'user-defined',
 			line,
-			guardText: returnText,
-			narrowedName: isMatch[1],
-			narrowedTo: isMatch[2].trim(),
-			isReturnTypeGuard: true,
-		});
-		return;
-	}
-
-	// "asserts x is Type" or "asserts x" pattern
-	const assertsIsMatch = returnText.match(/^asserts\s+(\w+)\s+is\s+(.+)$/);
-	if (assertsIsMatch) {
-		guards.push({
-			kind: 'assertion',
-			line,
-			guardText: returnText,
-			narrowedName: assertsIsMatch[1],
-			narrowedTo: assertsIsMatch[2].trim(),
-			isReturnTypeGuard: true,
-		});
-		return;
-	}
-
-	const assertsMatch = returnText.match(/^asserts\s+(\w+)$/);
-	if (assertsMatch) {
-		guards.push({
-			kind: 'assertion',
-			line,
-			guardText: returnText,
-			narrowedName: assertsMatch[1],
+			guardText,
+			narrowedName,
+			narrowedTo,
 			isReturnTypeGuard: true,
 		});
 	}
