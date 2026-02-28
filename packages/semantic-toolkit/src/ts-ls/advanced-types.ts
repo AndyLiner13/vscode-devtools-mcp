@@ -39,11 +39,15 @@ export type {
 /**
  * Check if a file path belongs to TypeScript's lib declaration files.
  * These contain built-in utility types like Partial, Required, Pick, etc.
+ * Matches paths like `.../typescript/lib/lib.es5.d.ts`.
  */
 function isTypescriptLibFile(filePath: string): boolean {
 	const normalized = filePath.replace(/\\/g, '/');
-	return /\/node_modules\/typescript\/lib\/lib\..*\.d\.ts$/.test(normalized) ||
-		/[/\\]lib\..*\.d\.ts$/.test(normalized) && normalized.includes('typescript');
+	const segments = normalized.split('/');
+	const fileName = segments[segments.length - 1] ?? '';
+	if (!fileName.startsWith('lib.') || !fileName.endsWith('.d.ts')) return false;
+	const libIndex = segments.lastIndexOf('lib');
+	return libIndex > 0 && segments[libIndex - 1] === 'typescript';
 }
 
 /**
@@ -170,15 +174,17 @@ function analyzeTypeNode(node: Node, maxDepth: number, currentDepth: number): Ad
 		return { kind: 'indexed-access', text };
 	}
 
-	// keyof T
+	// keyof T, readonly T[], unique symbol
 	if (node.getKind() === SyntaxKind.TypeOperator) {
-		const operatorText = node.getText().trim();
-		if (operatorText.startsWith('keyof')) {
-			return { kind: 'keyof', text: operatorText };
+		if (node.getFirstChildByKind(SyntaxKind.KeyOfKeyword)) {
+			return { kind: 'keyof', text };
 		}
-		if (operatorText.startsWith('typeof')) {
-			return { kind: 'typeof', text: operatorText };
-		}
+		return { kind: 'simple', text };
+	}
+
+	// typeof expr (in type position)
+	if (node.getKind() === SyntaxKind.TypeQuery) {
+		return { kind: 'typeof', text };
 	}
 
 	// Infer type: infer R

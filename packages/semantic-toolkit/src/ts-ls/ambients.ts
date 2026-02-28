@@ -103,9 +103,9 @@ function processModuleDeclaration(
 
 	// `declare module 'xxx' { ... }` or `declare module "xxx" { ... }`
 	// Module declarations with string literal names are module augmentations
-	const name = moduleDecl.getName();
-	if (name.startsWith("'") || name.startsWith('"')) {
-		const moduleName = name.slice(1, -1); // Strip quotes
+	const nameNode = moduleDecl.getNameNode();
+	if (nameNode.getKind() === SyntaxKind.StringLiteral) {
+		const moduleName = moduleDecl.getName().slice(1, -1);
 		const members = extractMembers(moduleDecl);
 		moduleAugs.push({
 			moduleName,
@@ -196,7 +196,7 @@ function collectAmbientDeclarations(
 	// Namespaces (non-global, non-module-augmentation)
 	for (const ns of sourceFile.getModules()) {
 		const name = ns.getName();
-		if (name === 'global' || name.startsWith("'") || name.startsWith('"')) continue;
+		if (ns.getDeclarationKind() === 'global' || ns.getNameNode().getKind() === SyntaxKind.StringLiteral) continue;
 		declarations.push({
 			name,
 			kind: 'namespace',
