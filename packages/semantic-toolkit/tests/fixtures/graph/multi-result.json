@@ -1,0 +1,334 @@
+{
+	"description": "Multi-result: 5 results with inter-connections. Verifies ★ markers, ◆ markers, shared dependencies, hub detection, and full Graph/Patterns/Details format.",
+	"query": "authentication token validation",
+	"tokenBudget": 8000,
+	"results": [
+		{
+			"chunk": {
+				"name": "validateToken",
+				"parentName": "TokenService",
+				"filePath": "/workspace/src/auth/tokenService.ts",
+				"relativePath": "src/auth/tokenService.ts",
+				"startLine": 20,
+				"endLine": 35,
+				"nodeKind": "method",
+				"fullSource": "async validateToken(token: string): Promise<JwtPayload | null> { ... }"
+			},
+			"metadata": {
+				"symbol": {
+					"name": "TokenService.validateToken",
+					"filePath": "src/auth/tokenService.ts",
+					"line": 20
+				},
+				"signature": "async validateToken(token: string): Promise<JwtPayload | null>",
+				"modifiers": ["async", "method", "exported"],
+				"outgoingCalls": [
+					{
+						"target": {
+							"name": "AuthConfig.getSecret",
+							"filePath": "src/config/auth.ts",
+							"line": 15
+						},
+						"callSiteLines": [22],
+						"outgoingCalls": [],
+						"cyclic": false,
+						"depthLimited": false
+					}
+				],
+				"incomingCallers": [
+					{
+						"source": {
+							"name": "AuthMiddleware.verify",
+							"filePath": "src/middleware/auth.ts",
+							"line": 10
+						},
+						"callSiteLines": [18],
+						"incomingCallers": [],
+						"cyclic": false,
+						"depthLimited": false
+					},
+					{
+						"source": {
+							"name": "LoginController.handle",
+							"filePath": "src/controllers/login.ts",
+							"line": 25
+						},
+						"callSiteLines": [30],
+						"incomingCallers": [],
+						"cyclic": false,
+						"depthLimited": false
+					}
+				],
+				"typeHierarchy": {
+					"extends": {
+						"name": "BaseValidator",
+						"filePath": "src/base.ts",
+						"line": 5
+					},
+					"implements": [],
+					"subtypes": [],
+					"typeParameters": []
+				},
+				"references": {
+					"totalCount": 12,
+					"fileCount": 8,
+					"files": []
+				},
+				"typeFlows": {
+					"symbol": {
+						"name": "TokenService.validateToken",
+						"filePath": "src/auth/tokenService.ts",
+						"line": 20
+					},
+					"parameters": [
+						{ "name": "token", "type": "string", "resolvedTypes": [] }
+					],
+					"returnType": {
+						"name": "return",
+						"type": "Promise<JwtPayload | null>",
+						"resolvedTypes": [
+							{ "name": "JwtPayload", "filePath": "src/models/auth.ts", "line": 5 }
+						]
+					},
+					"referencedTypes": [
+						{ "name": "JwtPayload", "filePath": "src/models/auth.ts", "line": 5 }
+					]
+				}
+			}
+		},
+		{
+			"chunk": {
+				"name": "verify",
+				"parentName": "AuthMiddleware",
+				"filePath": "/workspace/src/middleware/auth.ts",
+				"relativePath": "src/middleware/auth.ts",
+				"startLine": 10,
+				"endLine": 30,
+				"nodeKind": "method",
+				"fullSource": "async verify(req: Request, res: Response, next: NextFunction): Promise<void> { ... }"
+			},
+			"metadata": {
+				"symbol": {
+					"name": "AuthMiddleware.verify",
+					"filePath": "src/middleware/auth.ts",
+					"line": 10
+				},
+				"signature": "async verify(req: Request, res: Response, next: NextFunction): Promise<void>",
+				"modifiers": ["async", "method", "exported"],
+				"outgoingCalls": [
+					{
+						"target": {
+							"name": "TokenService.validateToken",
+							"filePath": "src/auth/tokenService.ts",
+							"line": 20
+						},
+						"callSiteLines": [18],
+						"outgoingCalls": [
+							{
+								"target": {
+									"name": "AuthConfig.getSecret",
+									"filePath": "src/config/auth.ts",
+									"line": 15
+								},
+								"callSiteLines": [22],
+								"outgoingCalls": [],
+								"cyclic": false,
+								"depthLimited": false
+							}
+						],
+						"cyclic": false,
+						"depthLimited": false
+					},
+					{
+						"target": {
+							"name": "AuthConfig.getSecret",
+							"filePath": "src/config/auth.ts",
+							"line": 15
+						},
+						"callSiteLines": [25],
+						"outgoingCalls": [],
+						"cyclic": false,
+						"depthLimited": false
+					}
+				],
+				"incomingCallers": [],
+				"references": {
+					"totalCount": 15,
+					"fileCount": 12,
+					"files": []
+				},
+				"typeFlows": {
+					"symbol": {
+						"name": "AuthMiddleware.verify",
+						"filePath": "src/middleware/auth.ts",
+						"line": 10
+					},
+					"parameters": [
+						{ "name": "req", "type": "Request", "resolvedTypes": [] },
+						{ "name": "res", "type": "Response", "resolvedTypes": [] }
+					],
+					"returnType": null,
+					"referencedTypes": []
+				}
+			}
+		},
+		{
+			"chunk": {
+				"name": "handle",
+				"parentName": "LoginController",
+				"filePath": "/workspace/src/controllers/login.ts",
+				"relativePath": "src/controllers/login.ts",
+				"startLine": 25,
+				"endLine": 50,
+				"nodeKind": "method",
+				"fullSource": "async handle(req: LoginRequest): Promise<AuthResponse> { ... }"
+			},
+			"metadata": {
+				"symbol": {
+					"name": "LoginController.handle",
+					"filePath": "src/controllers/login.ts",
+					"line": 25
+				},
+				"signature": "async handle(req: LoginRequest): Promise<AuthResponse>",
+				"modifiers": ["async", "method", "exported"],
+				"outgoingCalls": [
+					{
+						"target": {
+							"name": "TokenService.validateToken",
+							"filePath": "src/auth/tokenService.ts",
+							"line": 20
+						},
+						"callSiteLines": [30],
+						"outgoingCalls": [],
+						"cyclic": false,
+						"depthLimited": false
+					}
+				],
+				"incomingCallers": [],
+				"references": {
+					"totalCount": 5,
+					"fileCount": 3,
+					"files": []
+				},
+				"typeFlows": {
+					"symbol": {
+						"name": "LoginController.handle",
+						"filePath": "src/controllers/login.ts",
+						"line": 25
+					},
+					"parameters": [
+						{
+							"name": "req",
+							"type": "LoginRequest",
+							"resolvedTypes": [
+								{ "name": "LoginRequest", "filePath": "src/models/auth.ts", "line": 10 }
+							]
+						}
+					],
+					"returnType": {
+						"name": "return",
+						"type": "Promise<AuthResponse>",
+						"resolvedTypes": [
+							{ "name": "AuthResponse", "filePath": "src/models/auth.ts", "line": 20 }
+						]
+					},
+					"referencedTypes": [
+						{ "name": "LoginRequest", "filePath": "src/models/auth.ts", "line": 10 },
+						{ "name": "AuthResponse", "filePath": "src/models/auth.ts", "line": 20 }
+					]
+				}
+			}
+		},
+		{
+			"chunk": {
+				"name": "AuthConfig",
+				"parentName": null,
+				"filePath": "/workspace/src/config/auth.ts",
+				"relativePath": "src/config/auth.ts",
+				"startLine": 5,
+				"endLine": 30,
+				"nodeKind": "class",
+				"fullSource": "export class AuthConfig implements ConfigProvider { ... }"
+			},
+			"metadata": {
+				"symbol": {
+					"name": "AuthConfig",
+					"filePath": "src/config/auth.ts",
+					"line": 5
+				},
+				"signature": "class AuthConfig",
+				"modifiers": ["class", "exported"],
+				"outgoingCalls": [],
+				"incomingCallers": [
+					{
+						"source": {
+							"name": "TokenService.validateToken",
+							"filePath": "src/auth/tokenService.ts",
+							"line": 20
+						},
+						"callSiteLines": [22],
+						"incomingCallers": [],
+						"cyclic": false,
+						"depthLimited": false
+					},
+					{
+						"source": {
+							"name": "AuthMiddleware.verify",
+							"filePath": "src/middleware/auth.ts",
+							"line": 10
+						},
+						"callSiteLines": [25],
+						"incomingCallers": [],
+						"cyclic": false,
+						"depthLimited": false
+					}
+				],
+				"typeHierarchy": {
+					"implements": [
+						{ "name": "ConfigProvider", "filePath": "src/interfaces/config.ts", "line": 3 }
+					],
+					"subtypes": [],
+					"typeParameters": []
+				},
+				"references": {
+					"totalCount": 20,
+					"fileCount": 14,
+					"files": []
+				},
+				"members": [
+					{ "name": "getSecret", "kind": "method", "line": 10, "modifiers": [] },
+					{ "name": "getExpiry", "kind": "method", "line": 15, "modifiers": [] },
+					{ "name": "getIssuer", "kind": "method", "line": 20, "modifiers": [] }
+				]
+			}
+		},
+		{
+			"chunk": {
+				"name": "AUTH_TOKEN_EXPIRY",
+				"parentName": null,
+				"filePath": "/workspace/src/config/constants.ts",
+				"relativePath": "src/config/constants.ts",
+				"startLine": 5,
+				"endLine": 5,
+				"nodeKind": "variable",
+				"fullSource": "export const AUTH_TOKEN_EXPIRY = 3600;"
+			},
+			"metadata": {
+				"symbol": {
+					"name": "AUTH_TOKEN_EXPIRY",
+					"filePath": "src/config/constants.ts",
+					"line": 5
+				},
+				"signature": "const AUTH_TOKEN_EXPIRY: number",
+				"modifiers": ["const", "exported"],
+				"outgoingCalls": [],
+				"incomingCallers": [],
+				"references": {
+					"totalCount": 8,
+					"fileCount": 6,
+					"files": []
+				}
+			}
+		}
+	]
+}

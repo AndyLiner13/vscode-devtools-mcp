@@ -1,0 +1,249 @@
+{
+	"description": "Shared type: 4 results that all reference the same type (User). Verifies ◆ on shared type references and shared types section.",
+	"query": "user management",
+	"tokenBudget": 8000,
+	"results": [
+		{
+			"chunk": {
+				"name": "createUser",
+				"parentName": "UserService",
+				"filePath": "/workspace/src/services/userService.ts",
+				"relativePath": "src/services/userService.ts",
+				"startLine": 15,
+				"endLine": 30,
+				"nodeKind": "method",
+				"fullSource": "async createUser(data: CreateUserDto): Promise<User> { ... }"
+			},
+			"metadata": {
+				"symbol": {
+					"name": "UserService.createUser",
+					"filePath": "src/services/userService.ts",
+					"line": 15
+				},
+				"signature": "async createUser(data: CreateUserDto): Promise<User>",
+				"modifiers": ["async", "method", "exported"],
+				"outgoingCalls": [
+					{
+						"target": {
+							"name": "UserRepository.save",
+							"filePath": "src/repositories/userRepo.ts",
+							"line": 20
+						},
+						"callSiteLines": [22],
+						"outgoingCalls": [],
+						"cyclic": false,
+						"depthLimited": false
+					}
+				],
+				"incomingCallers": [],
+				"references": {
+					"totalCount": 5,
+					"fileCount": 3,
+					"files": []
+				},
+				"typeFlows": {
+					"symbol": {
+						"name": "UserService.createUser",
+						"filePath": "src/services/userService.ts",
+						"line": 15
+					},
+					"parameters": [
+						{
+							"name": "data",
+							"type": "CreateUserDto",
+							"resolvedTypes": [
+								{ "name": "CreateUserDto", "filePath": "src/models/user.ts", "line": 15 }
+							]
+						}
+					],
+					"returnType": {
+						"name": "return",
+						"type": "Promise<User>",
+						"resolvedTypes": [
+							{ "name": "User", "filePath": "src/models/user.ts", "line": 5 }
+						]
+					},
+					"referencedTypes": [
+						{ "name": "CreateUserDto", "filePath": "src/models/user.ts", "line": 15 },
+						{ "name": "User", "filePath": "src/models/user.ts", "line": 5 }
+					]
+				}
+			}
+		},
+		{
+			"chunk": {
+				"name": "updateUser",
+				"parentName": "UserService",
+				"filePath": "/workspace/src/services/userService.ts",
+				"relativePath": "src/services/userService.ts",
+				"startLine": 35,
+				"endLine": 50,
+				"nodeKind": "method",
+				"fullSource": "async updateUser(id: string, data: UpdateUserDto): Promise<User> { ... }"
+			},
+			"metadata": {
+				"symbol": {
+					"name": "UserService.updateUser",
+					"filePath": "src/services/userService.ts",
+					"line": 35
+				},
+				"signature": "async updateUser(id: string, data: UpdateUserDto): Promise<User>",
+				"modifiers": ["async", "method", "exported"],
+				"outgoingCalls": [
+					{
+						"target": {
+							"name": "UserRepository.save",
+							"filePath": "src/repositories/userRepo.ts",
+							"line": 20
+						},
+						"callSiteLines": [42],
+						"outgoingCalls": [],
+						"cyclic": false,
+						"depthLimited": false
+					}
+				],
+				"incomingCallers": [],
+				"references": {
+					"totalCount": 4,
+					"fileCount": 3,
+					"files": []
+				},
+				"typeFlows": {
+					"symbol": {
+						"name": "UserService.updateUser",
+						"filePath": "src/services/userService.ts",
+						"line": 35
+					},
+					"parameters": [
+						{ "name": "id", "type": "string", "resolvedTypes": [] },
+						{
+							"name": "data",
+							"type": "UpdateUserDto",
+							"resolvedTypes": [
+								{ "name": "UpdateUserDto", "filePath": "src/models/user.ts", "line": 20 }
+							]
+						}
+					],
+					"returnType": {
+						"name": "return",
+						"type": "Promise<User>",
+						"resolvedTypes": [
+							{ "name": "User", "filePath": "src/models/user.ts", "line": 5 }
+						]
+					},
+					"referencedTypes": [
+						{ "name": "UpdateUserDto", "filePath": "src/models/user.ts", "line": 20 },
+						{ "name": "User", "filePath": "src/models/user.ts", "line": 5 }
+					]
+				}
+			}
+		},
+		{
+			"chunk": {
+				"name": "getUserProfile",
+				"parentName": "ProfileController",
+				"filePath": "/workspace/src/controllers/profileController.ts",
+				"relativePath": "src/controllers/profileController.ts",
+				"startLine": 10,
+				"endLine": 25,
+				"nodeKind": "method",
+				"fullSource": "async getUserProfile(userId: string): Promise<UserProfile> { ... }"
+			},
+			"metadata": {
+				"symbol": {
+					"name": "ProfileController.getUserProfile",
+					"filePath": "src/controllers/profileController.ts",
+					"line": 10
+				},
+				"signature": "async getUserProfile(userId: string): Promise<UserProfile>",
+				"modifiers": ["async", "method", "exported"],
+				"outgoingCalls": [],
+				"incomingCallers": [],
+				"references": {
+					"totalCount": 3,
+					"fileCount": 2,
+					"files": []
+				},
+				"typeFlows": {
+					"symbol": {
+						"name": "ProfileController.getUserProfile",
+						"filePath": "src/controllers/profileController.ts",
+						"line": 10
+					},
+					"parameters": [
+						{ "name": "userId", "type": "string", "resolvedTypes": [] }
+					],
+					"returnType": {
+						"name": "return",
+						"type": "Promise<UserProfile>",
+						"resolvedTypes": [
+							{ "name": "UserProfile", "filePath": "src/models/user.ts", "line": 25 }
+						]
+					},
+					"referencedTypes": [
+						{ "name": "User", "filePath": "src/models/user.ts", "line": 5 },
+						{ "name": "UserProfile", "filePath": "src/models/user.ts", "line": 25 }
+					]
+				}
+			}
+		},
+		{
+			"chunk": {
+				"name": "deleteUser",
+				"parentName": "UserService",
+				"filePath": "/workspace/src/services/userService.ts",
+				"relativePath": "src/services/userService.ts",
+				"startLine": 55,
+				"endLine": 70,
+				"nodeKind": "method",
+				"fullSource": "async deleteUser(id: string): Promise<void> { ... }"
+			},
+			"metadata": {
+				"symbol": {
+					"name": "UserService.deleteUser",
+					"filePath": "src/services/userService.ts",
+					"line": 55
+				},
+				"signature": "async deleteUser(id: string): Promise<void>",
+				"modifiers": ["async", "method", "exported"],
+				"outgoingCalls": [
+					{
+						"target": {
+							"name": "UserRepository.save",
+							"filePath": "src/repositories/userRepo.ts",
+							"line": 20
+						},
+						"callSiteLines": [62],
+						"outgoingCalls": [],
+						"cyclic": false,
+						"depthLimited": false
+					}
+				],
+				"incomingCallers": [],
+				"references": {
+					"totalCount": 3,
+					"fileCount": 2,
+					"files": []
+				},
+				"typeFlows": {
+					"symbol": {
+						"name": "UserService.deleteUser",
+						"filePath": "src/services/userService.ts",
+						"line": 55
+					},
+					"parameters": [
+						{ "name": "id", "type": "string", "resolvedTypes": [] }
+					],
+					"returnType": {
+						"name": "return",
+						"type": "Promise<void>",
+						"resolvedTypes": []
+					},
+					"referencedTypes": [
+						{ "name": "User", "filePath": "src/models/user.ts", "line": 5 }
+					]
+				}
+			}
+		}
+	]
+}

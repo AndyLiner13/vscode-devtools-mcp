@@ -1,0 +1,91 @@
+{
+	"description": "No connections: 3 results with no cross-references. Verifies clean output with no ★ or ◆ markers.",
+	"query": "utility functions",
+	"tokenBudget": 8000,
+	"results": [
+		{
+			"chunk": {
+				"name": "formatDate",
+				"parentName": null,
+				"filePath": "/workspace/src/utils/date.ts",
+				"relativePath": "src/utils/date.ts",
+				"startLine": 5,
+				"endLine": 15,
+				"nodeKind": "function",
+				"fullSource": "export function formatDate(date: Date): string { ... }"
+			},
+			"metadata": {
+				"symbol": {
+					"name": "formatDate",
+					"filePath": "src/utils/date.ts",
+					"line": 5
+				},
+				"signature": "function formatDate(date: Date): string",
+				"modifiers": ["function", "exported"],
+				"outgoingCalls": [],
+				"incomingCallers": [],
+				"references": {
+					"totalCount": 4,
+					"fileCount": 3,
+					"files": []
+				}
+			}
+		},
+		{
+			"chunk": {
+				"name": "slugify",
+				"parentName": null,
+				"filePath": "/workspace/src/utils/string.ts",
+				"relativePath": "src/utils/string.ts",
+				"startLine": 10,
+				"endLine": 20,
+				"nodeKind": "function",
+				"fullSource": "export function slugify(text: string): string { ... }"
+			},
+			"metadata": {
+				"symbol": {
+					"name": "slugify",
+					"filePath": "src/utils/string.ts",
+					"line": 10
+				},
+				"signature": "function slugify(text: string): string",
+				"modifiers": ["function", "exported"],
+				"outgoingCalls": [],
+				"incomingCallers": [],
+				"references": {
+					"totalCount": 6,
+					"fileCount": 4,
+					"files": []
+				}
+			}
+		},
+		{
+			"chunk": {
+				"name": "clamp",
+				"parentName": null,
+				"filePath": "/workspace/src/utils/math.ts",
+				"relativePath": "src/utils/math.ts",
+				"startLine": 3,
+				"endLine": 8,
+				"nodeKind": "function",
+				"fullSource": "export function clamp(val: number, min: number, max: number): number { ... }"
+			},
+			"metadata": {
+				"symbol": {
+					"name": "clamp",
+					"filePath": "src/utils/math.ts",
+					"line": 3
+				},
+				"signature": "function clamp(val: number, min: number, max: number): number",
+				"modifiers": ["function", "exported"],
+				"outgoingCalls": [],
+				"incomingCallers": [],
+				"references": {
+					"totalCount": 2,
+					"fileCount": 2,
+					"files": []
+				}
+			}
+		}
+	]
+}

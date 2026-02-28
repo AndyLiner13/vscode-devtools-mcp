@@ -1060,6 +1060,15 @@ Input fixtures are JSON (pre-computed metadata), not source files — connection
 
 **Dependencies:** Phase 3 (TS LS)
 
+**Implementation decisions:**
+
+- **Module structure:** `src/graph/` with `types.ts` (input/output interfaces), `topology.ts` (call tree walking, ★/◆ assignment), `patterns.ts` (hub/shared dep/shared type/diamond/cycle detection), `render.ts` (text rendering in blueprint format), `index.ts` (main entry point)
+- **Token counting:** Simple estimation via `Math.ceil(output.length / 4)` — dependency-free, sufficient for budget tracking
+- **Two rendering formats:** Single-result format (compact inline: symbol + file, kind/modifiers/refs, Calls/Called by, Types in/out) and multi-result format (Summary → Graph → Patterns → Details). Single-result omits empty Graph/Patterns sections to save tokens.
+- **callDepth:** Not a parameter on the graph API. The renderer traverses whatever depth exists in the `SymbolMetadata.outgoingCalls` tree, which was already built by Phase 3 using the user's configured `callDepth` extension setting.
+- **Diamond detection:** Traverses the full depth of the outgoing/incoming call trees in the metadata. Scales naturally with the user's configured call depth.
+- **Shared type detection:** Uses `typeFlows.referencedTypes` from each result's metadata to identify types referenced by multiple results.
+
 ---
 
 ### Phase 6 — Symbol Lookup

@@ -1,0 +1,123 @@
+{
+	"description": "Single result: one method with basic metadata. Verifies single-result compact format.",
+	"query": "jwt token validation",
+	"tokenBudget": 8000,
+	"results": [
+		{
+			"chunk": {
+				"name": "validateToken",
+				"parentName": "TokenService",
+				"filePath": "/workspace/src/auth/tokenService.ts",
+				"relativePath": "src/auth/tokenService.ts",
+				"startLine": 20,
+				"endLine": 35,
+				"nodeKind": "method",
+				"fullSource": "async validateToken(token: string): Promise<JwtPayload | null> {\n  try {\n    return jwt.verify(token, this.secret) as JwtPayload;\n  } catch {\n    return null;\n  }\n}"
+			},
+			"metadata": {
+				"symbol": {
+					"name": "TokenService.validateToken",
+					"filePath": "src/auth/tokenService.ts",
+					"line": 20
+				},
+				"signature": "async validateToken(token: string): Promise<JwtPayload | null>",
+				"modifiers": ["async", "method", "exported"],
+				"outgoingCalls": [
+					{
+						"target": {
+							"name": "jwt.verify",
+							"filePath": "node_modules/jsonwebtoken/index.d.ts",
+							"line": 10
+						},
+						"callSiteLines": [23],
+						"outgoingCalls": [],
+						"cyclic": false,
+						"depthLimited": false
+					},
+					{
+						"target": {
+							"name": "AuthConfig.getSecret",
+							"filePath": "src/config/auth.ts",
+							"line": 15
+						},
+						"callSiteLines": [22],
+						"outgoingCalls": [],
+						"cyclic": false,
+						"depthLimited": false
+					}
+				],
+				"incomingCallers": [
+					{
+						"source": {
+							"name": "AuthMiddleware.verify",
+							"filePath": "src/middleware/auth.ts",
+							"line": 10
+						},
+						"callSiteLines": [18],
+						"incomingCallers": [],
+						"cyclic": false,
+						"depthLimited": false
+					},
+					{
+						"source": {
+							"name": "LoginController.handle",
+							"filePath": "src/controllers/login.ts",
+							"line": 25
+						},
+						"callSiteLines": [30],
+						"incomingCallers": [],
+						"cyclic": false,
+						"depthLimited": false
+					}
+				],
+				"typeHierarchy": {
+					"extends": {
+						"name": "BaseValidator",
+						"filePath": "src/base.ts",
+						"line": 5
+					},
+					"implements": [],
+					"subtypes": [],
+					"typeParameters": []
+				},
+				"references": {
+					"totalCount": 12,
+					"fileCount": 8,
+					"files": []
+				},
+				"typeFlows": {
+					"symbol": {
+						"name": "TokenService.validateToken",
+						"filePath": "src/auth/tokenService.ts",
+						"line": 20
+					},
+					"parameters": [
+						{
+							"name": "token",
+							"type": "string",
+							"resolvedTypes": []
+						}
+					],
+					"returnType": {
+						"name": "return",
+						"type": "Promise<JwtPayload | null>",
+						"resolvedTypes": [
+							{
+								"name": "JwtPayload",
+								"filePath": "src/models/auth.ts",
+								"line": 5
+							}
+						]
+					},
+					"referencedTypes": [
+						{
+							"name": "JwtPayload",
+							"filePath": "src/models/auth.ts",
+							"line": 5
+						}
+					]
+				}
+			}
+		}
+	]
+}
