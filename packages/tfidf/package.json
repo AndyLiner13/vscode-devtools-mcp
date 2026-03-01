@@ -6,6 +6,6 @@
 	"main": "src/index.ts",
 	"types": "src/index.ts",
 	"dependencies": {
-		"natural": "^8.0.1"
+		"natural": "^8.1.1"
 	}
 }
