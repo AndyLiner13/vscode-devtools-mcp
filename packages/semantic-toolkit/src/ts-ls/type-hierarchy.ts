@@ -6,7 +6,6 @@
  */
 import { Project, Node } from 'ts-morph';
 import type {
-	SourceFile,
 	ClassDeclaration,
 	InterfaceDeclaration,
 	ExpressionWithTypeArguments,
@@ -14,6 +13,7 @@ import type {
 import { toRelativePosixPath } from './paths.js';
 
 import type { SymbolRef, TypeHierarchy, TypeParameter } from './types.js';
+import type { SymbolTarget } from '../shared/types.js';
 
 export type { TypeHierarchy, TypeParameter } from './types.js';
 
@@ -21,47 +21,24 @@ export type { TypeHierarchy, TypeParameter } from './types.js';
 type TypeDeclaration = ClassDeclaration | InterfaceDeclaration;
 
 /**
- * Resolve type hierarchy for a named class or interface in a ts-morph project.
+ * Resolve type hierarchy for a class or interface.
  *
- * @param project       - ts-morph Project with all relevant source files added.
- * @param filePath      - Absolute path of the file containing the target symbol.
- * @param symbolName    - Name of the class or interface to resolve.
+ * @param target        - Pre-located SymbolTarget (must be class or interface kind).
  * @param workspaceRoot - Workspace root for computing relative paths.
  * @returns TypeHierarchy with extends, implements, and subtypes.
  */
 export function resolveTypeHierarchy(
-	project: Project,
-	filePath: string,
-	symbolName: string,
+	target: SymbolTarget,
 	workspaceRoot: string,
 ): TypeHierarchy {
-	const sourceFile = project.getSourceFileOrThrow(filePath);
-	const declaration = findTypeDeclaration(sourceFile, symbolName);
-
-	if (!declaration) {
+	if (!Node.isClassDeclaration(target.node) && !Node.isInterfaceDeclaration(target.node)) {
 		throw new Error(
-			`Symbol "${symbolName}" not found as a class or interface in ${filePath}`,
+			`Symbol "${target.name}" is not a class or interface (kind: ${target.kind})`,
 		);
 	}
 
-	return buildTypeHierarchy(declaration, project, workspaceRoot);
-}
-
-// ---------------------------------------------------------------------------
-// Symbol lookup
-// ---------------------------------------------------------------------------
-
-function findTypeDeclaration(
-	sourceFile: SourceFile,
-	name: string,
-): TypeDeclaration | undefined {
-	const cls = sourceFile.getClass(name);
-	if (cls) return cls;
-
-	const iface = sourceFile.getInterface(name);
-	if (iface) return iface;
-
-	return undefined;
+	const project = target.sourceFile.getProject();
+	return buildTypeHierarchy(target.node, project, workspaceRoot);
 }
 
 // ---------------------------------------------------------------------------

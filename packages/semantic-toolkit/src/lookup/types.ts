@@ -9,6 +9,7 @@
 import type { CodeChunk } from '../chunker/types.js';
 import type { ConnectionGraphResult, GraphResultEntry } from '../graph/types.js';
 import type { SnapshotResult } from '../snapshot/types.js';
+import type { NodeKind, RelativePath } from '../shared/types.js';
 
 // ─── Query Parsing ──────────────────────────────────────────────
 
@@ -28,7 +29,7 @@ export interface ParsedSymbolPath {
 	 * Parsed from `, kind = interface` suffix in the query.
 	 * Only required when multiple symbols share the same name and hierarchy.
 	 */
-	symbolKind: string | null;
+	symbolKind: NodeKind | null;
 }
 
 /** Result of parsing a query string for symbol lookup prefix detection. */
@@ -48,7 +49,7 @@ export interface ResolvedMatch {
 	chunk: CodeChunk;
 
 	/** Workspace-relative file path where this match was found. */
-	relativePath: string;
+	relativePath: RelativePath;
 }
 
 /** A near-match found during case-insensitive or partial-path fallback. */

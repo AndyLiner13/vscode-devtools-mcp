@@ -1,4 +1,5 @@
 import type { ParsedFile } from '../parser/types.js';
+import type { AbsolutePath, NodeKind, RelativePath } from '../shared/types.js';
 
 /**
  * A code chunk ready for embedding. Represents a single embeddable unit
@@ -14,13 +15,13 @@ export interface CodeChunk {
 	id: string;
 
 	/** Absolute file path. */
-	filePath: string;
+	filePath: AbsolutePath;
 
 	/** Workspace-relative path (forward slashes). */
-	relativePath: string;
+	relativePath: RelativePath;
 
 	/** Symbol kind from the parser. */
-	nodeKind: string;
+	nodeKind: NodeKind;
 
 	/** Symbol name. */
 	name: string;

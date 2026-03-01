@@ -5,9 +5,8 @@
  * Item 2: Multi-hop recursive tree, cycle detection, depth limits,
  *         constructor call resolution, same-name collision fix.
  */
-import { Project, SyntaxKind, Node } from 'ts-morph';
+import { SyntaxKind, Node } from 'ts-morph';
 import type {
-	SourceFile,
 	FunctionDeclaration,
 	MethodDeclaration,
 	ConstructorDeclaration,
@@ -25,6 +24,7 @@ import type {
 	SymbolMetadata,
 } from './types.js';
 import { DEFAULT_TS_LS_CONFIG } from './types.js';
+import type { SymbolTarget } from '../shared/types.js';
 
 export type { TsLsConfig, SymbolRef, OutgoingCall, IncomingCaller, SymbolMetadata } from './types.js';
 export { DEFAULT_TS_LS_CONFIG } from './types.js';
@@ -67,29 +67,26 @@ function isUserDeclaration(node: Node): boolean {
 // ---------------------------------------------------------------------------
 
 /**
- * Resolve call hierarchy metadata for a named function/method in a ts-morph project.
+ * Resolve call hierarchy metadata for a function or method.
  *
- * @param project       - ts-morph Project with all relevant source files added.
- * @param filePath      - Absolute path of the file containing the target symbol.
- * @param symbolName    - Name of the function or method to resolve.
+ * @param target        - Pre-located SymbolTarget (must be callable kind).
  * @param workspaceRoot - Workspace root for computing relative paths.
  * @param config        - Optional configuration (callDepth, etc.).
  */
 export function resolveCallHierarchy(
-	project: Project,
-	filePath: string,
-	symbolName: string,
+	target: SymbolTarget,
 	workspaceRoot: string,
 	config: Partial<TsLsConfig> = {},
 ): SymbolMetadata {
 	const merged: TsLsConfig = { ...DEFAULT_TS_LS_CONFIG, ...config };
-	const sourceFile = project.getSourceFileOrThrow(filePath);
-	const declaration = findCallableDeclaration(sourceFile, symbolName);
 
-	if (!declaration) {
-		throw new Error(`Symbol "${symbolName}" not found as a function or method in ${filePath}`);
+	if (!Node.isFunctionDeclaration(target.node) && !Node.isMethodDeclaration(target.node)) {
+		throw new Error(
+			`Symbol "${target.name}" is not a function or method (kind: ${target.kind})`,
+		);
 	}
 
+	const declaration = target.node;
 	const ref = buildSymbolRef(declaration, workspaceRoot);
 	const rootKey = symbolKey(ref);
 
@@ -105,27 +102,6 @@ export function resolveCallHierarchy(
 
 // ---------------------------------------------------------------------------
 // Symbol lookup
-// ---------------------------------------------------------------------------
-
-/**
- * Find a function or method declaration by name in a source file.
- * Searches top-level functions first, then methods inside classes.
- */
-function findCallableDeclaration(
-	sourceFile: SourceFile,
-	name: string,
-): CallableDeclaration | undefined {
-	const fn = sourceFile.getFunction(name);
-	if (fn) return fn;
-
-	for (const cls of sourceFile.getClasses()) {
-		const method = cls.getMethod(name);
-		if (method) return method;
-	}
-
-	return undefined;
-}
-
 // ---------------------------------------------------------------------------
 // SymbolRef building
 // ---------------------------------------------------------------------------

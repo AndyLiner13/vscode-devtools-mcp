@@ -4,45 +4,29 @@
  * Resolves reference count and per-file reference locations for any named symbol.
  * Excludes the definition itself; includes same-file usages.
  */
-import { Project, Node } from 'ts-morph';
-import type { SourceFile } from 'ts-morph';
+import { Node } from 'ts-morph';
 import { toRelativePosixPath } from './paths.js';
 
 import type { References, FileReference } from './types.js';
+import type { SymbolTarget } from '../shared/types.js';
 
 export type { References, FileReference } from './types.js';
 
 /**
- * Resolve cross-file references for a named symbol.
+ * Resolve cross-file references for a symbol.
  *
- * Works for any named symbol: functions, classes, interfaces, methods,
- * type aliases, variables, enum members, etc.
- *
- * @param project       - ts-morph Project with all relevant source files added.
- * @param filePath      - Absolute path of the file containing the target symbol.
- * @param symbolName    - Name of the symbol to find references for.
+ * @param target        - Pre-located SymbolTarget from the node locator.
  * @param workspaceRoot - Workspace root for computing relative paths.
  * @returns References with totalCount, fileCount, and per-file breakdown.
  */
 export function resolveReferences(
-	project: Project,
-	filePath: string,
-	symbolName: string,
+	target: SymbolTarget,
 	workspaceRoot: string,
 ): References {
-	const sourceFile = project.getSourceFileOrThrow(filePath);
-	const declaration = findNamedDeclaration(sourceFile, symbolName);
+	const definitionLine = target.startLine;
+	const definitionFile = target.sourceFile.getFilePath();
 
-	if (!declaration) {
-		throw new Error(
-			`Symbol "${symbolName}" not found in ${filePath}`,
-		);
-	}
-
-	const definitionLine = declaration.getStartLineNumber();
-	const definitionFile = declaration.getSourceFile().getFilePath();
-
-	const refNodes = declaration.findReferencesAsNodes();
+	const refNodes = target.node.findReferencesAsNodes();
 	const fileMap = new Map<string, { absolutePath: string; lines: Set<number> }>();
 
 	for (const refNode of refNodes) {
@@ -80,69 +64,4 @@ export function resolveReferences(
 		fileCount: files.length,
 		files,
 	};
-}
-
-// ---------------------------------------------------------------------------
-// Symbol lookup — works for any named declaration
-// ---------------------------------------------------------------------------
-
-type NamedDeclarationNode = Node & { findReferencesAsNodes(): Node[] };
-
-/**
- * Find any named declaration in a source file.
- * Searches: functions, classes, interfaces, type aliases, enums,
- * variable declarations, and class members (methods, properties).
- */
-function findNamedDeclaration(
-	sourceFile: SourceFile,
-	name: string,
-): NamedDeclarationNode | undefined {
-	const fn = sourceFile.getFunction(name);
-	if (fn) return fn;
-
-	const cls = sourceFile.getClass(name);
-	if (cls) return cls;
-
-	const iface = sourceFile.getInterface(name);
-	if (iface) return iface;
-
-	const typeAlias = sourceFile.getTypeAlias(name);
-	if (typeAlias) return typeAlias;
-
-	const enumDecl = sourceFile.getEnum(name);
-	if (enumDecl) return enumDecl;
-
-	const varDecl = sourceFile.getVariableDeclaration(name);
-	if (varDecl) return varDecl;
-
-	for (const cls of sourceFile.getClasses()) {
-		const method = cls.getMethod(name);
-		if (method) return method;
-
-		const prop = cls.getProperty(name);
-		if (prop) return prop;
-	}
-
-	// Search inside namespace/module declarations
-	for (const ns of sourceFile.getModules()) {
-		const fn = ns.getFunction(name);
-		if (fn) return fn;
-
-		const varDecl = ns.getVariableDeclaration(name);
-		if (varDecl) return varDecl;
-
-		const cls = ns.getClass(name);
-		if (cls) return cls;
-
-		const iface = ns.getInterface(name);
-		if (iface) return iface;
-
-		const typeAlias = ns.getTypeAlias(name);
-		if (typeAlias) return typeAlias;
-
-		const enumDecl = ns.getEnum(name);
-		if (enumDecl) return enumDecl;
-	}
-
-	return undefined;
 }

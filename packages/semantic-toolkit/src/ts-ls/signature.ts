@@ -5,7 +5,7 @@
  * symbol: functions, methods, classes, interfaces, type aliases, enums,
  * variables, properties, getters/setters.
  */
-import { Project, Node, SyntaxKind } from 'ts-morph';
+import { Node, SyntaxKind } from 'ts-morph';
 import type {
 	SourceFile,
 	FunctionDeclaration,
@@ -22,6 +22,7 @@ import type {
 	SetAccessorDeclaration,
 	ParameterDeclaration,
 } from 'ts-morph';
+import type { SymbolTarget } from '../shared/types.js';
 
 // Map from SyntaxKind to output label for tracked modifiers.
 const TRACKED_MODIFIER_KINDS = new Map<SyntaxKind, string>([
@@ -51,125 +52,23 @@ export interface SignatureInfo {
 // ---------------------------------------------------------------------------
 
 /**
- * Resolve the type signature and modifiers for a named symbol.
+ * Resolve the type signature and modifiers for a symbol.
  *
- * @param project    - ts-morph Project with all relevant source files added.
- * @param filePath   - Absolute path of the file containing the target symbol.
- * @param symbolName - Name of the symbol to resolve.
+ * @param target - Pre-located SymbolTarget from the node locator.
  * @returns SignatureInfo with signature text and modifiers array.
  */
-export function resolveSignature(
-	project: Project,
-	filePath: string,
-	symbolName: string,
-): SignatureInfo {
-	const sourceFile = project.getSourceFileOrThrow(filePath);
-	const node = findDeclaration(sourceFile, symbolName);
-
-	if (!node) {
-		throw new Error(
-			`Symbol "${symbolName}" not found in ${filePath}`,
-		);
-	}
-
+export function resolveSignature(target: SymbolTarget): SignatureInfo {
 	return {
-		signature: buildSignature(node, symbolName),
-		modifiers: buildModifiers(node, sourceFile),
+		signature: buildSignature(target.node, target.name),
+		modifiers: buildModifiers(target.node, target.sourceFile),
 	};
-}
-
-// ---------------------------------------------------------------------------
-// Declaration lookup
-// ---------------------------------------------------------------------------
-
-type DeclarationNode =
-	| FunctionDeclaration
-	| MethodDeclaration
-	| MethodSignature
-	| ClassDeclaration
-	| InterfaceDeclaration
-	| TypeAliasDeclaration
-	| EnumDeclaration
-	| VariableDeclaration
-	| PropertyDeclaration
-	| PropertySignature
-	| GetAccessorDeclaration
-	| SetAccessorDeclaration;
-
-function findDeclaration(
-	sourceFile: SourceFile,
-	name: string,
-): DeclarationNode | undefined {
-	const fn = sourceFile.getFunction(name);
-	if (fn) return fn;
-
-	const cls = sourceFile.getClass(name);
-	if (cls) return cls;
-
-	const iface = sourceFile.getInterface(name);
-	if (iface) return iface;
-
-	const typeAlias = sourceFile.getTypeAlias(name);
-	if (typeAlias) return typeAlias;
-
-	const enumDecl = sourceFile.getEnum(name);
-	if (enumDecl) return enumDecl;
-
-	const varDecl = sourceFile.getVariableDeclaration(name);
-	if (varDecl) return varDecl;
-
-	// Search methods and properties across all classes and interfaces
-	for (const c of sourceFile.getClasses()) {
-		const method = c.getMethod(name);
-		if (method) return method;
-
-		const prop = c.getProperty(name);
-		if (prop) return prop;
-
-		const getter = c.getGetAccessor(name);
-		if (getter) return getter;
-
-		const setter = c.getSetAccessor(name);
-		if (setter) return setter;
-	}
-
-	for (const i of sourceFile.getInterfaces()) {
-		const method = i.getMethod(name);
-		if (method) return method;
-
-		const prop = i.getProperty(name);
-		if (prop) return prop;
-	}
-
-	// Search inside namespace/module declarations
-	for (const ns of sourceFile.getModules()) {
-		const fn = ns.getFunction(name);
-		if (fn) return fn;
-
-		const varDecl = ns.getVariableDeclaration(name);
-		if (varDecl) return varDecl;
-
-		const cls = ns.getClass(name);
-		if (cls) return cls;
-
-		const iface = ns.getInterface(name);
-		if (iface) return iface;
-
-		const typeAlias = ns.getTypeAlias(name);
-		if (typeAlias) return typeAlias;
-
-		const enumDecl = ns.getEnum(name);
-		if (enumDecl) return enumDecl;
-	}
-
-	return undefined;
 }
 
 // ---------------------------------------------------------------------------
 // Signature building
 // ---------------------------------------------------------------------------
 
-function buildSignature(node: DeclarationNode, symbolName: string): string {
+function buildSignature(node: Node, symbolName: string): string {
 	if (Node.isFunctionDeclaration(node)) {
 		return buildFunctionSignature(node);
 	}
@@ -313,7 +212,7 @@ function buildSetAccessorSignature(setter: SetAccessorDeclaration): string {
 // Modifier building
 // ---------------------------------------------------------------------------
 
-function buildModifiers(node: DeclarationNode, sourceFile: SourceFile): string[] {
+function buildModifiers(node: Node, sourceFile: SourceFile): string[] {
 	const modifiers: string[] = [];
 
 	// Extract keyword modifiers from the node

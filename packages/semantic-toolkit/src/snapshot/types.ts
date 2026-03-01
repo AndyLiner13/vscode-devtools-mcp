@@ -7,6 +7,7 @@
  */
 
 import type { CodeChunk } from '../chunker/types.js';
+import type { AbsolutePath, RelativePath } from '../shared/types.js';
 
 /** Input for snapshot generation: target chunks from a single file. */
 export interface SnapshotInput {
@@ -14,10 +15,10 @@ export interface SnapshotInput {
 	targets: CodeChunk[];
 
 	/** Absolute path of the file these targets belong to. */
-	filePath: string;
+	filePath: AbsolutePath;
 
 	/** Workspace-relative path (forward slashes) for the file header. */
-	relativePath: string;
+	relativePath: RelativePath;
 }
 
 /**

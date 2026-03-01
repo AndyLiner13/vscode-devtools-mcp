@@ -1,12 +1,11 @@
+import type { NodeKind, AbsolutePath, RelativePath } from '../shared/types.js';
+
+export type { NodeKind, AbsolutePath, RelativePath } from '../shared/types.js';
+export { BODY_BEARING_KINDS } from '../shared/types.js';
+
 /** Supported file extensions for TypeScript/JavaScript parsing. */
 export const PARSEABLE_EXTENSIONS = new Set([
 	'ts', 'tsx', 'js', 'jsx', 'mts', 'mjs', 'cts', 'cjs',
-]);
-
-/** Symbol kinds that have bodies which contain nested declarations. */
-export const BODY_BEARING_KINDS = new Set([
-	'function', 'method', 'constructor', 'getter', 'setter',
-	'class', 'interface', 'enum', 'namespace', 'module', 'staticBlock',
 ]);
 
 /** Range within a file. Lines are 1-indexed. */
@@ -24,27 +23,7 @@ export interface ParsedSymbol {
 	name: string;
 
 	/** Symbol kind. */
-	kind:
-		| 'function'
-		| 'method'
-		| 'class'
-		| 'interface'
-		| 'type'
-		| 'enum'
-		| 'enumMember'
-		| 'variable'
-		| 'const'
-		| 'property'
-		| 'constructor'
-		| 'getter'
-		| 'setter'
-		| 'namespace'
-		| 'module'
-		| 'staticBlock'
-		| 'import'
-		| 'expression'
-		| 're-export'
-		| 'comment';
+	kind: NodeKind;
 
 	/** Nesting depth. 0 = file root, 1 = class member, 2 = nested inside member, etc. */
 	depth: number;
@@ -74,10 +53,10 @@ export interface ParsedSymbol {
 /** Result of parsing a single file. */
 export interface ParsedFile {
 	/** Absolute file path. */
-	filePath: string;
+	filePath: AbsolutePath;
 
 	/** Workspace-relative path (forward slashes). */
-	relativePath: string;
+	relativePath: RelativePath;
 
 	/** All symbols including root-level items (imports, expressions, declarations). */
 	symbols: ParsedSymbol[];

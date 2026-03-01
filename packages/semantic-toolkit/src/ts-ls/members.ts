@@ -5,7 +5,7 @@
  * index/call/construct signatures) from a class or interface declaration.
  * Returns an ordered list with kind, modifiers, type text, and line numbers.
  */
-import { Project, Node, SyntaxKind } from 'ts-morph';
+import { Node, SyntaxKind } from 'ts-morph';
 import type {
 	ClassDeclaration,
 	InterfaceDeclaration,
@@ -22,6 +22,7 @@ import type {
 } from 'ts-morph';
 
 import type { MemberInfo, MemberKind } from './types.js';
+import type { SymbolTarget } from '../shared/types.js';
 
 export type { MemberInfo, MemberKind } from './types.js';
 
@@ -42,28 +43,17 @@ const TRACKED_MODIFIER_KINDS = new Map<SyntaxKind, string>([
 // ---------------------------------------------------------------------------
 
 /**
- * Resolve all members for a class or interface by name.
+ * Resolve all members for a class or interface.
  *
- * @param project    - ts-morph Project with all relevant source files added.
- * @param filePath   - Absolute path of the file containing the target symbol.
- * @param symbolName - Name of the class or interface.
- * @returns Array of MemberInfo, ordered by source position. Empty if symbol not found or has no members.
+ * @param target - Pre-located SymbolTarget (must be class or interface kind).
+ * @returns Array of MemberInfo, ordered by source position.
  */
-export function resolveMembers(
-	project: Project,
-	filePath: string,
-	symbolName: string,
-): MemberInfo[] {
-	const sourceFile = project.getSourceFileOrThrow(filePath);
-
-	const cls = sourceFile.getClass(symbolName);
-	if (cls) return resolveClassMembers(cls);
-
-	const iface = sourceFile.getInterface(symbolName);
-	if (iface) return resolveInterfaceMembers(iface);
+export function resolveMembers(target: SymbolTarget): MemberInfo[] {
+	if (Node.isClassDeclaration(target.node)) return resolveClassMembers(target.node);
+	if (Node.isInterfaceDeclaration(target.node)) return resolveInterfaceMembers(target.node);
 
 	throw new Error(
-		`Class or interface "${symbolName}" not found in ${filePath}`,
+		`Symbol "${target.name}" is not a class or interface (kind: ${target.kind})`,
 	);
 }
 

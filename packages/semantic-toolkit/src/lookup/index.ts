@@ -33,6 +33,9 @@ import { resolveSignature } from '../ts-ls/signature.js';
 import type { SymbolMetadata, SymbolRef, MemberInfo } from '../ts-ls/types.js';
 import type { TsLsConfig } from '../ts-ls/types.js';
 
+import { createSymbolTarget } from '../shared/node-locator.js';
+import { CALLABLE_KINDS, TYPE_HIERARCHY_KINDS, SKIP_REFS_KINDS } from '../shared/types.js';
+
 import { generateConnectionGraph } from '../graph/index.js';
 import type { GraphResultEntry, ConnectionGraphResult } from '../graph/types.js';
 
@@ -278,12 +281,19 @@ function enrichWithMetadata(
 		incomingCallers: [],
 	};
 
-	const lookupName = chunk.name;
-	const absFilePath = chunk.filePath;
+	const target = createSymbolTarget(
+		project,
+		chunk.filePath,
+		chunk.relativePath,
+		chunk.name,
+		chunk.nodeKind,
+		chunk.startLine,
+	);
+	if (!target) return metadata;
 
 	// Signature + modifiers (applicable to all kinds)
 	try {
-		const sigInfo = resolveSignature(project, absFilePath, lookupName);
+		const sigInfo = resolveSignature(target);
 		metadata.signature = sigInfo.signature;
 		metadata.modifiers = sigInfo.modifiers;
 	} catch {
@@ -291,12 +301,9 @@ function enrichWithMetadata(
 	}
 
 	// Call hierarchy (functions, methods, constructors)
-	const callableKinds = new Set(['function', 'method', 'constructor', 'getter', 'setter']);
-	if (callableKinds.has(chunk.nodeKind)) {
+	if (CALLABLE_KINDS.has(chunk.nodeKind)) {
 		try {
-			const callMeta = resolveCallHierarchy(
-				project, absFilePath, lookupName, workspaceRoot, tsLsConfig,
-			);
+			const callMeta = resolveCallHierarchy(target, workspaceRoot, tsLsConfig);
 			metadata.outgoingCalls = callMeta.outgoingCalls;
 			metadata.incomingCallers = callMeta.incomingCallers;
 		} catch {
@@ -305,44 +312,36 @@ function enrichWithMetadata(
 	}
 
 	// Type hierarchy (classes, interfaces)
-	const typeHierarchyKinds = new Set(['class', 'interface']);
-	if (typeHierarchyKinds.has(chunk.nodeKind)) {
+	if (TYPE_HIERARCHY_KINDS.has(chunk.nodeKind)) {
 		try {
-			metadata.typeHierarchy = resolveTypeHierarchy(
-				project, absFilePath, lookupName, workspaceRoot,
-			);
+			metadata.typeHierarchy = resolveTypeHierarchy(target, workspaceRoot);
 		} catch {
 			// Not all classes/interfaces have resolvable type hierarchies
 		}
 	}
 
 	// Members (classes, interfaces)
-	if (typeHierarchyKinds.has(chunk.nodeKind)) {
+	if (TYPE_HIERARCHY_KINDS.has(chunk.nodeKind)) {
 		try {
-			metadata.members = resolveMembers(project, absFilePath, lookupName);
+			metadata.members = resolveMembers(target);
 		} catch {
 			// Not all classes/interfaces have members
 		}
 	}
 
 	// References (all named symbols)
-	const skipRefsKinds = new Set(['import', 'expression', 're-export', 'comment']);
-	if (!skipRefsKinds.has(chunk.nodeKind)) {
+	if (!SKIP_REFS_KINDS.has(chunk.nodeKind)) {
 		try {
-			metadata.references = resolveReferences(
-				project, absFilePath, lookupName, workspaceRoot,
-			);
+			metadata.references = resolveReferences(target, workspaceRoot);
 		} catch {
 			// References may fail for some symbols
 		}
 	}
 
 	// Type flows (functions, methods, constructors)
-	if (callableKinds.has(chunk.nodeKind)) {
+	if (CALLABLE_KINDS.has(chunk.nodeKind)) {
 		try {
-			metadata.typeFlows = resolveTypeFlows(
-				project, absFilePath, lookupName, workspaceRoot,
-			);
+			metadata.typeFlows = resolveTypeFlows(target, workspaceRoot);
 		} catch {
 			// Type flows may fail for some symbols
 		}

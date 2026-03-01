@@ -6,9 +6,8 @@
  * intersection members, tuple elements, and function-typed parameters
  * to discover all user-defined types referenced. Cycle-safe via visited set.
  */
-import { Project, Node, SyntaxKind, Type } from 'ts-morph';
+import { Node, SyntaxKind, Type } from 'ts-morph';
 import type {
-	SourceFile,
 	FunctionDeclaration,
 	MethodDeclaration,
 	ConstructorDeclaration,
@@ -19,8 +18,11 @@ import type {
 import { toRelativePosixPath } from './paths.js';
 
 import type { SymbolRef, TypeFlow, TypeFlowParam, TypeFlowType } from './types.js';
+import type { SymbolTarget } from '../shared/types.js';
 
 export type { TypeFlow, TypeFlowParam, TypeFlowType } from './types.js';
+
+type CallableNode = FunctionDeclaration | MethodDeclaration | ConstructorDeclaration;
 
 // Primitives and built-in types that have no meaningful origin file.
 const BUILTIN_NAMES = new Set([
@@ -46,64 +48,35 @@ const BUILTIN_NAMES = new Set([
 // ---------------------------------------------------------------------------
 
 /**
- * Resolve type flows for a named function, method, or constructor.
+ * Resolve type flows for a function, method, or constructor.
  *
- * @param project       - ts-morph Project with all relevant source files added.
- * @param filePath      - Absolute path of the file containing the target symbol.
- * @param symbolName    - Name of the function, method, or class (for constructors).
+ * @param target        - Pre-located SymbolTarget (must be callable kind).
  * @param workspaceRoot - Workspace root for computing relative paths.
  * @returns TypeFlow with parameter/return type provenance and deduplicated referencedTypes.
  */
 export function resolveTypeFlows(
-	project: Project,
-	filePath: string,
-	symbolName: string,
+	target: SymbolTarget,
 	workspaceRoot: string,
 ): TypeFlow {
-	const sourceFile = project.getSourceFileOrThrow(filePath);
-	const declaration = findCallableDeclaration(sourceFile, symbolName);
+	const node = target.node;
 
-	if (!declaration) {
+	if (
+		!Node.isFunctionDeclaration(node)
+		&& !Node.isMethodDeclaration(node)
+		&& !Node.isConstructorDeclaration(node)
+	) {
 		throw new Error(
-			`Callable symbol "${symbolName}" not found in ${filePath}`,
+			`Symbol "${target.name}" is not callable (kind: ${target.kind})`,
 		);
 	}
 
-	const symbol = buildSymbolRef(declaration, symbolName, workspaceRoot);
+	const declaration = node;
+	const symbol = buildSymbolRef(declaration, target.name, workspaceRoot);
 	const parameters = resolveParameters(declaration, workspaceRoot);
 	const returnType = resolveReturnType(declaration, workspaceRoot);
 	const referencedTypes = deduplicateTypes(parameters, returnType);
 
 	return { symbol, parameters, returnType, referencedTypes };
-}
-
-// ---------------------------------------------------------------------------
-// Declaration lookup
-// ---------------------------------------------------------------------------
-
-type CallableNode = FunctionDeclaration | MethodDeclaration | ConstructorDeclaration;
-
-function findCallableDeclaration(
-	sourceFile: SourceFile,
-	name: string,
-): CallableNode | undefined {
-	const fn = sourceFile.getFunction(name);
-	if (fn) return fn;
-
-	// For classes: look for constructor first, then methods
-	const cls = sourceFile.getClass(name);
-	if (cls) {
-		const ctor = cls.getConstructors()[0];
-		if (ctor) return ctor;
-	}
-
-	// Search methods across all classes
-	for (const cls of sourceFile.getClasses()) {
-		const method = cls.getMethod(name);
-		if (method) return method;
-	}
-
-	return undefined;
 }
 
 // ---------------------------------------------------------------------------
