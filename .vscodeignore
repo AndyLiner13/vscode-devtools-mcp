@@ -55,6 +55,10 @@ node_modules/**
 !node_modules/fdir/**
 !node_modules/picomatch/**
 
+# ── Workspace package node_modules ────────────────────────
+# esbuild bundles workspace packages; their own node_modules must NOT ship
+packages/**/node_modules/**
+
 # ── Directories not needed in extension VSIX ──────────────
 # These MUST come last so they override all earlier !include rules
 inspector/**

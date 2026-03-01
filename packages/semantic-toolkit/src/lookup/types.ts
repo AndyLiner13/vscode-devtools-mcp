@@ -61,7 +61,7 @@ export interface NearMatch {
 	location: string;
 
 	/** Which kind of fallback found this. */
-	kind: 'case-mismatch' | 'partial-path';
+	kind: 'case-mismatch' | 'partial-path' | 'local-symbol';
 }
 
 /** Result of the symbol resolution step. */
@@ -77,6 +77,9 @@ export interface ResolutionResult {
 
 	/** True if results came from partial path fallback (hints only, not auto-resolved). */
 	hasPathHints: boolean;
+
+	/** True if the symbol was found as a local (non-body-bearing) declaration inside a parent. */
+	hasLocalHint: boolean;
 }
 
 // ─── Output ─────────────────────────────────────────────────────

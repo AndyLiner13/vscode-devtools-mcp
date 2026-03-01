@@ -16,6 +16,8 @@
 import * as path from 'node:path';
 
 import type { CodeChunk, ChunkedFile } from '../chunker/types.js';
+import type { ParsedSymbol } from '../parser/types.js';
+import { BODY_BEARING_KINDS } from '../shared/types.js';
 import type { ParsedSymbolPath, ResolvedMatch, NearMatch, ResolutionResult } from './types.js';
 
 /**
@@ -60,6 +62,7 @@ export function resolveSymbol(
 			nearMatches: [],
 			hasCaseHints: false,
 			hasPathHints: false,
+			hasLocalHint: false,
 		};
 	}
 
@@ -83,15 +86,35 @@ export function resolveSymbol(
 			nearMatches,
 			hasCaseHints: true,
 			hasPathHints: false,
+			hasLocalHint: false,
 		};
 	}
 
-	// Step 4: Nothing found at all
+	// Step 4: Check if the symbol exists as a local (non-body-bearing) declaration
+	const localHits = findLocalSymbolInParsedTrees(symbolPath.symbolName, filesToSearch);
+	if (localHits.length > 0) {
+		const nearMatches: NearMatch[] = localHits.map(h => ({
+			value: h.parentName,
+			location: `${h.relativePath}:${h.parentStartLine}`,
+			kind: 'local-symbol' as const,
+		}));
+
+		return {
+			matches: [],
+			nearMatches,
+			hasCaseHints: false,
+			hasPathHints: false,
+			hasLocalHint: true,
+		};
+	}
+
+	// Step 5: Nothing found at all
 	return {
 		matches: [],
 		nearMatches: [],
 		hasCaseHints: false,
 		hasPathHints: false,
+		hasLocalHint: false,
 	};
 }
 
@@ -165,6 +188,7 @@ function buildPathHintResult(
 		nearMatches,
 		hasCaseHints: false,
 		hasPathHints: nearMatches.length > 0,
+		hasLocalHint: false,
 	};
 }
 
@@ -363,4 +387,99 @@ export function formatAmbiguityHint(
 		.join('\n');
 
 	return `${header}\n${suggestions}`;
+}
+
+// ─── Local Symbol Search ────────────────────────────────────────
+
+interface LocalSymbolHit {
+	parentName: string;
+	parentKind: string;
+	parentStartLine: number;
+	relativePath: string;
+	symbolKind: string;
+}
+
+/**
+ * Search parsed symbol trees for a name that exists as a local (non-body-bearing)
+ * declaration inside a body-bearing parent. These symbols are not chunked, so they
+ * won't appear in normal resolution — but we can still provide a helpful hint.
+ */
+function findLocalSymbolInParsedTrees(
+	symbolName: string,
+	chunkedFiles: ChunkedFile[],
+): LocalSymbolHit[] {
+	const hits: LocalSymbolHit[] = [];
+
+	for (const cf of chunkedFiles) {
+		walkSymbolTree(cf.parsedFile.symbols, cf.parsedFile.relativePath, null, hits, symbolName);
+	}
+
+	return hits;
+}
+
+/**
+ * Recursively walk the parsed symbol tree looking for non-body-bearing children
+ * whose name matches the requested symbol.
+ */
+function walkSymbolTree(
+	symbols: ParsedSymbol[],
+	relativePath: string,
+	parentCtx: { name: string; kind: string; startLine: number } | null,
+	hits: LocalSymbolHit[],
+	targetName: string,
+): void {
+	for (const sym of symbols) {
+		// If this is a non-body-bearing child inside a body-bearing parent, check for match
+		if (
+			parentCtx !== null &&
+			BODY_BEARING_KINDS.has(parentCtx.kind as import('../shared/types.js').NodeKind) &&
+			!BODY_BEARING_KINDS.has(sym.kind) &&
+			sym.name === targetName
+		) {
+			hits.push({
+				parentName: parentCtx.name,
+				parentKind: parentCtx.kind,
+				parentStartLine: parentCtx.startLine,
+				relativePath,
+				symbolKind: sym.kind,
+			});
+		}
+
+		// Recurse into children
+		if (sym.children.length > 0) {
+			walkSymbolTree(
+				sym.children,
+				relativePath,
+				{ name: sym.name, kind: sym.kind, startLine: sym.range.startLine },
+				hits,
+				targetName,
+			);
+		}
+	}
+}
+
+/**
+ * Format a hint message when a symbol is found as a local declaration
+ * inside a parent symbol.
+ *
+ * @param requestedName - The name the user typed.
+ * @param nearMatches - Local symbol matches found in the parsed tree.
+ * @returns Formatted hint string.
+ */
+export function formatLocalHint(requestedName: string, nearMatches: NearMatch[]): string {
+	if (nearMatches.length === 1) {
+		const m = nearMatches[0];
+		return (
+			`"${requestedName}" is a local declaration inside ${m.value} (${m.location}). ` +
+			`Try: symbol = ${m.value}`
+		);
+	}
+
+	const suggestions = nearMatches
+		.slice(0, 5)
+		.map(m => `  - symbol = ${m.value}  (${m.location})`)
+		.join('\n');
+	const suffix = nearMatches.length > 5 ? `\n  ... and ${nearMatches.length - 5} more` : '';
+
+	return `"${requestedName}" is a local declaration. Did you mean one of its parents?\n${suggestions}${suffix}`;
 }

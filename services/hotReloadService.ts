@@ -64,6 +64,10 @@ class HotReloadService {
 	 *
 	 * Also scans for non-TS asset files (.css, .html, .json) in the same
 	 * include directories so that style/markup changes trigger rebuilds.
+	 *
+	 * When the package has an esbuild.mjs that bundles @packages/* aliases,
+	 * source files from those dependent packages are included in the result
+	 * so that their changes are reflected in the content hash.
 	 */
 	discoverSourceFiles(packageRoot: string): string[] {
 		const buildConfigPath = join(packageRoot, 'tsconfig.build.json');
@@ -110,7 +114,75 @@ class HotReloadService {
 			allFiles.add(f);
 		}
 
+		// Include source files from bundled @packages/* dependencies
+		const bundledRoots = this.discoverBundledPackageRoots(packageRoot);
+		for (const pkgRoot of bundledRoots) {
+			const pkgFiles = this.discoverSourceFilesForPackage(pkgRoot);
+			for (const f of pkgFiles) {
+				allFiles.add(f);
+			}
+		}
+
 		return [...allFiles];
+	}
+
+	/**
+	 * Discover source files for a single package (no recursion into bundled deps).
+	 * Used to resolve files from dependent @packages/* roots.
+	 */
+	private discoverSourceFilesForPackage(packageRoot: string): string[] {
+		const buildConfigPath = join(packageRoot, 'tsconfig.build.json');
+		const defaultConfigPath = join(packageRoot, 'tsconfig.json');
+		const configPath = existsSync(buildConfigPath) ? buildConfigPath : defaultConfigPath;
+
+		if (!existsSync(configPath)) return [];
+
+		const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
+		if (configFile.error) return [];
+
+		const parsed = ts.parseJsonConfigFileContent(configFile.config, ts.sys, packageRoot, undefined, configPath);
+		return parsed.fileNames;
+	}
+
+	/**
+	 * Parse esbuild.mjs to discover @packages/* alias targets.
+	 *
+	 * Reads the esbuild config and extracts alias entries like:
+	 *   { alias: '@packages/semantic-toolkit', target: 'packages/semantic-toolkit/src/index.js' }
+	 *
+	 * Returns the absolute package root directories (parent of 'src/').
+	 */
+	private discoverBundledPackageRoots(packageRoot: string): string[] {
+		const esbuildPath = join(packageRoot, 'esbuild.mjs');
+		if (!existsSync(esbuildPath)) return [];
+
+		try {
+			const content = readFileSync(esbuildPath, 'utf-8');
+			const roots: string[] = [];
+
+			// Match alias target patterns: target: 'packages/foo/src/index.js'
+			const aliasPattern = /target:\s*['"]([^'"]+\/src\/[^'"]+)['"]/g;
+			let match;
+			while ((match = aliasPattern.exec(content)) !== null) {
+				const targetPath = match[1];
+				// Extract the package root (everything before /src/)
+				const srcIdx = targetPath.indexOf('/src/');
+				if (srcIdx === -1) continue;
+				const pkgRelative = targetPath.slice(0, srcIdx);
+				// Resolve relative to the monorepo root (parent of mcp-server)
+				const monorepoRoot = join(packageRoot, '..');
+				const pkgAbsolute = join(monorepoRoot, pkgRelative);
+				if (existsSync(pkgAbsolute)) {
+					roots.push(pkgAbsolute);
+					log(`[hotReload] Discovered bundled package: ${pkgRelative}`);
+				}
+			}
+
+			return roots;
+		} catch {
+			log(`[hotReload] Failed to parse esbuild config at ${esbuildPath}`);
+			return [];
+		}
 	}
 
 	/**

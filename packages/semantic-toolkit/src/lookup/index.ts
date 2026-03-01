@@ -43,7 +43,7 @@ import { generateSnapshot } from '../snapshot/index.js';
 import type { SnapshotResult } from '../snapshot/types.js';
 
 import { parseSymbolQuery } from './parse-query.js';
-import { resolveSymbol, formatCaseHint, formatPathHint, formatAmbiguityHint } from './resolve.js';
+import { resolveSymbol, formatCaseHint, formatPathHint, formatAmbiguityHint, formatLocalHint } from './resolve.js';
 import type {
 	LookupResult,
 	SymbolLookupResult,
@@ -110,6 +110,8 @@ export function lookupSymbol(
 			hint = formatCaseHint(parsed.path.symbolName, resolution.nearMatches);
 		} else if (resolution.hasPathHints && parsed.path.filePath !== null) {
 			hint = formatPathHint(parsed.path.filePath, resolution.nearMatches);
+		} else if (resolution.hasLocalHint) {
+			hint = formatLocalHint(parsed.path.symbolName, resolution.nearMatches);
 		}
 
 		return {

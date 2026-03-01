@@ -76,8 +76,15 @@ function createChunks(
 	parentChunkId: string | null,
 	idMap: Map<string, string>,
 	chunks: CodeChunk[],
+	parentIsBodyBearing = false,
 ): void {
 	for (const sym of symbols) {
+		// Non-body-bearing children of body-bearing parents are local
+		// implementation details (variables, constants, etc.) — skip chunking.
+		if (parentIsBodyBearing && !BODY_BEARING_KINDS.has(sym.kind)) {
+			continue;
+		}
+
 		const key = makeKey(sym, parentChain);
 		const chunkId = idMap.get(key);
 		if (!chunkId) continue;
@@ -152,6 +159,7 @@ function createChunks(
 				chunkId,
 				idMap,
 				chunks,
+				BODY_BEARING_KINDS.has(sym.kind),
 			);
 		}
 	}
