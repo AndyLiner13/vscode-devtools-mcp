@@ -135,16 +135,14 @@ export const search = defineTool({
 			return;
 		}
 
-		let output = result.output;
+		response.appendResponseLine(result.output);
 
 		const meta = [
 			`# matches: ${result.matchCount}`,
 			`# files: ${result.fileCount}`,
 			`# tokens: ${result.tokenCount}`,
-		];
-		output += '\n\n' + meta.join('\n');
-
-		response.appendResponseLine(output);
+		].join('\n');
+		response.appendResponseLine(meta);
 	},
 	name: 'codebase_search',
 	schema: {
