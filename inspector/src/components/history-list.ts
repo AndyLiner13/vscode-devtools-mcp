@@ -1,4 +1,4 @@
-import type { CallToolResult, ContentBlock, ExecutionRecord, RecordRating } from '../types';
+import type { CallToolResult, ExecutionRecord, RecordRating } from '../types';
 import type * as monaco from 'monaco-editor';
 
 import { rpc } from '../bridge';
@@ -399,39 +399,42 @@ function renderEntryDetail(record: ExecutionRecord): HTMLElement {
 	inputSection.appendChild(inputWrapper);
 	detail.appendChild(inputSection);
 
-	// Output
+	// Output — one editor per content block
 	const outputSection = document.createElement('div');
 	outputSection.className = 'history-detail-section';
 	const outputLabel = document.createElement('div');
 	outputLabel.className = 'history-detail-label';
 	outputLabel.textContent = 'Output';
+	outputSection.appendChild(outputLabel);
 
-	const outputText = combineOutputText(record.output);
-	let languageId = 'plaintext';
-	try {
-		JSON.parse(outputText);
-		languageId = 'json';
-	} catch {
-		// Not JSON
+	const textBlocks = record.output.filter((b) => b.text);
+	if (textBlocks.length === 0) {
+		const wrapper = document.createElement('div');
+		wrapper.className = 'tool-io-editor-wrapper';
+		const editor = createOutputEditor(wrapper, '(no output)', 'plaintext');
+		entryEditors.set(`${record.id}-output-0`, editor);
+		outputSection.appendChild(wrapper);
+	} else {
+		for (const [i, block] of textBlocks.entries()) {
+			const text = block.text ?? '';
+			let languageId = 'plaintext';
+			try {
+				JSON.parse(text);
+				languageId = 'json';
+			} catch {
+				// Not JSON
+			}
+			const wrapper = document.createElement('div');
+			wrapper.className = 'tool-io-editor-wrapper';
+			const editor = createOutputEditor(wrapper, text, languageId);
+			entryEditors.set(`${record.id}-output-${i}`, editor);
+			outputSection.appendChild(wrapper);
+		}
 	}
 
-	const outputWrapper = document.createElement('div');
-	outputWrapper.className = 'tool-io-editor-wrapper';
-	const outputEditor = createOutputEditor(outputWrapper, outputText, languageId);
-	entryEditors.set(`${record.id}-output`, outputEditor);
-
-	outputSection.appendChild(outputLabel);
-	outputSection.appendChild(outputWrapper);
 	detail.appendChild(outputSection);
 
 	return detail;
-}
-
-function combineOutputText(blocks: ContentBlock[]): string {
-	return blocks
-		.filter((b) => b.text)
-		.map((b) => b.text)
-		.join('\n');
 }
 
 function formatTime(isoString: string): string {

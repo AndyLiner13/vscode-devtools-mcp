@@ -265,6 +265,12 @@ code {
 	background-color: var(--color-vscode-input);
 }
 
+.output-block-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
 /* Result section styling */
 .tool-result-section {
 	margin-top: 2px;

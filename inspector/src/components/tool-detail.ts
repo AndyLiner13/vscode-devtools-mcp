@@ -2,15 +2,16 @@ import type { CallToolResult, ContentBlock, JsonSchema, ToolDefinition } from '.
 import type * as monaco from 'monaco-editor';
 
 import { setupJsonInteractivity, setupLockedEditing } from '../json-interactivity';
-import { createInputEditor, createOutputEditor, setModelLanguage } from '../monaco-setup';
+import { createInputEditor, createOutputEditor } from '../monaco-setup';
 import { addExecution, createHistoryContainer, setCurrentTool, updateExecution } from './history-list';
 
 let executeHandler: ((toolName: string, args: Record<string, unknown>) => Promise<CallToolResult>) | null = null;
 
 let activeInputEditor: monaco.editor.IStandaloneCodeEditor | null = null;
-let activeOutputEditor: monaco.editor.IStandaloneCodeEditor | null = null;
+let activeOutputEditors: monaco.editor.IStandaloneCodeEditor[] = [];
 let isExecuting = false;
 let activeOutputSection: HTMLElement | null = null;
+let activeOutputContainer: HTMLElement | null = null;
 let activeToolName = '';
 let inputSaveTimer: ReturnType<typeof setTimeout> | null = null;
 let activeInteractivity: { dispose(): void } | null = null;
@@ -18,10 +19,15 @@ let activeInteractivity: { dispose(): void } | null = null;
 const INPUT_STORAGE_PREFIX = 'mcp-inspector-input:';
 const OUTPUT_STORAGE_PREFIX = 'mcp-inspector-output:';
 
-interface SavedOutput {
-	isError: boolean;
+interface SavedOutputBlock {
+	isImage: boolean;
 	languageId: string;
 	text: string;
+}
+
+interface SavedOutput {
+	blocks: SavedOutputBlock[];
+	isError: boolean;
 }
 
 function saveInputState(toolName: string, value: string): void {
@@ -32,8 +38,8 @@ function loadInputState(toolName: string): string | null {
 	return localStorage.getItem(`${INPUT_STORAGE_PREFIX}${toolName}`);
 }
 
-function saveOutputState(toolName: string, text: string, isError: boolean, languageId: string): void {
-	const data: SavedOutput = { isError, languageId, text };
+function saveOutputState(toolName: string, blocks: SavedOutputBlock[], isError: boolean): void {
+	const data: SavedOutput = { blocks, isError };
 	localStorage.setItem(`${OUTPUT_STORAGE_PREFIX}${toolName}`, JSON.stringify(data));
 }
 
@@ -41,7 +47,16 @@ function loadOutputState(toolName: string): SavedOutput | null {
 	const raw = localStorage.getItem(`${OUTPUT_STORAGE_PREFIX}${toolName}`);
 	if (!raw) return null;
 	try {
-		return JSON.parse(raw) as SavedOutput;
+		const parsed = JSON.parse(raw) as Record<string, unknown>;
+		// Migrate old single-block format to new multi-block format
+		if ('text' in parsed && !('blocks' in parsed)) {
+			const legacy = parsed as { isError: boolean; languageId: string; text: string };
+			return {
+				blocks: [{ isImage: false, languageId: legacy.languageId, text: legacy.text }],
+				isError: legacy.isError,
+			};
+		}
+		return parsed as SavedOutput;
 	} catch {
 		return null;
 	}
@@ -67,10 +82,11 @@ function disposeEditors(): void {
 		activeInputEditor.dispose();
 		activeInputEditor = null;
 	}
-	if (activeOutputEditor) {
-		activeOutputEditor.dispose();
-		activeOutputEditor = null;
+	for (const editor of activeOutputEditors) {
+		editor.dispose();
 	}
+	activeOutputEditors = [];
+	activeOutputContainer = null;
 	isExecuting = false;
 	activeOutputSection = null;
 }
@@ -228,20 +244,28 @@ export function renderToolDetail(tool: ToolDefinition): void {
 	outputHeader.appendChild(outputLabel);
 	activeOutputSection.appendChild(outputHeader);
 
-	const outputWrapper = document.createElement('div');
-	outputWrapper.className = 'tool-io-editor-wrapper';
+	activeOutputContainer = document.createElement('div');
+	activeOutputContainer.className = 'output-block-list';
 
 	const savedOutput = loadOutputState(tool.name);
-	const initialOutputText = savedOutput?.text ?? '';
-	const initialOutputLang = savedOutput?.languageId ?? 'plaintext';
-
-	activeOutputEditor = createOutputEditor(outputWrapper, initialOutputText, initialOutputLang);
-
-	if (savedOutput) {
+	if (savedOutput && savedOutput.blocks.length > 0) {
 		outputLabel.style.color = savedOutput.isError ? 'var(--vscode-editorError-foreground, #f44747)' : '';
+		for (const block of savedOutput.blocks) {
+			const wrapper = document.createElement('div');
+			wrapper.className = 'tool-io-editor-wrapper';
+			const editor = createOutputEditor(wrapper, block.text, block.languageId);
+			activeOutputEditors.push(editor);
+			activeOutputContainer.appendChild(wrapper);
+		}
+	} else {
+		const wrapper = document.createElement('div');
+		wrapper.className = 'tool-io-editor-wrapper';
+		const editor = createOutputEditor(wrapper, '', 'plaintext');
+		activeOutputEditors.push(editor);
+		activeOutputContainer.appendChild(wrapper);
 	}
 
-	activeOutputSection.appendChild(outputWrapper);
+	activeOutputSection.appendChild(activeOutputContainer);
 
 	card.appendChild(activeOutputSection);
 
@@ -270,25 +294,43 @@ export function renderToolDetail(tool: ToolDefinition): void {
 // ── Live Output ──
 
 function renderLiveOutput(content: ContentBlock[], isError: boolean): void {
-	if (!activeOutputEditor) return;
+	if (!activeOutputContainer) return;
 
-	const outputText = content
-		.filter((b) => b.text)
-		.map((b) => b.text)
-		.join('\n');
-
-	let languageId = 'plaintext';
-	try {
-		JSON.parse(outputText);
-		languageId = 'json';
-	} catch {
-		// Not JSON
+	// Dispose old editors
+	for (const editor of activeOutputEditors) {
+		editor.dispose();
 	}
+	activeOutputEditors = [];
+	activeOutputContainer.innerHTML = '';
 
-	const model = activeOutputEditor.getModel();
-	if (model) {
-		setModelLanguage(model, languageId);
-		activeOutputEditor.setValue(outputText);
+	const textBlocks = content.filter((b) => b.text);
+	const blocks: SavedOutputBlock[] = [];
+
+	if (textBlocks.length === 0) {
+		const wrapper = document.createElement('div');
+		wrapper.className = 'tool-io-editor-wrapper';
+		const editor = createOutputEditor(wrapper, '(no output)', 'plaintext');
+		activeOutputEditors.push(editor);
+		activeOutputContainer.appendChild(wrapper);
+		blocks.push({ isImage: false, languageId: 'plaintext', text: '(no output)' });
+	} else {
+		for (const block of textBlocks) {
+			const text = block.text ?? '';
+			let languageId = 'plaintext';
+			try {
+				JSON.parse(text);
+				languageId = 'json';
+			} catch {
+				// Not JSON
+			}
+
+			const wrapper = document.createElement('div');
+			wrapper.className = 'tool-io-editor-wrapper';
+			const editor = createOutputEditor(wrapper, text, languageId);
+			activeOutputEditors.push(editor);
+			activeOutputContainer.appendChild(wrapper);
+			blocks.push({ isImage: false, languageId, text });
+		}
 	}
 
 	const label = document.getElementById('live-output-label');
@@ -297,7 +339,7 @@ function renderLiveOutput(content: ContentBlock[], isError: boolean): void {
 	}
 
 	if (activeToolName) {
-		saveOutputState(activeToolName, outputText, isError, languageId);
+		saveOutputState(activeToolName, blocks, isError);
 	}
 }
 
