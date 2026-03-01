@@ -131,18 +131,15 @@ export const search = defineTool({
 		}
 
 		if (!result.found) {
-			response.appendResponseLine(result.output);
+			for (const section of result.outputSections) {
+				response.appendResponseLine(section);
+			}
 			return;
 		}
 
-		response.appendResponseLine(result.output);
-
-		const meta = [
-			`# matches: ${result.matchCount}`,
-			`# files: ${result.fileCount}`,
-			`# tokens: ${result.tokenCount}`,
-		].join('\n');
-		response.appendResponseLine(meta);
+		for (const section of result.outputSections) {
+			response.appendResponseLine(section);
+		}
 	},
 	name: 'codebase_search',
 	schema: {

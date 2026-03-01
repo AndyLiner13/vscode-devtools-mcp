@@ -115,7 +115,7 @@ export function lookupSymbol(
 		return {
 			isSymbolLookup: true,
 			found: false,
-			output: hint ?? `No symbol "${parsed.path.symbolName}" found.`,
+			outputSections: [hint ?? `No symbol "${parsed.path.symbolName}" found.`],
 			matchCount: 0,
 			fileCount: 0,
 			tokenCount: estimateTokens(hint ?? ''),
@@ -136,7 +136,7 @@ export function lookupSymbol(
 			return {
 				isSymbolLookup: true,
 				found: false,
-				output: hint,
+				outputSections: [hint],
 				matchCount: resolution.matches.length,
 				fileCount: new Set(resolution.matches.map(m => m.relativePath)).size,
 				tokenCount: estimateTokens(hint),
@@ -234,27 +234,35 @@ function renderLookupOutput(
 		}
 	}
 
-	// Combine output
-	const outputParts: string[] = [graphResult.text];
-	if (snapshotTexts.length > 0) {
-		outputParts.push('');
-		outputParts.push('--- Code ---');
-		for (const snapshot of snapshotTexts) {
-			outputParts.push('');
-			outputParts.push(snapshot);
-		}
-	}
+	// Build code section
+	const codeSection = snapshotTexts.map(s => s.trim()).join('\n\n');
 
-	const output = outputParts.join('\n');
 	const distinctFiles = new Set(matches.map(m => m.relativePath));
+
+	// Debug metadata section
+	const debugMeta = [
+		graphResult.summaryLine,
+		`# matches: ${matches.length}`,
+		`# files: ${distinctFiles.size}`,
+		`# tokens: ${graphResult.tokenCount}`,
+	].join('\n');
+
+	const outputSections: [string, string, string] = [
+		debugMeta,
+		graphResult.graphBody.trim(),
+		codeSection || '(no code)',
+	];
+
+	// Token count across all sections
+	const tokenCount = estimateTokens(outputSections.join('\n'));
 
 	return {
 		isSymbolLookup: true,
 		found: true,
-		output,
+		outputSections,
 		matchCount: matches.length,
 		fileCount: distinctFiles.size,
-		tokenCount: estimateTokens(output),
+		tokenCount,
 		hint: null,
 	};
 }

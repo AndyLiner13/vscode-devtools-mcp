@@ -48,13 +48,10 @@ function loadOutputState(toolName: string): SavedOutput | null {
 	if (!raw) return null;
 	try {
 		const parsed = JSON.parse(raw) as Record<string, unknown>;
-		// Migrate old single-block format to new multi-block format
-		if ('text' in parsed && !('blocks' in parsed)) {
-			const legacy = parsed as { isError: boolean; languageId: string; text: string };
-			return {
-				blocks: [{ isImage: false, languageId: legacy.languageId, text: legacy.text }],
-				isError: legacy.isError,
-			};
+		if (!('blocks' in parsed) || !Array.isArray(parsed.blocks)) {
+			// Old format — discard instead of migrating
+			localStorage.removeItem(`${OUTPUT_STORAGE_PREFIX}${toolName}`);
+			return null;
 		}
 		return parsed as SavedOutput;
 	} catch {

@@ -35,17 +35,20 @@ export function renderSingleResult(
 	const sym = meta.symbol;
 
 	// Summary line
-	const resultText = buildSingleResultBody(entry);
-	const tokenCount = estimateTokens(resultText);
-	lines.push(`Search: "${query}" | 1 result | ${formatTokenCount(tokenCount)}/${formatTokenCount(tokenBudget)} tokens`);
+	const graphBody = buildSingleResultBody(entry);
+	const tokenCount = estimateTokens(graphBody);
+	const summaryLine = `Search: "${query}" | 1 result | ${formatTokenCount(tokenCount)}/${formatTokenCount(tokenBudget)} tokens`;
+	lines.push(summaryLine);
 	lines.push('');
 
-	lines.push(resultText);
+	lines.push(graphBody);
 
 	const text = lines.join('\n');
 
 	return {
 		text,
+		summaryLine,
+		graphBody,
 		resultCount: 1,
 		fileCount: 1,
 		tokenCount: estimateTokens(text),
@@ -178,7 +181,8 @@ export function renderMultiResult(
 	const tokenCount = estimateTokens(bodyText);
 
 	// Summary line (needs token count from body)
-	lines.push(`Search: "${query}" | ${results.length} results across ${fileCount} files | ${formatTokenCount(tokenCount)}/${formatTokenCount(tokenBudget)} tokens`);
+	const summaryLine = `Search: "${query}" | ${results.length} results across ${fileCount} files | ${formatTokenCount(tokenCount)}/${formatTokenCount(tokenBudget)} tokens`;
+	lines.push(summaryLine);
 	lines.push('');
 	lines.push(bodyText);
 
@@ -186,6 +190,8 @@ export function renderMultiResult(
 
 	return {
 		text,
+		summaryLine,
+		graphBody: bodyText,
 		resultCount: results.length,
 		fileCount,
 		tokenCount: estimateTokens(text),

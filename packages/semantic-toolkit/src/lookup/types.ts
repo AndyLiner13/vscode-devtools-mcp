@@ -93,10 +93,13 @@ export interface SymbolLookupResult {
 	found: boolean;
 
 	/**
-	 * Rendered output text (connection graph + smart snapshots).
-	 * Format matches full pipeline output. Empty string if nothing found.
+	 * Structured output sections for multi-panel rendering.
+	 * [0] = debug metadata (search summary + match/file/token counts)
+	 * [1] = connection graph (symbol card with calls/refs)
+	 * [2] = code (raw snapshot content)
+	 * When found is false, contains a single-element tuple with the error/hint message.
 	 */
-	output: string;
+	outputSections: [debugMeta: string, graph: string, code: string] | [message: string];
 
 	/** Number of matched symbols. */
 	matchCount: number;

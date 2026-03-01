@@ -171,8 +171,14 @@ export interface PatternsResult {
 
 /** The final connection graph output. */
 export interface ConnectionGraphResult {
-	/** The rendered connection graph text. */
+	/** The rendered connection graph text (summary + body combined). */
 	text: string;
+
+	/** The search summary line (e.g. 'Search: "symbol = Foo" | 1 result | 46/8,000 tokens'). */
+	summaryLine: string;
+
+	/** The graph body without the summary line (symbol card, calls, details). */
+	graphBody: string;
 
 	/** Number of result symbols. */
 	resultCount: number;
