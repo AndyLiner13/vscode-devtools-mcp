@@ -590,6 +590,37 @@ interface SemanticSymbolsResponse {
 
 const SYMBOL_PREFIX = 'symbol = ';
 
+// Cache for semantic symbols, keyed by file path
+// This allows the completion provider to return results synchronously
+// after the first fetch for a given file.
+interface SymbolCacheEntry {
+	symbols: SemanticSymbolEntry[];
+	timestamp: number;
+}
+const symbolCache = new Map<string, SymbolCacheEntry>();
+const SYMBOL_CACHE_TTL = 30_000; // 30 seconds
+
+async function fetchSymbolsWithCache(filePath: string): Promise<SemanticSymbolEntry[]> {
+	const cached = symbolCache.get(filePath);
+	const now = Date.now();
+	if (cached && now - cached.timestamp < SYMBOL_CACHE_TTL) {
+		log(`[querySymbol] using cached symbols for ${filePath} (age: ${now - cached.timestamp}ms)`);
+		return cached.symbols;
+	}
+
+	log(`[querySymbol] fetching fresh symbols for ${filePath}`);
+	try {
+		const data = await rpc<SemanticSymbolsResponse>('editor/semantic-symbols', { file: filePath });
+		const symbols = data.symbols ?? [];
+		symbolCache.set(filePath, { symbols, timestamp: now });
+		log(`[querySymbol] cached ${symbols.length} symbols for ${filePath}`);
+		return symbols;
+	} catch (err) {
+		log(`[querySymbol] → RPC error: ${String(err)}`);
+		return [];
+	}
+}
+
 /**
  * For lines containing `"query": "symbol = ..."`, returns the 1-based column
  * right after the "symbol = " prefix (where editable content begins).
@@ -620,9 +651,12 @@ function hasQuerySymbolSchema(schema: JsonSchema): null | string {
  * Registers symbol completions for the `query` field in tools like codebase_search.
  * Detects `symbol = ` prefix and provides semantic symbol suggestions from the
  * file specified in the `file` parameter.
+ * 
+ * Also watches for content changes to pre-fetch symbols when the file path changes,
+ * so completions can return synchronously.
  */
 function setupQuerySymbolIntellisense(
-	_editor: monacoNs.editor.IStandaloneCodeEditor,
+	editor: monacoNs.editor.IStandaloneCodeEditor,
 	schema: JsonSchema,
 ): monacoNs.IDisposable {
 	const fileProp = hasQuerySymbolSchema(schema);
@@ -631,45 +665,100 @@ function setupQuerySymbolIntellisense(
 	}
 
 	const queryProps = new Set(['query']);
+	let lastFilePathValue = '';
 
-	return monacoNs.languages.registerCompletionItemProvider('json', {
-		provideCompletionItems: async (model, position) => {
+	// Pre-fetch symbols when file path changes, so completions can be synchronous
+	const prefetchSymbols = (): void => {
+		const model = editor.getModel();
+		if (!model) return;
+		const filePathValue = readStringPropertyValue(model, fileProp);
+		if (filePathValue && filePathValue !== lastFilePathValue) {
+			lastFilePathValue = filePathValue;
+			log(`[querySymbol] file path changed to ${filePathValue}, pre-fetching symbols...`);
+			// Pre-fetch in background (fire and forget)
+			void fetchSymbolsWithCache(filePathValue);
+		}
+	};
+
+	// Initial pre-fetch
+	prefetchSymbols();
+
+	// Watch for content changes
+	const contentChangeDisposable = editor.onDidChangeModelContent(() => {
+		prefetchSymbols();
+	});
+
+	const completionDisposable = monacoNs.languages.registerCompletionItemProvider('json', {
+		provideCompletionItems: async (model, position, _context, token) => {
 			const empty: monacoNs.languages.CompletionList = { suggestions: [] };
+
+			log(`[querySymbol] provideCompletionItems called at line=${position.lineNumber} col=${position.column}`);
 
 			const line = model.getLineContent(position.lineNumber);
 			const valueRange = findStringValueRange(line, position.column, queryProps);
-			if (!valueRange) return empty;
+			log(`[querySymbol] valueRange: ${valueRange ? JSON.stringify(valueRange) : 'null'}`);
+			if (!valueRange) {
+				log(`[querySymbol] → no valueRange, returning empty`);
+				return empty;
+			}
 
 			const currentValue = line.substring(
 				valueRange.contentStart - 1,
 				valueRange.contentEnd - 1,
 			);
+			log(`[querySymbol] currentValue: ${JSON.stringify(currentValue)}`);
 
 			const hasPrefix = currentValue.toLowerCase().startsWith(SYMBOL_PREFIX.toLowerCase());
 			const filterText = hasPrefix
 				? currentValue.slice(SYMBOL_PREFIX.length)
 				: currentValue;
+			log(`[querySymbol] hasPrefix=${hasPrefix} filterText=${JSON.stringify(filterText)}`);
 
 			const filePathValue = readStringPropertyValue(model, fileProp);
-			if (!filePathValue) return empty;
-
-			let symbols: SemanticSymbolEntry[] = [];
-			try {
-				const data = await rpc<SemanticSymbolsResponse>(
-					'editor/semantic-symbols',
-					{ file: filePathValue },
-				);
-				symbols = data.symbols ?? [];
-			} catch {
+			log(`[querySymbol] filePathValue: ${filePathValue ?? 'null'}`);
+			if (!filePathValue) {
+				log(`[querySymbol] → no filePathValue, returning empty`);
 				return empty;
 			}
 
-			if (symbols.length === 0) return empty;
+			// Check if we have cached symbols (allows synchronous return)
+			const cached = symbolCache.get(filePathValue);
+			const now = Date.now();
+			const hasFreshCache = cached && now - cached.timestamp < SYMBOL_CACHE_TTL;
 
+			let symbols: SemanticSymbolEntry[];
+			if (hasFreshCache) {
+				symbols = cached.symbols;
+				log(`[querySymbol] using cached ${symbols.length} symbols (age: ${now - cached.timestamp}ms)`);
+			} else {
+				// No cache - need to fetch. This is async and Monaco won't wait.
+				// Fetch in background and invalidate cache after.
+				log(`[querySymbol] no cache or stale, fetching fresh symbols...`);
+				symbols = await fetchSymbolsWithCache(filePathValue);
+				
+				// Check if Monaco cancelled while we were waiting
+				if (token.isCancellationRequested) {
+					log(`[querySymbol] → request cancelled after fetch, returning empty`);
+					return empty;
+				}
+			}
+
+			log(`[querySymbol] fetched ${symbols.length} symbols`);
+			if (symbols.length === 0) {
+				log(`[querySymbol] → no symbols, returning empty`);
+				return empty;
+			}
+
+			// Replace range covers the full string content (including the prefix).
+			// We include the prefix in filterText so Monaco's fuzzy matching sees
+			// typed text "symbol = " matching "symbol = UserProfile" (prefix match).
 			const replaceRange = new monacoNs.Range(
 				position.lineNumber, valueRange.contentStart,
 				position.lineNumber, valueRange.contentEnd,
 			);
+			const rangeText = model.getValueInRange(replaceRange);
+			log(`[querySymbol] contentStart=${valueRange.contentStart} contentEnd=${valueRange.contentEnd} replaceRange=[${replaceRange.startColumn},${replaceRange.endColumn}] cursorCol=${position.column}`);
+			log(`[querySymbol] RANGE TEXT: ${JSON.stringify(rangeText)} | SAMPLE filterText: ${JSON.stringify(`${SYMBOL_PREFIX}SampleSymbol`)}`);
 
 			const suggestions: monacoNs.languages.CompletionItem[] = [];
 			for (const [idx, sym] of symbols.entries()) {
@@ -684,7 +773,7 @@ function setupQuerySymbolIntellisense(
 
 				suggestions.push({
 					detail: sym.kind,
-					filterText: displayName,
+					filterText: insertValue,
 					insertText: insertValue,
 					kind: symbolKindToCompletionKind(sym.kind),
 					label: displayName,
@@ -693,10 +782,20 @@ function setupQuerySymbolIntellisense(
 				});
 			}
 
-			return { suggestions };
+			log(`[querySymbol] → returning ${suggestions.length} suggestions (first: ${suggestions[0]?.label ?? 'none'})`);
+			log(`[querySymbol] → token.isCancellationRequested: ${token.isCancellationRequested}`);
+			return { incomplete: true, suggestions };
 		},
 		triggerCharacters: ['"', '=', '>', ' '],
 	});
+
+	// Return a composite disposable that cleans up both listeners
+	return {
+		dispose: () => {
+			contentChangeDisposable.dispose();
+			completionDisposable.dispose();
+		}
+	};
 }
 
 // ── Feature 4: Enum Array Inline Toggle ──────────────────────────────────────
@@ -1644,10 +1743,20 @@ function findNearestValueRange(line: string, column: number): null | { end: numb
 	const ranges = findAllValueRangesOnLine(line);
 	if (ranges.length === 0) return null;
 
+	// Apply "symbol = " prefix adjustment so nearest-range logic
+	// uses the same shrunk boundaries as findJsonValueRange.
+	const prefixEnd = getQuerySymbolPrefixEndCol(line);
+	const adjusted = ranges.map((r) => {
+		if (prefixEnd !== null && prefixEnd > r.start && prefixEnd <= r.end) {
+			return { end: r.end, start: prefixEnd };
+		}
+		return r;
+	});
+
 	let nearest: { end: number; start: number } | null = null;
 	let minDistance = Infinity;
 
-	for (const range of ranges) {
+	for (const range of adjusted) {
 		// If column is inside range, distance is 0
 		if (column >= range.start && column <= range.end) {
 			return range;
@@ -2135,6 +2244,23 @@ function setupTabToggle(
 					log(`[tab] → triggering query symbol suggest!`);
 					queueMicrotask(() => {
 						editor.trigger('tab-intellisense', 'editor.action.triggerSuggest', {});
+						// Log widget state after a short delay to let Monaco render
+						setTimeout(() => {
+							const dom = editor.getDomNode();
+							const widget = dom?.querySelector('.suggest-widget');
+							if (widget) {
+								const classes = widget.className;
+								const style = window.getComputedStyle(widget);
+								const rect = widget.getBoundingClientRect();
+								log(`[suggestWidget] classes: ${classes}`);
+								log(`[suggestWidget] display: ${style.display}, visibility: ${style.visibility}, opacity: ${style.opacity}`);
+								log(`[suggestWidget] rect: ${JSON.stringify({ width: rect.width, height: rect.height, top: rect.top, left: rect.left })}`);
+								const rows = widget.querySelectorAll('.monaco-list-row');
+								log(`[suggestWidget] rows: ${rows.length}`);
+							} else {
+								log(`[suggestWidget] widget NOT found in DOM`);
+							}
+						}, 100);
 					});
 					return;
 				}
