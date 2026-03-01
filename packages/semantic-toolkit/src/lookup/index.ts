@@ -40,7 +40,7 @@ import { generateSnapshot } from '../snapshot/index.js';
 import type { SnapshotResult } from '../snapshot/types.js';
 
 import { parseSymbolQuery } from './parse-query.js';
-import { resolveSymbol, formatCaseHint, formatPathHint } from './resolve.js';
+import { resolveSymbol, formatCaseHint, formatPathHint, formatAmbiguityHint } from './resolve.js';
 import type {
 	LookupResult,
 	SymbolLookupResult,
@@ -60,7 +60,7 @@ export type {
 } from './types.js';
 
 export { parseSymbolQuery } from './parse-query.js';
-export { resolveSymbol, formatCaseHint, formatPathHint } from './resolve.js';
+export { resolveSymbol, formatCaseHint, formatPathHint, formatAmbiguityHint } from './resolve.js';
 
 /**
  * Perform a symbol lookup against the workspace.
@@ -118,6 +118,28 @@ export function lookupSymbol(
 			tokenCount: estimateTokens(hint ?? ''),
 			hint,
 		} satisfies SymbolLookupResult;
+	}
+
+	// Step 4b: Detect ambiguous matches — multiple symbols with the same name
+	// but different kinds. Only triggered when no kind filter was provided.
+	if (parsed.path.symbolKind === null && resolution.matches.length > 1) {
+		const uniqueKinds = new Set(resolution.matches.map(m => m.chunk.nodeKind.toLowerCase()));
+		if (uniqueKinds.size > 1) {
+			const hint = formatAmbiguityHint(
+				parsed.path.symbolName,
+				parsed.path.parentName,
+				resolution.matches,
+			);
+			return {
+				isSymbolLookup: true,
+				found: false,
+				output: hint,
+				matchCount: resolution.matches.length,
+				fileCount: new Set(resolution.matches.map(m => m.relativePath)).size,
+				tokenCount: estimateTokens(hint),
+				hint,
+			} satisfies SymbolLookupResult;
+		}
 	}
 
 	// Step 5: Enrich matches with TS LS metadata and render output

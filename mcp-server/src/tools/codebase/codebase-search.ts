@@ -108,12 +108,17 @@ export const search = defineTool({
 		'The `query` param must use `symbol = Name` syntax for direct lookup:\n' +
 		'- Simple: `symbol = validateToken`\n' +
 		'- Nested: `symbol = TokenService > validateToken`\n' +
-		'- With file path: `symbol = src/auth/tokenService.ts:TokenService`\n\n' +
+		'- With file path: `symbol = src/auth/tokenService.ts:TokenService`\n' +
+		'- With kind filter: `symbol = Config, kind = interface`\n\n' +
+		'The `kind` flag is only needed when multiple symbols share the same name ' +
+		'(e.g., a class and an interface both named "Config"). If ambiguous, the tool ' +
+		'response will list exact queries to disambiguate.\n\n' +
 		'Natural language search is not available in this version.\n\n' +
 		'**EXAMPLES:**\n' +
 		'- `{ file: "src/auth", query: "symbol = validateToken" }`\n' +
 		'- `{ file: "src/auth/tokenService.ts", query: "symbol = TokenService > validate" }`\n' +
-		'- `{ file: "src/", query: "symbol = UserService", callDepth: 2 }`',
+		'- `{ file: "src/", query: "symbol = UserService", callDepth: 2 }`\n' +
+		'- `{ file: "src/config.ts", query: "symbol = Config, kind = interface" }`',
 	handler: async (request, response) => {
 		const { file, query, callDepth, typeDepth, maxTokenBudget } = request.params;
 
@@ -188,7 +193,9 @@ export const search = defineTool({
 			.string()
 			.describe(
 				'Symbol lookup query. Use "symbol = Name" for direct lookup, ' +
-				'"symbol = Parent > Child" for hierarchy. Natural language search not yet available.',
+				'"symbol = Parent > Child" for hierarchy, ' +
+				'"symbol = Name, kind = interface" to disambiguate same-name symbols. ' +
+				'Natural language search not yet available.',
 			),
 		callDepth: zod
 			.number()

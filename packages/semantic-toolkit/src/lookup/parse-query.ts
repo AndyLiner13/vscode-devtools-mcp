@@ -12,6 +12,10 @@
  *   symbol = TokenService > validateToken                       → parent > name (arrow)
  *   symbol = src/auth/tokenService.ts > TokenService > name     → file > parent > name
  *
+ * Optional kind filter (appended after the symbol path):
+ *   symbol = validateToken, kind = function                     → filter by kind
+ *   symbol = TokenService > validate, kind = method             → combined with hierarchy
+ *
  * The prefix is flexible: "symbol=", "symbol =", "Symbol = " all work.
  */
 
@@ -19,6 +23,9 @@ import type { QueryParseResult, ParsedSymbolPath } from './types.js';
 
 // Matches "symbol" followed by optional whitespace and "="
 const SYMBOL_PREFIX_RE = /^symbol\s*=\s*/i;
+
+// Matches ", kind = value" at the end of the path string (case-insensitive)
+const KIND_SUFFIX_RE = /,\s*kind\s*=\s*(\S+)\s*$/i;
 
 const HIERARCHY_SEPARATOR = ' > ';
 const FILE_SEPARATOR = '::';
@@ -40,12 +47,25 @@ export function parseSymbolQuery(query: string): QueryParseResult {
 		return { isSymbolLookup: false, path: null };
 	}
 
-	const pathStr = trimmed.slice(prefixMatch[0].length).trim();
+	let pathStr = trimmed.slice(prefixMatch[0].length).trim();
+	if (pathStr.length === 0) {
+		return { isSymbolLookup: false, path: null };
+	}
+
+	// Extract optional ", kind = ..." suffix before parsing the symbol path
+	let symbolKind: string | null = null;
+	const kindMatch = KIND_SUFFIX_RE.exec(pathStr);
+	if (kindMatch) {
+		symbolKind = kindMatch[1].toLowerCase();
+		pathStr = pathStr.slice(0, kindMatch.index).trim();
+	}
+
 	if (pathStr.length === 0) {
 		return { isSymbolLookup: false, path: null };
 	}
 
 	const symbolPath = parseSymbolPath(pathStr);
+	symbolPath.symbolKind = symbolKind;
 	return { isSymbolLookup: true, path: symbolPath };
 }
 
@@ -73,13 +93,14 @@ function parseSymbolPath(pathStr: string): ParsedSymbolPath {
 		const symbolPart = pathStr.slice(colonIdx + FILE_SEPARATOR.length).trim();
 
 		if (symbolPart.length === 0) {
-			return { filePath: filePart.length > 0 ? filePart : null, parentName: null, symbolName: pathStr };
+			return { filePath: filePart.length > 0 ? filePart : null, parentName: null, symbolKind: null, symbolName: pathStr };
 		}
 
 		const parsed = parseSymbolExpression(symbolPart);
 		return {
 			filePath: filePart.length > 0 ? filePart : null,
 			parentName: parsed.parentName,
+			symbolKind: null,
 			symbolName: parsed.symbolName,
 		};
 	}
@@ -92,6 +113,7 @@ function parseSymbolPath(pathStr: string): ParsedSymbolPath {
 	// Priority 3: dot notation (Parent.method) or bare name
 	return {
 		filePath: null,
+		symbolKind: null,
 		...parseSymbolExpression(pathStr),
 	};
 }
@@ -119,20 +141,20 @@ function parseArrowNotation(pathStr: string): ParsedSymbolPath {
 	const segments = pathStr.split(HIERARCHY_SEPARATOR).map(s => s.trim()).filter(s => s.length > 0);
 
 	if (segments.length === 0) {
-		return { filePath: null, parentName: null, symbolName: pathStr.trim() };
+		return { filePath: null, parentName: null, symbolKind: null, symbolName: pathStr.trim() };
 	}
 
 	if (segments.length === 1) {
-		return { filePath: null, parentName: null, symbolName: segments[0] };
+		return { filePath: null, parentName: null, symbolKind: null, symbolName: segments[0] };
 	}
 
 	const firstLooksLikeFile = isFilePathSegment(segments[0]);
 
 	if (segments.length === 2) {
 		if (firstLooksLikeFile) {
-			return { filePath: segments[0], parentName: null, symbolName: segments[1] };
+			return { filePath: segments[0], parentName: null, symbolKind: null, symbolName: segments[1] };
 		}
-		return { filePath: null, parentName: segments[0], symbolName: segments[1] };
+		return { filePath: null, parentName: segments[0], symbolKind: null, symbolName: segments[1] };
 	}
 
 	// 3+ segments
@@ -141,6 +163,7 @@ function parseArrowNotation(pathStr: string): ParsedSymbolPath {
 		return {
 			filePath: segments[0],
 			parentName: parentSegments.join('.'),
+			symbolKind: null,
 			symbolName: segments[segments.length - 1],
 		};
 	}
@@ -149,6 +172,7 @@ function parseArrowNotation(pathStr: string): ParsedSymbolPath {
 	return {
 		filePath: null,
 		parentName: parentSegments.join('.'),
+		symbolKind: null,
 		symbolName: segments[segments.length - 1],
 	};
 }

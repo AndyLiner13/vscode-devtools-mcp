@@ -589,6 +589,10 @@ interface SemanticSymbolsResponse {
 }
 
 const SYMBOL_PREFIX = 'symbol = ';
+const KIND_PREFIX = ', kind = ';
+
+// Matches ", kind = value" at the end (used to detect if cursor is in the kind portion)
+const KIND_SUFFIX_RE = /,\s*kind\s*=\s*(\S*)\s*$/i;
 
 // Cache for semantic symbols, keyed by file path
 // This allows the completion provider to return results synchronously
@@ -619,6 +623,125 @@ async function fetchSymbolsWithCache(filePath: string): Promise<SemanticSymbolEn
 		log(`[querySymbol] → RPC error: ${String(err)}`);
 		return [];
 	}
+}
+
+interface StringRange {
+	contentEnd: number;
+	contentStart: number;
+	propertyName: string;
+}
+
+/**
+ * Build symbol name suggestions (the main completion mode).
+ * Suggests items like "symbol = UserProfile", "symbol = Config > validate", etc.
+ */
+function buildSymbolSuggestions(
+	symbols: SemanticSymbolEntry[],
+	afterPrefix: string,
+	valueRange: StringRange,
+	position: monacoNs.Position,
+	model: monacoNs.editor.ITextModel,
+): monacoNs.languages.CompletionList {
+	const replaceRange = new monacoNs.Range(
+		position.lineNumber, valueRange.contentStart,
+		position.lineNumber, valueRange.contentEnd,
+	);
+
+	const filterText = afterPrefix.trim();
+	log(`[querySymbol:symbol] filterText=${JSON.stringify(filterText)}`);
+
+	const suggestions: monacoNs.languages.CompletionItem[] = [];
+	for (const [idx, sym] of symbols.entries()) {
+		const displayName = sym.parentName
+			? `${sym.parentName} > ${sym.name}`
+			: sym.name;
+		const insertValue = `${SYMBOL_PREFIX}${displayName}`;
+
+		if (filterText && !displayName.toLowerCase().includes(filterText.toLowerCase())) {
+			continue;
+		}
+
+		suggestions.push({
+			detail: sym.kind,
+			filterText: insertValue,
+			insertText: insertValue,
+			kind: symbolKindToCompletionKind(sym.kind),
+			label: displayName,
+			range: replaceRange,
+			sortText: String(idx).padStart(6, '0'),
+		});
+	}
+
+	log(`[querySymbol:symbol] → returning ${suggestions.length} suggestions`);
+	return { incomplete: true, suggestions };
+}
+
+/**
+ * Build kind suggestions when the cursor is in the ", kind = ..." portion.
+ * Offers the distinct kinds available for the symbol that was typed before the comma.
+ */
+function buildKindSuggestions(
+	symbols: SemanticSymbolEntry[],
+	afterPrefix: string,
+	kindMatch: RegExpExecArray,
+	valueRange: StringRange,
+	position: monacoNs.Position,
+	model: monacoNs.editor.ITextModel,
+): monacoNs.languages.CompletionList {
+	// Extract the symbol name portion (before the ", kind = ...")
+	const symbolPortion = afterPrefix.slice(0, kindMatch.index).trim();
+	const typedKind = kindMatch[1].toLowerCase();
+
+	log(`[querySymbol:kind] symbolPortion=${JSON.stringify(symbolPortion)} typedKind=${JSON.stringify(typedKind)}`);
+
+	// Find symbols matching the name the user has already typed
+	const matchingSymbols = symbols.filter(sym => {
+		const displayName = sym.parentName
+			? `${sym.parentName} > ${sym.name}`
+			: sym.name;
+		return displayName === symbolPortion;
+	});
+
+	// Collect distinct kinds for those matching symbols
+	const kindSet = new Set<string>();
+	for (const sym of matchingSymbols) {
+		kindSet.add(sym.kind.toLowerCase());
+	}
+
+	// If no exact symbol match, show all available kinds from the file
+	if (kindSet.size === 0) {
+		for (const sym of symbols) {
+			kindSet.add(sym.kind.toLowerCase());
+		}
+	}
+
+	const replaceRange = new monacoNs.Range(
+		position.lineNumber, valueRange.contentStart,
+		position.lineNumber, valueRange.contentEnd,
+	);
+
+	const sortedKinds = [...kindSet].sort();
+	const suggestions: monacoNs.languages.CompletionItem[] = [];
+
+	for (const [idx, kind] of sortedKinds.entries()) {
+		if (typedKind && !kind.startsWith(typedKind)) {
+			continue;
+		}
+
+		const insertValue = `${SYMBOL_PREFIX}${symbolPortion}${KIND_PREFIX}${kind}`;
+		suggestions.push({
+			detail: `Filter to ${kind} symbols`,
+			filterText: insertValue,
+			insertText: insertValue,
+			kind: monacoNs.languages.CompletionItemKind.Enum,
+			label: `kind = ${kind}`,
+			range: replaceRange,
+			sortText: String(idx).padStart(6, '0'),
+		});
+	}
+
+	log(`[querySymbol:kind] → returning ${suggestions.length} kind suggestions`);
+	return { incomplete: false, suggestions };
 }
 
 /**
@@ -709,10 +832,12 @@ function setupQuerySymbolIntellisense(
 			log(`[querySymbol] currentValue: ${JSON.stringify(currentValue)}`);
 
 			const hasPrefix = currentValue.toLowerCase().startsWith(SYMBOL_PREFIX.toLowerCase());
-			const filterText = hasPrefix
-				? currentValue.slice(SYMBOL_PREFIX.length)
-				: currentValue;
-			log(`[querySymbol] hasPrefix=${hasPrefix} filterText=${JSON.stringify(filterText)}`);
+			if (!hasPrefix) {
+				log(`[querySymbol] → no symbol prefix, returning empty`);
+				return empty;
+			}
+
+			const afterPrefix = currentValue.slice(SYMBOL_PREFIX.length);
 
 			const filePathValue = readStringPropertyValue(model, fileProp);
 			log(`[querySymbol] filePathValue: ${filePathValue ?? 'null'}`);
@@ -731,12 +856,9 @@ function setupQuerySymbolIntellisense(
 				symbols = cached.symbols;
 				log(`[querySymbol] using cached ${symbols.length} symbols (age: ${now - cached.timestamp}ms)`);
 			} else {
-				// No cache - need to fetch. This is async and Monaco won't wait.
-				// Fetch in background and invalidate cache after.
 				log(`[querySymbol] no cache or stale, fetching fresh symbols...`);
 				symbols = await fetchSymbolsWithCache(filePathValue);
-				
-				// Check if Monaco cancelled while we were waiting
+
 				if (token.isCancellationRequested) {
 					log(`[querySymbol] → request cancelled after fetch, returning empty`);
 					return empty;
@@ -749,44 +871,20 @@ function setupQuerySymbolIntellisense(
 				return empty;
 			}
 
-			// Replace range covers the full string content (including the prefix).
-			// We include the prefix in filterText so Monaco's fuzzy matching sees
-			// typed text "symbol = " matching "symbol = UserProfile" (prefix match).
-			const replaceRange = new monacoNs.Range(
-				position.lineNumber, valueRange.contentStart,
-				position.lineNumber, valueRange.contentEnd,
-			);
-			const rangeText = model.getValueInRange(replaceRange);
-			log(`[querySymbol] contentStart=${valueRange.contentStart} contentEnd=${valueRange.contentEnd} replaceRange=[${replaceRange.startColumn},${replaceRange.endColumn}] cursorCol=${position.column}`);
-			log(`[querySymbol] RANGE TEXT: ${JSON.stringify(rangeText)} | SAMPLE filterText: ${JSON.stringify(`${SYMBOL_PREFIX}SampleSymbol`)}`);
-
-			const suggestions: monacoNs.languages.CompletionItem[] = [];
-			for (const [idx, sym] of symbols.entries()) {
-				const displayName = sym.parentName
-					? `${sym.parentName} > ${sym.name}`
-					: sym.name;
-				const insertValue = `${SYMBOL_PREFIX}${displayName}`;
-
-				if (filterText && !displayName.toLowerCase().includes(filterText.toLowerCase())) {
-					continue;
-				}
-
-				suggestions.push({
-					detail: sym.kind,
-					filterText: insertValue,
-					insertText: insertValue,
-					kind: symbolKindToCompletionKind(sym.kind),
-					label: displayName,
-					range: replaceRange,
-					sortText: String(idx).padStart(6, '0'),
-				});
+			// Detect if the cursor is in the "kind = ..." portion
+			const kindMatch = KIND_SUFFIX_RE.exec(afterPrefix);
+			if (kindMatch) {
+				return buildKindSuggestions(
+					symbols, afterPrefix, kindMatch, valueRange, position, model,
+				);
 			}
 
-			log(`[querySymbol] → returning ${suggestions.length} suggestions (first: ${suggestions[0]?.label ?? 'none'})`);
-			log(`[querySymbol] → token.isCancellationRequested: ${token.isCancellationRequested}`);
-			return { incomplete: true, suggestions };
+			// Otherwise, provide symbol name suggestions
+			return buildSymbolSuggestions(
+				symbols, afterPrefix, valueRange, position, model,
+			);
 		},
-		triggerCharacters: ['"', '=', '>', ' '],
+		triggerCharacters: ['"', '=', '>', ' ', ','],
 	});
 
 	// Return a composite disposable that cleans up both listeners

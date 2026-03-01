@@ -40,12 +40,19 @@ export function resolveSymbol(
 	const filesToSearch = scopedFiles.exact;
 
 	// Step 2: Exact case-sensitive match
-	const exactMatches = findSymbolMatches(
+	let exactMatches = findSymbolMatches(
 		symbolPath.symbolName,
 		symbolPath.parentName,
 		filesToSearch,
 		true,
 	);
+
+	// Step 2b: Apply kind filter if specified
+	if (exactMatches.length > 0 && symbolPath.symbolKind !== null) {
+		exactMatches = exactMatches.filter(
+			m => m.chunk.nodeKind.toLowerCase() === symbolPath.symbolKind,
+		);
+	}
 
 	if (exactMatches.length > 0) {
 		return {
@@ -324,4 +331,36 @@ export function formatPathHint(requestedPath: string, nearMatches: NearMatch[]):
 	const suffix = nearMatches.length > 5 ? `\n  ... and ${nearMatches.length - 5} more` : '';
 
 	return `No file "${requestedPath}" found. Similar paths:\n${suggestions}${suffix}`;
+}
+
+/**
+ * Format a hint message for ambiguous symbol matches (same name, different kinds).
+ * Shows the user exact queries they can use with the `kind` flag to disambiguate.
+ *
+ * @param symbolName - The symbol name the user queried.
+ * @param parentName - Optional parent name from the query.
+ * @param matches - The ambiguous matches (all same name, different kinds).
+ * @returns Formatted hint string with suggested queries.
+ */
+export function formatAmbiguityHint(
+	symbolName: string,
+	parentName: string | null,
+	matches: ResolvedMatch[],
+): string {
+	const symbolPath = parentName
+		? `${parentName} > ${symbolName}`
+		: symbolName;
+
+	const header = `Multiple symbols named "${symbolName}" found. ` +
+		`Add a "kind" flag to disambiguate:`;
+
+	const suggestions = matches
+		.map(m => {
+			const kind = m.chunk.nodeKind.toLowerCase();
+			const location = `${m.relativePath}:${m.chunk.startLine}`;
+			return `  - symbol = ${symbolPath}, kind = ${kind}  (${kind} at ${location})`;
+		})
+		.join('\n');
+
+	return `${header}\n${suggestions}`;
 }

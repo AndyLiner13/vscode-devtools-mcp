@@ -22,6 +22,13 @@ export interface ParsedSymbolPath {
 
 	/** Required symbol name (e.g., "validateToken"). */
 	symbolName: string;
+
+	/**
+	 * Optional symbol kind filter (e.g., "class", "interface", "function").
+	 * Parsed from `, kind = interface` suffix in the query.
+	 * Only required when multiple symbols share the same name and hierarchy.
+	 */
+	symbolKind: string | null;
 }
 
 /** Result of parsing a query string for symbol lookup prefix detection. */
