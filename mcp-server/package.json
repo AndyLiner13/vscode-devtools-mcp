@@ -14,7 +14,7 @@
 		"build": "node esbuild.mjs"
 	},
 	"dependencies": {
-		"@modelcontextprotocol/sdk": "1.27.0"
+		"@modelcontextprotocol/sdk": "1.27.1"
 	},
 	"devDependencies": {
 		"@types/debug": "^4.1.12",
