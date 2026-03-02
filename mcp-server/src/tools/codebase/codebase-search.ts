@@ -103,7 +103,7 @@ export const search = defineTool({
 		'- `{ file: "src/config.ts", query: "symbol = Config, kind = interface" }`\n' +
 		'- `{ file: "src/utils/helpers.ts", query: "symbol = debounce", callDepth: 2 }`',
 	handler: async (request, response) => {
-		const { file, query, callDepth, typeDepth, maxTokenBudget, stage } = request.params;
+		const { file, query, callDepth, typeDepth, maxTokenBudget, snapshot } = request.params;
 
 		response.setSkipLedger();
 
@@ -152,16 +152,13 @@ export const search = defineTool({
 
 		const sections = result.outputSections as OutputSections;
 
-		if (stage) {
-			const text = relativizePaths(sections[stage], rootDir);
-			response.appendResponseLine(text);
-			response.appendResponseLine('');
-			return;
-		}
-
-		// Default: graph + snapshot (no chunk, no debug meta)
 		response.appendResponseLine(relativizePaths(sections.graph, rootDir));
-		response.appendResponseLine(relativizePaths(sections.snapshot, rootDir));
+		response.appendResponseLine('');
+		if (snapshot) {
+			response.appendResponseLine(relativizePaths(sections.snapshot, rootDir));
+		} else {
+			response.appendResponseLine(relativizePaths(sections.chunk, rootDir));
+		}
 	},
 	name: 'codebase_search',
 	schema: {
@@ -203,13 +200,13 @@ export const search = defineTool({
 			.describe(
 				'Maximum token budget for the combined output (connection graph + snapshots). Default: 8000.',
 			),
-		stage: zod
-			.enum(['chunk', 'graph', 'snapshot'])
+		snapshot: zod
+			.boolean()
 			.optional()
+			.default(false)
 			.describe(
-				'Pipeline stage to return. When omitted, returns graph + snapshot (default). ' +
-				'Use "chunk" for raw chunker output, "graph" for the connection graph only, ' +
-				'or "snapshot" for the code snapshot only.',
+				'When true, returns graph + smart structural snapshot. ' +
+				'When false (default), returns graph + raw chunk data.',
 			),
 	}
 });
