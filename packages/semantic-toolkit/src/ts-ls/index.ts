@@ -16,7 +16,7 @@ export { resolveProjectStructure } from './project-structure.js';
 export { resolveTypeGuards } from './type-guards.js';
 export { resolveCallbacks } from './callbacks.js';
 export { resolveGuardCallbacks } from './guard-callbacks.js';
-export { resolveAdvancedTypes } from './advanced-types.js';
+
 export { resolveEnumMembers } from './enum-members.js';
 export { resolveUnicodeIdentifiers } from './unicode-identifiers.js';
 export { resolveSideEffects } from './side-effects.js';
@@ -57,14 +57,7 @@ export type {
 	GuardCallbackSite,
 	GuardHofParameter,
 	GuardCallbackAnalysis,
-	AdvancedTypeKind,
-	ConditionalTypeInfo,
-	MappedTypeInfo,
-	TemplateLiteralInfo,
-	TemplateLiteralSpan,
-	UtilityTypeInfo,
-	AdvancedTypeEntry,
-	AdvancedTypeAnalysis,
+
 	EnumMemberEntry,
 	EnumAnalysis,
 	UnicodeIdentifierEntry,

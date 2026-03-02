@@ -103,7 +103,7 @@ export const search = defineTool({
 		'- `{ file: "src/config.ts", query: "symbol = Config, kind = interface" }`\n' +
 		'- `{ file: "src/utils/helpers.ts", query: "symbol = debounce", callDepth: 2 }`',
 	handler: async (request, response) => {
-		const { file, query, callDepth, typeDepth, snapshot } = request.params;
+		const { file, query, callDepth, snapshot } = request.params;
 
 		response.setSkipLedger();
 
@@ -127,7 +127,6 @@ export const search = defineTool({
 
 		const tsLsConfig: Partial<TsLsConfig> = {};
 		if (callDepth !== undefined) tsLsConfig.callDepth = callDepth;
-		if (typeDepth !== undefined) tsLsConfig.typeDepth = typeDepth;
 
 		let result: LookupResult;
 		try {
@@ -184,14 +183,7 @@ export const search = defineTool({
 			.describe(
 				'Max call depth for outgoing/incoming call resolution. 1 = immediate only (default). -1 = full transitive.',
 			),
-		typeDepth: zod
-			.number()
-			.int()
-			.optional()
-			.default(1)
-			.describe(
-				'Max nesting depth for advanced type structure extraction. 1 = top-level only (default).',
-			),
+
 		snapshot: zod
 			.boolean()
 			.optional()

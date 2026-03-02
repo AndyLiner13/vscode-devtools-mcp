@@ -61,7 +61,7 @@ export { resolveSymbol, formatCaseHint, formatPathHint, formatAmbiguityHint } fr
  * @param query         - The raw user query string.
  * @param workspaceRoot - Absolute path to the workspace root.
  * @param filePaths     - Absolute paths to all supported source files.
- * @param tsLsConfig    - Optional TS LS configuration (callDepth, typeDepth).
+ * @param tsLsConfig    - Optional TS LS configuration (callDepth).
  * @returns LookupResult (either found symbols or "not a lookup").
  */
 export function lookupSymbol(

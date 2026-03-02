@@ -44,7 +44,7 @@ export interface ConnectionGraphRawInput {
 	/** Node map from chunker (chunkId → ts-morph Node) for enrichment. */
 	nodeMap: Map<string, Node>;
 
-	/** Optional TS LS configuration (callDepth, typeDepth). */
+	/** Optional TS LS configuration (callDepth). */
 	tsLsConfig?: Partial<TsLsConfig>;
 }
 
