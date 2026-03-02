@@ -28,15 +28,3 @@ export function buildParentChain(
 	const ancestorChain = parentChains.get(parentName) ?? [];
 	return [...ancestorChain, parentName];
 }
-
-/**
- * Build the breadcrumb string: "relativePath > parent > ... > name".
- */
-export function buildBreadcrumb(
-	relativePath: string,
-	name: string,
-	parentChain: string[],
-): string {
-	const parts = [relativePath, ...parentChain, name];
-	return parts.join(' > ');
-}

@@ -10,10 +10,8 @@ import type {
 	InterfaceDeclaration,
 	ExpressionWithTypeArguments,
 } from 'ts-morph';
-import { toRelativePosixPath } from './paths.js';
 
 import type { SymbolRef, TypeHierarchy, TypeParameter } from './types.js';
-import type { SymbolTarget } from '../shared/types.js';
 
 export type { TypeHierarchy, TypeParameter } from './types.js';
 
@@ -23,22 +21,18 @@ type TypeDeclaration = ClassDeclaration | InterfaceDeclaration;
 /**
  * Resolve type hierarchy for a class or interface.
  *
- * @param target        - Pre-located SymbolTarget (must be class or interface kind).
- * @param workspaceRoot - Workspace root for computing relative paths.
- * @returns TypeHierarchy with extends, implements, and subtypes.
+ * @param node - The ts-morph AST node (must be class or interface).
+ * @returns TypeHierarchy with extends, implements, and subtypes. All file paths are absolute.
  */
-export function resolveTypeHierarchy(
-	target: SymbolTarget,
-	workspaceRoot: string,
-): TypeHierarchy {
-	if (!Node.isClassDeclaration(target.node) && !Node.isInterfaceDeclaration(target.node)) {
+export function resolveTypeHierarchy(node: Node): TypeHierarchy {
+	if (!Node.isClassDeclaration(node) && !Node.isInterfaceDeclaration(node)) {
 		throw new Error(
-			`Symbol "${target.name}" is not a class or interface (kind: ${target.kind})`,
+			`Node is not a class or interface (kind: ${node.getKindName()})`,
 		);
 	}
 
-	const project = target.sourceFile.getProject();
-	return buildTypeHierarchy(target.node, project, workspaceRoot);
+	const project = node.getSourceFile().getProject();
+	return buildTypeHierarchy(node, project);
 }
 
 // ---------------------------------------------------------------------------
@@ -48,31 +42,29 @@ export function resolveTypeHierarchy(
 function buildTypeHierarchy(
 	declaration: TypeDeclaration,
 	project: Project,
-	workspaceRoot: string,
 ): TypeHierarchy {
 	if (Node.isClassDeclaration(declaration)) {
-		return buildClassHierarchy(declaration, project, workspaceRoot);
+		return buildClassHierarchy(declaration, project);
 	}
-	return buildInterfaceHierarchy(declaration, project, workspaceRoot);
+	return buildInterfaceHierarchy(declaration, project);
 }
 
 function buildClassHierarchy(
 	cls: ClassDeclaration,
 	project: Project,
-	workspaceRoot: string,
 ): TypeHierarchy {
 	const extendsClause = cls.getExtends();
 	const extendsRef = extendsClause
-		? resolveHeritageRef(extendsClause, workspaceRoot)
+		? resolveHeritageRef(extendsClause)
 		: undefined;
 
 	const implementsRefs: SymbolRef[] = [];
 	for (const impl of cls.getImplements()) {
-		const ref = resolveHeritageRef(impl, workspaceRoot);
+		const ref = resolveHeritageRef(impl);
 		if (ref) implementsRefs.push(ref);
 	}
 
-	const subtypes = findSubtypes(cls, project, workspaceRoot);
+	const subtypes = findSubtypes(cls, project);
 	const isAbstract = cls.isAbstract() || undefined;
 	const typeParameters = extractTypeParameters(cls);
 
@@ -88,15 +80,14 @@ function buildClassHierarchy(
 function buildInterfaceHierarchy(
 	iface: InterfaceDeclaration,
 	project: Project,
-	workspaceRoot: string,
 ): TypeHierarchy {
 	const implementsRefs: SymbolRef[] = [];
 	for (const ext of iface.getExtends()) {
-		const ref = resolveHeritageRef(ext, workspaceRoot);
+		const ref = resolveHeritageRef(ext);
 		if (ref) implementsRefs.push(ref);
 	}
 
-	const subtypes = findSubtypes(iface, project, workspaceRoot);
+	const subtypes = findSubtypes(iface, project);
 	const typeParameters = extractTypeParameters(iface);
 
 	return {
@@ -116,7 +107,6 @@ function buildInterfaceHierarchy(
  */
 function resolveHeritageRef(
 	expr: ExpressionWithTypeArguments,
-	workspaceRoot: string,
 ): SymbolRef | undefined {
 	const exprNode = expr.getExpression();
 	if (!Node.isIdentifier(exprNode)) return undefined;
@@ -124,7 +114,7 @@ function resolveHeritageRef(
 	const defNodes = exprNode.getDefinitionNodes();
 	for (const defNode of defNodes) {
 		if (Node.isClassDeclaration(defNode) || Node.isInterfaceDeclaration(defNode)) {
-			return buildTypeSymbolRef(defNode, workspaceRoot);
+			return buildTypeSymbolRef(defNode);
 		}
 	}
 
@@ -142,7 +132,6 @@ function resolveHeritageRef(
 function findSubtypes(
 	declaration: TypeDeclaration,
 	project: Project,
-	workspaceRoot: string,
 ): SymbolRef[] {
 	const subtypes: SymbolRef[] = [];
 	const targetName = declaration.getName();
@@ -157,14 +146,14 @@ function findSubtypes(
 
 		for (const cls of sourceFile.getClasses()) {
 			if (isSubtypeOf(cls, targetName, targetFile, targetLine)) {
-				const ref = buildTypeSymbolRef(cls, workspaceRoot);
+				const ref = buildTypeSymbolRef(cls);
 				subtypes.push(ref);
 			}
 		}
 
 		for (const iface of sourceFile.getInterfaces()) {
 			if (isSubtypeOf(iface, targetName, targetFile, targetLine)) {
-				const ref = buildTypeSymbolRef(iface, workspaceRoot);
+				const ref = buildTypeSymbolRef(iface);
 				subtypes.push(ref);
 			}
 		}
@@ -222,14 +211,14 @@ function getHeritageClauses(declaration: TypeDeclaration): ExpressionWithTypeArg
 
 function buildTypeSymbolRef(
 	declaration: ClassDeclaration | InterfaceDeclaration,
-	workspaceRoot: string,
 ): SymbolRef {
-	const sourceFile = declaration.getSourceFile();
-	const absolutePath = sourceFile.getFilePath();
-	const relativePath = toRelativePosixPath(workspaceRoot, absolutePath);
 	const name = declaration.getName() ?? '<anonymous>';
 
-	const ref: SymbolRef = { name, filePath: relativePath, line: declaration.getStartLineNumber() };
+	const ref: SymbolRef = {
+		name,
+		filePath: declaration.getSourceFile().getFilePath(),
+		line: declaration.getStartLineNumber(),
+	};
 
 	if (Node.isClassDeclaration(declaration) && declaration.isAbstract()) {
 		ref.isAbstract = true;

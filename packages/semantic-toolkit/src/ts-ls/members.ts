@@ -22,7 +22,6 @@ import type {
 } from 'ts-morph';
 
 import type { MemberInfo, MemberKind } from './types.js';
-import type { SymbolTarget } from '../shared/types.js';
 
 export type { MemberInfo, MemberKind } from './types.js';
 
@@ -45,15 +44,15 @@ const TRACKED_MODIFIER_KINDS = new Map<SyntaxKind, string>([
 /**
  * Resolve all members for a class or interface.
  *
- * @param target - Pre-located SymbolTarget (must be class or interface kind).
+ * @param node - The ts-morph AST node (must be class or interface).
  * @returns Array of MemberInfo, ordered by source position.
  */
-export function resolveMembers(target: SymbolTarget): MemberInfo[] {
-	if (Node.isClassDeclaration(target.node)) return resolveClassMembers(target.node);
-	if (Node.isInterfaceDeclaration(target.node)) return resolveInterfaceMembers(target.node);
+export function resolveMembers(node: Node): MemberInfo[] {
+	if (Node.isClassDeclaration(node)) return resolveClassMembers(node);
+	if (Node.isInterfaceDeclaration(node)) return resolveInterfaceMembers(node);
 
 	throw new Error(
-		`Symbol "${target.name}" is not a class or interface (kind: ${target.kind})`,
+		`Node is not a class or interface (kind: ${node.getKindName()})`,
 	);
 }
 

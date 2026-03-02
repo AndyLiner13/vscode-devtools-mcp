@@ -1,175 +1,166 @@
-import type { ParsedFile, ParsedSymbol } from '../parser/types.js';
-import { BODY_BEARING_KINDS } from '../parser/types.js';
+import type { SourceFile, Node } from 'ts-morph';
 import type { CodeChunk, ChunkedFile } from './types.js';
-import { collapseChildren } from './collapse.js';
-import { generateChunkId, buildBreadcrumb } from './ids.js';
+import { hasBody, buildEmbeddingText } from './collapse.js';
+import { generateChunkId } from './ids.js';
 import { resolveRelevantImports } from './imports.js';
 
 export type { CodeChunk, ChunkedFile } from './types.js';
-export { BODY_BEARING_KINDS } from '../parser/types.js';
+export { hasBody } from './collapse.js';
 
 /**
- * Chunk a parsed file into embeddable CodeChunk[].
- * Each symbol in the tree becomes a chunk. Body-bearing children
- * are collapsed to signature stubs in the parent's embeddingText.
+ * Chunk a source file into embeddable CodeChunk[].
+ * Uses the compiler's symbol table (getLocals) for named declarations,
+ * plus getStatementsWithComments() for non-symbol root content
+ * (imports, expressions, re-exports, standalone comments).
+ * No custom AST walking. No workspaceRoot.
  */
-export function chunkFile(
-	parsedFile: ParsedFile,
-	sourceContent: string,
-): ChunkedFile {
-	const fileLines = sourceContent.split('\n');
-
-	// Collect all import symbols for relevantImports resolution
-	const allImports = parsedFile.symbols.filter(s => s.kind === 'import');
-
-	// First pass: generate all chunk IDs so we can link parent/child
-	const idMap = new Map<string, string>();
-	buildIdMap(parsedFile.symbols, parsedFile.filePath, [], idMap);
-
-	// Second pass: create chunks
+export function chunkFile(sourceFile: SourceFile): ChunkedFile {
 	const chunks: CodeChunk[] = [];
-	createChunks(
-		parsedFile.symbols,
-		parsedFile.filePath,
-		parsedFile.relativePath,
-		fileLines,
-		allImports,
-		[],
-		null,
-		idMap,
-		chunks,
-	);
+	const nodeMap = new Map<string, Node>();
+	const chunkedNodePositions = new Set<number>();
 
-	return { parsedFile, chunks };
-}
+	// 1. Named symbols: use the compiler's symbol table directly.
+	//    getLocals() returns every named binding in the file's scope.
+	for (const sym of sourceFile.getLocals()) {
+		for (const decl of sym.getDeclarations()) {
+			const chunk = chunkNode(decl, sourceFile, null, 0);
+			chunks.push(chunk);
+			nodeMap.set(chunk.id, decl);
+			chunkedNodePositions.add(decl.getStart());
 
-/**
- * Recursively build the ID map for all symbols.
- */
-function buildIdMap(
-	symbols: ParsedSymbol[],
-	filePath: string,
-	parentChain: string[],
-	idMap: Map<string, string>,
-): void {
-	for (const sym of symbols) {
-		const key = makeKey(sym, parentChain);
-		const id = generateChunkId(filePath, sym.kind, sym.name, sym.range.startLine, parentChain);
-		idMap.set(key, id);
-
-		if (sym.children.length > 0) {
-			buildIdMap(sym.children, filePath, [...parentChain, sym.name], idMap);
+			// Recurse into members of containers (classes, interfaces, enums)
+			if ('getMembers' in decl && typeof (decl as Record<string, unknown>).getMembers === 'function') {
+				const members = (decl as unknown as { getMembers(): Node[] }).getMembers();
+				for (const member of members) {
+					if (hasBody(member)) {
+						const memberChunk = chunkNode(member, sourceFile, getChunkLabel(decl), 1);
+						chunks.push(memberChunk);
+						nodeMap.set(memberChunk.id, member);
+						chunkedNodePositions.add(member.getStart());
+					}
+				}
+			}
 		}
 	}
-}
 
-/**
- * Recursively create chunks from the symbol tree.
- */
-function createChunks(
-	symbols: ParsedSymbol[],
-	filePath: string,
-	relativePath: string,
-	fileLines: string[],
-	allImports: ParsedSymbol[],
-	parentChain: string[],
-	parentChunkId: string | null,
-	idMap: Map<string, string>,
-	chunks: CodeChunk[],
-	parentIsBodyBearing = false,
-): void {
-	for (const sym of symbols) {
-		// Non-body-bearing children of body-bearing parents are local
-		// implementation details (variables, constants, etc.) — skip chunking.
-		if (parentIsBodyBearing && !BODY_BEARING_KINDS.has(sym.kind)) {
-			continue;
-		}
-
-		const key = makeKey(sym, parentChain);
-		const chunkId = idMap.get(key);
-		if (!chunkId) continue;
-
-		// Filter out same-line children: children whose line range matches
-		// the parent's exactly contain no unique content worth embedding separately.
-		const chunkableChildren = sym.children.filter(
-			child =>
-				child.range.startLine !== sym.range.startLine ||
-				child.range.endLine !== sym.range.endLine,
-		);
-
-		// Extract full source from file lines
-		const startIdx = sym.range.startLine - 1;
-		const endIdx = sym.range.endLine;
-		const fullSource = fileLines.slice(startIdx, endIdx).join('\n');
-
-		// Build embedding text (source with body-bearing children collapsed)
-		// Only collapse chunkable children (same-line children stay inline)
-		const embeddingText = collapseChildren(
-			fullSource,
-			sym.range.startLine,
-			chunkableChildren,
-			fileLines,
-		);
-
-		// Resolve child chunk IDs (only for chunkable children)
-		const childChain = [...parentChain, sym.name];
-		const childChunkIds: string[] = [];
-		for (const child of chunkableChildren) {
-			const childKey = makeKey(child, childChain);
-			const childId = idMap.get(childKey);
-			if (childId) childChunkIds.push(childId);
-		}
-
-		// Resolve relevant imports (only for symbols that reference other code)
-		const relevantImports = (sym.kind === 'import' || sym.kind === 're-export' || sym.kind === 'comment')
-			? []
-			: resolveRelevantImports(fullSource, allImports);
-
-		const breadcrumb = buildBreadcrumb(relativePath, sym.name, parentChain);
-
-		chunks.push({
-			id: chunkId,
-			filePath,
-			relativePath,
-			nodeKind: sym.kind,
-			name: sym.name,
-			parentName: sym.parentName,
-			parentChunkId,
-			childChunkIds,
-			depth: sym.depth,
-			signature: sym.signature,
-			fullSource,
-			startLine: sym.range.startLine,
-			endLine: sym.range.endLine,
-			jsdoc: sym.jsdoc,
-			relevantImports,
-			embeddingText,
-			breadcrumb,
-		});
-
-		// Recurse into chunkable children only
-		if (chunkableChildren.length > 0) {
-			createChunks(
-				chunkableChildren,
-				filePath,
-				relativePath,
-				fileLines,
-				allImports,
-				childChain,
-				chunkId,
-				idMap,
-				chunks,
-				BODY_BEARING_KINDS.has(sym.kind),
-			);
+	// 2. Non-symbol root content: imports, expressions, re-exports, standalone comments.
+	for (const stmt of sourceFile.getStatementsWithComments()) {
+		if (!chunkedNodePositions.has(stmt.getStart()) && !isChildOfChunkedNode(stmt, chunkedNodePositions)) {
+			const chunk = chunkNode(stmt, sourceFile, null, 0);
+			chunks.push(chunk);
+			nodeMap.set(chunk.id, stmt);
 		}
 	}
+
+	// Link parent/child chunk IDs
+	linkParentChild(chunks);
+
+	return { filePath: sourceFile.getFilePath(), chunks, nodeMap };
 }
 
 /**
- * Create a unique key for a symbol within its parent chain.
- * Used for the ID map lookup since multiple symbols can share names
- * (e.g., overloaded functions, declaration merging).
+ * Create a CodeChunk for a single ts-morph node.
+ * Used by both batch indexing and direct lookup.
  */
-function makeKey(sym: ParsedSymbol, parentChain: string[]): string {
-	return [...parentChain, sym.kind, sym.name, String(sym.range.startLine)].join('::');
+export function chunkNode(
+	node: Node,
+	sourceFile: SourceFile,
+	parentName: string | null,
+	depth: number,
+): CodeChunk {
+	const name = getChunkLabel(node);
+	const parentChain = parentName ? [parentName] : [];
+
+	const fullSource = node.getText();
+	const embeddingText = buildEmbeddingText(node);
+	const relevantImports = resolveRelevantImports(fullSource, sourceFile);
+	const jsdoc = extractJsDoc(node);
+
+	return {
+		id: generateChunkId(sourceFile.getFilePath(), node.getKindName(), name, node.getStartLineNumber(), parentChain),
+		filePath: sourceFile.getFilePath(),
+		nodeKind: node.getKindName(),
+		name,
+		parentName,
+		parentChunkId: null,
+		childChunkIds: [],
+		depth,
+		fullSource,
+		startLine: node.getStartLineNumber(),
+		endLine: node.getEndLineNumber(),
+		jsdoc,
+		relevantImports,
+		embeddingText,
+	};
+}
+
+/**
+ * Get a label for a chunk node.
+ * Named declarations use getName(); non-symbol content uses getKindName().
+ */
+function getChunkLabel(node: Node): string {
+	if ('getName' in node && typeof (node as Record<string, unknown>).getName === 'function') {
+		const name = (node as unknown as { getName(): string | undefined }).getName();
+		if (name) return name;
+	}
+	return node.getKindName();
+}
+
+/**
+ * Extract JSDoc comment text from a node, if present.
+ */
+function extractJsDoc(node: Node): string | null {
+	if ('getJsDocs' in node && typeof (node as Record<string, unknown>).getJsDocs === 'function') {
+		const jsDocs = (node as unknown as { getJsDocs(): Array<{ getDescription(): string }> }).getJsDocs();
+		if (jsDocs.length > 0) {
+			return jsDocs.map(doc => doc.getDescription().trim()).filter(Boolean).join('\n') || null;
+		}
+	}
+	return null;
+}
+
+/**
+ * Check if a statement is a child of an already-chunked node.
+ * Prevents double-chunking VariableStatements whose VariableDeclarations
+ * were already chunked via getLocals().
+ */
+function isChildOfChunkedNode(stmt: Node, chunkedPositions: Set<number>): boolean {
+	// VariableStatements wrap VariableDeclarations; if the inner declaration
+	// was chunked via getLocals(), skip the outer statement.
+	if (stmt.getKindName() === 'VariableStatement') {
+		const children = stmt.getChildren();
+		for (const child of children) {
+			if (child.getKindName() === 'VariableDeclarationList') {
+				const innerChildren = child.getChildren();
+				for (const inner of innerChildren) {
+					if (chunkedPositions.has(inner.getStart())) {
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
+/**
+ * Link parent/child chunk IDs after all chunks are created.
+ */
+function linkParentChild(chunks: CodeChunk[]): void {
+	const chunkByNameAndDepth = new Map<string, CodeChunk>();
+	for (const chunk of chunks) {
+		if (chunk.depth === 0) {
+			chunkByNameAndDepth.set(chunk.name, chunk);
+		}
+	}
+
+	for (const chunk of chunks) {
+		if (chunk.parentName !== null) {
+			const parent = chunkByNameAndDepth.get(chunk.parentName);
+			if (parent) {
+				chunk.parentChunkId = parent.id;
+				parent.childChunkIds.push(chunk.id);
+			}
+		}
+	}
 }

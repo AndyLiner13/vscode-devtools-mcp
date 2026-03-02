@@ -3,13 +3,12 @@
  *
  * Defines input/output interfaces for the direct symbol lookup module.
  * Symbol lookup bypasses vector search entirely, resolving symbols by
- * exact name/path matching through parsed symbol trees.
+ * exact name/path matching through chunked symbol trees.
  */
 
 import type { CodeChunk } from '../chunker/types.js';
 import type { ConnectionGraphResult, GraphResultEntry } from '../graph/types.js';
 import type { SnapshotResult } from '../snapshot/types.js';
-import type { NodeKind, RelativePath } from '../shared/types.js';
 
 // ─── Query Parsing ──────────────────────────────────────────────
 
@@ -27,9 +26,9 @@ export interface ParsedSymbolPath {
 	/**
 	 * Optional symbol kind filter (e.g., "class", "interface", "function").
 	 * Parsed from `, kind = interface` suffix in the query.
-	 * Only required when multiple symbols share the same name and hierarchy.
+	 * Compared case-insensitively against CodeChunk.nodeKind.
 	 */
-	symbolKind: NodeKind | null;
+	symbolKind: string | null;
 }
 
 /** Result of parsing a query string for symbol lookup prefix detection. */
@@ -48,8 +47,8 @@ export interface ResolvedMatch {
 	/** The matched CodeChunk. */
 	chunk: CodeChunk;
 
-	/** Workspace-relative file path where this match was found. */
-	relativePath: RelativePath;
+	/** File path where this match was found (absolute). */
+	filePath: string;
 }
 
 /** A near-match found during case-insensitive or partial-path fallback. */

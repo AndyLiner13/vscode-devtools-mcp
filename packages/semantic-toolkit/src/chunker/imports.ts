@@ -1,4 +1,4 @@
-import type { ParsedSymbol } from '../parser/types.js';
+import type { SourceFile, ImportDeclaration } from 'ts-morph';
 
 /**
  * Parsed representation of an import for identifier matching.
@@ -11,46 +11,30 @@ interface ImportInfo {
 }
 
 /**
- * Extract identifier names from an import symbol's signature.
- * Handles: default imports, named imports, namespace imports, side-effect imports.
+ * Extract identifier names from an import declaration using ts-morph.
  */
-export function extractImportIdentifiers(importSymbol: ParsedSymbol): ImportInfo {
-	const sig = importSymbol.signature;
+function extractImportIdentifiers(decl: ImportDeclaration): ImportInfo {
+	const source = decl.getText();
 	const identifiers: string[] = [];
 
+	// Default import: import Name from '...'
+	const defaultImport = decl.getDefaultImport();
+	if (defaultImport) {
+		identifiers.push(defaultImport.getText());
+	}
+
 	// Namespace import: import * as Name from '...'
-	const nsMatch = sig.match(/\*\s+as\s+(\w+)/);
-	if (nsMatch) {
-		identifiers.push(nsMatch[1]);
+	const nsImport = decl.getNamespaceImport();
+	if (nsImport) {
+		identifiers.push(nsImport.getText());
 	}
 
 	// Named imports: import { A, B as C } from '...'
-	const namedMatch = sig.match(/\{\s*([^}]+)\s*\}/);
-	if (namedMatch) {
-		const names = namedMatch[1].split(',').map(n => n.trim());
-		for (const name of names) {
-			// Handle "X as Y" — the local name is Y
-			const asMatch = name.match(/\w+\s+as\s+(\w+)/);
-			if (asMatch) {
-				identifiers.push(asMatch[1]);
-			} else {
-				const cleanName = name.replace(/^type\s+/, '').trim();
-				if (cleanName) identifiers.push(cleanName);
-			}
-		}
+	for (const named of decl.getNamedImports()) {
+		identifiers.push(named.getName());
 	}
 
-	// Default import: import Name from '...' or import Name, { ... } from '...'
-	// Match: "import Name" or "import type Name" before "from" but not "* as" or "{"
-	const defaultMatch = sig.match(/^import\s+(?:type\s+)?([A-Za-z_$]\w*)(?:\s*,|\s+from)/);
-	if (defaultMatch) {
-		identifiers.push(defaultMatch[1]);
-	}
-
-	return {
-		source: sig,
-		identifiers,
-	};
+	return { source, identifiers };
 }
 
 /**
@@ -60,13 +44,14 @@ export function extractImportIdentifiers(importSymbol: ParsedSymbol): ImportInfo
  */
 export function resolveRelevantImports(
 	chunkSource: string,
-	allImports: ParsedSymbol[],
+	sourceFile: SourceFile,
 ): string[] {
-	if (allImports.length === 0) return [];
+	const imports = sourceFile.getImportDeclarations();
+	if (imports.length === 0) return [];
 
 	const relevant: string[] = [];
 
-	for (const imp of allImports) {
+	for (const imp of imports) {
 		const info = extractImportIdentifiers(imp);
 
 		// Side-effect imports (no identifiers) are never relevant to specific chunks

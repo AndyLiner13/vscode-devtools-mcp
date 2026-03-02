@@ -7,7 +7,21 @@
  */
 
 import type { CodeChunk } from '../chunker/types.js';
-import type { AbsolutePath, RelativePath } from '../shared/types.js';
+
+// ---------------------------------------------------------------------------
+// Branded path types (moved here from shared/types.ts)
+// ---------------------------------------------------------------------------
+
+/**
+ * Branded string for absolute file system paths.
+ * The `_brand` property exists only at the type level — never set at runtime.
+ */
+export type AbsolutePath = string & { readonly _brand?: 'AbsolutePath' };
+
+/**
+ * Branded string for workspace-relative paths (POSIX forward-slash separators).
+ */
+export type RelativePath = string & { readonly _brand?: 'RelativePath' };
 
 /** Input for snapshot generation: target chunks from a single file. */
 export interface SnapshotInput {

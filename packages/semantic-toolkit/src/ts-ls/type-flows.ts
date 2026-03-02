@@ -8,6 +8,7 @@
  */
 import { Node, SyntaxKind, Type } from 'ts-morph';
 import type {
+	SourceFile,
 	FunctionDeclaration,
 	MethodDeclaration,
 	ConstructorDeclaration,
@@ -15,10 +16,8 @@ import type {
 	Symbol as TsMorphSymbol,
 	ImportSpecifier,
 } from 'ts-morph';
-import { toRelativePosixPath } from './paths.js';
 
 import type { SymbolRef, TypeFlow, TypeFlowParam, TypeFlowType } from './types.js';
-import type { SymbolTarget } from '../shared/types.js';
 
 export type { TypeFlow, TypeFlowParam, TypeFlowType } from './types.js';
 
@@ -50,30 +49,25 @@ const BUILTIN_NAMES = new Set([
 /**
  * Resolve type flows for a function, method, or constructor.
  *
- * @param target        - Pre-located SymbolTarget (must be callable kind).
- * @param workspaceRoot - Workspace root for computing relative paths.
+ * @param node - The ts-morph AST node (must be callable kind).
  * @returns TypeFlow with parameter/return type provenance and deduplicated referencedTypes.
+ *          All file paths are absolute.
  */
-export function resolveTypeFlows(
-	target: SymbolTarget,
-	workspaceRoot: string,
-): TypeFlow {
-	const node = target.node;
-
+export function resolveTypeFlows(node: Node): TypeFlow {
 	if (
 		!Node.isFunctionDeclaration(node)
 		&& !Node.isMethodDeclaration(node)
 		&& !Node.isConstructorDeclaration(node)
 	) {
 		throw new Error(
-			`Symbol "${target.name}" is not callable (kind: ${target.kind})`,
+			`Node is not callable (kind: ${node.getKindName()})`,
 		);
 	}
 
 	const declaration = node;
-	const symbol = buildSymbolRef(declaration, target.name, workspaceRoot);
-	const parameters = resolveParameters(declaration, workspaceRoot);
-	const returnType = resolveReturnType(declaration, workspaceRoot);
+	const symbol = buildSymbolRef(declaration);
+	const parameters = resolveParameters(declaration);
+	const returnType = resolveReturnType(declaration);
 	const referencedTypes = deduplicateTypes(parameters, returnType);
 
 	return { symbol, parameters, returnType, referencedTypes };
@@ -83,16 +77,18 @@ export function resolveTypeFlows(
 // SymbolRef builder
 // ---------------------------------------------------------------------------
 
-function buildSymbolRef(
-	declaration: CallableNode,
-	symbolName: string,
-	workspaceRoot: string,
-): SymbolRef {
-	const absPath = declaration.getSourceFile().getFilePath();
-	const relativePath = toRelativePosixPath(workspaceRoot, absPath);
+function buildSymbolRef(declaration: CallableNode): SymbolRef {
+	let name: string;
+	if (Node.isConstructorDeclaration(declaration)) {
+		const parent = declaration.getParent();
+		name = (Node.isClassDeclaration(parent) ? parent.getName() : undefined) ?? '<constructor>';
+	} else {
+		name = declaration.getName() ?? '<anonymous>';
+	}
+
 	return {
-		name: symbolName,
-		filePath: relativePath,
+		name,
+		filePath: declaration.getSourceFile().getFilePath(),
 		line: declaration.getStartLineNumber(),
 	};
 }
@@ -103,7 +99,6 @@ function buildSymbolRef(
 
 function resolveParameters(
 	declaration: CallableNode,
-	workspaceRoot: string,
 ): TypeFlowParam[] {
 	const params: TypeFlowParam[] = [];
 
@@ -113,13 +108,11 @@ function resolveParameters(
 		const visited = new Set<string>();
 		const resolvedTypes: TypeFlowType[] = [];
 
-		// TypeNode-based resolution catches type aliases the checker expands
 		if (typeNode) {
-			extractImmediateTypeNames(typeNode, workspaceRoot, visited, resolvedTypes);
+			extractImmediateTypeNames(typeNode, visited, resolvedTypes);
 		}
 
-		// Type-based deep traversal (unions, intersections, generics, etc.)
-		extractTypesFromType(param.getType(), workspaceRoot, visited, resolvedTypes);
+		extractTypesFromType(param.getType(), visited, resolvedTypes);
 
 		params.push({
 			name: param.getName(),
@@ -137,7 +130,6 @@ function resolveParameters(
 
 function resolveReturnType(
 	declaration: CallableNode,
-	workspaceRoot: string,
 ): TypeFlowParam | undefined {
 	if (Node.isConstructorDeclaration(declaration)) {
 		return undefined;
@@ -155,9 +147,9 @@ function resolveReturnType(
 	const resolvedTypes: TypeFlowType[] = [];
 
 	if (typeNode) {
-		extractImmediateTypeNames(typeNode, workspaceRoot, visited, resolvedTypes);
+		extractImmediateTypeNames(typeNode, visited, resolvedTypes);
 	}
-	extractTypesFromType(returnType, workspaceRoot, visited, resolvedTypes);
+	extractTypesFromType(returnType, visited, resolvedTypes);
 
 	return {
 		name: 'return',
@@ -175,7 +167,6 @@ function resolveReturnType(
 
 function extractImmediateTypeNames(
 	typeNode: TypeNode,
-	workspaceRoot: string,
 	visited: Set<string>,
 	results: TypeFlowType[],
 ): void {
@@ -213,8 +204,7 @@ function extractImmediateTypeNames(
 		if (visited.has(visitKey)) continue;
 		visited.add(visitKey);
 
-		const relativePath = toRelativePosixPath(workspaceRoot, declFile);
-		results.push({ name, filePath: relativePath, line: declLine });
+		results.push({ name, filePath: declFile, line: declLine });
 	}
 }
 
@@ -281,7 +271,6 @@ function findInFileRecursive(
 
 function extractTypesFromType(
 	type: Type,
-	workspaceRoot: string,
 	visited: Set<string>,
 	results: TypeFlowType[],
 ): void {
@@ -298,8 +287,7 @@ function extractTypesFromType(
 					const visitKey = `${declFile}:${declLine}`;
 					if (!visited.has(visitKey)) {
 						visited.add(visitKey);
-						const relativePath = toRelativePosixPath(workspaceRoot, declFile);
-						results.push({ name: enumName, filePath: relativePath, line: declLine });
+						results.push({ name: enumName, filePath: declFile, line: declLine });
 					}
 				}
 			}
@@ -310,7 +298,7 @@ function extractTypesFromType(
 	// Union types: string | User → extract User
 	if (type.isUnion()) {
 		for (const member of type.getUnionTypes()) {
-			extractTypesFromType(member, workspaceRoot, visited, results);
+			extractTypesFromType(member, visited, results);
 		}
 		return;
 	}
@@ -318,7 +306,7 @@ function extractTypesFromType(
 	// Intersection types: A & B → extract both
 	if (type.isIntersection()) {
 		for (const member of type.getIntersectionTypes()) {
-			extractTypesFromType(member, workspaceRoot, visited, results);
+			extractTypesFromType(member, visited, results);
 		}
 		return;
 	}
@@ -326,7 +314,7 @@ function extractTypesFromType(
 	// Tuple types: [User, Token] → extract each element
 	if (type.isTuple()) {
 		for (const element of type.getTupleElements()) {
-			extractTypesFromType(element, workspaceRoot, visited, results);
+			extractTypesFromType(element, visited, results);
 		}
 		return;
 	}
@@ -335,39 +323,35 @@ function extractTypesFromType(
 	if (type.isArray()) {
 		const elementType = type.getArrayElementType();
 		if (elementType) {
-			extractTypesFromType(elementType, workspaceRoot, visited, results);
+			extractTypesFromType(elementType, visited, results);
 		}
 		return;
 	}
 
-	// Check alias symbol first (handles type aliases like UserId = number)
 	const aliasSymbol = type.getAliasSymbol();
 	if (aliasSymbol) {
 		const aliasName = aliasSymbol.getName();
 		if (!BUILTIN_NAMES.has(aliasName)) {
-			tryResolveSymbolFromType(aliasSymbol, aliasName, workspaceRoot, visited, results);
+			tryResolveSymbolFromType(aliasSymbol, aliasName, visited, results);
 		}
 		for (const arg of type.getAliasTypeArguments()) {
-			extractTypesFromType(arg, workspaceRoot, visited, results);
+			extractTypesFromType(arg, visited, results);
 		}
 		return;
 	}
 
-	// Generic type arguments: Promise<User> → extract User
 	const typeArgs = type.getTypeArguments();
 	const symbol = type.getSymbol();
 	const symbolName = symbol?.getName();
 
-	// Skip anonymous types (__type) from intersection with object literals
 	if (symbolName && symbolName !== '__type' && !BUILTIN_NAMES.has(symbolName)) {
-		tryResolveSymbolFromType(symbol, symbolName, workspaceRoot, visited, results);
+		tryResolveSymbolFromType(symbol, symbolName, visited, results);
 	}
 
 	for (const arg of typeArgs) {
-		extractTypesFromType(arg, workspaceRoot, visited, results);
+		extractTypesFromType(arg, visited, results);
 	}
 
-	// Function types: (entry: AuditEntry) => Token → extract from call signatures
 	const callSignatures = type.getCallSignatures();
 	for (const sig of callSignatures) {
 		for (const param of sig.getParameters()) {
@@ -375,12 +359,12 @@ function extractTypesFromType(
 			if (decls.length > 0) {
 				const paramDecl = decls[0];
 				if (paramDecl) {
-					extractTypesFromType(paramDecl.getType(), workspaceRoot, visited, results);
+					extractTypesFromType(paramDecl.getType(), visited, results);
 				}
 			}
 		}
 		const returnType = sig.getReturnType();
-		extractTypesFromType(returnType, workspaceRoot, visited, results);
+		extractTypesFromType(returnType, visited, results);
 	}
 }
 
@@ -391,7 +375,6 @@ function extractTypesFromType(
 function tryResolveSymbolFromType(
 	symbol: TsMorphSymbol | undefined,
 	symbolName: string,
-	workspaceRoot: string,
 	visited: Set<string>,
 	results: TypeFlowType[],
 ): void {
@@ -412,8 +395,7 @@ function tryResolveSymbolFromType(
 	if (visited.has(visitKey)) return;
 	visited.add(visitKey);
 
-	const relativePath = toRelativePosixPath(workspaceRoot, declFile);
-	results.push({ name: symbolName, filePath: relativePath, line: declLine });
+	results.push({ name: symbolName, filePath: declFile, line: declLine });
 }
 
 // ---------------------------------------------------------------------------

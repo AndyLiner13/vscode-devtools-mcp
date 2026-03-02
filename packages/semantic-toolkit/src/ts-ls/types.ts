@@ -1,4 +1,5 @@
-import type { RelativePath } from '../shared/types.js';
+// Removed import of RelativePath — all file paths are now absolute strings.
+// Resolvers return absolute paths; the renderer relativizes at display time.
 
 /**
  * Phase 3 — TypeScript Language Services types.
@@ -53,8 +54,8 @@ export interface SymbolRef {
 	/** Symbol name as it appears at the call site. */
 	name: string;
 
-	/** Workspace-relative file path (forward slashes). */
-	filePath: RelativePath;
+	/** Absolute file path. */
+	filePath: string;
 
 	/** 1-indexed line number of the call/reference. */
 	line: number;
@@ -139,8 +140,8 @@ export interface TypeHierarchy {
 
 /** A file that references a symbol, with the specific lines where it's referenced. */
 export interface FileReference {
-	/** Workspace-relative file path (forward slashes). */
-	filePath: RelativePath;
+	/** Absolute file path. */
+	filePath: string;
 
 	/** 1-indexed lines where the symbol is referenced in this file. */
 	lines: number[];
@@ -167,8 +168,8 @@ export interface TypeFlowType {
 	/** Type name as written in source (e.g. 'User', 'Role'). */
 	name: string;
 
-	/** Workspace-relative file path where this type is defined (forward slashes). */
-	filePath: RelativePath;
+	/** Absolute file path where this type is defined. */
+	filePath: string;
 
 	/** 1-indexed line number of the type definition. */
 	line: number;
@@ -394,8 +395,8 @@ export interface ConfusablePair {
 
 /** Full Unicode identifier analysis for a file. */
 export interface UnicodeIdentifierAnalysis {
-	/** Workspace-relative file path. */
-	filePath: RelativePath;
+	/** Absolute file path. */
+	filePath: string;
 
 	/** All identifiers with non-ASCII or suspicious characters. */
 	identifiers: UnicodeIdentifierEntry[];
@@ -436,8 +437,8 @@ export interface SideEffectEntry {
 
 /** Full module-level side effect analysis for a file. */
 export interface SideEffectAnalysis {
-	/** Workspace-relative file path. */
-	filePath: RelativePath;
+	/** Absolute file path. */
+	filePath: string;
 
 	/** All side effects in source order. */
 	effects: SideEffectEntry[];
@@ -463,7 +464,7 @@ export interface AliasEntry {
 	name: string;
 
 	/** File where the alias appears. */
-	filePath: RelativePath;
+	filePath: string;
 
 	/** Line where the alias is declared. */
 	line: number;
@@ -503,7 +504,7 @@ export interface AliasHop {
 	name: string;
 
 	/** File where this hop occurs. */
-	filePath: RelativePath;
+	filePath: string;
 
 	/** Line of this alias/re-export. */
 	line: number;
@@ -531,7 +532,7 @@ export interface AmbientMember {
 /** A single `declare global { ... }` block. */
 export interface GlobalAugmentation {
 	/** File where the declare global block appears. */
-	filePath: RelativePath;
+	filePath: string;
 
 	/** Line where the block starts. */
 	line: number;
@@ -546,7 +547,7 @@ export interface ModuleAugmentation {
 	moduleName: string;
 
 	/** File where the declare module block appears. */
-	filePath: RelativePath;
+	filePath: string;
 
 	/** Line where the block starts. */
 	line: number;
@@ -564,7 +565,7 @@ export interface AmbientDeclaration {
 	kind: string;
 
 	/** File where the declaration lives. */
-	filePath: RelativePath;
+	filePath: string;
 
 	/** 1-indexed line number. */
 	line: number;
@@ -597,8 +598,8 @@ export interface CallbackUsage {
 	/** Name of the function/method receiving the callback (e.g. 'map', 'retry'). */
 	calledBy: string;
 
-	/** Workspace-relative file path where this usage occurs. */
-	filePath: RelativePath;
+	/** Absolute file path where this usage occurs. */
+	filePath: string;
 
 	/** 1-indexed line number of the callback usage. */
 	line: number;
@@ -651,8 +652,8 @@ export interface GuardCallbackSite {
 	/** Name of the function/method receiving the guard as an argument. */
 	calledBy: string;
 
-	/** Workspace-relative file path of the call site. */
-	filePath: RelativePath;
+	/** Absolute file path of the call site. */
+	filePath: string;
 
 	/** 1-indexed line number. */
 	line: number;

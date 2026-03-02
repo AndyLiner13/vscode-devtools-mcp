@@ -5,28 +5,24 @@
  * Excludes the definition itself; includes same-file usages.
  */
 import { Node } from 'ts-morph';
-import { toRelativePosixPath } from './paths.js';
 
 import type { References, FileReference } from './types.js';
-import type { SymbolTarget } from '../shared/types.js';
 
 export type { References, FileReference } from './types.js';
 
 /**
  * Resolve cross-file references for a symbol.
  *
- * @param target        - Pre-located SymbolTarget from the node locator.
- * @param workspaceRoot - Workspace root for computing relative paths.
- * @returns References with totalCount, fileCount, and per-file breakdown.
+ * @param node - The ts-morph AST node for the declaration.
+ * @returns References with totalCount, fileCount, and per-file breakdown (absolute paths).
  */
-export function resolveReferences(
-	target: SymbolTarget,
-	workspaceRoot: string,
-): References {
-	const definitionLine = target.startLine;
-	const definitionFile = target.sourceFile.getFilePath();
+export function resolveReferences(node: Node): References {
+	const definitionLine = node.getStartLineNumber();
+	const definitionFile = node.getSourceFile().getFilePath();
 
-	const refNodes = target.node.findReferencesAsNodes();
+	const refNodes = 'findReferencesAsNodes' in node
+		? (node as unknown as { findReferencesAsNodes(): import('ts-morph').Node[] }).findReferencesAsNodes()
+		: [];
 	const fileMap = new Map<string, { absolutePath: string; lines: Set<number> }>();
 
 	for (const refNode of refNodes) {
@@ -53,9 +49,8 @@ export function resolveReferences(
 	const sortedEntries = [...fileMap.entries()].sort(([a], [b]) => a.localeCompare(b));
 
 	for (const [, { absolutePath, lines }] of sortedEntries) {
-		const relativePath = toRelativePosixPath(workspaceRoot, absolutePath);
 		const sortedLines = [...lines].sort((a, b) => a - b);
-		files.push({ filePath: relativePath, lines: sortedLines });
+		files.push({ filePath: absolutePath, lines: sortedLines });
 		totalCount += sortedLines.length;
 	}
 

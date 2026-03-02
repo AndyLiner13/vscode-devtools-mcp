@@ -1,23 +1,21 @@
 /**
  * Phase 6 — Symbol Lookup: Symbol Resolver.
  *
- * Walks parsed symbol trees and chunked files to find exact matches
- * for a parsed symbol path. Implements the strict-with-helpful-fallback
- * pattern:
+ * Walks chunked files to find exact matches for a parsed symbol path.
+ * Implements the strict-with-helpful-fallback pattern:
  *   1. Exact case-sensitive name + exact path match
  *   2. On failure: case-insensitive fallback → helpful hints
  *   3. On path failure: partial path fallback → path suggestions
  *
- * TODO(Phase 7): Replace fresh parsing with indexed chunk retrieval.
- * Once the LanceDB index exists, the resolve step should query the index
- * instead of iterating over freshly parsed ChunkedFile[].
+ * Uses ts-morph SourceFile directly for local symbol hints instead of
+ * walking parsed symbol trees.
  */
 
 import * as path from 'node:path';
+import type { SourceFile } from 'ts-morph';
 
 import type { CodeChunk, ChunkedFile } from '../chunker/types.js';
-import type { ParsedSymbol } from '../parser/types.js';
-import { BODY_BEARING_KINDS } from '../shared/types.js';
+import { hasBody } from '../chunker/collapse.js';
 import type { ParsedSymbolPath, ResolvedMatch, NearMatch, ResolutionResult } from './types.js';
 
 /**
@@ -25,18 +23,22 @@ import type { ParsedSymbolPath, ResolvedMatch, NearMatch, ResolutionResult } fro
  *
  * @param symbolPath - The parsed symbol path from the query.
  * @param chunkedFiles - All chunked files in the workspace.
+ * @param workspaceRoot - Absolute workspace root for path matching.
+ * @param sourceFiles - ts-morph SourceFiles for local symbol hint resolution.
  * @returns Resolution result with matches and/or near-match hints.
  */
 export function resolveSymbol(
 	symbolPath: ParsedSymbolPath,
 	chunkedFiles: ChunkedFile[],
+	workspaceRoot: string,
+	sourceFiles?: Map<string, SourceFile>,
 ): ResolutionResult {
 	// Step 1: Scope to relevant files
-	const scopedFiles = scopeToFiles(symbolPath.filePath, chunkedFiles);
+	const scopedFiles = scopeToFiles(symbolPath.filePath, chunkedFiles, workspaceRoot);
 
 	// If file path was specified but no files matched, try partial fallback
 	if (symbolPath.filePath !== null && scopedFiles.exact.length === 0) {
-		return buildPathHintResult(symbolPath.filePath, chunkedFiles);
+		return buildPathHintResult(symbolPath.filePath, chunkedFiles, workspaceRoot);
 	}
 
 	const filesToSearch = scopedFiles.exact;
@@ -47,6 +49,7 @@ export function resolveSymbol(
 		symbolPath.parentName,
 		filesToSearch,
 		true,
+		workspaceRoot,
 	);
 
 	// Step 2b: Apply kind filter if specified
@@ -72,12 +75,13 @@ export function resolveSymbol(
 		symbolPath.parentName,
 		filesToSearch,
 		false,
+		workspaceRoot,
 	);
 
 	if (caseInsensitiveMatches.length > 0) {
 		const nearMatches: NearMatch[] = caseInsensitiveMatches.map(m => ({
 			value: m.chunk.name,
-			location: `${m.relativePath}:${m.chunk.startLine}`,
+			location: `${toRelative(m.filePath, workspaceRoot)}:${m.chunk.startLine}`,
 			kind: 'case-mismatch' as const,
 		}));
 
@@ -91,7 +95,8 @@ export function resolveSymbol(
 	}
 
 	// Step 4: Check if the symbol exists as a local (non-body-bearing) declaration
-	const localHits = findLocalSymbolInParsedTrees(symbolPath.symbolName, filesToSearch);
+	if (sourceFiles) {
+	const localHits = findLocalSymbolInSourceFiles(symbolPath.symbolName, filesToSearch, sourceFiles, workspaceRoot);
 	if (localHits.length > 0) {
 		const nearMatches: NearMatch[] = localHits.map(h => ({
 			value: h.parentName,
@@ -106,6 +111,7 @@ export function resolveSymbol(
 			hasPathHints: false,
 			hasLocalHint: true,
 		};
+	}
 	}
 
 	// Step 5: Nothing found at all
@@ -131,16 +137,16 @@ interface ScopedFiles {
 function scopeToFiles(
 	filePath: string | null,
 	chunkedFiles: ChunkedFile[],
+	workspaceRoot: string,
 ): ScopedFiles {
 	if (filePath === null) {
 		return { exact: chunkedFiles };
 	}
 
-	// Normalize to forward slashes for comparison
 	const normalizedTarget = filePath.replace(/\\/g, '/');
 
 	const exact = chunkedFiles.filter(cf => {
-		const cfRelative = cf.parsedFile.relativePath.replace(/\\/g, '/');
+		const cfRelative = toRelative(cf.filePath, workspaceRoot);
 		return cfRelative === normalizedTarget;
 	});
 
@@ -154,6 +160,7 @@ function scopeToFiles(
 function buildPathHintResult(
 	requestedPath: string,
 	chunkedFiles: ChunkedFile[],
+	workspaceRoot: string,
 ): ResolutionResult {
 	const normalized = requestedPath.replace(/\\/g, '/');
 	const basename = path.basename(normalized);
@@ -161,7 +168,7 @@ function buildPathHintResult(
 	const nearMatches: NearMatch[] = [];
 
 	for (const cf of chunkedFiles) {
-		const cfRelative = cf.parsedFile.relativePath.replace(/\\/g, '/');
+		const cfRelative = toRelative(cf.filePath, workspaceRoot);
 
 		// Basename match: "tokenService.ts" matches "src/auth/tokenService.ts"
 		if (path.basename(cfRelative) === basename) {
@@ -208,6 +215,7 @@ function findSymbolMatches(
 	parentName: string | null,
 	files: ChunkedFile[],
 	caseSensitive: boolean,
+	workspaceRoot: string,
 ): ResolvedMatch[] {
 	const matches: ResolvedMatch[] = [];
 	const compare = caseSensitive ? strictCompare : caseInsensitiveCompare;
@@ -227,7 +235,7 @@ function findSymbolMatches(
 
 			matches.push({
 				chunk,
-				relativePath: cf.parsedFile.relativePath,
+				filePath: cf.filePath,
 			});
 		}
 	}
@@ -237,7 +245,6 @@ function findSymbolMatches(
 
 /**
  * Check if a chunk's parent matches the required parent name.
- * Supports dot-separated parent chains (e.g., "Outer.Inner").
  */
 function matchesParent(
 	chunk: CodeChunk,
@@ -246,52 +253,11 @@ function matchesParent(
 ): boolean {
 	const compare = caseSensitive ? strictCompare : caseInsensitiveCompare;
 
-	// Direct parent name match
 	if (chunk.parentName !== null && compare(chunk.parentName, requiredParent)) {
 		return true;
 	}
 
-	// Check breadcrumb for nested parent chains (e.g., "file > Outer > Inner > method")
-	// The requiredParent might be "Outer.Inner" for deeply nested symbols
-	if (requiredParent.includes('.')) {
-		const parentChain = requiredParent.split('.');
-		return matchesBreadcrumbParentChain(chunk.breadcrumb, parentChain, caseSensitive);
-	}
-
 	return false;
-}
-
-/**
- * Match a dot-separated parent chain against a breadcrumb string.
- * Breadcrumb format: "file > Parent > Child > symbol"
- * Parent chain: ["Parent", "Child"]
- */
-function matchesBreadcrumbParentChain(
-	breadcrumb: string,
-	parentChain: string[],
-	caseSensitive: boolean,
-): boolean {
-	const compare = caseSensitive ? strictCompare : caseInsensitiveCompare;
-	const breadcrumbSegments = breadcrumb.split(' > ').map(s => s.trim());
-
-	// The parent chain should appear as consecutive segments in the breadcrumb,
-	// immediately before the symbol name (last breadcrumb segment).
-	// Example: breadcrumb = "file > Outer > Inner > method"
-	//          parentChain = ["Outer", "Inner"]
-	//          → match at indices 1,2 (just before index 3 "method")
-	if (breadcrumbSegments.length < parentChain.length + 1) {
-		return false;
-	}
-
-	// Check from the end (just before the last segment which is the symbol itself)
-	const startIdx = breadcrumbSegments.length - 1 - parentChain.length;
-	for (let i = 0; i < parentChain.length; i++) {
-		if (!compare(breadcrumbSegments[startIdx + i], parentChain[i])) {
-			return false;
-		}
-	}
-
-	return true;
 }
 
 // ─── Comparison Helpers ─────────────────────────────────────────
@@ -370,6 +336,7 @@ export function formatAmbiguityHint(
 	symbolName: string,
 	parentName: string | null,
 	matches: ResolvedMatch[],
+	workspaceRoot: string,
 ): string {
 	const symbolPath = parentName
 		? `${parentName} > ${symbolName}`
@@ -381,12 +348,18 @@ export function formatAmbiguityHint(
 	const suggestions = matches
 		.map(m => {
 			const kind = m.chunk.nodeKind.toLowerCase();
-			const location = `${m.relativePath}:${m.chunk.startLine}`;
+			const location = `${toRelative(m.filePath, workspaceRoot)}:${m.chunk.startLine}`;
 			return `  - symbol = ${symbolPath}, kind = ${kind}  (${kind} at ${location})`;
 		})
 		.join('\n');
 
 	return `${header}\n${suggestions}`;
+}
+
+// ─── Path Helpers ───────────────────────────────────────────────
+
+function toRelative(absolutePath: string, workspaceRoot: string): string {
+	return path.relative(workspaceRoot, absolutePath).replace(/\\/g, '/');
 }
 
 // ─── Local Symbol Search ────────────────────────────────────────
@@ -400,62 +373,56 @@ interface LocalSymbolHit {
 }
 
 /**
- * Search parsed symbol trees for a name that exists as a local (non-body-bearing)
- * declaration inside a body-bearing parent. These symbols are not chunked, so they
- * won't appear in normal resolution — but we can still provide a helpful hint.
+ * Search ts-morph source files for a name that exists as a local (non-body-bearing)
+ * declaration inside a body-bearing parent. Uses ts-morph getLocals() directly.
  */
-function findLocalSymbolInParsedTrees(
+function findLocalSymbolInSourceFiles(
 	symbolName: string,
 	chunkedFiles: ChunkedFile[],
+	sourceFiles: Map<string, SourceFile>,
+	workspaceRoot: string,
 ): LocalSymbolHit[] {
 	const hits: LocalSymbolHit[] = [];
 
 	for (const cf of chunkedFiles) {
-		walkSymbolTree(cf.parsedFile.symbols, cf.parsedFile.relativePath, null, hits, symbolName);
+		const sf = sourceFiles.get(cf.filePath);
+		if (!sf) continue;
+
+		const relativePath = toRelative(cf.filePath, workspaceRoot);
+
+		for (const sym of sf.getLocals()) {
+			for (const decl of sym.getDeclarations()) {
+				if (!('getMembers' in decl)) continue;
+
+				const container = decl as unknown as { getMembers(): import('ts-morph').Node[] };
+				for (const member of container.getMembers()) {
+					if (!hasBody(member)) {
+						const memberName = 'getName' in member
+							&& typeof (member as Record<string, unknown>).getName === 'function'
+							? (member as unknown as { getName(): string | undefined }).getName()
+							: undefined;
+
+						if (memberName === symbolName) {
+							const parentName = 'getName' in decl
+								&& typeof (decl as Record<string, unknown>).getName === 'function'
+								? (decl as unknown as { getName(): string | undefined }).getName() ?? '<anonymous>'
+								: '<anonymous>';
+
+							hits.push({
+								parentName,
+								parentKind: decl.getKindName(),
+								parentStartLine: decl.getStartLineNumber(),
+								relativePath,
+								symbolKind: member.getKindName(),
+							});
+						}
+					}
+				}
+			}
+		}
 	}
 
 	return hits;
-}
-
-/**
- * Recursively walk the parsed symbol tree looking for non-body-bearing children
- * whose name matches the requested symbol.
- */
-function walkSymbolTree(
-	symbols: ParsedSymbol[],
-	relativePath: string,
-	parentCtx: { name: string; kind: string; startLine: number } | null,
-	hits: LocalSymbolHit[],
-	targetName: string,
-): void {
-	for (const sym of symbols) {
-		// If this is a non-body-bearing child inside a body-bearing parent, check for match
-		if (
-			parentCtx !== null &&
-			BODY_BEARING_KINDS.has(parentCtx.kind as import('../shared/types.js').NodeKind) &&
-			!BODY_BEARING_KINDS.has(sym.kind) &&
-			sym.name === targetName
-		) {
-			hits.push({
-				parentName: parentCtx.name,
-				parentKind: parentCtx.kind,
-				parentStartLine: parentCtx.startLine,
-				relativePath,
-				symbolKind: sym.kind,
-			});
-		}
-
-		// Recurse into children
-		if (sym.children.length > 0) {
-			walkSymbolTree(
-				sym.children,
-				relativePath,
-				{ name: sym.name, kind: sym.kind, startLine: sym.range.startLine },
-				hits,
-				targetName,
-			);
-		}
-	}
 }
 
 /**

@@ -22,7 +22,6 @@ import type {
 	SetAccessorDeclaration,
 	ParameterDeclaration,
 } from 'ts-morph';
-import type { SymbolTarget } from '../shared/types.js';
 
 // Map from SyntaxKind to output label for tracked modifiers.
 const TRACKED_MODIFIER_KINDS = new Map<SyntaxKind, string>([
@@ -54,13 +53,16 @@ export interface SignatureInfo {
 /**
  * Resolve the type signature and modifiers for a symbol.
  *
- * @param target - Pre-located SymbolTarget from the node locator.
+ * @param node - The ts-morph AST node for the declaration.
  * @returns SignatureInfo with signature text and modifiers array.
  */
-export function resolveSignature(target: SymbolTarget): SignatureInfo {
+export function resolveSignature(node: Node): SignatureInfo {
+	const name = 'getName' in node && typeof (node as Record<string, unknown>).getName === 'function'
+		? (node as unknown as { getName(): string | undefined }).getName() ?? ''
+		: '';
 	return {
-		signature: buildSignature(target.node, target.name),
-		modifiers: buildModifiers(target.node, target.sourceFile),
+		signature: buildSignature(node, name),
+		modifiers: buildModifiers(node, node.getSourceFile()),
 	};
 }
 
@@ -233,7 +235,7 @@ function buildModifiers(node: Node, sourceFile: SourceFile): string[] {
 	return modifiers;
 }
 
-function isExported(node: DeclarationNode, sourceFile: SourceFile): boolean {
+function isExported(node: Node, sourceFile: SourceFile): boolean {
 	// Variable declarations need special handling — check the parent statement
 	if (Node.isVariableDeclaration(node)) {
 		const statement = node.getVariableStatement();

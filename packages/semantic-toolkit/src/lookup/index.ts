@@ -5,24 +5,17 @@
  * `symbol = ...` queries, resolves matching symbols, enriches them
  * with TS LS metadata, and renders the same output as the full pipeline.
  *
- * TODO(Phase 7): Replace fresh parsing with indexed chunk retrieval.
- * Once the LanceDB index exists, the workspace must be queried via the
- * index instead of fresh parsing. There should be only one code path —
- * the fresh parsing path below is temporary.
+ * TODO(Phase 7): Replace fresh chunking with indexed chunk retrieval from LanceDB.
  *
  * Usage:
  *   const result = lookupSymbol(query, workspaceRoot, filePaths, tokenBudget);
  *   if (!result.isSymbolLookup) { // proceed with full pipeline }
  */
 
-import { Project } from 'ts-morph';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
+import { Project, Node } from 'ts-morph';
 
-import { parseFile, parseFiles } from '../parser/index.js';
 import { chunkFile } from '../chunker/index.js';
 import type { ChunkedFile, CodeChunk } from '../chunker/types.js';
-import type { ParsedFile } from '../parser/types.js';
 
 import { resolveCallHierarchy } from '../ts-ls/call-hierarchy.js';
 import { resolveTypeHierarchy } from '../ts-ls/type-hierarchy.js';
@@ -30,17 +23,13 @@ import { resolveReferences } from '../ts-ls/references.js';
 import { resolveTypeFlows } from '../ts-ls/type-flows.js';
 import { resolveMembers } from '../ts-ls/members.js';
 import { resolveSignature } from '../ts-ls/signature.js';
-import type { SymbolMetadata, SymbolRef, MemberInfo } from '../ts-ls/types.js';
+import type { SymbolMetadata, SymbolRef } from '../ts-ls/types.js';
 import type { TsLsConfig } from '../ts-ls/types.js';
 
-import { createSymbolTarget } from '../shared/node-locator.js';
-import { CALLABLE_KINDS, TYPE_HIERARCHY_KINDS, SKIP_REFS_KINDS } from '../shared/types.js';
-
 import { generateConnectionGraph } from '../graph/index.js';
-import type { GraphResultEntry, ConnectionGraphResult } from '../graph/types.js';
+import type { GraphResultEntry } from '../graph/types.js';
 
 import { generateSnapshot } from '../snapshot/index.js';
-import type { SnapshotResult } from '../snapshot/types.js';
 
 import { parseSymbolQuery } from './parse-query.js';
 import { resolveSymbol, formatCaseHint, formatPathHint, formatAmbiguityHint, formatLocalHint } from './resolve.js';
@@ -95,12 +84,20 @@ export function lookupSymbol(
 		return { isSymbolLookup: false } satisfies NotALookupResult;
 	}
 
-	// Step 2: Fresh parse + chunk all files
+	// Step 2: Create ts-morph project + chunk all files
 	// TODO(Phase 7): Replace with indexed chunk retrieval from LanceDB
-	const chunkedFiles = parseAndChunkFiles(filePaths, workspaceRoot);
+	const project = new Project({ useInMemoryFileSystem: false });
+	for (const fp of filePaths) {
+		try {
+			project.addSourceFileAtPath(fp);
+		} catch {
+			// Skip files that can't be loaded
+		}
+	}
+	const chunkedFiles = chunkWorkspaceFiles(project);
 
 	// Step 3: Resolve symbol matches
-	const resolution = resolveSymbol(parsed.path, chunkedFiles);
+	const resolution = resolveSymbol(parsed.path, chunkedFiles, workspaceRoot);
 
 	// Step 4: Handle no matches — return hints if available
 	if (resolution.matches.length === 0) {
@@ -134,13 +131,14 @@ export function lookupSymbol(
 				parsed.path.symbolName,
 				parsed.path.parentName,
 				resolution.matches,
+				workspaceRoot,
 			);
 			return {
 				isSymbolLookup: true,
 				found: false,
 				outputSections: [hint],
 				matchCount: resolution.matches.length,
-				fileCount: new Set(resolution.matches.map(m => m.relativePath)).size,
+				fileCount: new Set(resolution.matches.map(m => m.filePath)).size,
 				tokenCount: estimateTokens(hint),
 				hint,
 			} satisfies SymbolLookupResult;
@@ -151,8 +149,9 @@ export function lookupSymbol(
 	return renderLookupOutput(
 		query,
 		resolution.matches,
+		chunkedFiles,
+		project,
 		workspaceRoot,
-		filePaths,
 		tokenBudget,
 		tsLsConfig,
 	);
@@ -161,19 +160,18 @@ export function lookupSymbol(
 // ─── Internal: Parse + Chunk ────────────────────────────────────
 
 /**
- * Parse and chunk all workspace files.
- * TODO(Phase 7): Replace with indexed chunk retrieval.
+ * Chunk all workspace files using ts-morph directly.
+ * TODO(Phase 7): Replace with indexed chunk retrieval from LanceDB.
  */
-function parseAndChunkFiles(
-	filePaths: string[],
-	workspaceRoot: string,
+function chunkWorkspaceFiles(
+	project: Project,
 ): ChunkedFile[] {
-	const parsedFiles = parseFiles(filePaths, workspaceRoot);
 	const chunkedFiles: ChunkedFile[] = [];
 
-	for (const pf of parsedFiles) {
-		const content = fs.readFileSync(pf.filePath, 'utf-8');
-		chunkedFiles.push(chunkFile(pf, content));
+	for (const sourceFile of project.getSourceFiles()) {
+		const fp = sourceFile.getFilePath();
+		if (fp.endsWith('.d.ts') || fp.includes('node_modules')) continue;
+		chunkedFiles.push(chunkFile(sourceFile));
 	}
 
 	return chunkedFiles;
@@ -188,30 +186,25 @@ function parseAndChunkFiles(
 function renderLookupOutput(
 	query: string,
 	matches: ResolvedMatch[],
+	chunkedFiles: ChunkedFile[],
+	project: Project,
 	workspaceRoot: string,
-	filePaths: string[],
 	tokenBudget: number,
 	tsLsConfig?: Partial<TsLsConfig>,
 ): SymbolLookupResult {
-	// Create a shared ts-morph project for TS LS resolution
-	const project = new Project({ useInMemoryFileSystem: false });
-	for (const fp of filePaths) {
-		try {
-			project.addSourceFileAtPath(fp);
-		} catch {
-			// Skip files that can't be loaded
+	// Build a combined nodeMap from all chunked files for Node lookup
+	const nodeMap = new Map<string, import('ts-morph').Node>();
+	for (const cf of chunkedFiles) {
+		for (const [chunkId, node] of cf.nodeMap) {
+			nodeMap.set(chunkId, node);
 		}
 	}
 
 	// Enrich each match with metadata
 	const resultEntries: GraphResultEntry[] = [];
 	for (const match of matches) {
-		const metadata = enrichWithMetadata(
-			project,
-			match.chunk,
-			workspaceRoot,
-			tsLsConfig,
-		);
+		const node = nodeMap.get(match.chunk.id);
+		const metadata = enrichWithMetadata(node, match.chunk, tsLsConfig);
 		resultEntries.push({ chunk: match.chunk, metadata });
 	}
 
@@ -226,7 +219,7 @@ function renderLookupOutput(
 	const snapshotTexts: string[] = [];
 	const fileGroups = groupByFile(matches);
 
-	for (const [filePath, fileMatches] of fileGroups) {
+	for (const [, fileMatches] of fileGroups) {
 		const targets = fileMatches.map(m => m.chunk);
 		try {
 			const snapshotResult = generateSnapshot(project, targets, workspaceRoot);
@@ -239,7 +232,7 @@ function renderLookupOutput(
 	// Build code section
 	const codeSection = snapshotTexts.map(s => s.trim()).join('\n\n');
 
-	const distinctFiles = new Set(matches.map(m => m.relativePath));
+	const distinctFiles = new Set(matches.map(m => m.filePath));
 
 	// Debug metadata section
 	const debugMeta = [
@@ -255,7 +248,6 @@ function renderLookupOutput(
 		codeSection || '(no code)',
 	];
 
-	// Token count across all sections
 	const tokenCount = estimateTokens(outputSections.join('\n'));
 
 	return {
@@ -271,17 +263,16 @@ function renderLookupOutput(
 
 /**
  * Enrich a single chunk with TS LS structural metadata.
- * Resolves as many metadata fields as applicable for the chunk's kind.
+ * Uses the ts-morph Node directly from the chunker's nodeMap.
  */
 function enrichWithMetadata(
-	project: Project,
+	node: Node | undefined,
 	chunk: CodeChunk,
-	workspaceRoot: string,
 	tsLsConfig?: Partial<TsLsConfig>,
 ): SymbolMetadata {
 	const symbolRef: SymbolRef = {
 		name: chunk.parentName ? `${chunk.parentName}.${chunk.name}` : chunk.name,
-		filePath: chunk.relativePath,
+		filePath: chunk.filePath,
 		line: chunk.startLine,
 	};
 
@@ -291,19 +282,11 @@ function enrichWithMetadata(
 		incomingCallers: [],
 	};
 
-	const target = createSymbolTarget(
-		project,
-		chunk.filePath,
-		chunk.relativePath,
-		chunk.name,
-		chunk.nodeKind,
-		chunk.startLine,
-	);
-	if (!target) return metadata;
+	if (!node) return metadata;
 
 	// Signature + modifiers (applicable to all kinds)
 	try {
-		const sigInfo = resolveSignature(target);
+		const sigInfo = resolveSignature(node);
 		metadata.signature = sigInfo.signature;
 		metadata.modifiers = sigInfo.modifiers;
 	} catch {
@@ -311,9 +294,9 @@ function enrichWithMetadata(
 	}
 
 	// Call hierarchy (functions, methods, constructors)
-	if (CALLABLE_KINDS.has(chunk.nodeKind)) {
+	if (Node.isFunctionDeclaration(node) || Node.isMethodDeclaration(node)) {
 		try {
-			const callMeta = resolveCallHierarchy(target, workspaceRoot, tsLsConfig);
+			const callMeta = resolveCallHierarchy(node, tsLsConfig);
 			metadata.outgoingCalls = callMeta.outgoingCalls;
 			metadata.incomingCallers = callMeta.incomingCallers;
 		} catch {
@@ -322,36 +305,41 @@ function enrichWithMetadata(
 	}
 
 	// Type hierarchy (classes, interfaces)
-	if (TYPE_HIERARCHY_KINDS.has(chunk.nodeKind)) {
+	if (Node.isClassDeclaration(node) || Node.isInterfaceDeclaration(node)) {
 		try {
-			metadata.typeHierarchy = resolveTypeHierarchy(target, workspaceRoot);
+			metadata.typeHierarchy = resolveTypeHierarchy(node);
 		} catch {
 			// Not all classes/interfaces have resolvable type hierarchies
 		}
 	}
 
 	// Members (classes, interfaces)
-	if (TYPE_HIERARCHY_KINDS.has(chunk.nodeKind)) {
+	if (Node.isClassDeclaration(node) || Node.isInterfaceDeclaration(node)) {
 		try {
-			metadata.members = resolveMembers(target);
+			metadata.members = resolveMembers(node);
 		} catch {
 			// Not all classes/interfaces have members
 		}
 	}
 
-	// References (all named symbols)
-	if (!SKIP_REFS_KINDS.has(chunk.nodeKind)) {
+	// References (all named symbols — skip imports, expressions, re-exports, comments)
+	const skipRefsKinds = new Set(['ImportDeclaration', 'ExpressionStatement', 'ExportDeclaration']);
+	if (!skipRefsKinds.has(node.getKindName())) {
 		try {
-			metadata.references = resolveReferences(target, workspaceRoot);
+			metadata.references = resolveReferences(node);
 		} catch {
 			// References may fail for some symbols
 		}
 	}
 
-	// Type flows (functions, methods, constructors)
-	if (CALLABLE_KINDS.has(chunk.nodeKind)) {
+	// Type flows (callable symbols)
+	if (
+		Node.isFunctionDeclaration(node)
+		|| Node.isMethodDeclaration(node)
+		|| Node.isConstructorDeclaration(node)
+	) {
 		try {
-			metadata.typeFlows = resolveTypeFlows(target, workspaceRoot);
+			metadata.typeFlows = resolveTypeFlows(node);
 		} catch {
 			// Type flows may fail for some symbols
 		}

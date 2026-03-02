@@ -14,7 +14,6 @@ import type {
 	NewExpression,
 	Identifier,
 } from 'ts-morph';
-import { toRelativePosixPath } from './paths.js';
 
 import type {
 	TsLsConfig,
@@ -24,7 +23,6 @@ import type {
 	SymbolMetadata,
 } from './types.js';
 import { DEFAULT_TS_LS_CONFIG } from './types.js';
-import type { SymbolTarget } from '../shared/types.js';
 
 export type { TsLsConfig, SymbolRef, OutgoingCall, IncomingCaller, SymbolMetadata } from './types.js';
 export { DEFAULT_TS_LS_CONFIG } from './types.js';
@@ -69,32 +67,31 @@ function isUserDeclaration(node: Node): boolean {
 /**
  * Resolve call hierarchy metadata for a function or method.
  *
- * @param target        - Pre-located SymbolTarget (must be callable kind).
- * @param workspaceRoot - Workspace root for computing relative paths.
- * @param config        - Optional configuration (callDepth, etc.).
+ * @param node   - The ts-morph AST node (must be function or method).
+ * @param config - Optional configuration (callDepth, etc.).
+ * @returns SymbolMetadata with outgoing/incoming calls. All file paths are absolute.
  */
 export function resolveCallHierarchy(
-	target: SymbolTarget,
-	workspaceRoot: string,
+	node: Node,
 	config: Partial<TsLsConfig> = {},
 ): SymbolMetadata {
 	const merged: TsLsConfig = { ...DEFAULT_TS_LS_CONFIG, ...config };
 
-	if (!Node.isFunctionDeclaration(target.node) && !Node.isMethodDeclaration(target.node)) {
+	if (!Node.isFunctionDeclaration(node) && !Node.isMethodDeclaration(node)) {
 		throw new Error(
-			`Symbol "${target.name}" is not a function or method (kind: ${target.kind})`,
+			`Node is not a function or method (kind: ${node.getKindName()})`,
 		);
 	}
 
-	const declaration = target.node;
-	const ref = buildSymbolRef(declaration, workspaceRoot);
+	const declaration = node;
+	const ref = buildSymbolRef(declaration);
 	const rootKey = symbolKey(ref);
 
 	const outgoingCalls = resolveOutgoingCallsRecursive(
-		declaration, workspaceRoot, 1, merged.callDepth, new Set([rootKey]),
+		declaration, 1, merged.callDepth, new Set([rootKey]),
 	);
 	const incomingCallers = resolveIncomingCallersRecursive(
-		declaration, workspaceRoot, 1, merged.callDepth, new Set([rootKey]),
+		declaration, 1, merged.callDepth, new Set([rootKey]),
 	);
 
 	return { symbol: ref, outgoingCalls, incomingCallers };
@@ -106,12 +103,8 @@ export function resolveCallHierarchy(
 // SymbolRef building
 // ---------------------------------------------------------------------------
 
-/** Build a SymbolRef from any resolvable declaration. */
-function buildSymbolRef(declaration: ResolvableDeclaration, workspaceRoot: string): SymbolRef {
-	const sourceFile = declaration.getSourceFile();
-	const absolutePath = sourceFile.getFilePath();
-	const relativePath = toRelativePosixPath(workspaceRoot, absolutePath);
-
+/** Build a SymbolRef from any resolvable declaration. Uses absolute paths. */
+function buildSymbolRef(declaration: ResolvableDeclaration): SymbolRef {
 	let name: string;
 	if (Node.isConstructorDeclaration(declaration)) {
 		const parent = declaration.getParent();
@@ -120,7 +113,11 @@ function buildSymbolRef(declaration: ResolvableDeclaration, workspaceRoot: strin
 		name = declaration.getName() ?? '<anonymous>';
 	}
 
-	return { name, filePath: relativePath, line: declaration.getStartLineNumber() };
+	return {
+		name,
+		filePath: declaration.getSourceFile().getFilePath(),
+		line: declaration.getStartLineNumber(),
+	};
 }
 
 // ---------------------------------------------------------------------------
@@ -138,7 +135,6 @@ function buildSymbolRef(declaration: ResolvableDeclaration, workspaceRoot: strin
  */
 function resolveOutgoingCallsRecursive(
 	declaration: ResolvableDeclaration,
-	workspaceRoot: string,
 	currentDepth: number,
 	maxDepth: number,
 	ancestors: Set<string>,
@@ -146,7 +142,7 @@ function resolveOutgoingCallsRecursive(
 	const body = declaration.getBody();
 	if (!body) return [];
 
-	const targets = collectCallTargets(body, workspaceRoot);
+	const targets = collectCallTargets(body);
 	const grouped = groupCallTargets(targets);
 	const result: OutgoingCall[] = [];
 
@@ -165,7 +161,7 @@ function resolveOutgoingCallsRecursive(
 		}
 
 		if (maxDepth !== -1 && currentDepth >= maxDepth) {
-			const hasMore = targetDecl ? hasResolvableOutgoingCalls(targetDecl, workspaceRoot) : false;
+			const hasMore = targetDecl ? hasResolvableOutgoingCalls(targetDecl) : false;
 			result.push({
 				target: ref,
 				callSiteLines: sortedLines,
@@ -186,7 +182,7 @@ function resolveOutgoingCallsRecursive(
 
 		ancestors.add(targetKey);
 		const children = resolveOutgoingCallsRecursive(
-			targetDecl, workspaceRoot, currentDepth + 1, maxDepth, ancestors,
+			targetDecl, currentDepth + 1, maxDepth, ancestors,
 		);
 		ancestors.delete(targetKey);
 
@@ -203,7 +199,7 @@ function resolveOutgoingCallsRecursive(
 /**
  * Collect all call targets (regular calls + constructor calls) from a body node.
  */
-function collectCallTargets(body: Node, workspaceRoot: string): ResolvedTarget[] {
+function collectCallTargets(body: Node): ResolvedTarget[] {
 	const targets: ResolvedTarget[] = [];
 
 	for (const callExpr of body.getDescendantsOfKind(SyntaxKind.CallExpression)) {
@@ -211,7 +207,7 @@ function collectCallTargets(body: Node, workspaceRoot: string): ResolvedTarget[]
 		if (!decl) continue;
 		if (!isUserDeclaration(decl)) continue;
 
-		const ref = buildSymbolRef(decl, workspaceRoot);
+		const ref = buildSymbolRef(decl);
 		targets.push({ ref, declaration: decl, callLine: callExpr.getStartLineNumber() });
 	}
 
@@ -220,7 +216,7 @@ function collectCallTargets(body: Node, workspaceRoot: string): ResolvedTarget[]
 		if (!decl) continue;
 		if (!isUserDeclaration(decl)) continue;
 
-		const ref = buildSymbolRef(decl, workspaceRoot);
+		const ref = buildSymbolRef(decl);
 		targets.push({ ref, declaration: decl, callLine: newExpr.getStartLineNumber() });
 	}
 
@@ -302,10 +298,10 @@ function resolveNewExpressionTarget(newExpr: NewExpression): ConstructorDeclarat
 }
 
 /** Check if a declaration has any resolvable outgoing calls to user code. */
-function hasResolvableOutgoingCalls(declaration: ResolvableDeclaration, workspaceRoot: string): boolean {
+function hasResolvableOutgoingCalls(declaration: ResolvableDeclaration): boolean {
 	const body = declaration.getBody();
 	if (!body) return false;
-	return collectCallTargets(body, workspaceRoot).length > 0;
+	return collectCallTargets(body).length > 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -323,12 +319,11 @@ function hasResolvableOutgoingCalls(declaration: ResolvableDeclaration, workspac
  */
 function resolveIncomingCallersRecursive(
 	declaration: ResolvableDeclaration,
-	workspaceRoot: string,
 	currentDepth: number,
 	maxDepth: number,
 	descendants: Set<string>,
 ): IncomingCaller[] {
-	const directCallers = resolveDirectIncomingCallers(declaration, workspaceRoot);
+	const directCallers = resolveDirectIncomingCallers(declaration);
 	const result: IncomingCaller[] = [];
 
 	for (const { source, declaration: callerDecl, lines } of directCallers) {
@@ -366,7 +361,7 @@ function resolveIncomingCallersRecursive(
 
 		descendants.add(callerKey);
 		const parentCallers = resolveIncomingCallersRecursive(
-			callerDecl, workspaceRoot, currentDepth + 1, maxDepth, descendants,
+			callerDecl, currentDepth + 1, maxDepth, descendants,
 		);
 		descendants.delete(callerKey);
 
@@ -386,7 +381,6 @@ function resolveIncomingCallersRecursive(
  */
 function resolveDirectIncomingCallers(
 	declaration: ResolvableDeclaration,
-	workspaceRoot: string,
 ): ResolvedCaller[] {
 	const nameNode = Node.isConstructorDeclaration(declaration)
 		? undefined
@@ -409,7 +403,7 @@ function resolveDirectIncomingCallers(
 		if (!containingDecl) continue;
 		if (!isUserDeclaration(containingDecl)) continue;
 
-		const source = buildSymbolRef(containingDecl, workspaceRoot);
+		const source = buildSymbolRef(containingDecl);
 		const key = `${source.filePath}:${source.name}:${source.line}`;
 		const callLine = callExpr.getStartLineNumber();
 		const existing = callerMap.get(key);
