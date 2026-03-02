@@ -130,7 +130,7 @@ export const search = defineTool({
 
 		let result: LookupResult;
 		try {
-			result = lookupSymbol(query, rootDir, [filePath], tsLsConfig);
+			result = lookupSymbol(query, rootDir, [filePath], tsLsConfig, snapshot === true);
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : String(err);
 			response.appendResponseLine(`error: Failed to parse ${path.relative(rootDir, filePath)}: ${msg}`);
@@ -151,9 +151,9 @@ export const search = defineTool({
 
 		const sections = result.outputSections as OutputSections;
 
-		response.appendResponseLine(relativizePaths(sections.graph, rootDir));
-		response.appendResponseLine('');
 		if (snapshot) {
+			response.appendResponseLine(relativizePaths(sections.graph, rootDir));
+			response.appendResponseLine('');
 			response.appendResponseLine(relativizePaths(sections.snapshot, rootDir));
 		} else {
 			response.appendResponseLine(relativizePaths(sections.chunk, rootDir));
@@ -189,8 +189,8 @@ export const search = defineTool({
 			.optional()
 			.default(false)
 			.describe(
-				'When true, returns graph + smart structural snapshot. ' +
-				'When false (default), returns graph + raw chunk data.',
+				'When true, returns enriched graph (calls, refs, types) + smart structural snapshot. ' +
+				'When false (default), returns only the raw source code chunk (no enrichment).',
 			),
 	}
 });

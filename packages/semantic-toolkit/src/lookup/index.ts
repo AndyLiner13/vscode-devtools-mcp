@@ -69,6 +69,7 @@ export function lookupSymbol(
 	workspaceRoot: string,
 	filePaths: string[],
 	tsLsConfig?: Partial<TsLsConfig>,
+	enrich = true,
 ): LookupResult {
 	// Step 1: Parse query for symbol lookup prefix
 	const parsed = parseSymbolQuery(query);
@@ -143,7 +144,8 @@ export function lookupSymbol(
 		chunkedFiles,
 		project,
 		workspaceRoot,
-		tsLsConfig,
+		enrich ? tsLsConfig : undefined,
+		enrich,
 	);
 }
 
@@ -180,6 +182,7 @@ function renderLookupOutput(
 	project: Project,
 	workspaceRoot: string,
 	tsLsConfig?: Partial<TsLsConfig>,
+	enrich = true,
 ): SymbolLookupResult {
 	// Build a combined nodeMap from all chunked files for Node lookup
 	const nodeMap = new Map<string, import('ts-morph').Node>();
@@ -190,6 +193,31 @@ function renderLookupOutput(
 	}
 
 	const chunks = matches.map(m => m.chunk);
+
+	// Build chunk section (raw embeddingText per chunk — always needed)
+	const chunkSection = chunks
+		.map(c => `// ${c.filePath}\n\n${c.embeddingText}`)
+		.join('\n\n');
+
+	const distinctFiles = new Set(matches.map(m => m.filePath));
+
+	// When enrichment is disabled, skip graph + snapshot generation entirely
+	if (!enrich) {
+		const outputSections: OutputSections = {
+			chunk: chunkSection,
+			graph: '',
+			snapshot: '',
+		};
+
+		return {
+			isSymbolLookup: true,
+			found: true,
+			outputSections,
+			matchCount: matches.length,
+			fileCount: distinctFiles.size,
+			hint: null,
+		};
+	}
 
 	// Generate connection graph (enrichment happens inside the graph module)
 	const graphResult = generateConnectionGraphFromChunks({
@@ -213,14 +241,7 @@ function renderLookupOutput(
 		}
 	}
 
-	// Build chunk section (raw embeddingText per chunk)
-	const chunkSection = chunks
-		.map(c => `// ${c.filePath}\n\n${c.embeddingText}`)
-		.join('\n\n');
-
 	const snapshotSection = snapshotTexts.map(s => s.trim()).join('\n\n');
-
-	const distinctFiles = new Set(matches.map(m => m.filePath));
 
 	const outputSections: OutputSections = {
 		chunk: chunkSection,
