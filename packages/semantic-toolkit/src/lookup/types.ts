@@ -84,6 +84,22 @@ export interface ResolutionResult {
 // ─── Output ─────────────────────────────────────────────────────
 
 /**
+ * Named output sections produced by the lookup pipeline.
+ * Each section corresponds to a pipeline stage and can be
+ * independently selected via the MCP tool's `stage` param.
+ */
+export interface OutputSections {
+	/** Raw chunk data rendered as text (embeddingText + metadata). */
+	chunk: string;
+
+	/** Connection graph text (symbol card with calls/refs/topology). */
+	graph: string;
+
+	/** Smart structural snapshot code. */
+	snapshot: string;
+}
+
+/**
  * The final symbol lookup result.
  * Same output format as the full search pipeline.
  */
@@ -95,13 +111,11 @@ export interface SymbolLookupResult {
 	found: boolean;
 
 	/**
-	 * Structured output sections for multi-panel rendering.
-	 * [0] = debug metadata (search summary + match/file/token counts)
-	 * [1] = connection graph (symbol card with calls/refs)
-	 * [2] = code (raw snapshot content)
-	 * When found is false, contains a single-element tuple with the error/hint message.
+	 * Named output sections — one per pipeline stage.
+	 * When found is true, all fields are populated.
+	 * When found is false, only `graph` contains the error/hint message.
 	 */
-	outputSections: [debugMeta: string, graph: string, code: string] | [message: string];
+	outputSections: OutputSections | { graph: string };
 
 	/** Number of matched symbols. */
 	matchCount: number;
@@ -128,5 +142,4 @@ export interface NotALookupResult {
 	isSymbolLookup: false;
 }
 
-/** Union type returned by the lookup entry point. */
-export type LookupResult = SymbolLookupResult | NotALookupResult;
+export type { OutputSections, LookupResult, SymbolLookupResult, NotALookupResult };

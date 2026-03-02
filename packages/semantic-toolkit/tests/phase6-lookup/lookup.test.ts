@@ -467,7 +467,9 @@ describe('Phase 6 — Entry Point (lookupSymbol)', () => {
 			expect(lookup.found).toBe(true);
 			expect(lookup.matchCount).toBe(1);
 			expect(lookup.fileCount).toBe(1);
-			expect(lookup.outputSections).toHaveLength(3);
+			expect(lookup.outputSections).toHaveProperty('chunk');
+			expect(lookup.outputSections).toHaveProperty('graph');
+			expect(lookup.outputSections).toHaveProperty('snapshot');
 			expect(lookup.tokenCount).toBeGreaterThan(0);
 			expect(lookup.hint).toBeNull();
 		});
@@ -545,7 +547,7 @@ describe('Phase 6 — Entry Point (lookupSymbol)', () => {
 			const lookup = result as SymbolLookupResult;
 			expect(lookup.found).toBe(false);
 			expect(lookup.matchCount).toBe(0);
-			expect(lookup.outputSections[0]).toContain('totallyNotARealSymbol');
+			expect(lookup.outputSections.graph).toContain('totallyNotARealSymbol');
 			expect(lookup.hint).toBeNull();
 		});
 	});

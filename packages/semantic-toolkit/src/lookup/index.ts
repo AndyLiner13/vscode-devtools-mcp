@@ -2,8 +2,9 @@
  * Phase 6 — Symbol Lookup.
  *
  * Main entry point for the direct symbol lookup module. Detects
- * `symbol = ...` queries, resolves matching symbols, enriches them
- * with TS LS metadata, and renders the same output as the full pipeline.
+ * `symbol = ...` queries, resolves matching symbols, passes them
+ * to the graph module for enrichment + rendering, and generates
+ * smart snapshots.
  *
  * TODO(Phase 7): Replace fresh chunking with indexed chunk retrieval from LanceDB.
  *
@@ -12,22 +13,14 @@
  *   if (!result.isSymbolLookup) { // proceed with full pipeline }
  */
 
-import { Project, Node } from 'ts-morph';
+import { Project } from 'ts-morph';
 
 import { chunkFile } from '../chunker/index.js';
 import type { ChunkedFile, CodeChunk } from '../chunker/types.js';
 
-import { resolveCallHierarchy } from '../ts-ls/call-hierarchy.js';
-import { resolveTypeHierarchy } from '../ts-ls/type-hierarchy.js';
-import { resolveReferences } from '../ts-ls/references.js';
-import { resolveTypeFlows } from '../ts-ls/type-flows.js';
-import { resolveMembers } from '../ts-ls/members.js';
-import { resolveSignature } from '../ts-ls/signature.js';
-import type { SymbolMetadata, SymbolRef } from '../ts-ls/types.js';
 import type { TsLsConfig } from '../ts-ls/types.js';
 
-import { generateConnectionGraph } from '../graph/index.js';
-import type { GraphResultEntry } from '../graph/types.js';
+import { generateConnectionGraphFromChunks } from '../graph/index.js';
 
 import { generateSnapshot } from '../snapshot/index.js';
 
@@ -37,6 +30,7 @@ import type {
 	LookupResult,
 	SymbolLookupResult,
 	NotALookupResult,
+	OutputSections,
 	ResolvedMatch,
 } from './types.js';
 
@@ -44,6 +38,7 @@ export type {
 	LookupResult,
 	SymbolLookupResult,
 	NotALookupResult,
+	OutputSections,
 	ParsedSymbolPath,
 	QueryParseResult,
 	ResolvedMatch,
@@ -114,7 +109,7 @@ export function lookupSymbol(
 		return {
 			isSymbolLookup: true,
 			found: false,
-			outputSections: [hint ?? `No symbol "${parsed.path.symbolName}" found.`],
+			outputSections: { graph: hint ?? `No symbol "${parsed.path.symbolName}" found.` },
 			matchCount: 0,
 			fileCount: 0,
 			tokenCount: estimateTokens(hint ?? ''),
@@ -136,7 +131,7 @@ export function lookupSymbol(
 			return {
 				isSymbolLookup: true,
 				found: false,
-				outputSections: [hint],
+				outputSections: { graph: hint },
 				matchCount: resolution.matches.length,
 				fileCount: new Set(resolution.matches.map(m => m.filePath)).size,
 				tokenCount: estimateTokens(hint),
@@ -180,8 +175,8 @@ function chunkWorkspaceFiles(
 // ─── Internal: Enrich + Render ──────────────────────────────────
 
 /**
- * Enrich matched chunks with TS LS metadata and render the full output
- * (connection graph + smart snapshots).
+ * Enrich matched chunks via the graph module and render the full output
+ * (connection graph + smart snapshots + chunk data).
  */
 function renderLookupOutput(
 	query: string,
@@ -200,19 +195,15 @@ function renderLookupOutput(
 		}
 	}
 
-	// Enrich each match with metadata
-	const resultEntries: GraphResultEntry[] = [];
-	for (const match of matches) {
-		const node = nodeMap.get(match.chunk.id);
-		const metadata = enrichWithMetadata(node, match.chunk, tsLsConfig);
-		resultEntries.push({ chunk: match.chunk, metadata });
-	}
+	const chunks = matches.map(m => m.chunk);
 
-	// Generate connection graph
-	const graphResult = generateConnectionGraph({
+	// Generate connection graph (enrichment happens inside the graph module)
+	const graphResult = generateConnectionGraphFromChunks({
 		query,
-		results: resultEntries,
+		chunks,
+		nodeMap,
 		tokenBudget,
+		tsLsConfig,
 	});
 
 	// Generate smart snapshots (grouped by file)
@@ -229,26 +220,24 @@ function renderLookupOutput(
 		}
 	}
 
-	// Build code section
-	const codeSection = snapshotTexts.map(s => s.trim()).join('\n\n');
+	// Build chunk section (raw embeddingText per chunk)
+	const chunkSection = chunks
+		.map(c => `// ${c.filePath}:${c.startLine}-${c.endLine} (${c.nodeKind}) ${c.name}\n${c.embeddingText}`)
+		.join('\n\n');
+
+	const snapshotSection = snapshotTexts.map(s => s.trim()).join('\n\n');
 
 	const distinctFiles = new Set(matches.map(m => m.filePath));
 
-	// Debug metadata section
-	const debugMeta = [
-		graphResult.summaryLine,
-		`# matches: ${matches.length}`,
-		`# files: ${distinctFiles.size}`,
-		`# tokens: ${graphResult.tokenCount}`,
-	].join('\n');
+	const outputSections: OutputSections = {
+		chunk: chunkSection,
+		graph: graphResult.text.trim(),
+		snapshot: snapshotSection || '(no code)',
+	};
 
-	const outputSections: [string, string, string] = [
-		debugMeta,
-		graphResult.graphBody.trim(),
-		codeSection || '(no code)',
-	];
-
-	const tokenCount = estimateTokens(outputSections.join('\n'));
+	const tokenCount = estimateTokens(
+		outputSections.graph + '\n' + outputSections.snapshot,
+	);
 
 	return {
 		isSymbolLookup: true,
@@ -259,93 +248,6 @@ function renderLookupOutput(
 		tokenCount,
 		hint: null,
 	};
-}
-
-/**
- * Enrich a single chunk with TS LS structural metadata.
- * Uses the ts-morph Node directly from the chunker's nodeMap.
- */
-function enrichWithMetadata(
-	node: Node | undefined,
-	chunk: CodeChunk,
-	tsLsConfig?: Partial<TsLsConfig>,
-): SymbolMetadata {
-	const symbolRef: SymbolRef = {
-		name: chunk.parentName ? `${chunk.parentName}.${chunk.name}` : chunk.name,
-		filePath: chunk.filePath,
-		line: chunk.startLine,
-	};
-
-	const metadata: SymbolMetadata = {
-		symbol: symbolRef,
-		outgoingCalls: [],
-		incomingCallers: [],
-	};
-
-	if (!node) return metadata;
-
-	// Signature + modifiers (applicable to all kinds)
-	try {
-		const sigInfo = resolveSignature(node);
-		metadata.signature = sigInfo.signature;
-		metadata.modifiers = sigInfo.modifiers;
-	} catch {
-		// Not all symbols have resolvable signatures
-	}
-
-	// Call hierarchy (functions, methods, constructors)
-	if (Node.isFunctionDeclaration(node) || Node.isMethodDeclaration(node)) {
-		try {
-			const callMeta = resolveCallHierarchy(node, tsLsConfig);
-			metadata.outgoingCalls = callMeta.outgoingCalls;
-			metadata.incomingCallers = callMeta.incomingCallers;
-		} catch {
-			// Call hierarchy may fail for some symbols
-		}
-	}
-
-	// Type hierarchy (classes, interfaces)
-	if (Node.isClassDeclaration(node) || Node.isInterfaceDeclaration(node)) {
-		try {
-			metadata.typeHierarchy = resolveTypeHierarchy(node);
-		} catch {
-			// Not all classes/interfaces have resolvable type hierarchies
-		}
-	}
-
-	// Members (classes, interfaces)
-	if (Node.isClassDeclaration(node) || Node.isInterfaceDeclaration(node)) {
-		try {
-			metadata.members = resolveMembers(node);
-		} catch {
-			// Not all classes/interfaces have members
-		}
-	}
-
-	// References (all named symbols — skip imports, expressions, re-exports, comments)
-	const skipRefsKinds = new Set(['ImportDeclaration', 'ExpressionStatement', 'ExportDeclaration']);
-	if (!skipRefsKinds.has(node.getKindName())) {
-		try {
-			metadata.references = resolveReferences(node);
-		} catch {
-			// References may fail for some symbols
-		}
-	}
-
-	// Type flows (callable symbols)
-	if (
-		Node.isFunctionDeclaration(node)
-		|| Node.isMethodDeclaration(node)
-		|| Node.isConstructorDeclaration(node)
-	) {
-		try {
-			metadata.typeFlows = resolveTypeFlows(node);
-		} catch {
-			// Type flows may fail for some symbols
-		}
-	}
-
-	return metadata;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────

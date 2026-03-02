@@ -8,6 +8,7 @@ export type {
 	LookupResult,
 	SymbolLookupResult,
 	NotALookupResult,
+	OutputSections,
 } from './lookup/types.js';
 
 export type { TsLsConfig } from './ts-ls/types.js';

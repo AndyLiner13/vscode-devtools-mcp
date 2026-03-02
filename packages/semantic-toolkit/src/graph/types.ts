@@ -7,7 +7,8 @@
  */
 
 import type { CodeChunk } from '../chunker/types.js';
-import type { SymbolMetadata, SymbolRef, OutgoingCall, IncomingCaller } from '../ts-ls/types.js';
+import type { SymbolMetadata, SymbolRef, OutgoingCall, IncomingCaller, TsLsConfig } from '../ts-ls/types.js';
+import type { Node } from 'ts-morph';
 
 // ─── Input ───────────────────────────────────────────────────────
 
@@ -20,7 +21,7 @@ export interface GraphResultEntry {
 	metadata: SymbolMetadata;
 }
 
-/** Input for connection graph generation. */
+/** Input for connection graph generation from pre-enriched results. */
 export interface ConnectionGraphInput {
 	/** The original search query string. */
 	query: string;
@@ -30,6 +31,27 @@ export interface ConnectionGraphInput {
 
 	/** Maximum token budget for the full MCP response. */
 	tokenBudget: number;
+}
+
+/**
+ * Input for connection graph generation from raw chunks.
+ * The graph module handles enrichment internally.
+ */
+export interface ConnectionGraphRawInput {
+	/** The original search query string. */
+	query: string;
+
+	/** Matched code chunks to enrich and render. */
+	chunks: CodeChunk[];
+
+	/** Node map from chunker (chunkId → ts-morph Node) for enrichment. */
+	nodeMap: Map<string, Node>;
+
+	/** Maximum token budget for the full MCP response. */
+	tokenBudget: number;
+
+	/** Optional TS LS configuration (callDepth, typeDepth). */
+	tsLsConfig?: Partial<TsLsConfig>;
 }
 
 // ─── Topology analysis ──────────────────────────────────────────
