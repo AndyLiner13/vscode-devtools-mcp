@@ -222,7 +222,7 @@ function renderLookupOutput(
 
 	// Build chunk section (raw embeddingText per chunk)
 	const chunkSection = chunks
-		.map(c => `// ${c.filePath}:${c.startLine}-${c.endLine} (${c.nodeKind}) ${c.name}\n${c.embeddingText}`)
+		.map(c => `// ${c.filePath}:${c.startLine}-${c.endLine} (${c.nodeKind}) ${c.name}\n\n${c.embeddingText}`)
 		.join('\n\n');
 
 	const snapshotSection = snapshotTexts.map(s => s.trim()).join('\n\n');

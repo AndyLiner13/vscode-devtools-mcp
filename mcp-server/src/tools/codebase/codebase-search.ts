@@ -153,8 +153,9 @@ export const search = defineTool({
 		const sections = result.outputSections as OutputSections;
 
 		if (stage) {
-			const text = sections[stage];
-			response.appendResponseLine(relativizePaths(text, rootDir));
+			const text = relativizePaths(sections[stage], rootDir);
+			response.appendResponseLine(text);
+			response.appendResponseLine('');
 			return;
 		}
 
