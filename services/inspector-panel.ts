@@ -375,10 +375,11 @@ class InspectorPanelProvider {
 		const fileName = `${safeName}-${shortId}.md`;
 		const fileUri = vscode.Uri.joinPath(contextDir, fileName);
 
-		const outputText = record.output
+		const outputBlocks = record.output
 			.filter((b) => b.text)
-			.map((b) => b.text)
-			.join('\n');
+			.map((b) => b.text);
+
+		log(`materializeRecord: record.output has ${record.output.length} blocks, outputBlocks has ${outputBlocks.length} entries`);
 
 		const status = record.isError ? '\u274c Error' : '\u2705 Success';
 		const ratingLabel =
@@ -408,10 +409,11 @@ class InspectorPanelProvider {
 			'```',
 			'',
 			'## Output',
-			'```',
-			outputText,
-			'```'
 		);
+
+		for (const block of outputBlocks) {
+			lines.push('```', block, '```', '');
+		}
 
 		const content = new TextEncoder().encode(lines.join('\n'));
 		await vscode.workspace.fs.writeFile(fileUri, content);
