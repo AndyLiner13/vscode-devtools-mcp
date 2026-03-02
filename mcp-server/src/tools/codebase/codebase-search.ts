@@ -17,6 +17,16 @@ import { getClientWorkspace } from '../../config.js';
 import { ToolCategory } from '../categories.js';
 import { defineTool } from '../ToolDefinition.js';
 
+/**
+ * Replace all occurrences of the absolute workspace root in text with
+ * workspace-relative forward-slash paths for cleaner MCP output.
+ */
+function relativizePaths(text: string, rootDir: string): string {
+	const normalized = rootDir.replace(/\\/g, '/');
+	const withTrailing = normalized.endsWith('/') ? normalized : `${normalized}/`;
+	return text.replaceAll(withTrailing, '');
+}
+
 /** Supported file extensions for TypeScript/JavaScript analysis. */
 const PARSEABLE_EXTENSIONS = new Set([
 	'ts', 'tsx', 'js', 'jsx', 'mts', 'mjs', 'cts', 'cjs',
@@ -136,13 +146,13 @@ export const search = defineTool({
 
 		if (!result.found) {
 			for (const section of result.outputSections) {
-				response.appendResponseLine(section);
+				response.appendResponseLine(relativizePaths(section, rootDir));
 			}
 			return;
 		}
 
 		for (const section of result.outputSections) {
-			response.appendResponseLine(section);
+			response.appendResponseLine(relativizePaths(section, rootDir));
 		}
 	},
 	name: 'codebase_search',

@@ -51,7 +51,6 @@ export function generateSnapshot(
 	}
 
 	const filePath = targets[0].filePath;
-	const relativePath = targets[0].relativePath;
 
 	// Get the source file content
 	const sourceFile = project.getSourceFileOrThrow(filePath);
@@ -61,8 +60,8 @@ export function generateSnapshot(
 	// Step 1: Resolve all same-file dependencies (recursive/transitive)
 	const resolution = resolveIdentifiers(project, filePath, targets);
 
-	// Step 2: Render the snapshot
-	return renderSnapshot(resolution, targets, fileLines, relativePath);
+	// Step 2: Render the snapshot (use absolute filePath — MCP tool relativizes)
+	return renderSnapshot(resolution, targets, fileLines, filePath);
 }
 
 /**
