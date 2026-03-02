@@ -16,7 +16,7 @@ import type {
 	NotALookupResult,
 } from '../../src/lookup/types';
 
-import { parseFiles } from '../../src/parser/index';
+import { Project } from 'ts-morph';
 import { chunkFile } from '../../src/chunker/index';
 import type { ChunkedFile } from '../../src/chunker/types';
 
@@ -32,19 +32,20 @@ function getFixturePaths(): string[] {
 }
 
 /**
- * Parse + chunk all lookup fixtures.
+ * Chunk all lookup fixtures using ts-morph Project directly.
  * Mirrors what the entry point does internally.
  */
 function buildChunkedFiles(): ChunkedFile[] {
 	const filePaths = getFixturePaths();
-	const parsed = parseFiles(filePaths, WORKSPACE_ROOT);
-	const chunked: ChunkedFile[] = [];
-
-	for (const pf of parsed) {
-		const content = fs.readFileSync(pf.filePath, 'utf-8');
-		chunked.push(chunkFile(pf, content));
+	const project = new Project({ useInMemoryFileSystem: false });
+	for (const fp of filePaths) {
+		project.addSourceFileAtPath(fp);
 	}
 
+	const chunked: ChunkedFile[] = [];
+	for (const sourceFile of project.getSourceFiles()) {
+		chunked.push(chunkFile(sourceFile));
+	}
 	return chunked;
 }
 
@@ -184,7 +185,7 @@ describe('Phase 6 — Symbol Resolution (resolveSymbol)', () => {
 				symbolName: 'formatDate',
 				symbolKind: null,
 			};
-			const result = resolveSymbol(symbolPath, chunkedFiles);
+			const result = resolveSymbol(symbolPath, chunkedFiles, WORKSPACE_ROOT);
 			expect(result.matches.length).toBeGreaterThanOrEqual(1);
 			expect(result.matches[0].chunk.name).toBe('formatDate');
 			expect(result.hasCaseHints).toBe(false);
@@ -198,7 +199,7 @@ describe('Phase 6 — Symbol Resolution (resolveSymbol)', () => {
 				symbolName: 'TokenService',
 				symbolKind: null,
 			};
-			const result = resolveSymbol(symbolPath, chunkedFiles);
+			const result = resolveSymbol(symbolPath, chunkedFiles, WORKSPACE_ROOT);
 			expect(result.matches.length).toBe(1);
 			expect(result.matches[0].chunk.name).toBe('TokenService');
 		});
@@ -210,7 +211,7 @@ describe('Phase 6 — Symbol Resolution (resolveSymbol)', () => {
 				symbolName: 'validateToken',
 				symbolKind: null,
 			};
-			const result = resolveSymbol(symbolPath, chunkedFiles);
+			const result = resolveSymbol(symbolPath, chunkedFiles, WORKSPACE_ROOT);
 			expect(result.matches.length).toBe(1);
 			expect(result.matches[0].chunk.name).toBe('validateToken');
 			expect(result.matches[0].chunk.parentName).toBe('TokenService');
@@ -223,7 +224,7 @@ describe('Phase 6 — Symbol Resolution (resolveSymbol)', () => {
 				symbolName: 'AuthConfig',
 				symbolKind: null,
 			};
-			const result = resolveSymbol(symbolPath, chunkedFiles);
+			const result = resolveSymbol(symbolPath, chunkedFiles, WORKSPACE_ROOT);
 			expect(result.matches.length).toBe(1);
 			expect(result.matches[0].chunk.name).toBe('AuthConfig');
 		});
@@ -235,7 +236,7 @@ describe('Phase 6 — Symbol Resolution (resolveSymbol)', () => {
 				symbolName: 'MAX_RETRIES',
 				symbolKind: null,
 			};
-			const result = resolveSymbol(symbolPath, chunkedFiles);
+			const result = resolveSymbol(symbolPath, chunkedFiles, WORKSPACE_ROOT);
 			expect(result.matches.length).toBe(1);
 			expect(result.matches[0].chunk.name).toBe('MAX_RETRIES');
 		});
@@ -247,7 +248,7 @@ describe('Phase 6 — Symbol Resolution (resolveSymbol)', () => {
 				symbolName: 'EventHandler',
 				symbolKind: null,
 			};
-			const result = resolveSymbol(symbolPath, chunkedFiles);
+			const result = resolveSymbol(symbolPath, chunkedFiles, WORKSPACE_ROOT);
 			expect(result.matches.length).toBe(1);
 			expect(result.matches[0].chunk.name).toBe('EventHandler');
 		});
@@ -263,9 +264,9 @@ describe('Phase 6 — Symbol Resolution (resolveSymbol)', () => {
 				symbolName: 'validateToken',
 				symbolKind: null,
 			};
-			const result = resolveSymbol(symbolPath, chunkedFiles);
+			const result = resolveSymbol(symbolPath, chunkedFiles, WORKSPACE_ROOT);
 			expect(result.matches.length).toBeGreaterThanOrEqual(2);
-			const paths = result.matches.map(m => m.relativePath);
+			const paths = result.matches.map(m => m.filePath);
 			expect(paths.some(p => p.includes('auth-service'))).toBe(true);
 			expect(paths.some(p => p.includes('data-repository'))).toBe(true);
 		});
@@ -277,7 +278,7 @@ describe('Phase 6 — Symbol Resolution (resolveSymbol)', () => {
 				symbolName: 'validateToken',
 				symbolKind: null,
 			};
-			const result = resolveSymbol(symbolPath, chunkedFiles);
+			const result = resolveSymbol(symbolPath, chunkedFiles, WORKSPACE_ROOT);
 			expect(result.matches.length).toBe(1);
 			expect(result.matches[0].chunk.parentName).toBe('TokenService');
 		});
@@ -293,9 +294,9 @@ describe('Phase 6 — Symbol Resolution (resolveSymbol)', () => {
 				symbolName: 'validateToken',
 				symbolKind: null,
 			};
-			const result = resolveSymbol(symbolPath, chunkedFiles);
+			const result = resolveSymbol(symbolPath, chunkedFiles, WORKSPACE_ROOT);
 			expect(result.matches.length).toBe(1);
-			expect(result.matches[0].relativePath).toContain('auth-service');
+			expect(result.matches[0].filePath).toContain('auth-service');
 		});
 
 		it('should return path hints when basename matches but directory is wrong', () => {
@@ -305,7 +306,7 @@ describe('Phase 6 — Symbol Resolution (resolveSymbol)', () => {
 				symbolName: 'validateToken',
 				symbolKind: null,
 			};
-			const result = resolveSymbol(symbolPath, chunkedFiles);
+			const result = resolveSymbol(symbolPath, chunkedFiles, WORKSPACE_ROOT);
 			expect(result.matches.length).toBe(0);
 			expect(result.hasPathHints).toBe(true);
 			expect(result.nearMatches.length).toBeGreaterThan(0);
@@ -324,7 +325,7 @@ describe('Phase 6 — Symbol Resolution (resolveSymbol)', () => {
 				symbolName: 'formatdate',
 				symbolKind: null,
 			};
-			const result = resolveSymbol(symbolPath, chunkedFiles);
+			const result = resolveSymbol(symbolPath, chunkedFiles, WORKSPACE_ROOT);
 			expect(result.matches.length).toBe(0);
 			expect(result.hasCaseHints).toBe(true);
 			expect(result.nearMatches.length).toBeGreaterThanOrEqual(1);
@@ -339,7 +340,7 @@ describe('Phase 6 — Symbol Resolution (resolveSymbol)', () => {
 				symbolName: 'VALIDATETOKEN',
 				symbolKind: null,
 			};
-			const result = resolveSymbol(symbolPath, chunkedFiles);
+			const result = resolveSymbol(symbolPath, chunkedFiles, WORKSPACE_ROOT);
 			expect(result.matches.length).toBe(0);
 			expect(result.hasCaseHints).toBe(true);
 		});
@@ -355,7 +356,7 @@ describe('Phase 6 — Symbol Resolution (resolveSymbol)', () => {
 				symbolName: 'completelyNonexistentSymbol',
 				symbolKind: null,
 			};
-			const result = resolveSymbol(symbolPath, chunkedFiles);
+			const result = resolveSymbol(symbolPath, chunkedFiles, WORKSPACE_ROOT);
 			expect(result.matches.length).toBe(0);
 			expect(result.nearMatches.length).toBe(0);
 			expect(result.hasCaseHints).toBe(false);
@@ -369,7 +370,7 @@ describe('Phase 6 — Symbol Resolution (resolveSymbol)', () => {
 				symbolName: 'validateToken',
 				symbolKind: null,
 			};
-			const result = resolveSymbol(symbolPath, chunkedFiles);
+			const result = resolveSymbol(symbolPath, chunkedFiles, WORKSPACE_ROOT);
 			expect(result.matches.length).toBe(0);
 		});
 	});

@@ -1,19 +1,3 @@
-export {
-	extractFileSymbols,
-	extractRootContent,
-	extractSignature,
-	parseFile,
-	parseFiles,
-	parseSource,
-	PARSEABLE_EXTENSIONS,
-} from './parser/index.js';
-
-export type {
-	ParsedFile,
-	ParsedSymbol,
-	SymbolRange,
-} from './parser/index.js';
-
 export { chunkFile } from './chunker/index.js';
 
 export type { CodeChunk, ChunkedFile } from './chunker/types.js';
