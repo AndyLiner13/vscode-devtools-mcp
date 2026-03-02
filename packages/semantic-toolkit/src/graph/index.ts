@@ -6,7 +6,7 @@
  * in the blueprint's graph-first topology format.
  *
  * Usage:
- *   const result = generateConnectionGraph({ query, results, tokenBudget });
+ *   const result = generateConnectionGraph({ query, results });
  */
 
 import type { ConnectionGraphInput, ConnectionGraphRawInput, ConnectionGraphResult, GraphResultEntry } from './types.js';
@@ -44,12 +44,12 @@ export { enrichWithMetadata } from './enrich.js';
  * 2. Detects structural patterns (hubs, shared deps, shared types, diamonds)
  * 3. Renders the connection graph in the appropriate format
  *
- * @param input - Query, results with metadata, and token budget.
+ * @param input - Query, results with metadata.
  * @returns Connection graph text and metadata.
  * @throws If results array is empty.
  */
 export function generateConnectionGraph(input: ConnectionGraphInput): ConnectionGraphResult {
-	const { query, results, tokenBudget } = input;
+	const { query, results } = input;
 
 	if (results.length === 0) {
 		throw new Error('At least one result is required to generate a connection graph');
@@ -57,14 +57,14 @@ export function generateConnectionGraph(input: ConnectionGraphInput): Connection
 
 	// Single-result: use compact inline format
 	if (results.length === 1) {
-		return renderSingleResult(query, results[0], tokenBudget);
+		return renderSingleResult(query, results[0]);
 	}
 
 	// Multi-result: full Graph → Patterns → Details format
 	const topology = analyzeTopology(results);
 	const patterns = detectPatterns(topology, results);
 
-	return renderMultiResult(query, results, topology, patterns, tokenBudget);
+	return renderMultiResult(query, results, topology, patterns);
 }
 
 /**
@@ -73,12 +73,12 @@ export function generateConnectionGraph(input: ConnectionGraphInput): Connection
  * This is the preferred API — callers pass chunks and a nodeMap, and the
  * graph module handles TS LS enrichment + topology + patterns + rendering.
  *
- * @param input - Raw chunks, nodeMap, query, and token budget.
+ * @param input - Raw chunks, nodeMap, query.
  * @returns Connection graph text and metadata.
  * @throws If chunks array is empty.
  */
 export function generateConnectionGraphFromChunks(input: ConnectionGraphRawInput): ConnectionGraphResult {
-	const { query, chunks, nodeMap, tokenBudget, tsLsConfig } = input;
+	const { query, chunks, nodeMap, tsLsConfig } = input;
 
 	if (chunks.length === 0) {
 		throw new Error('At least one chunk is required to generate a connection graph');
@@ -91,5 +91,5 @@ export function generateConnectionGraphFromChunks(input: ConnectionGraphRawInput
 		results.push({ chunk, metadata });
 	}
 
-	return generateConnectionGraph({ query, results, tokenBudget });
+	return generateConnectionGraph({ query, results });
 }

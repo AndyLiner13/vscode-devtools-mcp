@@ -123,9 +123,6 @@ export interface SymbolLookupResult {
 	/** Number of distinct files with matches. */
 	fileCount: number;
 
-	/** Estimated token count of the output. */
-	tokenCount: number;
-
 	/**
 	 * Hint message when no exact match is found but near-matches exist.
 	 * Null if exact matches were found or no hints are available.

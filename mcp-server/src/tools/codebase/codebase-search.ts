@@ -103,7 +103,7 @@ export const search = defineTool({
 		'- `{ file: "src/config.ts", query: "symbol = Config, kind = interface" }`\n' +
 		'- `{ file: "src/utils/helpers.ts", query: "symbol = debounce", callDepth: 2 }`',
 	handler: async (request, response) => {
-		const { file, query, callDepth, typeDepth, maxTokenBudget, snapshot } = request.params;
+		const { file, query, callDepth, typeDepth, snapshot } = request.params;
 
 		response.setSkipLedger();
 
@@ -131,7 +131,7 @@ export const search = defineTool({
 
 		let result: LookupResult;
 		try {
-			result = lookupSymbol(query, rootDir, [filePath], maxTokenBudget, tsLsConfig);
+			result = lookupSymbol(query, rootDir, [filePath], tsLsConfig);
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : String(err);
 			response.appendResponseLine(`error: Failed to parse ${path.relative(rootDir, filePath)}: ${msg}`);
@@ -191,14 +191,6 @@ export const search = defineTool({
 			.default(1)
 			.describe(
 				'Max nesting depth for advanced type structure extraction. 1 = top-level only (default).',
-			),
-		maxTokenBudget: zod
-			.number()
-			.int()
-			.optional()
-			.default(8000)
-			.describe(
-				'Maximum token budget for the combined output (connection graph + snapshots). Default: 8000.',
 			),
 		snapshot: zod
 			.boolean()

@@ -16,11 +16,6 @@ import type {
 	ConnectionGraphResult,
 } from './types.js';
 
-/** Estimate token count from character count. */
-function estimateTokens(text: string): number {
-	return Math.ceil(text.length / 4);
-}
-
 /**
  * Render the connection graph for a single result.
  * Uses the compact inline format from the blueprint.
@@ -28,16 +23,12 @@ function estimateTokens(text: string): number {
 export function renderSingleResult(
 	query: string,
 	entry: GraphResultEntry,
-	tokenBudget: number,
 ): ConnectionGraphResult {
 	const lines: string[] = [];
-	const meta = entry.metadata;
-	const sym = meta.symbol;
 
 	// Summary line
 	const graphBody = buildSingleResultBody(entry);
-	const tokenCount = estimateTokens(graphBody);
-	const summaryLine = `Search: "${query}" | 1 result | ${formatTokenCount(tokenCount)}/${formatTokenCount(tokenBudget)} tokens`;
+	const summaryLine = `Search: "${query}" | 1 result`;
 	lines.push(summaryLine);
 	lines.push('');
 
@@ -51,7 +42,6 @@ export function renderSingleResult(
 		graphBody,
 		resultCount: 1,
 		fileCount: 1,
-		tokenCount: estimateTokens(text),
 	};
 }
 
@@ -143,7 +133,6 @@ export function renderMultiResult(
 	results: GraphResultEntry[],
 	topology: TopologyResult,
 	patterns: PatternsResult,
-	tokenBudget: number,
 ): ConnectionGraphResult {
 	const fileCount = new Set(results.map(r => r.metadata.symbol.filePath)).size;
 	const lines: string[] = [];
@@ -178,10 +167,9 @@ export function renderMultiResult(
 	}
 
 	const bodyText = bodyLines.join('\n');
-	const tokenCount = estimateTokens(bodyText);
 
-	// Summary line (needs token count from body)
-	const summaryLine = `Search: "${query}" | ${results.length} results across ${fileCount} files | ${formatTokenCount(tokenCount)}/${formatTokenCount(tokenBudget)} tokens`;
+	// Summary line
+	const summaryLine = `Search: "${query}" | ${results.length} results across ${fileCount} files`;
 	lines.push(summaryLine);
 	lines.push('');
 	lines.push(bodyText);
@@ -194,7 +182,6 @@ export function renderMultiResult(
 		graphBody: bodyText,
 		resultCount: results.length,
 		fileCount,
-		tokenCount: estimateTokens(text),
 	};
 }
 
@@ -356,11 +343,4 @@ function buildTypesLine(meta: SymbolMetadata): string | null {
 	}
 
 	return parts.length > 0 ? parts.join(' | ') : null;
-}
-
-/**
- * Format a token count with comma separators.
- */
-function formatTokenCount(count: number): string {
-	return count.toLocaleString('en-US');
 }

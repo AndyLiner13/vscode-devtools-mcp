@@ -9,7 +9,7 @@
  * TODO(Phase 7): Replace fresh chunking with indexed chunk retrieval from LanceDB.
  *
  * Usage:
- *   const result = lookupSymbol(query, workspaceRoot, filePaths, tokenBudget);
+ *   const result = lookupSymbol(query, workspaceRoot, filePaths);
  *   if (!result.isSymbolLookup) { // proceed with full pipeline }
  */
 
@@ -61,7 +61,6 @@ export { resolveSymbol, formatCaseHint, formatPathHint, formatAmbiguityHint } fr
  * @param query         - The raw user query string.
  * @param workspaceRoot - Absolute path to the workspace root.
  * @param filePaths     - Absolute paths to all supported source files.
- * @param tokenBudget   - Maximum token budget for the rendered output.
  * @param tsLsConfig    - Optional TS LS configuration (callDepth, typeDepth).
  * @returns LookupResult (either found symbols or "not a lookup").
  */
@@ -69,7 +68,6 @@ export function lookupSymbol(
 	query: string,
 	workspaceRoot: string,
 	filePaths: string[],
-	tokenBudget: number,
 	tsLsConfig?: Partial<TsLsConfig>,
 ): LookupResult {
 	// Step 1: Parse query for symbol lookup prefix
@@ -112,7 +110,6 @@ export function lookupSymbol(
 			outputSections: { graph: hint ?? `No symbol "${parsed.path.symbolName}" found.` },
 			matchCount: 0,
 			fileCount: 0,
-			tokenCount: estimateTokens(hint ?? ''),
 			hint,
 		} satisfies SymbolLookupResult;
 	}
@@ -134,7 +131,6 @@ export function lookupSymbol(
 				outputSections: { graph: hint },
 				matchCount: resolution.matches.length,
 				fileCount: new Set(resolution.matches.map(m => m.filePath)).size,
-				tokenCount: estimateTokens(hint),
 				hint,
 			} satisfies SymbolLookupResult;
 		}
@@ -147,7 +143,6 @@ export function lookupSymbol(
 		chunkedFiles,
 		project,
 		workspaceRoot,
-		tokenBudget,
 		tsLsConfig,
 	);
 }
@@ -184,7 +179,6 @@ function renderLookupOutput(
 	chunkedFiles: ChunkedFile[],
 	project: Project,
 	workspaceRoot: string,
-	tokenBudget: number,
 	tsLsConfig?: Partial<TsLsConfig>,
 ): SymbolLookupResult {
 	// Build a combined nodeMap from all chunked files for Node lookup
@@ -202,7 +196,6 @@ function renderLookupOutput(
 		query,
 		chunks,
 		nodeMap,
-		tokenBudget,
 		tsLsConfig,
 	});
 
@@ -235,17 +228,12 @@ function renderLookupOutput(
 		snapshot: snapshotSection || '(no code)',
 	};
 
-	const tokenCount = estimateTokens(
-		outputSections.graph + '\n' + outputSections.snapshot,
-	);
-
 	return {
 		isSymbolLookup: true,
 		found: true,
 		outputSections,
 		matchCount: matches.length,
 		fileCount: distinctFiles.size,
-		tokenCount,
 		hint: null,
 	};
 }
@@ -267,9 +255,4 @@ function groupByFile(matches: ResolvedMatch[]): Map<string, ResolvedMatch[]> {
 	}
 
 	return groups;
-}
-
-/** Estimate token count using the ~4 chars per token heuristic. */
-function estimateTokens(text: string): number {
-	return Math.ceil(text.length / 4);
 }

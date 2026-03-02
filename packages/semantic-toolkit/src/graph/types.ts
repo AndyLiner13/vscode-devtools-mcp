@@ -28,9 +28,6 @@ export interface ConnectionGraphInput {
 
 	/** Ordered result entries (by score descending). */
 	results: GraphResultEntry[];
-
-	/** Maximum token budget for the full MCP response. */
-	tokenBudget: number;
 }
 
 /**
@@ -46,9 +43,6 @@ export interface ConnectionGraphRawInput {
 
 	/** Node map from chunker (chunkId → ts-morph Node) for enrichment. */
 	nodeMap: Map<string, Node>;
-
-	/** Maximum token budget for the full MCP response. */
-	tokenBudget: number;
 
 	/** Optional TS LS configuration (callDepth, typeDepth). */
 	tsLsConfig?: Partial<TsLsConfig>;
@@ -207,7 +201,4 @@ export interface ConnectionGraphResult {
 
 	/** Number of distinct files across results. */
 	fileCount: number;
-
-	/** Estimated token count of the rendered text. */
-	tokenCount: number;
 }
