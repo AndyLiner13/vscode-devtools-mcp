@@ -193,26 +193,28 @@ Files that are entirely non-symbolic (e.g., `server.ts` with only `app.use(...)`
 interface CodeChunk {
   id: string;                    // hash of filePath + nodeKind + name + startLine + parentChain
   filePath: string;
-  relativePath: string;
   nodeKind: string;              // 'function' | 'method' | 'class' | 'interface' | 'type' | 'enum' | 'component' | 'variable' | 'const' | 'import' | 'expression' | 're-export' | 'comment'
   name: string;
   parentName?: string;           // class name if this is a method
   parentChunkId?: string;        // ID of parent chunk for hierarchical navigation
   childChunkIds?: string[];      // IDs of child chunks
   depth: number;                 // nesting depth (0 = top-level)
-  signature: string;
   fullSource: string;            // complete source of the node — returned to Copilot
   startLine: number;
   endLine: number;
   jsdoc?: string;
   relevantImports: string[];     // import statements actually used by this chunk
   embeddingText: string;         // raw source with body-bearing children collapsed to signature stubs
-  breadcrumb: string;            // "file > parent > ... > name" for display/debugging
   vector: Float32Array;          // 1024-dim Voyage Code 3 embedding (Phase 3)
   contentHash: string;           // SHA-256 of file contents for change detection (Phase 3)
   lastModified: number;          // file mtime for incremental invalidation trigger (Phase 3)
 }
 ```
+
+> **Computed at query/render time (not stored):**
+> - **`relativePath`** — derived from `filePath` + workspace root at query time. Avoids coupling the chunk to a specific workspace location.
+> - **`signature`** — extractable from `fullSource` via header slicing (text before the body). For signature cascade detection during re-indexing, the indexer extracts signatures on-the-fly from old and new `fullSource` rather than storing a separate field.
+> - **`breadcrumb`** — `"file > parent > ... > name"` assembled from `filePath` + `parentName` + `name` at render time.
 
 > **Note on graph edges:** Dedicated graph edge fields (`callsIds`, `calledByIds`, etc.) are NOT stored in this schema. The TypeScript Language Services provide real-time structural analysis during the post-rerank enrichment stage (Stage 3), using live compiler data rather than stale cached edges. This avoids maintaining duplicate structural data and ensures connections are always accurate.
 

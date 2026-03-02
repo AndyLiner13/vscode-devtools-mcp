@@ -15,16 +15,3 @@ export function generateChunkId(
 	const input = [filePath, nodeKind, name, String(startLine), ...parentChain].join('::');
 	return createHash('sha256').update(input).digest('hex').slice(0, 16);
 }
-
-/**
- * Build the parent chain (breadcrumb ancestors) for a symbol.
- * Returns an array of ancestor names from root to immediate parent.
- */
-export function buildParentChain(
-	parentName: string | null,
-	parentChains: Map<string, string[]>,
-): string[] {
-	if (parentName === null) return [];
-	const ancestorChain = parentChains.get(parentName) ?? [];
-	return [...ancestorChain, parentName];
-}
