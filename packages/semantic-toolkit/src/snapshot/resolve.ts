@@ -16,6 +16,7 @@ import {
 } from 'ts-morph';
 
 import type { CodeChunk } from '../chunker/types.js';
+import { parseParentPath, parseName } from '../indexer/symbol-path.js';
 import type { ResolvedDependency, ResolutionResult, DependencyKind } from './types.js';
 
 /**
@@ -330,10 +331,12 @@ function resolveParentWrappers(
 	collectedByLine: Map<number, ResolvedDependency>,
 ): void {
 	for (const target of targets) {
-		if (target.parentName === null) continue;
+		const parentPath = parseParentPath(target.symbolPath);
+		if (parentPath === null) continue;
 
+		const parentName = parseName(parentPath);
 		// Find the parent class/interface declaration
-		const parentNode = findParentDeclaration(sourceFile, target.parentName);
+		const parentNode = findParentDeclaration(sourceFile, parentName);
 		if (!parentNode) continue;
 
 		const parentStartLine = parentNode.getStartLineNumber();

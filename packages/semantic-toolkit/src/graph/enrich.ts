@@ -17,6 +17,7 @@ import { resolveMembers } from '../ts-ls/members.js';
 import { resolveSignature } from '../ts-ls/signature.js';
 import type { SymbolMetadata, SymbolRef, TsLsConfig } from '../ts-ls/types.js';
 import type { CodeChunk } from '../chunker/types.js';
+import { parseCleanPath } from '../indexer/symbol-path.js';
 
 /**
  * Enrich a single chunk with TS LS structural metadata.
@@ -28,7 +29,7 @@ export function enrichWithMetadata(
 	tsLsConfig?: Partial<TsLsConfig>,
 ): SymbolMetadata {
 	const symbolRef: SymbolRef = {
-		name: chunk.parentName ? `${chunk.parentName}.${chunk.name}` : chunk.name,
+		name: parseCleanPath(chunk.symbolPath),
 		filePath: chunk.filePath,
 		line: chunk.startLine,
 	};

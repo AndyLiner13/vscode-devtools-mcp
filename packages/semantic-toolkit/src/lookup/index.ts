@@ -17,6 +17,7 @@ import { Project } from 'ts-morph';
 
 import { chunkFile } from '../chunker/index.js';
 import type { ChunkedFile, CodeChunk } from '../chunker/types.js';
+import { parseKind } from '../indexer/symbol-path.js';
 
 import type { TsLsConfig } from '../ts-ls/types.js';
 
@@ -118,7 +119,7 @@ export function lookupSymbol(
 	// Step 4b: Detect ambiguous matches — multiple symbols with the same name
 	// but different kinds. Only triggered when no kind filter was provided.
 	if (parsed.path.symbolKind === null && resolution.matches.length > 1) {
-		const uniqueKinds = new Set(resolution.matches.map(m => m.chunk.nodeKind.toLowerCase()));
+		const uniqueKinds = new Set(resolution.matches.map(m => parseKind(m.chunk.symbolPath).toLowerCase()));
 		if (uniqueKinds.size > 1) {
 			const hint = formatAmbiguityHint(
 				parsed.path.symbolName,
@@ -185,18 +186,19 @@ function renderLookupOutput(
 	enrich = true,
 ): SymbolLookupResult {
 	// Build a combined nodeMap from all chunked files for Node lookup
+	// Key: "filePath::symbolPath" for global uniqueness
 	const nodeMap = new Map<string, import('ts-morph').Node>();
 	for (const cf of chunkedFiles) {
-		for (const [chunkId, node] of cf.nodeMap) {
-			nodeMap.set(chunkId, node);
+		for (const [symbolPath, node] of cf.nodeMap) {
+			nodeMap.set(`${cf.filePath}::${symbolPath}`, node);
 		}
 	}
 
 	const chunks = matches.map(m => m.chunk);
 
-	// Build chunk section (raw embeddingText per chunk — always needed)
+	// Build chunk section (raw chunkContent per chunk — always needed)
 	const chunkSection = chunks
-		.map(c => `// ${c.filePath}\n\n${c.embeddingText}`)
+		.map(c => `// ${c.filePath}\n\n${c.chunkContent}`)
 		.join('\n\n');
 
 	const distinctFiles = new Set(matches.map(m => m.filePath));

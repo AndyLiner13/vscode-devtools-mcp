@@ -16,6 +16,7 @@ import type { SourceFile } from 'ts-morph';
 
 import type { CodeChunk, ChunkedFile } from '../chunker/types.js';
 import { hasBody } from '../chunker/collapse.js';
+import { parseName, parseKind, parseParentPath } from '../indexer/symbol-path.js';
 import type { ParsedSymbolPath, ResolvedMatch, NearMatch, ResolutionResult } from './types.js';
 
 /**
@@ -55,7 +56,7 @@ export function resolveSymbol(
 	// Step 2b: Apply kind filter if specified
 	if (exactMatches.length > 0 && symbolPath.symbolKind !== null) {
 		exactMatches = exactMatches.filter(
-			m => m.chunk.nodeKind.toLowerCase() === symbolPath.symbolKind,
+			m => parseKind(m.chunk.symbolPath).toLowerCase() === symbolPath.symbolKind,
 		);
 	}
 
@@ -80,7 +81,7 @@ export function resolveSymbol(
 
 	if (caseInsensitiveMatches.length > 0) {
 		const nearMatches: NearMatch[] = caseInsensitiveMatches.map(m => ({
-			value: m.chunk.name,
+			value: parseName(m.chunk.symbolPath),
 			location: `${toRelative(m.filePath, workspaceRoot)}:${m.chunk.startLine}`,
 			kind: 'case-mismatch' as const,
 		}));
@@ -222,7 +223,7 @@ function findSymbolMatches(
 
 	for (const cf of files) {
 		for (const chunk of cf.chunks) {
-			if (!compare(chunk.name, symbolName)) {
+			if (!compare(parseName(chunk.symbolPath), symbolName)) {
 				continue;
 			}
 
@@ -245,6 +246,7 @@ function findSymbolMatches(
 
 /**
  * Check if a chunk's parent matches the required parent name.
+ * Derives parent name from the chunk's symbolPath.
  */
 function matchesParent(
 	chunk: CodeChunk,
@@ -253,8 +255,12 @@ function matchesParent(
 ): boolean {
 	const compare = caseSensitive ? strictCompare : caseInsensitiveCompare;
 
-	if (chunk.parentName !== null && compare(chunk.parentName, requiredParent)) {
-		return true;
+	const parentPath = parseParentPath(chunk.symbolPath);
+	if (parentPath !== null) {
+		const parentName = parseName(parentPath);
+		if (compare(parentName, requiredParent)) {
+			return true;
+		}
 	}
 
 	return false;
@@ -347,7 +353,7 @@ export function formatAmbiguityHint(
 
 	const suggestions = matches
 		.map(m => {
-			const kind = m.chunk.nodeKind.toLowerCase();
+			const kind = parseKind(m.chunk.symbolPath).toLowerCase();
 			const location = `${toRelative(m.filePath, workspaceRoot)}:${m.chunk.startLine}`;
 			return `  - symbol = ${symbolPath}, kind = ${kind}  (${kind} at ${location})`;
 		})

@@ -9,10 +9,14 @@ import * as path from 'node:path';
 import { z as zod } from 'zod';
 
 import {
-	lookupSymbol,
+	lookupFromIndex,
 	type LookupResult,
 	type TsLsConfig,
 	type OutputSections,
+	sync,
+	closeDatabase,
+	formatSyncStats,
+	PARSEABLE_EXTENSIONS,
 } from '@packages/semantic-toolkit';
 import { getClientWorkspace } from '../../config.js';
 import { ToolCategory } from '../categories.js';
@@ -27,11 +31,6 @@ function relativizePaths(text: string, rootDir: string): string {
 	const withTrailing = normalized.endsWith('/') ? normalized : `${normalized}/`;
 	return text.replaceAll(withTrailing, '');
 }
-
-/** Supported file extensions for TypeScript/JavaScript analysis. */
-const PARSEABLE_EXTENSIONS = new Set([
-	'ts', 'tsx', 'js', 'jsx', 'mts', 'mjs', 'cts', 'cjs',
-]);
 
 // ── File Resolution ──────────────────────────────────────
 
@@ -116,10 +115,14 @@ export const search = defineTool({
 
 		const rootDir = getClientWorkspace();
 
+		// Phase 7: sync is a hard gate — if LanceDB fails, the tool fails
+		const syncHandle = await sync(rootDir);
+
 		let filePath: string;
 		try {
 			filePath = resolveFilePath(file, rootDir);
 		} catch (err: unknown) {
+			closeDatabase(syncHandle.db);
 			const msg = err instanceof Error ? err.message : String(err);
 			response.appendResponseLine(`error: ${msg}`);
 			return;
@@ -130,22 +133,30 @@ export const search = defineTool({
 
 		let result: LookupResult;
 		try {
-			result = lookupSymbol(query, rootDir, [filePath], tsLsConfig, snapshot === true);
+			result = await lookupFromIndex(query, rootDir, filePath, syncHandle.db, tsLsConfig, snapshot === true);
 		} catch (err: unknown) {
+			closeDatabase(syncHandle.db);
 			const msg = err instanceof Error ? err.message : String(err);
-			response.appendResponseLine(`error: Failed to parse ${path.relative(rootDir, filePath)}: ${msg}`);
+			response.appendResponseLine(`error: Failed to query index for ${path.relative(rootDir, filePath)}: ${msg}`);
 			return;
 		}
+
+		// Done querying — close the database
+		closeDatabase(syncHandle.db);
 
 		if (!result.isSymbolLookup) {
 			response.appendResponseLine(
 				"Natural language search is not yet available. Use 'symbol = Name' for direct symbol lookup.",
 			);
+			response.appendResponseLine('');
+			response.appendResponseLine(formatSyncStats(syncHandle.stats));
 			return;
 		}
 
 		if (!result.found) {
 			response.appendResponseLine(relativizePaths(result.outputSections.graph, rootDir));
+			response.appendResponseLine('');
+			response.appendResponseLine(formatSyncStats(syncHandle.stats));
 			return;
 		}
 
@@ -158,6 +169,10 @@ export const search = defineTool({
 		} else {
 			response.appendResponseLine(relativizePaths(sections.chunk, rootDir));
 		}
+
+		// Phase 7: append sync debug stats
+		response.appendResponseLine('');
+		response.appendResponseLine(formatSyncStats(syncHandle.stats));
 	},
 	name: 'codebase_search',
 	schema: {

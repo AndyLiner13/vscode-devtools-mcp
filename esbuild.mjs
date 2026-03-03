@@ -59,7 +59,8 @@ const loaderConfig = {
 	// - jsonc-parser: UMD entry has dynamic require('./impl/...') that esbuild can't resolve
 	// - ts-morph: large dependency tree with dynamic requires (typescript compiler)
 	// - koffi: native FFI library with prebuilt .node binaries
-	external: ['vscode', 'jsonc-parser', 'ts-morph', 'koffi'],
+	// - @lancedb/lancedb: native .node addon + apache-arrow peer dep (Phase 7 indexer)
+	external: ['vscode', 'jsonc-parser', 'ts-morph', 'koffi', '@lancedb/lancedb', 'apache-arrow'],
 	logLevel: 'silent',
 	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin]
 };
@@ -80,7 +81,8 @@ const runtimeConfig = {
 	// - jsonc-parser: UMD entry has dynamic require('./impl/...') that esbuild can't resolve
 	// - ts-morph: large dependency tree with dynamic requires (typescript compiler)
 	// - koffi: native FFI library with prebuilt .node binaries
-	external: ['vscode', 'jsonc-parser', 'ts-morph', 'koffi'],
+	// - @lancedb/lancedb: native .node addon + apache-arrow peer dep (Phase 7 indexer)
+	external: ['vscode', 'jsonc-parser', 'ts-morph', 'koffi', '@lancedb/lancedb', 'apache-arrow'],
 	logLevel: 'silent',
 	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin]
 };
@@ -91,7 +93,7 @@ const runtimeConfig = {
 const workerConfig = {
 	bundle: true,
 	entryPoints: ['services/codebase/codebase-worker.ts'],
-	external: ['jsonc-parser', 'ts-morph'],
+	external: ['jsonc-parser', 'ts-morph', '@lancedb/lancedb', 'apache-arrow'],
 	format: 'cjs',
 	logLevel: 'silent',
 	minify: production,

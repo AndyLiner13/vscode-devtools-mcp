@@ -7,6 +7,7 @@
  */
 import type { ResolutionResult, ResolvedDependency, SnapshotResult } from './types.js';
 import type { CodeChunk } from '../chunker/types.js';
+import { parseParentPath, parseName } from '../indexer/symbol-path.js';
 
 /**
  * Line range with its source text and classification.
@@ -58,7 +59,10 @@ export function renderSnapshot(
 
 	// Determine if targets are class members (have a parent)
 	const parentNames = new Set(
-		targets.filter(t => t.parentName !== null).map(t => t.parentName!),
+		targets
+			.map(t => parseParentPath(t.symbolPath))
+			.filter((p): p is string => p !== null)
+			.map(p => parseName(p)),
 	);
 	const isClassMember = parentNames.size > 0;
 
@@ -102,7 +106,7 @@ export function renderSnapshot(
 		const sortedTargets = [...targets].sort((a, b) => a.startLine - b.startLine);
 		for (const target of sortedTargets) {
 			snapshotParts.push('');
-			snapshotParts.push(target.fullSource);
+			snapshotParts.push(target.chunkContent);
 		}
 	}
 
@@ -152,7 +156,7 @@ function renderClassWrapper(
 			target.startLine >= wrapper.startLine
 			&& target.endLine <= wrapper.endLine
 		) {
-			classMembers.push({ startLine: target.startLine, text: target.fullSource });
+			classMembers.push({ startLine: target.startLine, text: target.chunkContent });
 		}
 	}
 

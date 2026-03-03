@@ -86,7 +86,7 @@ export function generateConnectionGraphFromChunks(input: ConnectionGraphRawInput
 
 	const results: GraphResultEntry[] = [];
 	for (const chunk of chunks) {
-		const node = nodeMap.get(chunk.id);
+		const node = nodeMap.get(`${chunk.filePath}::${chunk.symbolPath}`);
 		const metadata = enrichWithMetadata(node, chunk, tsLsConfig);
 		results.push({ chunk, metadata });
 	}

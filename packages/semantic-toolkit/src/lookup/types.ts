@@ -26,7 +26,7 @@ export interface ParsedSymbolPath {
 	/**
 	 * Optional symbol kind filter (e.g., "class", "interface", "function").
 	 * Parsed from `, kind = interface` suffix in the query.
-	 * Compared case-insensitively against CodeChunk.nodeKind.
+	 * Compared case-insensitively against the kind segment of CodeChunk.symbolPath.
 	 */
 	symbolKind: string | null;
 }
@@ -89,7 +89,7 @@ export interface ResolutionResult {
  * independently selected via the MCP tool's `stage` param.
  */
 export interface OutputSections {
-	/** Raw chunk data rendered as text (embeddingText + metadata). */
+	/** Raw chunk data rendered as text (chunkContent + metadata). */
 	chunk: string;
 
 	/** Connection graph text (symbol card with calls/refs/topology). */

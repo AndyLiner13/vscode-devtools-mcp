@@ -33,7 +33,7 @@ export function collapseBody(node: Node): string {
  * Build embedding text for a node: its source with body-bearing
  * children collapsed to stubs.
  *
- * For leaf symbols (no body-bearing children), returns fullSource unchanged.
+ * For leaf symbols (no body-bearing children), returns the source unchanged.
  * For containers (classes, interfaces, enums), each body-bearing member
  * is replaced with its collapsed stub.
  */
