@@ -58,19 +58,8 @@ export async function lookupFromIndex(
 	// Normalize to forward slashes (ts-morph stores forward slashes)
 	const normalizedFilePath = filePath.replaceAll('\\', '/');
 
-	// Debug: dump all stored filePaths in the DB
-	const { queryAllChunks } = await import('../indexer/db.js');
-	const allChunks = await queryAllChunks(db);
-	const distinctPaths = [...new Set(allChunks.map(c => c.filePath))];
-	console.error(`[codebase_search] DB has ${allChunks.length} total chunks across ${distinctPaths.length} files`);
-	for (const dp of distinctPaths.slice(0, 5)) {
-		console.error(`[codebase_search]   stored path: "${dp}"`);
-	}
-
 	// Query LanceDB for all chunks in the target file
-	console.error(`[codebase_search] querying LanceDB for: "${normalizedFilePath}"`);
 	const indexedChunks = await getChunksByFile(db, normalizedFilePath);
-	console.error(`[codebase_search] found ${indexedChunks.length} indexed chunks`);
 
 	if (indexedChunks.length === 0) {
 		return {
