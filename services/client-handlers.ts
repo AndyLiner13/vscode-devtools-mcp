@@ -1059,8 +1059,8 @@ async function handleFileDeleteFile(params: Record<string, unknown>) {
 		};
 	}
 
-	// No external references — safe to delete
-	await vscode.workspace.fs.delete(uri);
+	// No external references — safe to delete (move to trash for recovery)
+	await vscode.workspace.fs.delete(uri, { useTrash: true });
 
 	return {
 		blocked: false,
