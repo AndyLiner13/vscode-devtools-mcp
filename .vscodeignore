@@ -69,8 +69,7 @@ mcp-server/**
 tests/**
 resources/**
 .github/**
-client-workspace/**
-client-workspace/**
+test-workspace/**
 backups/**
 documentation/**
 scripts/**
