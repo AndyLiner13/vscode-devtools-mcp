@@ -54,6 +54,7 @@ log.txt
 
 # VS Code
 .vscode-test
+.vscode/
 
 # Yarn
 .yarn/cache
@@ -67,7 +68,6 @@ log.txt
 # Project-specific
 .DS_Store
 .devtools/
-client-workspace/
 backups/
 tmpfldr/
 sideline/
