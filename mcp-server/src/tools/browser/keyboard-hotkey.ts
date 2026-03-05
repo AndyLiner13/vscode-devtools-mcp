@@ -17,17 +17,11 @@ export const keyboardHotkey = defineTool({
 	description:
 		'Press a key or key combination. Use when other input methods cannot be used.\n\n' +
 		'Args:\n' +
-		'  - key (string): Key or combination (e.g., "Enter", "Control+A", "Control+Shift+R")\n' +
-		'  - response_format ("markdown"|"json"): Output format. Default: "markdown"',
+		'  - key (string): Key or combination (e.g., "Enter", "Control+A", "Control+Shift+R")',
 	handler: async (request, response) => {
-		const { key, response_format: format } = request.params;
+		const { key } = request.params;
 
 		const { summary: changes } = await browserExecuteWithDiff('pressKey', { key });
-
-		if (format === 'json') {
-			response.appendResponseLine(JSON.stringify({ success: true, action: 'hotkey', key, ...(changes ? { changes } : {}) }, null, 2));
-			return;
-		}
 
 		if (changes && changes !== 'No visible changes detected.') {
 			response.appendResponseLine(`## Changes detected\n${changes}`);
@@ -37,6 +31,5 @@ export const keyboardHotkey = defineTool({
 	name: 'keyboard_hotkey',
 	schema: {
 		key: zod.string().describe('A key or combination (e.g., "Enter", "Control+A"). Modifiers: Control, Shift, Alt, Meta.'),
-		response_format: zod.enum(['markdown', 'json']).optional().describe('Output format. Default: markdown.'),
 	},
 });

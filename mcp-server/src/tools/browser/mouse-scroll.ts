@@ -19,27 +19,15 @@ export const mouseScroll = defineTool({
 		'Args:\n' +
 		'  - uid (string): Element uid from page snapshot\n' +
 		'  - direction ("up"|"down"|"left"|"right"): Scroll direction. Optional\n' +
-		'  - amount (number): Scroll distance in pixels. Default: 300\n' +
-		'  - response_format ("markdown"|"json"): Output format. Default: "markdown"',
+		'  - amount (number): Scroll distance in pixels. Default: 300',
 	handler: async (request, response) => {
-		const { uid, direction, amount, response_format: format } = request.params;
+		const { uid, direction, amount } = request.params;
 
 		const { summary: changes } = await browserExecuteWithDiff('scroll', { uid, direction, amount });
 
 		const actionText = direction
 			? `Scrolled ${direction} by ${amount ?? 300}px within the element`
 			: 'Scrolled element into view';
-
-		if (format === 'json') {
-			response.appendResponseLine(JSON.stringify({
-				success: true,
-				action: 'scroll',
-				...(direction ? { direction } : {}),
-				...(amount ? { amount } : {}),
-				...(changes ? { changes } : {}),
-			}, null, 2));
-			return;
-		}
 
 		if (changes && changes !== 'No visible changes detected.') {
 			response.appendResponseLine(`## Changes detected\n${changes}`);
@@ -50,7 +38,6 @@ export const mouseScroll = defineTool({
 	schema: {
 		amount: zod.number().optional().describe('Scroll distance in pixels. Default: 300.'),
 		direction: zod.enum(['up', 'down', 'left', 'right']).optional().describe('Direction to scroll. If omitted, element is scrolled into view.'),
-		response_format: zod.enum(['markdown', 'json']).optional().describe('Output format. Default: markdown.'),
 		uid: zod.string().describe('The uid of an element on the page from the page content snapshot.'),
 	},
 });

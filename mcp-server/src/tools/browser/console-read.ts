@@ -36,7 +36,7 @@ export const consoleRead = defineTool({
 		const {
 			afterId, beforeId, correlationId, fields = ['id', 'type', 'text'],
 			includeStackFrames, limit, minDuration, msgid, pattern,
-			response_format: format, severity, sourcePattern, stackDepth = 1,
+			severity, sourcePattern, stackDepth = 1,
 			templateId, textLimit, timeRange, types,
 		} = request.params;
 
@@ -100,11 +100,7 @@ export const consoleRead = defineTool({
 		const hasMore = total > returned;
 
 		if (filtered.length === 0) {
-			response.appendResponseLine(
-				format === 'json'
-					? JSON.stringify({ hasMore: false, messages: [], returned: 0, total: 0 }, null, 2)
-					: 'No console messages found matching the specified filters.'
-			);
+			response.appendResponseLine('No console messages found matching the specified filters.');
 			return;
 		}
 
@@ -134,15 +130,6 @@ export const consoleRead = defineTool({
 			return out;
 		});
 
-		const structuredOutput = {
-			hasMore,
-			returned,
-			total,
-			...(oldestId !== undefined ? { oldestId } : {}),
-			...(newestId !== undefined ? { newestId } : {}),
-			messages: outputMessages,
-		};
-
 		const filters: FilterOptions = {};
 		if (templateId) filters.templateId = templateId;
 		if (severity) filters.severity = severity as Severity;
@@ -150,14 +137,6 @@ export const consoleRead = defineTool({
 		if (minDuration) filters.minDuration = minDuration;
 		if (correlationId) filters.correlationId = correlationId;
 		if (includeStackFrames !== undefined) filters.includeStackFrames = includeStackFrames;
-
-		if (format === 'json') {
-			const raw = JSON.stringify(structuredOutput, null, 2);
-			const hasFilters = Object.keys(filters).length > 0;
-			const result = compressLogs({ label: 'Console Messages (JSON)', text: raw }, hasFilters ? filters : undefined);
-			response.appendResponseLine(result.formatted);
-			return;
-		}
 
 		let header = `## Console Messages\n\n**Returned:** ${returned} of ${total} total`;
 		if (hasMore) header += ` (use \`afterId: ${oldestId! - 1}\` or increase \`limit\` to see more)`;
@@ -187,7 +166,6 @@ export const consoleRead = defineTool({
 		minDuration: zod.string().optional().describe('Show templates with durations >= threshold.'),
 		msgid: zod.number().optional().describe('Get a specific message by ID with full details.'),
 		pattern: zod.string().optional().describe('Regex pattern to match against message text.'),
-		response_format: zod.enum(['markdown', 'json']).optional().describe('Output format. Default: markdown.'),
 		severity: zod.enum(['error', 'warning', 'info']).optional().describe('Filter by severity level.'),
 		sourcePattern: zod.string().optional().describe('Regex to match against source URLs in stack traces.'),
 		stackDepth: zod.number().optional().describe('Max stack frames. Default: 1. Set 0 to exclude.'),

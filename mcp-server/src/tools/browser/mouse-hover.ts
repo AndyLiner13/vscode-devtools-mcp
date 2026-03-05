@@ -17,17 +17,11 @@ export const mouseHover = defineTool({
 	description:
 		'Hover over the provided element.\n\n' +
 		'Args:\n' +
-		'  - uid (string): Element uid from page snapshot\n' +
-		'  - response_format ("markdown"|"json"): Output format. Default: "markdown"',
+		'  - uid (string): Element uid from page snapshot',
 	handler: async (request, response) => {
-		const { uid, response_format: format } = request.params;
+		const { uid } = request.params;
 
 		const { summary: changes } = await browserExecuteWithDiff('hover', { uid });
-
-		if (format === 'json') {
-			response.appendResponseLine(JSON.stringify({ success: true, action: 'hover', ...(changes ? { changes } : {}) }, null, 2));
-			return;
-		}
 
 		if (changes && changes !== 'No visible changes detected.') {
 			response.appendResponseLine(`## Changes detected\n${changes}`);
@@ -36,7 +30,6 @@ export const mouseHover = defineTool({
 	},
 	name: 'mouse_hover',
 	schema: {
-		response_format: zod.enum(['markdown', 'json']).optional().describe('Output format. Default: markdown.'),
 		uid: zod.string().describe('The uid of an element on the page from the page content snapshot.'),
 	},
 });
