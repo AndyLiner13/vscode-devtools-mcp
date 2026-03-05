@@ -112,12 +112,12 @@ export class FileDeleteTool implements vscode.LanguageModelTool<IFileDeleteParam
 
 		if (brokenReferences.length > 0) {
 			const totalRefs = brokenReferences.reduce((sum, b) => sum + b.references.length, 0);
-			return textResult({
-				blocked: true,
-				brokenReferences,
-				message: `Cannot delete ${fileRelPath}: ${brokenReferences.length} symbol(s) with ${totalRefs} external reference(s) would break.`,
-				success: false
-			});
+			const details = brokenReferences.map(b =>
+				`  ${b.symbol} (${b.kind}): ${b.references.map(r => `${r.file}:${r.line}`).join(', ')}`
+			).join('\n');
+			throw new Error(
+				`Cannot delete ${fileRelPath}: ${brokenReferences.length} symbol(s) with ${totalRefs} external reference(s) would break.\n\nRemove or update these references first:\n${details}`
+			);
 		}
 
 		await vscode.workspace.fs.delete(uri, { useTrash: true });
