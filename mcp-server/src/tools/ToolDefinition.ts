@@ -69,11 +69,6 @@ export interface ImageContentData {
 export interface Response {
 	appendResponseLine: (value: string) => void;
 	attachImage: (value: ImageContentData) => void;
-	/**
-	 * Call to skip appending the process ledger to this response.
-	 * Use for JSON-format responses to avoid corrupting output.
-	 */
-	setSkipLedger: () => void;
 }
 
 export function defineTool<Schema extends zod.ZodRawShape>(definition: ToolDefinition<Schema>): ToolDefinition<Schema> {

@@ -210,3 +210,80 @@ export async function readyToRestart(): Promise<void> {
 		// Expected — the server may be killed before the response arrives
 	}
 }
+
+// ── Browser RPC Methods (proxied to BrowserService in Host) ──────────────────
+
+const BROWSER_TIMEOUT_MS = 30_000;
+
+export interface BrowserAXTreeResult {
+	formatted: string;
+	targetsSummary: string;
+}
+
+export interface BrowserScreenshotResult {
+	data: string;
+	size: number;
+}
+
+export interface BrowserConsoleMessage {
+	args: unknown[];
+	id: number;
+	stackTrace?: Array<{ url: string; lineNumber: number; columnNumber: number }>;
+	text: string;
+	timestamp: number;
+	type: string;
+}
+
+export interface BrowserConsoleResult {
+	messages: BrowserConsoleMessage[];
+	total: number;
+}
+
+export async function browserFetchAXTree(verbose: boolean): Promise<BrowserAXTreeResult> {
+	const result = await sendHostRequest('browser.fetchAXTree', { verbose }, BROWSER_TIMEOUT_MS);
+	return result as BrowserAXTreeResult;
+}
+
+export async function browserCaptureScreenshot(params: { format?: string; fullPage?: boolean; quality?: number; uid?: string }): Promise<BrowserScreenshotResult> {
+	const result = await sendHostRequest('browser.captureScreenshot', params, BROWSER_TIMEOUT_MS);
+	return result as BrowserScreenshotResult;
+}
+
+export async function browserClickElement(uid: string, clickCount?: number): Promise<void> {
+	await sendHostRequest('browser.clickElement', { uid, clickCount }, BROWSER_TIMEOUT_MS);
+}
+
+export async function browserHoverElement(uid: string): Promise<void> {
+	await sendHostRequest('browser.hoverElement', { uid }, BROWSER_TIMEOUT_MS);
+}
+
+export async function browserTypeIntoElement(uid: string, value: string, clear?: boolean): Promise<void> {
+	await sendHostRequest('browser.typeIntoElement', { uid, value, clear }, BROWSER_TIMEOUT_MS);
+}
+
+export async function browserDragElement(from_uid: string, to_uid: string): Promise<void> {
+	await sendHostRequest('browser.dragElement', { from_uid, to_uid }, BROWSER_TIMEOUT_MS);
+}
+
+export async function browserPressKey(key: string): Promise<void> {
+	await sendHostRequest('browser.pressKey', { key }, BROWSER_TIMEOUT_MS);
+}
+
+export async function browserScrollElement(uid: string, direction?: string, amount?: number): Promise<void> {
+	await sendHostRequest('browser.scrollElement', { uid, direction, amount }, BROWSER_TIMEOUT_MS);
+}
+
+export async function browserExecuteWithDiff(action: string, actionParams: Record<string, unknown>): Promise<{ summary: string }> {
+	const result = await sendHostRequest('browser.executeWithDiff', { action, actionParams }, BROWSER_TIMEOUT_MS);
+	return result as { summary: string };
+}
+
+export async function browserGetConsoleMessages(params: { limit?: number }): Promise<BrowserConsoleResult> {
+	const result = await sendHostRequest('browser.getConsoleMessages', params, BROWSER_TIMEOUT_MS);
+	return result as BrowserConsoleResult;
+}
+
+export async function browserGetConsoleMessageById(msgid: number): Promise<{ found: boolean; message?: BrowserConsoleMessage }> {
+	const result = await sendHostRequest('browser.getConsoleMessageById', { msgid }, BROWSER_TIMEOUT_MS);
+	return result as { found: boolean; message?: BrowserConsoleMessage };
+}

@@ -24,7 +24,7 @@ import path from 'node:path';
 import * as vscode from 'vscode';
 
 import { BrowserService, CdpClient } from './browser';
-import { setBrowserService, setReconnectCdpCallback } from './clientDevTools';
+import { getBrowserService, requireBrowserService, setBrowserService, setReconnectCdpCallback } from './clientDevTools';
 import { type ChangeCheckResult, createHotReloadService, getHotReloadService } from './hotReloadService';
 import { log, warn } from './logger';
 import { showCompletionNotification } from './notifications';
@@ -1615,6 +1615,149 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 		log('[host] ensureMcpServer called from Inspector');
 		await vscode.commands.executeCommand('devtools.startMcpServer', { silent: true });
 		return { ok: true };
+	});
+
+	// ── Browser RPC Handlers (proxied by MCP tools via host-pipe) ────────────
+
+	register('browser.fetchAXTree', async (params) => {
+		const service = await requireBrowserService();
+		const verbose = typeof params.verbose === 'boolean' ? params.verbose : false;
+		const { formatted } = await service.fetchAXTree(verbose);
+		const targetsSummary = await service.getTargetsSummary();
+		return { formatted, targetsSummary };
+	});
+
+	register('browser.captureScreenshot', async (params) => {
+		const service = await requireBrowserService();
+		const options: Record<string, unknown> = {};
+		if (typeof params.format === 'string') options.format = params.format;
+		if (typeof params.quality === 'number') options.quality = params.quality;
+		if (typeof params.fullPage === 'boolean') options.fullPage = params.fullPage;
+		if (typeof params.uid === 'string') options.uid = params.uid;
+		const buffer = await service.captureScreenshot(options);
+		return { data: buffer.toString('base64'), size: buffer.length };
+	});
+
+	register('browser.clickElement', async (params) => {
+		const service = await requireBrowserService();
+		const uid = String(params.uid);
+		const clickCount = typeof params.clickCount === 'number' ? params.clickCount : 1;
+		await service.clickElement(uid, clickCount);
+		return { success: true };
+	});
+
+	register('browser.hoverElement', async (params) => {
+		const service = await requireBrowserService();
+		await service.hoverElement(String(params.uid));
+		return { success: true };
+	});
+
+	register('browser.typeIntoElement', async (params) => {
+		const service = await requireBrowserService();
+		const uid = String(params.uid);
+		const value = String(params.value);
+		const clear = typeof params.clear === 'boolean' ? params.clear : false;
+		if (clear) {
+			await service.fillElement(uid, value);
+		} else {
+			await service.typeIntoElement(uid, value);
+		}
+		return { success: true };
+	});
+
+	register('browser.dragElement', async (params) => {
+		const service = await requireBrowserService();
+		await service.dragElement(String(params.from_uid), String(params.to_uid));
+		return { success: true };
+	});
+
+	register('browser.pressKey', async (params) => {
+		const service = await requireBrowserService();
+		await service.pressKey(String(params.key));
+		return { success: true };
+	});
+
+	register('browser.scrollElement', async (params) => {
+		const service = await requireBrowserService();
+		const uid = String(params.uid);
+		const direction = typeof params.direction === 'string' ? params.direction : undefined;
+		const amount = typeof params.amount === 'number' ? params.amount : undefined;
+		await service.scrollElement(uid, direction, amount);
+		return { success: true };
+	});
+
+	register('browser.executeWithDiff', async (params) => {
+		const service = await requireBrowserService();
+		const action = String(params.action);
+		const actionParams = (typeof params.actionParams === 'object' && params.actionParams !== null) ? params.actionParams as Record<string, unknown> : {};
+
+		const { summary } = await service.executeWithDiff(async () => {
+			switch (action) {
+				case 'click':
+					await service.clickElement(String(actionParams.uid), typeof actionParams.clickCount === 'number' ? actionParams.clickCount : 1);
+					break;
+				case 'hover':
+					await service.hoverElement(String(actionParams.uid));
+					break;
+				case 'type':
+					if (actionParams.clear) {
+						await service.fillElement(String(actionParams.uid), String(actionParams.value));
+					} else {
+						await service.typeIntoElement(String(actionParams.uid), String(actionParams.value));
+					}
+					break;
+				case 'drag':
+					await service.dragElement(String(actionParams.from_uid), String(actionParams.to_uid));
+					break;
+				case 'pressKey':
+					await service.pressKey(String(actionParams.key));
+					break;
+				case 'scroll':
+					await service.scrollElement(
+						String(actionParams.uid),
+						typeof actionParams.direction === 'string' ? actionParams.direction : undefined,
+						typeof actionParams.amount === 'number' ? actionParams.amount : undefined
+					);
+					break;
+			}
+		}, 1500);
+
+		return { summary };
+	});
+
+	register('browser.getConsoleMessages', async (params) => {
+		const service = await requireBrowserService();
+		const limit = typeof params.limit === 'number' ? params.limit : undefined;
+		const { messages, total } = service.getConsoleMessages({ limit });
+		return {
+			messages: messages.map(m => ({
+				args: m.args,
+				id: m.id,
+				stackTrace: m.stackTrace,
+				text: m.text,
+				timestamp: m.timestamp,
+				type: m.type,
+			})),
+			total
+		};
+	});
+
+	register('browser.getConsoleMessageById', async (params) => {
+		const service = await requireBrowserService();
+		const msgid = typeof params.msgid === 'number' ? params.msgid : Number(params.msgid);
+		const msg = service.getConsoleMessageById(msgid);
+		if (!msg) return { found: false };
+		return {
+			found: true,
+			message: {
+				args: msg.args,
+				id: msg.id,
+				stackTrace: msg.stackTrace,
+				text: msg.text,
+				timestamp: msg.timestamp,
+				type: msg.type,
+			}
+		};
 	});
 
 	// Track debug session lifecycle

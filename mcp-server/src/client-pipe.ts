@@ -50,44 +50,6 @@ function isJsonRpcResponse(value: unknown): value is JsonRpcResponse {
 	return typeof value === 'object' && value !== null && 'jsonrpc' in value && ('result' in value || 'error' in value);
 }
 
-export type ProcessStatus = 'completed' | 'killed' | 'orphaned' | 'running';
-
-export interface ChildProcessInfo {
-	commandLine: string;
-	name: string;
-	parentPid: number;
-	pid: number;
-}
-
-export interface ProcessEntry {
-	children?: ChildProcessInfo[];
-	command: string;
-	endedAt?: string;
-	exitCode?: number;
-	pid: number;
-	sessionId: string;
-	startedAt: string;
-	status: ProcessStatus;
-	terminalName: string;
-}
-
-export interface ProcessLedgerSummary {
-	active: ProcessEntry[];
-	orphaned: ProcessEntry[];
-	recentlyCompleted: ProcessEntry[];
-	sessionId: string;
-	terminalSessions: TerminalSessionInfo[];
-}
-
-export interface TerminalSessionInfo {
-	command?: string;
-	isActive: boolean;
-	name: string;
-	pid?: number;
-	shell?: string;
-	status: string;
-}
-
 // ── JSON-RPC Transport ───────────────────────────────────
 
 /**
@@ -827,23 +789,3 @@ export async function ensureClientAvailable(): Promise<void> {
 
 // ── Process Ledger Methods ─────────────────────────────────────
 
-/**
- * Get the full process ledger: active, orphaned, and recently completed processes.
- * This is called before EVERY tool response for Copilot accountability.
- */
-export async function getProcessLedger(): Promise<ProcessLedgerSummary> {
-	try {
-		const result = await sendClientRequest('system.getProcessLedger', {}, 3_000);
-		assertResult<ProcessLedgerSummary>(result, 'system.getProcessLedger');
-		return result;
-	} catch {
-		// Return empty ledger if unavailable
-		return {
-			active: [],
-			orphaned: [],
-			recentlyCompleted: [],
-			sessionId: 'unknown',
-			terminalSessions: []
-		};
-	}
-}

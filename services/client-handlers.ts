@@ -5,26 +5,20 @@
  * We have no access to proposed APIs. They will cause the extension to
  * enter Safe Mode and all client handlers will fail to register.
  *
- * Handles tool operations for the VS Code DevTools MCP system.
+ * Handles RPC operations for the VS Code DevTools system.
  * The Client is the Extension Development Host (the spawned VS Code window).
  *
- * API Surface (Terminal — single-terminal model):
- * - terminal.run: Run a command, wait for completion/prompt/timeout
- * - terminal.input: Send input to a waiting prompt
- * - terminal.state: Check current terminal state
- * - terminal.kill: Send Ctrl+C to stop the running process
- *
- * API Surface (Other):
+ * API Surface:
  * - terminal.listAll: List all VS Code terminals
  * - command.execute: Run arbitrary VS Code commands
+ * - codebase.*: Codebase analysis methods
+ * - file.*: File service methods (read, edit, symbols, diagnostics, etc.)
  */
 
 import * as vscode from 'vscode';
 
 import { extractStructure, findDeadCode, findDuplicates, getExports, getImportGraph, getOverview, traceSymbol } from './codebase/codebase-worker-proxy';
 import { registerInspectorHandlers } from './inspector-backend';
-import { disposeProcessLedger, getProcessLedger, initProcessLedger, type ProcessLedgerSummary } from './processLedger';
-import { SingleTerminalController } from './singleTerminalController';
 import { getUserActionTracker } from './userActionTracker';
 import { error, log, warn } from './logger';
 
@@ -59,10 +53,6 @@ function paramStrArray(p: Record<string, unknown>, k: string): string[] | undefi
 function errorMessage(err: unknown): string {
 	return err instanceof Error ? err.message : String(err);
 }
-
-// ── Module State ─────────────────────────────────────────────────────────────
-
-let terminalController: null | SingleTerminalController = null;
 
 // ── Read Highlight Decoration ────────────────────────────────────────────────
 
@@ -135,124 +125,6 @@ function parseRangeArray(value: unknown): Array<{ startLine: number; endLine: nu
 		}
 	}
 	return ranges;
-}
-
-/**
- * Get the shared terminal controller (for LM tools or other consumers).
- */
-export function getTerminalControllerFromClient(): null | SingleTerminalController {
-	return terminalController;
-}
-
-// ── Terminal Handlers (Multi-Terminal Model) ─────────────────────────────────
-
-/**
- * Run a command in a named terminal (PowerShell).
- * Creates the terminal if needed, rejects with current state if busy.
- * Returns when the command completes, a prompt is detected, or timeout fires.
- */
-async function handleTerminalRun(params: Record<string, unknown>) {
-	if (!terminalController) throw new Error('Terminal controller not initialized');
-
-	const command = paramStr(params, 'command');
-	if (!command) {
-		throw new Error('command is required and must be a string');
-	}
-
-	const cwd = paramStr(params, 'cwd');
-	if (!cwd) {
-		throw new Error('cwd is required and must be an absolute path');
-	}
-
-	const timeout = paramNum(params, 'timeout');
-	const name = paramStr(params, 'name');
-
-	log(`[client] terminal.run — cwd: ${cwd}, command: ${command}, name: ${name ?? 'default'}`);
-	return terminalController.run(command, cwd, timeout, name);
-}
-
-/**
- * Send input text to a terminal (e.g. answering a [Y/n] prompt).
- * Waits for the next completion or prompt after sending.
- */
-async function handleTerminalInput(params: Record<string, unknown>) {
-	if (!terminalController) throw new Error('Terminal controller not initialized');
-
-	const text = paramStr(params, 'text');
-	if (typeof text !== 'string') {
-		throw new Error('text is required and must be a string');
-	}
-
-	const addNewline = paramBool(params, 'addNewline') ?? true;
-	const timeout = paramNum(params, 'timeout');
-	const name = paramStr(params, 'name');
-
-	log(`[client] terminal.input — text: ${text}, name: ${name ?? 'default'}`);
-	return terminalController.sendInput(text, addNewline, timeout, name);
-}
-
-/**
- * Get the current terminal state without modifying anything.
- */
-async function handleTerminalState(params: Record<string, unknown>) {
-	if (!terminalController) throw new Error('Terminal controller not initialized');
-
-	const name = paramStr(params, 'name');
-	return terminalController.getState(name);
-}
-
-/**
- * Send Ctrl+C to kill the running process in a terminal.
- */
-function handleTerminalKill(params: Record<string, unknown>) {
-	if (!terminalController) throw new Error('Terminal controller not initialized');
-
-	const name = paramStr(params, 'name');
-	log(`[client] terminal.kill — name: ${name ?? 'default'}`);
-	return terminalController.kill(name);
-}
-
-// ── Process Ledger Handlers ──────────────────────────────────────────────────
-
-/**
- * Get the full process ledger (active + orphaned + recently completed + terminal sessions).
- * This is called by MCP before EVERY tool response for Copilot accountability.
- * Refreshes the child process cache if stale (PowerShell CIM query, 5s TTL).
- */
-async function handleGetProcessLedger(_params: Record<string, unknown>): Promise<ProcessLedgerSummary> {
-	const ledger = getProcessLedger();
-	await ledger.refreshActiveChildren();
-	const summary = ledger.getLedger();
-
-	// Inject live terminal session data from the terminal controller
-	if (terminalController) {
-		summary.terminalSessions = terminalController.getTerminalSessions();
-	}
-
-	return summary;
-}
-
-/**
- * Kill a process by PID. Works for both active and orphaned processes.
- */
-async function handleKillProcess(params: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
-	const pid = paramNum(params, 'pid');
-	if (typeof pid !== 'number' || pid <= 0) {
-		throw new Error('pid is required and must be a positive number');
-	}
-
-	log(`[client] process.kill — PID: ${pid}`);
-	const ledger = getProcessLedger();
-	return ledger.killProcess(pid);
-}
-
-/**
- * Kill all orphaned processes from previous sessions.
- */
-async function handleKillOrphans(_params: Record<string, unknown>): Promise<{ killed: number[]; failed: Array<{ pid: number; error: string }> }> {
-	log('[client] process.killOrphans');
-	const ledger = getProcessLedger();
-	return ledger.killAllOrphans();
 }
 
 // ── Terminal ListAll Handler ─────────────────────────────────────────────────
@@ -992,29 +864,11 @@ async function handleFileExtractStructure(params: Record<string, unknown>) {
 export function registerClientHandlers(register: RegisterHandler, workspaceState: vscode.Memento): vscode.Disposable {
 	log('[client] Registering Client RPC handlers');
 
-	// Initialize the process ledger with VS Code's workspace state for persistence
-	const processLedger = initProcessLedger(workspaceState);
-	processLedger.initialize().catch((err) => {
-		error('[client] Process ledger initialization failed:', err);
-	});
-
-	// Initialize the single terminal controller (for MCP tools)
-	terminalController = new SingleTerminalController();
-
-	// Terminal methods (single-terminal model)
-	register('terminal.run', handleTerminalRun);
-	register('terminal.input', handleTerminalInput);
-	register('terminal.state', handleTerminalState);
-	register('terminal.kill', handleTerminalKill);
+	// Terminal methods
 	register('terminal.listAll', handleTerminalListAll);
 
 	// Command methods
 	register('command.execute', handleCommandExecute);
-
-	// Process ledger methods (for global accountability)
-	register('system.getProcessLedger', handleGetProcessLedger);
-	register('process.kill', handleKillProcess);
-	register('process.killOrphans', handleKillOrphans);
 
 	// Codebase analysis methods
 	register('codebase.getOverview', handleCodebaseGetOverview);
@@ -1046,15 +900,8 @@ export function registerClientHandlers(register: RegisterHandler, workspaceState
 	// Return disposable for cleanup
 	return new vscode.Disposable(() => {
 		log('[client] Cleaning up Client handlers');
-
-		if (terminalController) {
-			terminalController.dispose();
-			terminalController = null;
-		}
-
 		readHighlightDecoration.dispose();
 		editDiffProviderDisposable?.dispose();
 		editDiffContentStore.clear();
-		disposeProcessLedger();
 	});
 }

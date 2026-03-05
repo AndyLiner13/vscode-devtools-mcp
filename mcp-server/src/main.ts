@@ -13,7 +13,7 @@ import process from 'node:process';
 import { toJSONSchema } from 'zod/v4-mini';
 import { z as zod } from 'zod';
 
-import { ensureClientAvailable, getProcessLedger, type ProcessEntry, type ProcessLedgerSummary, registerClientRecoveryHandler } from './client-pipe.js';
+import { ensureClientAvailable, registerClientRecoveryHandler } from './client-pipe.js';
 import { getMcpServerRoot, loadConfig, type ResolvedConfig } from './config.js';
 import { checkForChanges, readyToRestart } from './host-pipe.js';
 import { logger } from './logger.js';
@@ -28,119 +28,6 @@ const DEFAULT_TOOL_TIMEOUT_MS = 30_000;
 
 // ── MCP Server Root ──────────────────────────────────────
 const mcpServerDir = getMcpServerRoot();
-
-/**
- * Format child processes as indented tree lines for a parent process.
- */
-function formatChildProcesses(entry: ProcessEntry, indent: string): string[] {
-	if (!entry.children || entry.children.length === 0) return [];
-
-	const lines: string[] = [];
-	for (const child of entry.children) {
-		const cmdLine = child.commandLine ? (child.commandLine.length > 60 ? `${child.commandLine.slice(0, 57)}...` : child.commandLine) : child.name;
-		lines.push(`\n${indent}↳ PID ${child.pid} — ${child.name} — \`${cmdLine}\``);
-	}
-	return lines;
-}
-
-/**
- * Format the process ledger summary for inclusion in every MCP response.
- * Shows terminals as parent nodes with their processes as children,
- * giving Copilot full visibility into the terminal ↔ process relationship.
- */
-function formatProcessLedger(ledger: ProcessLedgerSummary): string {
-	const parts: string[] = [];
-	const sessions = ledger.terminalSessions ?? [];
-
-	// Orphaned processes (highest priority — from previous sessions, no terminal)
-	if (ledger.orphaned.length > 0) {
-		parts.push('\n---');
-		parts.push(`\n⚠️ **Orphaned Processes (${ledger.orphaned.length}):**`);
-		for (const p of ledger.orphaned) {
-			const cmd = p.command.length > 50 ? `${p.command.slice(0, 47)}...` : p.command;
-			parts.push(`\n• **PID ${p.pid}** (${p.terminalName}) — \`${cmd}\` — from previous session`);
-			parts.push(...formatChildProcesses(p, '  '));
-		}
-	}
-
-	// Terminal sessions as parent nodes with active processes as children
-	if (sessions.length > 0 || ledger.active.length > 0) {
-		// Track which active processes we've already shown under a terminal
-		const shownPids = new Set<number>();
-
-		parts.push('\n---');
-		parts.push(`\n📺 **Terminal Sessions (${sessions.length}):**`);
-
-		for (const session of sessions) {
-			const shellLabel = session.shell ? ` [${session.shell}]` : '';
-			const pidLabel = session.pid ? ` (PID ${session.pid})` : '';
-			const activeIcon = session.isActive ? '▶️' : '📺';
-
-			// Find the active process running in this terminal
-			const matchedProcess = ledger.active.find((p) => (session.pid && p.pid === session.pid) || p.terminalName === session.name || (session.name === 'MCP Terminal' && p.terminalName === 'default') || session.name === `MCP: ${p.terminalName}`);
-
-			if (matchedProcess) {
-				shownPids.add(matchedProcess.pid);
-				const cmd = matchedProcess.command.length > 45 ? `${matchedProcess.command.slice(0, 42)}...` : matchedProcess.command;
-				const childCount = matchedProcess.children?.length ?? 0;
-				const childLabel = childCount > 0 ? ` [${childCount} child${childCount > 1 ? 'ren' : ''}]` : '';
-				parts.push(`\n${activeIcon} **${session.name}**${shellLabel}${pidLabel}`);
-				parts.push(`\n  └─ ${matchedProcess.status}: \`${cmd}\`${childLabel}`);
-				parts.push(...formatChildProcesses(matchedProcess, '     '));
-			} else if (session.command) {
-				const cmd = session.command.length > 40 ? `${session.command.slice(0, 37)}...` : session.command;
-				parts.push(`\n${activeIcon} **${session.name}**${shellLabel}${pidLabel}`);
-				parts.push(`\n  └─ ${session.status}: \`${cmd}\``);
-			} else {
-				parts.push(`\n${activeIcon} **${session.name}**${shellLabel}${pidLabel} — ${session.status}`);
-			}
-		}
-
-		// Show any active processes not matched to a terminal session
-		const unmatched = ledger.active.filter((p) => !shownPids.has(p.pid));
-		if (unmatched.length > 0) {
-			parts.push(`\n\n🟢 **Unmatched Active Processes (${unmatched.length}):**`);
-			for (const p of unmatched) {
-				const cmd = p.command.length > 50 ? `${p.command.slice(0, 47)}...` : p.command;
-				const childCount = p.children?.length ?? 0;
-				const childLabel = childCount > 0 ? ` [${childCount} child${childCount > 1 ? 'ren' : ''}]` : '';
-				parts.push(`\n• **${p.terminalName}** (PID ${p.pid ?? 'pending'}) — \`${cmd}\` — ${p.status}${childLabel}`);
-				parts.push(...formatChildProcesses(p, '  '));
-			}
-		}
-	} else if (ledger.active.length > 0) {
-		// Fallback: no terminal sessions data, show processes only
-		parts.push('\n---');
-		parts.push(`\n🟢 **Active Copilot Processes (${ledger.active.length}):**`);
-		for (const p of ledger.active) {
-			const cmd = p.command.length > 50 ? `${p.command.slice(0, 47)}...` : p.command;
-			const childCount = p.children?.length ?? 0;
-			const childLabel = childCount > 0 ? ` [${childCount} child${childCount > 1 ? 'ren' : ''}]` : '';
-			parts.push(`\n• **${p.terminalName}** (PID ${p.pid ?? 'pending'}) — \`${cmd}\` — ${p.status}${childLabel}`);
-			parts.push(...formatChildProcesses(p, '  '));
-		}
-	}
-
-	// Recently completed (lower priority)
-	const completed = ledger.recentlyCompleted.filter((p) => p.status === 'completed' || p.status === 'killed');
-	if (completed.length > 0) {
-		const shown = completed.slice(0, 3);
-		parts.push('\n---');
-		parts.push(`\n✅ **Recently Completed (${shown.length}/${completed.length}):**`);
-		for (const p of shown) {
-			const cmd = p.command.length > 40 ? `${p.command.slice(0, 37)}...` : p.command;
-			const exitInfo = p.exitCode !== undefined ? `exit ${p.exitCode}` : p.status;
-			parts.push(`\n• **${p.terminalName}** — \`${cmd}\` — ${exitInfo}`);
-		}
-	}
-
-	// If nothing to report, return empty string (no notification)
-	if (ledger.orphaned.length === 0 && sessions.length === 0 && ledger.active.length === 0 && completed.length === 0) {
-		return '';
-	}
-
-	return parts.join('');
-}
 
 class ToolTimeoutError extends Error {
 	constructor(toolName: string, timeoutMs: number) {
@@ -281,14 +168,6 @@ async function executeTool(toolName: string, args: Record<string, unknown>): Pro
 				}
 				if (content.length === 0) {
 					content.push({ text: '(no output)', type: 'text' });
-				}
-
-				if (!response.skipLedger) {
-					const ledger = await getProcessLedger();
-					const ledgerText = formatProcessLedger(ledger);
-					if (ledgerText) {
-						content.push({ text: ledgerText, type: 'text' });
-					}
 				}
 
 				return { content };
