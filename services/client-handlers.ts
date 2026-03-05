@@ -925,6 +925,14 @@ async function handleFileDeleteFile(params: Record<string, unknown>) {
 
 	const uri = vscode.Uri.file(filePath);
 
+	// Ensure the file is inside the workspace
+	const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
+	if (!workspaceFolder) {
+		return { blocked: false, message: `File is outside the workspace: ${filePath}`, success: false };
+	}
+
+	getUserActionTracker().trackFileAccess(filePath);
+
 	// Verify file exists (and is not a directory)
 	try {
 		const stat = await vscode.workspace.fs.stat(uri);
@@ -935,12 +943,27 @@ async function handleFileDeleteFile(params: Record<string, unknown>) {
 		return { blocked: false, message: `File not found: ${filePath}`, success: false };
 	}
 
-	// Get all symbols defined in the file
+	// Open the document so the language server receives textDocument/didOpen and
+	// begins activation. Then query symbols with exponential backoff — the LS may
+	// need time to start up and register its DocumentSymbolProvider.
 	const doc = await vscode.workspace.openTextDocument(uri);
-	const symbols = await vscode.commands.executeCommand<undefined | vscode.DocumentSymbol[]>(
+	const fileHasContent = doc.getText().trim().length > 0;
+	let symbols = await vscode.commands.executeCommand<undefined | vscode.DocumentSymbol[]>(
 		'vscode.executeDocumentSymbolProvider',
 		uri
 	);
+
+	if (!symbols && fileHasContent) {
+		const backoffDelays = [500, 1000, 2000, 3000];
+		for (const delay of backoffDelays) {
+			await new Promise(resolve => setTimeout(resolve, delay));
+			symbols = await vscode.commands.executeCommand<undefined | vscode.DocumentSymbol[]>(
+				'vscode.executeDocumentSymbolProvider',
+				uri
+			);
+			if (symbols) break;
+		}
+	}
 
 	// For each top-level symbol, find external references
 	const brokenReferences: Array<{
@@ -984,7 +1007,7 @@ async function handleFileDeleteFile(params: Record<string, unknown>) {
 	// Check 2: Detect re-export patterns not covered by DocumentSymbolProvider.
 	// Barrel files (export { x } from '...' and export * from '...') don't
 	// surface as symbols, so they bypass the check above.
-	if (brokenReferences.length === 0) {
+	{
 		const text = doc.getText();
 
 		// Named re-exports: export { ident1, ident2 } from '...'

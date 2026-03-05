@@ -14,7 +14,7 @@ function resolveFilePath(userPath: string): string {
 
 export const fileDelete = defineTool({
 	annotations: {
-		category: ToolCategory.CODEBASE_ANALYSIS,
+		category: ToolCategory.EXPERIMENTAL,
 		conditions: ['client-pipe'],
 		destructiveHint: true,
 		idempotentHint: false,

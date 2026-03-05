@@ -9,6 +9,7 @@ export enum ToolCategory {
 	DEBUGGING = 'debugging',
 	DEV_DIAGNOSTICS = 'dev_diagnostics',
 	EDITOR_TABS = 'editor_tabs',
+	EXPERIMENTAL = 'experimental',
 	INPUT = 'input',
 	NAVIGATION = 'navigation',
 	UI_CONTEXT = 'ui_context'
@@ -22,6 +23,7 @@ const /**
 		[ToolCategory.DEBUGGING]: 'Debugging',
 		[ToolCategory.DEV_DIAGNOSTICS]: 'Development diagnostics',
 		[ToolCategory.EDITOR_TABS]: 'Editor tabs',
+		[ToolCategory.EXPERIMENTAL]: 'Experimental',
 		[ToolCategory.INPUT]: 'Input automation',
 		[ToolCategory.NAVIGATION]: 'Navigation automation',
 		[ToolCategory.UI_CONTEXT]: 'UI context'
