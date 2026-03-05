@@ -505,7 +505,32 @@ class InspectorPanelProvider {
 		}
 
 		try {
-			const result = await sendClientRpc(msg.method, msg.params);
+			let result: unknown;
+
+			try {
+				result = await sendClientRpc(msg.method, msg.params);
+			} catch (firstErr) {
+				const firstMsg = firstErr instanceof Error ? firstErr.message : String(firstErr);
+
+				// mcp/tools is the connect/reconnect handshake — if the Client pipe
+				// is unreachable, ask the Host to start the MCP server + client window
+				// (same command the ensureMcpServer handler uses), then retry once.
+				if (msg.method === 'mcp/tools' && isRetryableClientError(firstMsg)) {
+					log(`Client pipe unavailable for mcp/tools — requesting MCP server start`);
+					try {
+						await vscode.commands.executeCommand('devtools.startMcpServer', { silent: true });
+						log('MCP server start command completed — retrying Client RPC');
+						result = await sendClientRpc(msg.method, msg.params);
+					} catch (retryErr) {
+						const retryMsg = retryErr instanceof Error ? retryErr.message : String(retryErr);
+						log(`MCP server start or retry failed: ${retryMsg}`);
+						throw retryErr;
+					}
+				} else {
+					throw firstErr;
+				}
+			}
+
 			this.panel?.webview.postMessage({
 				id: msg.id,
 				result,

@@ -80,6 +80,9 @@ function getMcpServerId(): string {
 /** Flag to prevent MCP shutdown during hot-reload */
 let hotReloadInProgress = false;
 
+/** Mutex preventing concurrent spawnClient calls from mcpReady + startClientWindow */
+let spawnInProgress: Promise<{ cdpPort: number; userDataDir: string; clientStartedAt: number }> | null = null;
+
 /** Exported getter so extension.ts can check before tethered lifecycle actions. */
 export function isHotReloadInProgress(): boolean {
 	return hotReloadInProgress;
@@ -574,11 +577,26 @@ function getElectronPath(): string {
 }
 
 /**
- * Spawn the Extension Development Host (Client)
- * @param clientWorkspace - Workspace folder the Client should open (from host config)
- * @param extensionPath - Extension development path (from host config)
+ * Spawn the Extension Development Host (Client).
+ * Guarded by {@link spawnInProgress} — concurrent callers (e.g. mcpReady +
+ * startClientWindow racing) await the same in-flight spawn instead of
+ * starting a second Electron instance.
  */
 async function spawnClient(clientWorkspace: string, extensionPath: string, launchFlags?: Record<string, unknown>): Promise<{ cdpPort: number; userDataDir: string; clientStartedAt: number }> {
+	if (spawnInProgress) {
+		log('[host] spawnClient: spawn already in progress — awaiting existing promise');
+		return spawnInProgress;
+	}
+	const promise = doSpawnClient(clientWorkspace, extensionPath, launchFlags);
+	spawnInProgress = promise;
+	try {
+		return await promise;
+	} finally {
+		spawnInProgress = null;
+	}
+}
+
+async function doSpawnClient(clientWorkspace: string, extensionPath: string, launchFlags?: Record<string, unknown>): Promise<{ cdpPort: number; userDataDir: string; clientStartedAt: number }> {
 	// Allocate ports (CDP for browser debugging + inspector for Extension Host debugging)
 	const allocatedCdpPort = await allocatePort();
 	const allocatedInspectorPort = await allocatePort();
@@ -1011,12 +1029,17 @@ async function connectCdpClient(port: number): Promise<void> {
 		await client.connect(port);
 		activeCdpClient = client;
 
-		// Instant disconnect detection via WebSocket close event
+		// Stale-closure guard: if a newer connection replaced this one,
+		// the async WebSocket close event must not overwrite the new state.
 		client.onDisconnect(() => {
+			if (activeCdpClient !== client) {
+				log('[host] CDP WebSocket closed — ignoring stale disconnect (superseded by newer connection)');
+				return;
+			}
+
 			log('[host] CDP WebSocket closed — client window died');
 			log('CDP WebSocket closed — client window disconnected');
 
-			// Clean up immediately — no polling needed
 			setBrowserService(null);
 			onBrowserServiceChangedCallback?.(null);
 			activeCdpClient = null;
@@ -1205,6 +1228,12 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 			return { cdpPort: result.cdpPort, clientStartedAt: result.clientStartedAt, userDataDir: result.userDataDir };
 		} finally {
 			hotReloadInProgress = false;
+			log('[host] hotReloadRequired: complete — health monitor resumed');
+
+			if (lastKnownClientState !== undefined) {
+				log(`[state-fire] hotReloadRequired: replaying state=${lastKnownClientState} after hot-reload guard lifted`);
+				_onClientStateChanged.fire(lastKnownClientState);
+			}
 		}
 	});
 
@@ -1426,6 +1455,11 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 			restartInProgress = null;
 			hotReloadInProgress = false;
 			log('[host] MCP restart complete — health monitor resumed');
+
+			if (lastKnownClientState !== undefined) {
+				log(`[state-fire] handleMcpRestart: replaying state=${lastKnownClientState} after hot-reload guard lifted`);
+				_onClientStateChanged.fire(lastKnownClientState);
+			}
 		}
 	};
 
@@ -1598,6 +1632,14 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 			if (!result.mcpRebuilt) {
 				hotReloadInProgress = false;
 				log('[host] checkForChanges: complete — health monitor resumed');
+
+				// Re-fire the current client state so the tethered lifecycle picks
+				// it up. Events fired while hotReloadInProgress was true were
+				// intentionally suppressed — replay the final state now.
+				if (lastKnownClientState !== undefined) {
+					log(`[state-fire] checkForChanges: replaying state=${lastKnownClientState} after hot-reload guard lifted`);
+					_onClientStateChanged.fire(lastKnownClientState);
+				}
 			} else {
 				log('[host] checkForChanges: MCP restart pending — health monitor stays suppressed until readyToRestart');
 			}

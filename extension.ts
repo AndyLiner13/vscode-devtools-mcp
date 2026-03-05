@@ -375,6 +375,30 @@ export async function activate(context: vscode.ExtensionContext) {
 
 			// Track whether WE are driving a toggle to avoid recursive loops
 			let tetheredAction = false;
+			const TETHERED_TIMEOUT_MS = 30_000;
+
+			function runTetheredCommand(label: string, ...commandArgs: unknown[]): void {
+				tetheredAction = true;
+				const timeout = setTimeout(() => {
+					if (tetheredAction) {
+						log(`Tethered lifecycle: ${label} timed out after ${TETHERED_TIMEOUT_MS}ms — resetting guard`);
+						tetheredAction = false;
+					}
+				}, TETHERED_TIMEOUT_MS);
+				void (vscode.commands.executeCommand as (...args: unknown[]) => Thenable<unknown>)(...commandArgs).then(
+					() => {
+						clearTimeout(timeout);
+						log(`Tethered lifecycle: ${label} completed`);
+						tetheredAction = false;
+					},
+					(err: unknown) => {
+						clearTimeout(timeout);
+						const msg = err instanceof Error ? err.message : String(err);
+						log(`Tethered lifecycle: ${label} failed: ${msg}`);
+						tetheredAction = false;
+					}
+				);
+			}
 
 			// When client state changes (health monitor fires), update status bar and MCP
 			context.subscriptions.push(
@@ -397,33 +421,11 @@ export async function activate(context: vscode.ExtensionContext) {
 							inspectorPanel.show();
 						}
 
-						tetheredAction = true;
-						void vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true }).then(
-							() => {
-								log('Tethered lifecycle: MCP server started/confirmed running');
-								tetheredAction = false;
-							},
-							(err: unknown) => {
-								const msg = err instanceof Error ? err.message : String(err);
-								log(`Tethered lifecycle: MCP startServer failed: ${msg}`);
-								tetheredAction = false;
-							}
-						);
+						runTetheredCommand('MCP startServer', 'workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true });
 					} else {
 						updateStatusBar('disconnected');
 						log('Client window disconnected — stopping MCP server via tethered lifecycle');
-						tetheredAction = true;
-						void vscode.commands.executeCommand('workbench.mcp.stopServer', MCP_SERVER_DEF_ID).then(
-							() => {
-								log('Tethered lifecycle: MCP server stopped successfully');
-								tetheredAction = false;
-							},
-							(err: unknown) => {
-								const msg = err instanceof Error ? err.message : String(err);
-								log(`Tethered lifecycle: MCP stopServer failed: ${msg}`);
-								tetheredAction = false;
-							}
-						);
+						runTetheredCommand('MCP stopServer', 'workbench.mcp.stopServer', MCP_SERVER_DEF_ID);
 					}
 				})
 			);

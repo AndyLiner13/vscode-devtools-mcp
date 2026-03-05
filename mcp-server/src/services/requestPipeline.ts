@@ -100,6 +100,7 @@ export class RequestPipeline {
 	private processing = false;
 	private restartScheduled = false;
 	private batchChecked = false;
+	private changeCheckInProgress: Promise<ChangeCheckResult> | null = null;
 	private readonly deps: PipelineDeps;
 
 	constructor(deps: PipelineDeps) {
@@ -193,25 +194,7 @@ export class RequestPipeline {
 	 * resolved (build error or restart signaled).
 	 */
 	private async performChangeCheck(entry: PipelineEntry): Promise<ChangeCheckResult | null> {
-		let check: ChangeCheckResult;
-
-		try {
-			// Single gate: extension checks, rebuilds, redeploys, and verifies
-			// connectivity before responding. No polling or timing on our side.
-			check = await this.deps.checkForChanges(this.deps.mcpServerRoot, this.deps.extensionPath);
-		} catch (err) {
-			const message = err instanceof Error ? err.message : String(err);
-			logger(`[pipeline] checkForChanges RPC failed: ${message} — proceeding without hot-reload check`);
-			check = {
-				extBuildError: null,
-				extChanged: false,
-				extClientReloaded: false,
-				extRebuilt: false,
-				mcpBuildError: null,
-				mcpChanged: false,
-				mcpRebuilt: false
-			};
-		}
+		const check = await this.serializedCheckForChanges();
 
 		// Extension build failure → return error, skip tool execution
 		if (check.extBuildError) {
@@ -241,6 +224,41 @@ export class RequestPipeline {
 		}
 
 		return check;
+	}
+
+	/**
+	 * Serialize checkForChanges calls so that concurrent callers
+	 * (pipeline processLoop + inspector runHotReloadCheck) share
+	 * the same in-flight RPC instead of sending duplicates.
+	 */
+	private async serializedCheckForChanges(): Promise<ChangeCheckResult> {
+		if (this.changeCheckInProgress) {
+			logger('[pipeline] checkForChanges already in progress — awaiting existing call');
+			return this.changeCheckInProgress;
+		}
+
+		const promise = this.deps
+			.checkForChanges(this.deps.mcpServerRoot, this.deps.extensionPath)
+			.catch((err: unknown) => {
+				const message = err instanceof Error ? err.message : String(err);
+				logger(`[pipeline] checkForChanges RPC failed: ${message} — proceeding without hot-reload check`);
+				return {
+					extBuildError: null,
+					extChanged: false,
+					extClientReloaded: false,
+					extRebuilt: false,
+					mcpBuildError: null,
+					mcpChanged: false,
+					mcpRebuilt: false
+				} satisfies ChangeCheckResult;
+			});
+
+		this.changeCheckInProgress = promise;
+		try {
+			return await promise;
+		} finally {
+			this.changeCheckInProgress = null;
+		}
 	}
 
 	/**
@@ -306,21 +324,14 @@ export class RequestPipeline {
 			return this.restartScheduled ? 'restarting' : 'ready';
 		}
 
-		let check: ChangeCheckResult;
-		try {
-			check = await this.deps.checkForChanges(this.deps.mcpServerRoot, this.deps.extensionPath);
-		} catch (err) {
-			const message = err instanceof Error ? err.message : String(err);
-			logger(`[pipeline] runHotReloadCheck: checkForChanges failed: ${message}`);
-			return 'ready';
-		}
+		const check = await this.serializedCheckForChanges();
 
 		if (check.mcpRebuilt) {
 			this.signalRestart('MCP server source changed (inspector session init)');
 			return 'restarting';
 		}
 
-		// Reset batchChecked so the next tool call in the pipeline
+		// Mark batch as checked so the next tool in the pipeline
 		// doesn't redundantly re-check after we just checked.
 		this.batchChecked = true;
 

@@ -296,14 +296,23 @@ class LifecycleService {
 		this._connected = false;
 		this._debugWindowStartedAt = undefined;
 
+		// Share the connection promise with ensureConnection() so concurrent
+		// callers wait on recovery instead of starting a parallel doConnect().
+		const connectPromise = this.doConnect({ forceRestart: true });
+		this.connectInProgress = connectPromise;
+
 		try {
-			await this.doConnect({ forceRestart: true });
+			await connectPromise;
 			logger('[Lifecycle] Client recovery via doConnect() succeeded');
 		} catch (connectErr) {
 			const msg = connectErr instanceof Error ? connectErr.message : String(connectErr);
 			logger(`[Lifecycle] doConnect() failed: ${msg} — trying handleHotReload()`);
 			await this.handleHotReload();
 			logger('[Lifecycle] Client recovery via handleHotReload() succeeded');
+		} finally {
+			if (this.connectInProgress === connectPromise) {
+				this.connectInProgress = undefined;
+			}
 		}
 	}
 }
