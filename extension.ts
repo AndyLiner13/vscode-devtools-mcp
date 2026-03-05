@@ -334,7 +334,7 @@ export async function activate(context: vscode.ExtensionContext) {
 						}
 						if (!isClientWindowConnected()) {
 							log('Start MCP Server: client window not active — starting it');
-							void startClientWindow();
+							await startClientWindow();
 						}
 						void vscode.commands.executeCommand(
 							'workbench.mcp.startServer',

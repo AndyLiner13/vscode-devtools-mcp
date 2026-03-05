@@ -83,6 +83,9 @@ let hotReloadInProgress = false;
 /** Mutex preventing concurrent spawnClient calls from mcpReady + startClientWindow */
 let spawnInProgress: Promise<{ cdpPort: number; userDataDir: string; clientStartedAt: number }> | null = null;
 
+/** Mutex preventing concurrent startClientWindow calls */
+let startInProgress: Promise<boolean> | null = null;
+
 /** Exported getter so extension.ts can check before tethered lifecycle actions. */
 export function isHotReloadInProgress(): boolean {
 	return hotReloadInProgress;
@@ -1858,6 +1861,20 @@ function resolveClientConfig(): null | { clientWorkspace: string; extensionPath:
  * Called during extension activation to auto-start the client.
  */
 export async function startClientWindow(): Promise<boolean> {
+	if (startInProgress) {
+		log('startClientWindow: already in progress — awaiting existing promise');
+		return startInProgress;
+	}
+	const promise = doStartClientWindow();
+	startInProgress = promise;
+	try {
+		return await promise;
+	} finally {
+		startInProgress = null;
+	}
+}
+
+async function doStartClientWindow(): Promise<boolean> {
 	log('startClientWindow: ENTRY');
 	log('[host] startClientWindow: ENTRY');
 

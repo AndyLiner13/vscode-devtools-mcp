@@ -127,6 +127,14 @@ function isRetryableClientError(message: string): boolean {
 }
 
 /**
+ * Whether the error means the Client pipe flat-out doesn't exist
+ * (client window not running), as opposed to a transient hot-reload glitch.
+ */
+function isPipeNotFound(message: string): boolean {
+	return message.includes('ENOENT') || message.includes('ECONNREFUSED');
+}
+
+/**
  * Send a JSON-RPC request to the Client pipe and return the result.
  * Opens a short-lived connection per request (simple and stateless).
  *
@@ -507,28 +515,31 @@ class InspectorPanelProvider {
 		try {
 			let result: unknown;
 
-			try {
-				result = await sendClientRpc(msg.method, msg.params);
-			} catch (firstErr) {
-				const firstMsg = firstErr instanceof Error ? firstErr.message : String(firstErr);
+			if (msg.method === 'mcp/tools') {
+				// mcp/tools is the connect/reconnect handshake. Do a single quick
+				// probe first — if the Client pipe doesn't exist, ask the Host to
+				// start the MCP server + client, then retry through the Client pipe.
+				rpcIdCounter += 1;
+				const probeId = `inspector-${rpcIdCounter}`;
+				try {
+					result = await sendClientRpcOnce(probeId, msg.method, msg.params);
+				} catch (probeErr) {
+					const probeMsg = probeErr instanceof Error ? probeErr.message : String(probeErr);
 
-				// mcp/tools is the connect/reconnect handshake — if the Client pipe
-				// is unreachable, ask the Host to start the MCP server + client window
-				// (same command the ensureMcpServer handler uses), then retry once.
-				if (msg.method === 'mcp/tools' && isRetryableClientError(firstMsg)) {
-					log(`Client pipe unavailable for mcp/tools — requesting MCP server start`);
-					try {
+					if (isPipeNotFound(probeMsg)) {
+						log('Client pipe not found — asking Host to start MCP server + client');
 						await vscode.commands.executeCommand('devtools.startMcpServer', { silent: true });
-						log('MCP server start command completed — retrying Client RPC');
+						log('Host confirmed MCP server + client started — retrying Client RPC');
 						result = await sendClientRpc(msg.method, msg.params);
-					} catch (retryErr) {
-						const retryMsg = retryErr instanceof Error ? retryErr.message : String(retryErr);
-						log(`MCP server start or retry failed: ${retryMsg}`);
-						throw retryErr;
+					} else if (isRetryableClientError(probeMsg)) {
+						// Transient error (hot-reload pipe churn) — use normal retry loop
+						result = await sendClientRpc(msg.method, msg.params);
+					} else {
+						throw probeErr;
 					}
-				} else {
-					throw firstErr;
 				}
+			} else {
+				result = await sendClientRpc(msg.method, msg.params);
 			}
 
 			this.panel?.webview.postMessage({
