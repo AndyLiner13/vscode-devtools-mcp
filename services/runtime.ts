@@ -10,8 +10,10 @@
 
 import * as vscode from 'vscode';
 
+import type { BrowserService } from './browser';
 import { LogFileReadTool } from './logFileReadTool';
 import { OutputReadTool, setClientLogsStoragePath, setHostLogUri } from './readHostOutputTool';
+import { setBrowserService, setReconnectCdpCallback } from './clientDevTools';
 import { disposeUserActionTracker, getUserActionTracker } from './userActionTracker';
 import { WaitTool } from './waitLmTool';
 import { log } from './logger';
@@ -97,4 +99,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
 export async function deactivate() {
 	log('[devtools:runtime] Runtime deactivating...');
+}
+
+export function wireReconnectCdpCallback(callback: () => Promise<boolean>): void {
+	setReconnectCdpCallback(callback);
+}
+
+export function wireBrowserService(service: BrowserService | null): void {
+	setBrowserService(service);
 }

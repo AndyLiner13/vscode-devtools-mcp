@@ -13,11 +13,25 @@
  * even if handler code fails to compile, the pipe server responds to ping.
  */
 
+import { appendFileSync, mkdirSync } from 'node:fs';
 import net from 'node:net';
+import { homedir } from 'node:os';
 import * as path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import * as vscode from 'vscode';
+
+// File-based diagnostic logger — writes to workspace root so we can read it after reinstall
+const DIAG_LOG_PATH = path.join(homedir(), 'devtools-activation.log');
+function diagLog(msg: string): void {
+	const ts = new Date().toISOString();
+	const pid = process.pid;
+	try {
+		appendFileSync(DIAG_LOG_PATH, `[${ts}] [PID:${pid}] ${msg}\n`);
+	} catch {
+		// best-effort
+	}
+}
 
 import * as bootstrap from './bootstrap';
 import pkg from './package.json';
@@ -111,6 +125,15 @@ async function notifyHostOfShutdown(reason: string): Promise<void> {
 // ── Activation ───────────────────────────────────────────────────────────────
 
 export async function activate(context: vscode.ExtensionContext) {
+	diagLog('========== ACTIVATE START ==========');
+	diagLog(`vscode.env.appName=${vscode.env.appName}`);
+	diagLog(`vscode.env.appHost=${vscode.env.appHost}`);
+	diagLog(`vscode.env.sessionId=${vscode.env.sessionId}`);
+	diagLog(`vscode.env.machineId=${vscode.env.machineId}`);
+	diagLog(`workspace.folders=${JSON.stringify(vscode.workspace.workspaceFolders?.map(f => f.uri.fsPath))}`);
+	diagLog(`extensionPath=${context.extensionPath}`);
+	diagLog(`extensionMode=${context.extensionMode}`);
+
 	// Output channel for all logging
 	outputChannel = vscode.window.createOutputChannel('devtools');
 	context.subscriptions.push(outputChannel);
@@ -176,15 +199,19 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Step 1: Role Detection via Pipe Availability
 	// ========================================================================
 
+	diagLog('Step 1: Role detection starting...');
 	try {
 		// Try to claim the Host pipe
+		diagLog(`Attempting to claim Host pipe: ${HOST_PIPE_PATH}`);
 		await bootstrap.startServer(HOST_PIPE_PATH);
 		currentRole = 'host';
+		diagLog('SUCCESS: Claimed Host pipe — this instance is HOST');
 		log(`Claimed Host pipe @ ${HOST_PIPE_PATH} — this instance is the HOST`);
 		updateStatusBar('disconnected');
 	} catch (err: unknown) {
 		const error = err as NodeJS.ErrnoException;
 		if (error.code === 'EADDRINUSE') {
+			diagLog('Host pipe EADDRINUSE — another Host exists, becoming CLIENT');
 			// Host pipe exists → we're the Client
 			// Try to claim the Client pipe — may need retries if the previous
 			// Client was just killed and the OS hasn't released the pipe yet
@@ -215,6 +242,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 
 			currentRole = 'client';
+			diagLog(`SUCCESS: Claimed Client pipe — this instance is CLIENT`);
 			log(`Host pipe exists — claimed Client pipe @ ${CLIENT_PIPE_PATH} — this instance is the CLIENT`);
 			statusBarItem.text = '$(debug-connected) VS Code DevTools Client';
 			statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Client\nPipe: ${CLIENT_PIPE_PATH}`;
@@ -230,6 +258,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	try {
 		if (currentRole === 'host') {
+			diagLog('Step 2: Loading HOST handlers...');
 			// Dynamic import keeps host-handlers out of the static dependency graph.
 			// If it fails to compile, the extension still works in Safe Mode.
 			log('Loading host-handlers module...');
@@ -267,9 +296,11 @@ export async function activate(context: vscode.ExtensionContext) {
 
 			// Gate the MCP server + client window on the dev mode setting
 			const devModeEnabled = vscode.workspace.getConfiguration('devtools').get<boolean>('dev.enabled', false);
+			diagLog(`devtools.dev.enabled = ${devModeEnabled}`);
 			if (!devModeEnabled) {
 				mcpProvider.setEnabled(false);
 			}
+			diagLog(`MCP provider enabled=${mcpProvider.enabled}`);
 			log(`MCP server provider registered (enabled: ${mcpProvider.enabled}, devMode: ${devModeEnabled})`);
 
 			// Listen for settings changes — dev mode toggle + general refresh
@@ -396,7 +427,9 @@ export async function activate(context: vscode.ExtensionContext) {
 				})
 			);
 
-			// When MCP is toggled, start/stop client window + MCP server together
+			// When MCP is toggled, start/stop client window + MCP server together.
+			// Only start the MCP server here — its ensureConnection/mcpReady will
+			// spawn the client window via the Host handlers, avoiding double spawn.
 			context.subscriptions.push(
 				mcpProvider.onDidToggle((enabled: boolean) => {
 					if (tetheredAction) {
@@ -404,24 +437,17 @@ export async function activate(context: vscode.ExtensionContext) {
 					}
 					log(`MCP server toggled: ${enabled ? 'enabled' : 'disabled'}`);
 					if (enabled) {
-						// MCP turned on → start both client window and MCP server
-						void Promise.all([
-							startClientWindow().then((ok: boolean) => {
-								if (!ok) {
-									log('Failed to start client window after MCP enable');
-									updateStatusBar('disconnected');
-								}
-							}),
-							vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID).then(
-								() => {
-									log('MCP server started after toggle on');
-								},
-								(err: unknown) => {
-									const msg = err instanceof Error ? err.message : String(err);
-									log(`MCP server start after toggle on failed: ${msg}`);
-								}
-							)
-						]);
+						updateStatusBar('connecting');
+						void vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true }).then(
+							() => {
+								log('MCP server started after toggle on');
+							},
+							(err: unknown) => {
+								const msg = err instanceof Error ? err.message : String(err);
+								log(`MCP server start after toggle on failed: ${msg}`);
+								updateStatusBar('disconnected');
+							}
+						);
 					} else {
 						// MCP turned off → stop client window
 						stopClientWindow();
@@ -434,7 +460,9 @@ export async function activate(context: vscode.ExtensionContext) {
 			// will spawn the client window via the Host handlers. This avoids a race
 			// condition where both extension.ts AND mcp-server/main.ts try to spawn
 			// the client simultaneously.
+			diagLog(`Step 3: Auto-start check — devModeEnabled=${devModeEnabled}`);
 			if (devModeEnabled) {
+				diagLog('AUTO-START: Starting MCP server + client window lifecycle');
 				updateStatusBar('connecting');
 				log('Auto-starting MCP server (will spawn client via ensureConnection)...');
 
@@ -480,19 +508,12 @@ export async function activate(context: vscode.ExtensionContext) {
 					}
 				});
 
-				// Fallback: if the MCP server's ensureConnection() fails to spawn the
-				// client (e.g. VS Code didn't actually launch the MCP process), start
-				// the client window directly after a grace period.
-				setTimeout(() => {
-					if (!isClientWindowConnected()) {
-						log('[auto-start] Client not connected after 10s — starting client window directly as fallback');
-						void startClientWindow();
-					}
-				}, 10_000);
 			} else {
+				diagLog('SKIP: Dev mode disabled — no auto-start');
 				log('Dev mode disabled — skipping auto-start. Enable devtools.dev.enabled to activate.');
 			}
 		} else {
+			diagLog('Step 2: Loading CLIENT handlers...');
 			log('Loading client-handlers module...');
 
 			const { registerClientHandlers } = await import('./services/client-handlers');
@@ -568,6 +589,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	}
 
+	diagLog(`========== ACTIVATE COMPLETE (role: ${currentRole}) ==========`);
 	log(`Extension activation complete (role: ${currentRole})`);
 }
 
@@ -594,6 +616,8 @@ async function initiateTakeover(): Promise<void> {
 // ── Deactivation ─────────────────────────────────────────────────────────────
 
 export async function deactivate() {
+	diagLog('========== DEACTIVATE START ==========');
+	diagLog(`role=${currentRole}`);
 	log('Extension deactivating...');
 
 	// Kill spawned processes FIRST — synchronously, before any async work.
@@ -641,4 +665,6 @@ export async function deactivate() {
 		const msg = err instanceof Error ? err.message : String(err);
 		log(`Worker stop error: ${msg}`);
 	}
+
+	diagLog('========== DEACTIVATE COMPLETE ==========');
 }

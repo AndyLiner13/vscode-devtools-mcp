@@ -30,14 +30,13 @@
 		"compile": "node esbuild.mjs",
 		"format": "eslint --cache --fix . && prettier --write --cache .",
 		"inspector:build": "cd inspector && npm run inspector:build",
-		"install:vsix": "node --input-type=module -e \"import{readFileSync}from'node:fs';import{execSync}from'node:child_process';const p=JSON.parse(readFileSync('./package.json','utf8'));execSync('code --install-extension '+p.name+'-'+p.version+'.vsix --force',{stdio:'inherit'})\"",
 		"knip": "knip --strict",
 		"lint": "eslint .",
 		"lint:fix": "eslint --fix .",
 		"mcp:build": "cd mcp-server && npm run build && tsc --noEmit",
 		"mcp:inspect": "node mcp-server/scripts/inspect.mjs",
-		"reinstall": "npm run compile && npm run build && npm run uninstall && npm run install:vsix",
-		"uninstall": "code --uninstall-extension AndyLiner.vscode-devtools || echo Extension not installed, skipping"
+		"reinstall": "npm run build && code.cmd --install-extension vscode-devtools-0.1.0.vsix --force",
+		"vscode:prepublish": "node esbuild.mjs"
 	},
 	"contributes": {
 		"commands": [
