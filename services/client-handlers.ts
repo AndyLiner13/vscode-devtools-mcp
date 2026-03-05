@@ -925,7 +925,6 @@ async function handleFileDeleteFile(params: Record<string, unknown>) {
 
 	const uri = vscode.Uri.file(filePath);
 
-	// Ensure the file is inside the workspace
 	const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
 	if (!workspaceFolder) {
 		return { blocked: false, message: `File is outside the workspace: ${filePath}`, success: false };
@@ -933,7 +932,6 @@ async function handleFileDeleteFile(params: Record<string, unknown>) {
 
 	getUserActionTracker().trackFileAccess(filePath);
 
-	// Verify file exists (and is not a directory)
 	try {
 		const stat = await vscode.workspace.fs.stat(uri);
 		if (stat.type === vscode.FileType.Directory) {
@@ -943,9 +941,6 @@ async function handleFileDeleteFile(params: Record<string, unknown>) {
 		return { blocked: false, message: `File not found: ${filePath}`, success: false };
 	}
 
-	// Open the document so the language server receives textDocument/didOpen and
-	// begins activation. Then query symbols with exponential backoff — the LS may
-	// need time to start up and register its DocumentSymbolProvider.
 	const doc = await vscode.workspace.openTextDocument(uri);
 	const fileHasContent = doc.getText().trim().length > 0;
 	let symbols = await vscode.commands.executeCommand<undefined | vscode.DocumentSymbol[]>(
@@ -953,6 +948,7 @@ async function handleFileDeleteFile(params: Record<string, unknown>) {
 		uri
 	);
 
+	// The LS may need time to register its DocumentSymbolProvider after didOpen
 	if (!symbols && fileHasContent) {
 		const backoffDelays = [500, 1000, 2000, 3000];
 		for (const delay of backoffDelays) {
@@ -965,7 +961,6 @@ async function handleFileDeleteFile(params: Record<string, unknown>) {
 		}
 	}
 
-	// For each top-level symbol, find external references
 	const brokenReferences: Array<{
 		symbol: string;
 		kind: string;
@@ -976,16 +971,14 @@ async function handleFileDeleteFile(params: Record<string, unknown>) {
 
 	if (symbols && symbols.length > 0) {
 		for (const sym of symbols) {
-			const position = sym.selectionRange.start;
 			const locations = await vscode.commands.executeCommand<undefined | vscode.Location[]>(
 				'vscode.executeReferenceProvider',
 				uri,
-				position
+				sym.selectionRange.start
 			);
 
 			if (!locations) continue;
 
-			// Filter to only external references (not in the file being deleted)
 			const externalRefs = locations.filter(
 				(loc) => vscode.workspace.asRelativePath(loc.uri) !== fileRelPath
 			);
@@ -1004,74 +997,6 @@ async function handleFileDeleteFile(params: Record<string, unknown>) {
 		}
 	}
 
-	// Check 2: Detect re-export patterns not covered by DocumentSymbolProvider.
-	// Barrel files (export { x } from '...' and export * from '...') don't
-	// surface as symbols, so they bypass the check above.
-	{
-		const text = doc.getText();
-
-		// Named re-exports: export { ident1, ident2 } from '...'
-		const namedReExportPattern = /export\s*\{([^}]+)\}\s*from\s*['"][^'"]+['"]/g;
-		let reExportMatch: RegExpExecArray | null;
-		while ((reExportMatch = namedReExportPattern.exec(text)) !== null) {
-			const identifiersBlock = reExportMatch[1];
-			const bracesStart = text.indexOf('{', reExportMatch.index);
-
-			for (const segment of identifiersBlock.split(',')) {
-				const trimmed = segment.trim();
-				if (!trimmed) continue;
-
-				// Handle 'original as alias' — use the original name
-				const name = trimmed.split(/\s+as\s+/)[0].trim();
-				if (!name) continue;
-
-				// Find the identifier position within the braces
-				const identOffset = text.indexOf(name, bracesStart);
-				if (identOffset === -1) continue;
-
-				const position = doc.positionAt(identOffset);
-				const locations = await vscode.commands.executeCommand<undefined | vscode.Location[]>(
-					'vscode.executeReferenceProvider',
-					uri,
-					position
-				);
-				if (!locations) continue;
-
-				const externalRefs = locations.filter(
-					(loc) => vscode.workspace.asRelativePath(loc.uri) !== fileRelPath
-				);
-
-				if (externalRefs.length > 0) {
-					brokenReferences.push({
-						kind: 'ReExport',
-						references: externalRefs.map((loc) => ({
-							character: loc.range.start.character,
-							file: vscode.workspace.asRelativePath(loc.uri),
-							line: loc.range.start.line + 1
-						})),
-						symbol: name
-					});
-				}
-			}
-		}
-
-		// Star re-exports: export * from '...' (no identifiers to query)
-		// For these, check if any workspace file imports from this file's module path.
-		const hasStarReExport = /export\s+\*\s+from\s+['"]/.test(text);
-		if (hasStarReExport && brokenReferences.length === 0) {
-			const importers = await findFilesImportingModule(uri);
-			if (importers.length > 0) {
-				const moduleName = uri.path.split('/').pop()?.replace(/\.[^.]+$/, '') ?? 'module';
-				brokenReferences.push({
-					kind: 'StarReExport',
-					references: importers,
-					symbol: moduleName + ' (star re-export barrel)'
-				});
-			}
-		}
-	}
-
-	// If there are external references, block the deletion
 	if (brokenReferences.length > 0) {
 		const totalRefs = brokenReferences.reduce((sum, b) => sum + b.references.length, 0);
 		return {
@@ -1082,7 +1007,6 @@ async function handleFileDeleteFile(params: Record<string, unknown>) {
 		};
 	}
 
-	// No external references — safe to delete (move to trash for recovery)
 	await vscode.workspace.fs.delete(uri, { useTrash: true });
 
 	return {
@@ -1090,68 +1014,6 @@ async function handleFileDeleteFile(params: Record<string, unknown>) {
 		deletedFile: vscode.workspace.asRelativePath(uri),
 		success: true
 	};
-}
-
-/**
- * Find workspace files that import from the given module URI.
- * Used to detect consumers of star-re-export barrel files
- * where executeDocumentSymbolProvider returns no queryable symbols.
- */
-async function findFilesImportingModule(
-	targetUri: vscode.Uri
-): Promise<Array<{ file: string; line: number; character: number }>> {
-	const targetPath = targetUri.fsPath;
-	const targetNoExt = targetPath.replace(/\.[^.]+$/, '');
-	const targetBasename = targetNoExt.split(/[\\/]/).pop() ?? '';
-	if (!targetBasename) return [];
-
-	const files = await vscode.workspace.findFiles(
-		'**/*.{ts,tsx,js,jsx}',
-		'**/node_modules/**'
-	);
-
-	const results: Array<{ file: string; line: number; character: number }> = [];
-	const escapedName = targetBasename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-	const importPattern = new RegExp(
-		`(?:import|export)\\s+.*?from\\s+['"][^'"]*[/\\\\]?${escapedName}(?:\\.\\w+)?['"]`,
-		'g'
-	);
-
-	for (const file of files) {
-		if (file.toString() === targetUri.toString()) continue;
-
-		const fileDoc = await vscode.workspace.openTextDocument(file);
-		const text = fileDoc.getText();
-
-		let match: RegExpExecArray | null;
-		while ((match = importPattern.exec(text)) !== null) {
-			// Verify the import resolves to the target file by resolving
-			// the specifier from the importing file's directory
-			const specifierMatch = /from\s+['"]([^'"]+)['"]/.exec(match[0]);
-			if (!specifierMatch) continue;
-
-			const specifier = specifierMatch[1];
-			if (!specifier.startsWith('.')) continue; // skip package imports
-
-			const importingDir = vscode.Uri.joinPath(file, '..');
-			const resolved = vscode.Uri.joinPath(importingDir, specifier);
-			const resolvedNoExt = resolved.fsPath.replace(/\.[^.]+$/, '');
-
-			// Compare resolved path (without extension) to the target
-			if (resolvedNoExt.toLowerCase() === targetNoExt.toLowerCase()) {
-				const pos = fileDoc.positionAt(match.index);
-				results.push({
-					character: pos.character,
-					file: vscode.workspace.asRelativePath(file),
-					line: pos.line + 1
-				});
-			}
-		}
-
-		importPattern.lastIndex = 0;
-	}
-
-	return results;
 }
 
 // ── Registration ─────────────────────────────────────────────────────────────
