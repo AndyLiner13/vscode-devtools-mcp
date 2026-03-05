@@ -249,30 +249,6 @@ export async function browserCaptureScreenshot(params: { format?: string; fullPa
 	return result as BrowserScreenshotResult;
 }
 
-export async function browserClickElement(uid: string, clickCount?: number): Promise<void> {
-	await sendHostRequest('browser.clickElement', { uid, clickCount }, BROWSER_TIMEOUT_MS);
-}
-
-export async function browserHoverElement(uid: string): Promise<void> {
-	await sendHostRequest('browser.hoverElement', { uid }, BROWSER_TIMEOUT_MS);
-}
-
-export async function browserTypeIntoElement(uid: string, value: string, clear?: boolean): Promise<void> {
-	await sendHostRequest('browser.typeIntoElement', { uid, value, clear }, BROWSER_TIMEOUT_MS);
-}
-
-export async function browserDragElement(from_uid: string, to_uid: string): Promise<void> {
-	await sendHostRequest('browser.dragElement', { from_uid, to_uid }, BROWSER_TIMEOUT_MS);
-}
-
-export async function browserPressKey(key: string): Promise<void> {
-	await sendHostRequest('browser.pressKey', { key }, BROWSER_TIMEOUT_MS);
-}
-
-export async function browserScrollElement(uid: string, direction?: string, amount?: number): Promise<void> {
-	await sendHostRequest('browser.scrollElement', { uid, direction, amount }, BROWSER_TIMEOUT_MS);
-}
-
 export async function browserExecuteWithDiff(action: string, actionParams: Record<string, unknown>): Promise<{ summary: string }> {
 	const result = await sendHostRequest('browser.executeWithDiff', { action, actionParams }, BROWSER_TIMEOUT_MS);
 	return result as { summary: string };
