@@ -89,7 +89,7 @@ class McpServerProvider implements vscode.McpServerDefinitionProvider<vscode.Mcp
 		log(`[mcpServerProvider] Returning definition: command=node, args=[${initScript}]`);
 		const env = buildConfigEnv(this._workspacePath);
 
-		return [new vscode.McpStdioServerDefinition('Experimental DevTools', 'node', [initScript], env)];
+		return [new vscode.McpStdioServerDefinition('Client Controller', 'node', [initScript], env)];
 	}
 
 	toggle(): void {

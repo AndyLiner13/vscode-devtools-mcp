@@ -45,21 +45,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	);
 
 	// ========================================================================
-	// Settings View — empty-state welcome button opens extension settings
+	// Open Settings Command
 	// ========================================================================
-
-	const emptyTreeProvider: vscode.TreeDataProvider<never> = {
-		getChildren: () => [],
-		getTreeItem: () => {
-			throw new Error('No items');
-		}
-	};
-
-	const settingsView = vscode.window.createTreeView('devtools.settings', {
-		canSelectMany: false,
-		treeDataProvider: emptyTreeProvider
-	});
-	track(settingsView);
 
 	track(
 		vscode.commands.registerCommand('devtools.openSettings', () => {

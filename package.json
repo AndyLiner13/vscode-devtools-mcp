@@ -42,7 +42,8 @@
 		"commands": [
 			{
 				"command": "devtools.toggleMcpServer",
-				"title": "VS Code DevTools: Toggle MCP Server"
+				"title": "VS Code DevTools: Toggle MCP Server",
+				"when": "config.devtools.dev.enabled"
 			},
 			{
 				"command": "devtools.openSettings",
@@ -50,23 +51,28 @@
 			},
 			{
 				"command": "devtools.openInspector",
-				"title": "DevTools: Open MCP Inspector"
+				"title": "DevTools: Open MCP Inspector",
+				"when": "config.devtools.dev.enabled"
 			},
 			{
 				"command": "devtools.refreshInspector",
-				"title": "DevTools: Refresh MCP Inspector"
+				"title": "DevTools: Refresh MCP Inspector",
+				"when": "config.devtools.dev.enabled"
 			},
 			{
 				"command": "devtools.startMcpServer",
-				"title": "DevTools: Start MCP Server"
+				"title": "DevTools: Start MCP Server",
+				"when": "config.devtools.dev.enabled"
 			},
 			{
 				"command": "devtools.stopMcpServer",
-				"title": "DevTools: Stop MCP Server"
+				"title": "DevTools: Stop MCP Server",
+				"when": "config.devtools.dev.enabled"
 			},
 			{
 				"command": "devtools.restartMcpServer",
-				"title": "DevTools: Restart MCP Server"
+				"title": "DevTools: Restart MCP Server",
+				"when": "config.devtools.dev.enabled"
 			}
 		],
 		"keybindings": [
@@ -343,32 +349,7 @@
 		"mcpServerDefinitionProviders": [
 			{
 				"id": "devtools.mcp-server",
-				"label": "Experimental DevTools"
-			}
-		],
-		"views": {
-			"devtools": [
-				{
-					"id": "devtools.settings",
-					"name": "Settings",
-					"contextualTitle": "VS Code DevTools Settings",
-					"when": "devtools.coreLoaded"
-				}
-			]
-		},
-		"viewsContainers": {
-			"activitybar": [
-				{
-					"id": "devtools",
-					"title": "VS Code DevTools",
-					"icon": "icon.svg"
-				}
-			]
-		},
-		"viewsWelcome": [
-			{
-				"view": "devtools.settings",
-				"contents": "[Open Settings](command:devtools.openSettings)"
+				"label": "Client Controller"
 			}
 		]
 	},

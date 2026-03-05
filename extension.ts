@@ -42,7 +42,7 @@ import { attachErrorToChat, showCompletionNotification } from './services/notifi
 import { registerMcpServerProvider } from './services/mcpServerProvider';
 
 // VS Code constructs server definition IDs as: ExtensionIdentifier.toKey(id) + '/' + label
-const MCP_SERVER_DEF_ID = 'andyliner.vscode-devtools/Experimental DevTools';
+const MCP_SERVER_DEF_ID = 'andyliner.vscode-devtools/Client Controller';
 const MCP_PROVIDER_ID = 'devtools.mcp-server';
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -161,7 +161,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	const version = pkg.version || 'unknown';
 	statusBarItem.text = '$(debug-disconnect) VS Code DevTools';
 	statusBarItem.tooltip = `VS Code DevTools v${version}`;
-	statusBarItem.show();
 
 	/** Update the status bar to reflect MCP / connection state (Host only). */
 	function updateStatusBar(state: 'connected' | 'connecting' | 'disconnected' | 'safe-mode', detail?: string): void {
@@ -193,6 +192,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
 				break;
 		}
+		statusBarItem.show();
 	}
 
 	// ========================================================================
@@ -207,7 +207,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		currentRole = 'host';
 		diagLog('SUCCESS: Claimed Host pipe — this instance is HOST');
 		log(`Claimed Host pipe @ ${HOST_PIPE_PATH} — this instance is the HOST`);
-		updateStatusBar('disconnected');
 	} catch (err: unknown) {
 		const error = err as NodeJS.ErrnoException;
 		if (error.code === 'EADDRINUSE') {
@@ -247,6 +246,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			statusBarItem.text = '$(debug-connected) VS Code DevTools Client';
 			statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Client\nPipe: ${CLIENT_PIPE_PATH}`;
 			statusBarItem.command = undefined;
+			statusBarItem.show();
 		} else {
 			throw err;
 		}
@@ -315,6 +315,7 @@ export async function activate(context: vscode.ExtensionContext) {
 						} else if (!newEnabled && mcpProvider.enabled) {
 							log('Dev mode disabled — stopping MCP server and client window');
 							mcpProvider.setEnabled(false);
+							statusBarItem.hide();
 						}
 					} else if (e.affectsConfiguration('devtools')) {
 						mcpProvider.refresh();
@@ -565,15 +566,11 @@ export async function activate(context: vscode.ExtensionContext) {
 			log('Wired CDP reconnect callback to runtime bundle');
 		}
 
-		// Signal to VS Code that runtime loaded — views become visible
-		await vscode.commands.executeCommand('setContext', 'devtools.coreLoaded', true);
+		// Signal to VS Code that runtime loaded
 		log('Runtime loaded successfully');
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
 		const stack = err instanceof Error ? err.stack : undefined;
-
-		// Views stay hidden
-		await vscode.commands.executeCommand('setContext', 'devtools.coreLoaded', false);
 
 		updateStatusBar('safe-mode', msg);
 
