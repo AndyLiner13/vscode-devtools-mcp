@@ -856,6 +856,149 @@ async function handleFileExtractStructure(params: Record<string, unknown>) {
 	return extractStructure(filePath);
 }
 
+// ── File Rename (with import/reference updates) ─────────────────────────────
+
+async function handleFileRenameFile(params: Record<string, unknown>) {
+	const oldPath = paramStr(params, 'oldPath');
+	const newPath = paramStr(params, 'newPath');
+
+	if (!oldPath || !newPath) {
+		throw new Error('oldPath and newPath are required');
+	}
+
+	const oldUri = vscode.Uri.file(oldPath);
+	const newUri = vscode.Uri.file(newPath);
+
+	// Verify source file exists
+	try {
+		await vscode.workspace.fs.stat(oldUri);
+	} catch {
+		throw new Error(`Source file not found: ${oldPath}`);
+	}
+
+	// Verify target does not already exist
+	try {
+		await vscode.workspace.fs.stat(newUri);
+		throw new Error(`Target file already exists: ${newPath}`);
+	} catch (err) {
+		if (err instanceof Error && err.message.startsWith('Target file already exists')) throw err;
+		// File not found is expected — proceed
+	}
+
+	const edit = new vscode.WorkspaceEdit();
+	edit.renameFile(oldUri, newUri);
+	const applied = await vscode.workspace.applyEdit(edit);
+
+	if (!applied) {
+		return { error: 'VS Code rejected the rename edit', filesAffected: [], success: false };
+	}
+
+	// Save all modified documents
+	const filesAffected: string[] = [];
+	for (const doc of vscode.workspace.textDocuments) {
+		if (doc.isDirty) {
+			filesAffected.push(vscode.workspace.asRelativePath(doc.uri));
+			try {
+				await doc.save();
+			} catch {
+				/* best-effort save */
+			}
+		}
+	}
+
+	return {
+		filesAffected,
+		newPath: vscode.workspace.asRelativePath(newUri),
+		oldPath: vscode.workspace.asRelativePath(oldUri),
+		success: true
+	};
+}
+
+// ── File Delete (with reference safety check) ───────────────────────────────
+
+async function handleFileDeleteFile(params: Record<string, unknown>) {
+	const filePath = paramStr(params, 'filePath');
+
+	if (!filePath) {
+		throw new Error('filePath is required');
+	}
+
+	const uri = vscode.Uri.file(filePath);
+
+	// Verify file exists
+	try {
+		await vscode.workspace.fs.stat(uri);
+	} catch {
+		throw new Error(`File not found: ${filePath}`);
+	}
+
+	// Get all symbols defined in the file
+	const doc = await vscode.workspace.openTextDocument(uri);
+	const symbols = await vscode.commands.executeCommand<undefined | vscode.DocumentSymbol[]>(
+		'vscode.executeDocumentSymbolProvider',
+		uri
+	);
+
+	// For each top-level symbol, find external references
+	const brokenReferences: Array<{
+		symbol: string;
+		kind: string;
+		references: Array<{ file: string; line: number; character: number }>;
+	}> = [];
+
+	if (symbols && symbols.length > 0) {
+		const fileRelPath = vscode.workspace.asRelativePath(uri);
+
+		for (const sym of symbols) {
+			const position = sym.selectionRange.start;
+			const locations = await vscode.commands.executeCommand<undefined | vscode.Location[]>(
+				'vscode.executeReferenceProvider',
+				uri,
+				position
+			);
+
+			if (!locations) continue;
+
+			// Filter to only external references (not in the file being deleted)
+			const externalRefs = locations.filter(
+				(loc) => vscode.workspace.asRelativePath(loc.uri) !== fileRelPath
+			);
+
+			if (externalRefs.length > 0) {
+				brokenReferences.push({
+					kind: vscode.SymbolKind[sym.kind],
+					references: externalRefs.map((loc) => ({
+						character: loc.range.start.character,
+						file: vscode.workspace.asRelativePath(loc.uri),
+						line: loc.range.start.line + 1
+					})),
+					symbol: sym.name
+				});
+			}
+		}
+	}
+
+	// If there are external references, block the deletion
+	if (brokenReferences.length > 0) {
+		const totalRefs = brokenReferences.reduce((sum, b) => sum + b.references.length, 0);
+		return {
+			blocked: true,
+			brokenReferences,
+			message: `Cannot delete ${vscode.workspace.asRelativePath(uri)}: ${brokenReferences.length} symbol(s) with ${totalRefs} external reference(s) would break.`,
+			success: false
+		};
+	}
+
+	// No external references — safe to delete
+	await vscode.workspace.fs.delete(uri);
+
+	return {
+		blocked: false,
+		deletedFile: vscode.workspace.asRelativePath(uri),
+		success: true
+	};
+}
+
 // ── Registration ─────────────────────────────────────────────────────────────
 
 /**
@@ -891,6 +1034,8 @@ export function registerClientHandlers(register: RegisterHandler, workspaceState
 	register('file.getCodeActions', handleFileGetCodeActions);
 	register('file.applyCodeAction', handleFileApplyCodeAction);
 	register('file.extractStructure', handleFileExtractStructure);
+	register('file.renameFile', handleFileRenameFile);
+	register('file.deleteFile', handleFileDeleteFile);
 
 	// Inspector backend handlers (storage CRUD, MCP proxy, file browsing, symbols)
 	registerInspectorHandlers(register, workspaceState);

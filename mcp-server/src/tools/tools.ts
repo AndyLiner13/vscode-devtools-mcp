@@ -7,8 +7,9 @@
 import type { ToolDefinition } from './ToolDefinition.js';
 
 import * as browserTools from './browser/index.js';
+import * as fileTools from './file/index.js';
 
-const tools = [...Object.values(browserTools)] as unknown as ToolDefinition[];
+const tools = [...Object.values(browserTools), ...Object.values(fileTools)] as unknown as ToolDefinition[];
 
 tools.sort((a, b) => {
 	return a.name.localeCompare(b.name);
