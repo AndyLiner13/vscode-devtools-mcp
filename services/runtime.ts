@@ -15,6 +15,7 @@ import { LogFileReadTool } from './logFileReadTool';
 import { OutputReadTool, setClientLogsStoragePath, setHostLogUri } from './readHostOutputTool';
 import { setBrowserService, setReconnectCdpCallback } from './clientDevTools';
 import { disposeUserActionTracker, getUserActionTracker } from './userActionTracker';
+import { FileDeleteTool } from './fileDeleteTool';
 import { WaitTool } from './waitLmTool';
 import { log } from './logger';
 
@@ -66,6 +67,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	track(vscode.lm.registerTool('logFile_read', new LogFileReadTool()));
 	track(vscode.lm.registerTool('output_read', new OutputReadTool()));
 	track(vscode.lm.registerTool('wait', new WaitTool()));
+	track(vscode.lm.registerTool('file_delete', new FileDeleteTool()));
 
 	log('[devtools:runtime] All LM tools registered');
 

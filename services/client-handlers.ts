@@ -914,108 +914,6 @@ async function handleFileRenameFile(params: Record<string, unknown>) {
 	};
 }
 
-// ── File Delete (with reference safety check) ───────────────────────────────
-
-async function handleFileDeleteFile(params: Record<string, unknown>) {
-	const filePath = paramStr(params, 'filePath');
-
-	if (!filePath) {
-		return { blocked: false, message: 'filePath is required', success: false };
-	}
-
-	const uri = vscode.Uri.file(filePath);
-
-	const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
-	if (!workspaceFolder) {
-		return { blocked: false, message: `File is outside the workspace: ${filePath}`, success: false };
-	}
-
-	getUserActionTracker().trackFileAccess(filePath);
-
-	try {
-		const stat = await vscode.workspace.fs.stat(uri);
-		if (stat.type === vscode.FileType.Directory) {
-			return { blocked: false, message: `Path is a directory, not a file: ${filePath}`, success: false };
-		}
-	} catch {
-		return { blocked: false, message: `File not found: ${filePath}`, success: false };
-	}
-
-	const doc = await vscode.workspace.openTextDocument(uri);
-	const fileHasContent = doc.getText().trim().length > 0;
-	let symbols = await vscode.commands.executeCommand<undefined | vscode.DocumentSymbol[]>(
-		'vscode.executeDocumentSymbolProvider',
-		uri
-	);
-
-	// The LS may need time to register its DocumentSymbolProvider after didOpen
-	if (!symbols && fileHasContent) {
-		const backoffDelays = [500, 1000, 2000, 3000];
-		for (const delay of backoffDelays) {
-			await new Promise(resolve => setTimeout(resolve, delay));
-			symbols = await vscode.commands.executeCommand<undefined | vscode.DocumentSymbol[]>(
-				'vscode.executeDocumentSymbolProvider',
-				uri
-			);
-			if (symbols) break;
-		}
-	}
-
-	const brokenReferences: Array<{
-		symbol: string;
-		kind: string;
-		references: Array<{ file: string; line: number; character: number }>;
-	}> = [];
-
-	const fileRelPath = vscode.workspace.asRelativePath(uri);
-
-	if (symbols && symbols.length > 0) {
-		for (const sym of symbols) {
-			const locations = await vscode.commands.executeCommand<undefined | vscode.Location[]>(
-				'vscode.executeReferenceProvider',
-				uri,
-				sym.selectionRange.start
-			);
-
-			if (!locations) continue;
-
-			const externalRefs = locations.filter(
-				(loc) => vscode.workspace.asRelativePath(loc.uri) !== fileRelPath
-			);
-
-			if (externalRefs.length > 0) {
-				brokenReferences.push({
-					kind: vscode.SymbolKind[sym.kind],
-					references: externalRefs.map((loc) => ({
-						character: loc.range.start.character,
-						file: vscode.workspace.asRelativePath(loc.uri),
-						line: loc.range.start.line + 1
-					})),
-					symbol: sym.name
-				});
-			}
-		}
-	}
-
-	if (brokenReferences.length > 0) {
-		const totalRefs = brokenReferences.reduce((sum, b) => sum + b.references.length, 0);
-		return {
-			blocked: true,
-			brokenReferences,
-			message: `Cannot delete ${vscode.workspace.asRelativePath(uri)}: ${brokenReferences.length} symbol(s) with ${totalRefs} external reference(s) would break.`,
-			success: false
-		};
-	}
-
-	await vscode.workspace.fs.delete(uri, { useTrash: true });
-
-	return {
-		blocked: false,
-		deletedFile: vscode.workspace.asRelativePath(uri),
-		success: true
-	};
-}
-
 // ── Registration ─────────────────────────────────────────────────────────────
 
 /**
@@ -1052,7 +950,6 @@ export function registerClientHandlers(register: RegisterHandler, workspaceState
 	register('file.applyCodeAction', handleFileApplyCodeAction);
 	register('file.extractStructure', handleFileExtractStructure);
 	register('file.renameFile', handleFileRenameFile);
-	register('file.deleteFile', handleFileDeleteFile);
 
 	// Inspector backend handlers (storage CRUD, MCP proxy, file browsing, symbols)
 	registerInspectorHandlers(register, workspaceState);

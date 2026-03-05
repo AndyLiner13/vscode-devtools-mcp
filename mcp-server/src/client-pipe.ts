@@ -706,25 +706,11 @@ interface FileRenameResult {
 	success: boolean;
 }
 
-interface BrokenReference {
-	kind: string;
-	references: Array<{ character: number; file: string; line: number }>;
-	symbol: string;
-}
-
-interface FileDeleteResult {
-	blocked: boolean;
-	brokenReferences?: BrokenReference[];
-	deletedFile?: string;
-	message?: string;
-	success: boolean;
-}
-
 interface FileFindReferencesResult {
 	references: Array<{ character: number; file: string; line: number }>;
 }
 
-// ── File Rename / Delete Methods ─────────────────────────
+// ── File Rename Methods ──────────────────────────────────
 
 /**
  * Rename/move a file, updating all imports and references via VS Code's WorkspaceEdit.renameFile.
@@ -732,16 +718,6 @@ interface FileFindReferencesResult {
 export async function fileRenameFile(oldPath: string, newPath: string): Promise<FileRenameResult> {
 	const result = await sendClientRequest('file.renameFile', { newPath, oldPath }, 30_000);
 	assertResult<FileRenameResult>(result, 'file.renameFile');
-	return result;
-}
-
-/**
- * Delete a file after checking that no external references would break.
- * Returns blocked=true with a list of broken references if deletion is unsafe.
- */
-export async function fileDeleteFile(filePath: string): Promise<FileDeleteResult> {
-	const result = await sendClientRequest('file.deleteFile', { filePath }, 30_000);
-	assertResult<FileDeleteResult>(result, 'file.deleteFile');
 	return result;
 }
 
