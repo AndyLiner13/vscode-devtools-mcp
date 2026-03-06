@@ -364,6 +364,33 @@
 					]
 				}
 			}
+			,
+			{
+				"name": "file_rename",
+				"displayName": "File Rename",
+				"toolReferenceName": "file_rename",
+				"icon": "$(edit)",
+				"canBeReferencedInPrompt": true,
+				"userDescription": "Rename or move a file or folder, updating all imports and references",
+				"modelDescription": "Rename or move a file or folder in the workspace, automatically updating all imports and references across the codebase.\n\nUses VS Code's refactoring API to ensure all import paths, re-exports, and references are updated to reflect the new file location. Supports both files and folders.\n\nArgs:\n  - filePath (string): Current path of the file or folder (absolute or relative to workspace root)\n  - newPath (string): New path for the file or folder (absolute or relative to workspace root)\n\nReturns on success: { success: true, oldPath, newPath, filesAffected: [...] }\nReturns on failure: { success: false, error: '...' }\n\nUse this tool when asked to rename, move, or relocate a file or folder.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"filePath": {
+							"type": "string",
+							"description": "Current path of the file or folder to rename (absolute or relative to workspace root)."
+						},
+						"newPath": {
+							"type": "string",
+							"description": "New path for the file or folder (absolute or relative to workspace root)."
+						}
+					},
+					"required": [
+						"filePath",
+						"newPath"
+					]
+				}
+			}
 		],
 		"languages": [
 			{

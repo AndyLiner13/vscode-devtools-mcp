@@ -167,7 +167,9 @@ async function findExternalReferences(
 	const brokenRefs: BrokenRef[] = [];
 
 	if (symbols && symbols.length > 0) {
-		for (const sym of symbols) {
+		const exportedSymbols = symbols.filter(sym => isExportedSymbol(doc, sym));
+
+		for (const sym of exportedSymbols) {
 			if (token.isCancellationRequested) return brokenRefs;
 
 			const locations = await vscode.commands.executeCommand<undefined | vscode.Location[]>(
@@ -197,6 +199,19 @@ async function findExternalReferences(
 	}
 
 	return brokenRefs;
+}
+
+function isExportedSymbol(doc: vscode.TextDocument, sym: vscode.DocumentSymbol): boolean {
+	const declarationLine = doc.lineAt(sym.range.start.line).text;
+	if (declarationLine.trimStart().startsWith('export ')) return true;
+
+	// Check the line before for a standalone `export` (e.g. `export\nfunction foo()`)
+	if (sym.range.start.line > 0) {
+		const prevLine = doc.lineAt(sym.range.start.line - 1).text.trim();
+		if (prevLine === 'export' || prevLine === 'export default') return true;
+	}
+
+	return false;
 }
 
 function throwBrokenRefsError(targetPath: string, brokenReferences: BrokenRef[]): never {
