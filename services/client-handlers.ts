@@ -858,6 +858,38 @@ async function handleFileExtractStructure(params: Record<string, unknown>) {
 
 // ── File Rename (with import/reference updates) ─────────────────────────────
 
+function collectDirtyFiles(excludeUri?: vscode.Uri): string[] {
+	const dirty: string[] = [];
+	for (const doc of vscode.workspace.textDocuments) {
+		if (doc.isDirty && (!excludeUri || doc.uri.toString() !== excludeUri.toString())) {
+			dirty.push(vscode.workspace.asRelativePath(doc.uri));
+		}
+	}
+	return dirty;
+}
+
+async function waitForDirtyDocuments(knownDirtyBefore: Set<string>, maxWaitMs: number, pollIntervalMs: number): Promise<string[]> {
+	const deadline = Date.now() + maxWaitMs;
+	let newDirtyFiles: string[] = [];
+
+	while (Date.now() < deadline) {
+		await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+
+		newDirtyFiles = [];
+		for (const doc of vscode.workspace.textDocuments) {
+			if (doc.isDirty && !knownDirtyBefore.has(doc.uri.toString())) {
+				newDirtyFiles.push(vscode.workspace.asRelativePath(doc.uri));
+			}
+		}
+
+		if (newDirtyFiles.length > 0) {
+			return newDirtyFiles;
+		}
+	}
+
+	return newDirtyFiles;
+}
+
 async function handleFileRenameFile(params: Record<string, unknown>) {
 	const oldPath = paramStr(params, 'oldPath');
 	const newPath = paramStr(params, 'newPath');
@@ -882,7 +914,19 @@ async function handleFileRenameFile(params: Record<string, unknown>) {
 		throw new Error(`Target file already exists: ${newPath}`);
 	} catch (err) {
 		if (err instanceof Error && err.message.startsWith('Target file already exists')) throw err;
-		// File not found is expected — proceed
+	}
+
+	// Open the file to activate the associated language service (e.g. TypeScript).
+	// Language extensions are lazy-activated and won't participate in rename events
+	// unless a file of that language type has been opened first.
+	await vscode.window.showTextDocument(oldUri, { preview: true, preserveFocus: true });
+
+	// Snapshot which documents are already dirty before the rename
+	const dirtyBefore = new Set<string>();
+	for (const doc of vscode.workspace.textDocuments) {
+		if (doc.isDirty) {
+			dirtyBefore.add(doc.uri.toString());
+		}
 	}
 
 	const edit = new vscode.WorkspaceEdit();
@@ -893,7 +937,11 @@ async function handleFileRenameFile(params: Record<string, unknown>) {
 		return { error: 'VS Code rejected the rename edit', filesAffected: [], success: false };
 	}
 
-	// Save all modified documents
+	// Language extensions (TypeScript, Python, etc.) process rename events
+	// asynchronously with a ~50ms delay. Wait for their edits to appear.
+	await waitForDirtyDocuments(dirtyBefore, 5000, 100);
+
+	// Save all documents that became dirty from the rename + import updates
 	const filesAffected: string[] = [];
 	for (const doc of vscode.workspace.textDocuments) {
 		if (doc.isDirty) {
