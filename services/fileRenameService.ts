@@ -12,13 +12,17 @@ export interface FileRenameResult {
 	success: boolean;
 }
 
+interface RenameWorkspacePathOptions {
+	updateRefs: boolean;
+}
+
 const MAX_PROJECT_WARM_FILES = 200;
 const PROJECT_CONFIG_FILES = ['tsconfig.json', 'jsconfig.json'];
 const SKIPPED_DIRECTORIES = new Set(['.git', '.hg', '.svn', 'dist', 'node_modules', 'out']);
 
-export async function renameWorkspacePath(filePath: string, newPath: string): Promise<FileRenameResult> {
+export async function renameWorkspacePath(filePath: string, newPath: string, options: RenameWorkspacePathOptions): Promise<FileRenameResult> {
 	if (!filePath || !newPath) {
-		return { error: 'filePath and newPath are required', filesAffected: [], success: false };
+		return { error: 'filePath, newPath, and updateRefs are required', filesAffected: [], success: false };
 	}
 
 	const oldUri = resolveFileUri(filePath);
@@ -48,6 +52,22 @@ export async function renameWorkspacePath(filePath: string, newPath: string): Pr
 	}
 
 	const isDirectory = sourceStat.type === vscode.FileType.Directory;
+	if (!options.updateRefs) {
+		try {
+			await vscode.workspace.fs.rename(oldUri, newUri, { overwrite: false });
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			return { error: `Failed to rename path: ${message}`, filesAffected: [], success: false };
+		}
+
+		return {
+			filesAffected: [],
+			newPath: vscode.workspace.asRelativePath(newUri),
+			oldPath: vscode.workspace.asRelativePath(oldUri),
+			success: true
+		};
+	}
+
 	await activateLanguageServices(oldUri, isDirectory);
 
 	const dirtyBefore = new Set<string>();
