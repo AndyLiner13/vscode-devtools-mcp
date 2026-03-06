@@ -19,9 +19,8 @@ import * as vscode from 'vscode';
 
 import { extractStructure, findDeadCode, findDuplicates, getExports, getImportGraph, getOverview, traceSymbol } from './codebase/codebase-worker-proxy';
 import { registerInspectorHandlers } from './inspector-backend';
+import { log, warn } from './logger';
 import { getUserActionTracker } from './userActionTracker';
-import { error, log, warn } from './logger';
-
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -873,7 +872,7 @@ async function waitForDirtyDocuments(knownDirtyBefore: Set<string>, maxWaitMs: n
 	let newDirtyFiles: string[] = [];
 
 	while (Date.now() < deadline) {
-		await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+		await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
 
 		newDirtyFiles = [];
 		for (const doc of vscode.workspace.textDocuments) {
@@ -888,89 +887,6 @@ async function waitForDirtyDocuments(knownDirtyBefore: Set<string>, maxWaitMs: n
 	}
 
 	return newDirtyFiles;
-}
-
-async function handleFileRenameFile(params: Record<string, unknown>) {
-	const oldPath = paramStr(params, 'oldPath');
-	const newPath = paramStr(params, 'newPath');
-
-	if (!oldPath || !newPath) {
-		throw new Error('oldPath and newPath are required');
-	}
-
-	const oldUri = vscode.Uri.file(oldPath);
-	const newUri = vscode.Uri.file(newPath);
-
-	// Verify source exists
-	let sourceStat: vscode.FileStat;
-	try {
-		sourceStat = await vscode.workspace.fs.stat(oldUri);
-	} catch {
-		throw new Error(`Source not found: ${oldPath}`);
-	}
-
-	// Verify target does not already exist
-	try {
-		await vscode.workspace.fs.stat(newUri);
-		throw new Error(`Target already exists: ${newPath}`);
-	} catch (err) {
-		if (err instanceof Error && err.message.startsWith('Target already exists')) throw err;
-	}
-
-	const isDirectory = sourceStat.type === vscode.FileType.Directory;
-
-	// Activate the language service so it participates in rename events.
-	// For files, open the file directly. For directories, open the first
-	// code file inside the folder to trigger lazy language activation.
-	if (isDirectory) {
-		const pattern = new vscode.RelativePattern(oldUri, '**/*.{ts,tsx,js,jsx,py,md}');
-		const childFiles = await vscode.workspace.findFiles(pattern, undefined, 1);
-		if (childFiles.length > 0) {
-			await vscode.window.showTextDocument(childFiles[0], { preview: true, preserveFocus: true });
-		}
-	} else {
-		await vscode.window.showTextDocument(oldUri, { preview: true, preserveFocus: true });
-	}
-
-	// Snapshot which documents are already dirty before the rename
-	const dirtyBefore = new Set<string>();
-	for (const doc of vscode.workspace.textDocuments) {
-		if (doc.isDirty) {
-			dirtyBefore.add(doc.uri.toString());
-		}
-	}
-
-	const edit = new vscode.WorkspaceEdit();
-	edit.renameFile(oldUri, newUri);
-	const applied = await vscode.workspace.applyEdit(edit);
-
-	if (!applied) {
-		return { error: 'VS Code rejected the rename edit', filesAffected: [], success: false };
-	}
-
-	// Language extensions (TypeScript, Python, etc.) process rename events
-	// asynchronously with a ~50ms delay. Wait for their edits to appear.
-	await waitForDirtyDocuments(dirtyBefore, 5000, 100);
-
-	// Save all documents that became dirty from the rename + import updates
-	const filesAffected: string[] = [];
-	for (const doc of vscode.workspace.textDocuments) {
-		if (doc.isDirty) {
-			filesAffected.push(vscode.workspace.asRelativePath(doc.uri));
-			try {
-				await doc.save();
-			} catch {
-				/* best-effort save */
-			}
-		}
-	}
-
-	return {
-		filesAffected,
-		newPath: vscode.workspace.asRelativePath(newUri),
-		oldPath: vscode.workspace.asRelativePath(oldUri),
-		success: true
-	};
 }
 
 // ── Registration ─────────────────────────────────────────────────────────────
@@ -1008,7 +924,6 @@ export function registerClientHandlers(register: RegisterHandler, workspaceState
 	register('file.getCodeActions', handleFileGetCodeActions);
 	register('file.applyCodeAction', handleFileApplyCodeAction);
 	register('file.extractStructure', handleFileExtractStructure);
-	register('file.renameFile', handleFileRenameFile);
 
 	// Inspector backend handlers (storage CRUD, MCP proxy, file browsing, symbols)
 	registerInspectorHandlers(register, workspaceState);

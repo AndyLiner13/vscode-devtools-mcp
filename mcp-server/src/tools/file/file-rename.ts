@@ -2,8 +2,8 @@ import path from 'node:path';
 
 import { z as zod } from 'zod';
 
-import { fileRenameFile } from '../../client-pipe.js';
 import { getClientWorkspace } from '../../config.js';
+import { fileRenameFile } from '../../host-pipe.js';
 import { ToolCategory } from '../categories.js';
 import { defineTool } from '../ToolDefinition.js';
 
@@ -15,7 +15,6 @@ function resolveFilePath(userPath: string): string {
 export const fileRename = defineTool({
 	annotations: {
 		category: ToolCategory.CODEBASE_ANALYSIS,
-		conditions: ['client-pipe'],
 		destructiveHint: true,
 		idempotentHint: false,
 		openWorldHint: false,
@@ -24,7 +23,7 @@ export const fileRename = defineTool({
 	},
 	description:
 		'Rename or move a file, automatically updating all imports and references across the codebase.\n\n' +
-		'Uses VS Code\'s refactoring API to ensure all import paths, re-exports, and references ' +
+		"Uses VS Code's refactoring API to ensure all import paths, re-exports, and references " +
 		'are updated to reflect the new file location.\n\n' +
 		'Args:\n' +
 		'  - filePath (string): Current path of the file to rename (absolute or relative to workspace)\n' +
@@ -54,7 +53,7 @@ export const fileRename = defineTool({
 	name: 'file_rename',
 	schema: {
 		filePath: zod.string().describe('Current path of the file to rename (absolute or relative to workspace).'),
-		newPath: zod.string().describe('New path for the file (absolute or relative to workspace).'),
+		newPath: zod.string().describe('New path for the file (absolute or relative to workspace).')
 	},
-	timeoutMs: 30_000,
+	timeoutMs: 30_000
 });

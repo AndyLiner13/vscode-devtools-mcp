@@ -16,17 +16,17 @@
  * - ensureMcpServer: Inspector requests that the MCP server is running
  */
 
-import { type ChildProcess, exec, execSync, spawn } from 'node:child_process';
+import { type ChildProcess, execSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
-import http from 'node:http';
 import net from 'node:net';
 import path from 'node:path';
 import * as vscode from 'vscode';
 
 import { BrowserService, CdpClient } from './browser';
-import { getBrowserService, requireBrowserService, setBrowserService, setReconnectCdpCallback } from './clientDevTools';
-import { type ChangeCheckResult, createHotReloadService, getHotReloadService } from './hotReloadService';
-import { log, warn } from './logger';
+import { requireBrowserService, setBrowserService } from './clientDevTools';
+import { renameWorkspacePath } from './fileRenameService';
+import { type ChangeCheckResult, createHotReloadService } from './hotReloadService';
+import { log } from './logger';
 import { showCompletionNotification } from './notifications';
 
 // ── Client State Events ────────────────────────────────────────────────────
@@ -109,9 +109,13 @@ function markInspectorRecordsStale(): void {
 			params: {}
 		});
 		socket.write(`${payload}\n`);
-		socket.on('data', () => { socket.destroy(); });
+		socket.on('data', () => {
+			socket.destroy();
+		});
 	});
-	socket.on('error', () => { /* Inspector backend may not be ready */ });
+	socket.on('error', () => {
+		/* Inspector backend may not be ready */
+	});
 }
 
 /** Workspace storage path for persisting user-data, set during registerHostHandlers */
@@ -194,6 +198,17 @@ export async function waitForMcpReady(timeoutMs: number): Promise<boolean> {
 // ── Types ─────────────────────────────────────────────────────────────────
 
 type RegisterHandler = (method: string, handler: (params: Record<string, unknown>) => Promise<unknown> | unknown) => void;
+
+async function handleHostFileRename(params: Record<string, unknown>) {
+	const oldPath = typeof params.oldPath === 'string' ? params.oldPath : '';
+	const newPath = typeof params.newPath === 'string' ? params.newPath : '';
+
+	if (!oldPath || !newPath) {
+		throw new Error('oldPath and newPath are required');
+	}
+
+	return renameWorkspacePath(oldPath, newPath);
+}
 
 // ── Session Persistence ──────────────────────────────────────────────────────
 
@@ -1093,6 +1108,7 @@ function disconnectCdpClient(): void {
  */
 export function registerHostHandlers(register: RegisterHandler, context: vscode.ExtensionContext): void {
 	log('[host] Registering Host RPC handlers');
+	register('file.renameFile', handleHostFileRename);
 
 	// Capture workspaceState for session persistence helpers
 	hostWorkspaceState = context.workspaceState;
@@ -1734,7 +1750,7 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 	register('browser.executeWithDiff', async (params) => {
 		const service = await requireBrowserService();
 		const action = String(params.action);
-		const actionParams = (typeof params.actionParams === 'object' && params.actionParams !== null) ? params.actionParams as Record<string, unknown> : {};
+		const actionParams = typeof params.actionParams === 'object' && params.actionParams !== null ? (params.actionParams as Record<string, unknown>) : {};
 
 		const { summary } = await service.executeWithDiff(async () => {
 			switch (action) {
@@ -1758,11 +1774,7 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 					await service.pressKey(String(actionParams.key));
 					break;
 				case 'scroll':
-					await service.scrollElement(
-						String(actionParams.uid),
-						typeof actionParams.direction === 'string' ? actionParams.direction : undefined,
-						typeof actionParams.amount === 'number' ? actionParams.amount : undefined
-					);
+					await service.scrollElement(String(actionParams.uid), typeof actionParams.direction === 'string' ? actionParams.direction : undefined, typeof actionParams.amount === 'number' ? actionParams.amount : undefined);
 					break;
 			}
 		}, 1500);
@@ -1775,13 +1787,13 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 		const limit = typeof params.limit === 'number' ? params.limit : undefined;
 		const { messages, total } = service.getConsoleMessages({ limit });
 		return {
-			messages: messages.map(m => ({
+			messages: messages.map((m) => ({
 				args: m.args,
 				id: m.id,
 				stackTrace: m.stackTrace,
 				text: m.text,
 				timestamp: m.timestamp,
-				type: m.type,
+				type: m.type
 			})),
 			total
 		};
@@ -1800,7 +1812,7 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 				stackTrace: msg.stackTrace,
 				text: msg.text,
 				timestamp: msg.timestamp,
-				type: msg.type,
+				type: msg.type
 			}
 		};
 	});
