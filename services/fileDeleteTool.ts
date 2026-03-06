@@ -29,95 +29,39 @@ export class FileDeleteTool implements vscode.LanguageModelTool<IFileDeleteParam
 		const uri = resolveFileUri(filePath);
 		const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
 		if (!workspaceFolder) {
-			return textResult({ blocked: false, message: `File is outside the workspace: ${filePath}`, success: false });
+			return textResult({ blocked: false, message: `Path is outside the workspace: ${filePath}`, success: false });
 		}
 
 		getUserActionTracker().trackFileAccess(uri.fsPath);
 
+		let isDirectory = false;
 		try {
 			const stat = await vscode.workspace.fs.stat(uri);
-			if (stat.type === vscode.FileType.Directory) {
-				return textResult({ blocked: false, message: `Path is a directory, not a file: ${filePath}`, success: false });
-			}
+			isDirectory = stat.type === vscode.FileType.Directory;
 		} catch {
-			return textResult({ blocked: false, message: `File not found: ${filePath}`, success: false });
+			return textResult({ blocked: false, message: `Path not found: ${filePath}`, success: false });
 		}
 
 		if (token.isCancellationRequested) {
 			return textResult({ blocked: false, message: 'Cancelled', success: false });
 		}
 
-		const doc = await vscode.workspace.openTextDocument(uri);
-		const fileHasContent = doc.getText().trim().length > 0;
-		let symbols = await vscode.commands.executeCommand<undefined | vscode.DocumentSymbol[]>(
-			'vscode.executeDocumentSymbolProvider',
-			uri
-		);
-
-		// The LS may need time to register its DocumentSymbolProvider after didOpen
-		if (!symbols && fileHasContent) {
-			const backoffDelays = [500, 1000, 2000, 3000];
-			for (const delay of backoffDelays) {
-				if (token.isCancellationRequested) {
-					return textResult({ blocked: false, message: 'Cancelled', success: false });
-				}
-				await new Promise(resolve => setTimeout(resolve, delay));
-				symbols = await vscode.commands.executeCommand<undefined | vscode.DocumentSymbol[]>(
-					'vscode.executeDocumentSymbolProvider',
-					uri
-				);
-				if (symbols) break;
-			}
+		if (isDirectory) {
+			return this.deleteDirectory(uri, token);
 		}
+		return this.deleteFile(uri, token);
+	}
 
-		const brokenReferences: Array<{
-			symbol: string;
-			kind: string;
-			references: Array<{ file: string; line: number; character: number }>;
-		}> = [];
-
+	private async deleteFile(uri: vscode.Uri, token: vscode.CancellationToken): Promise<vscode.LanguageModelToolResult> {
 		const fileRelPath = vscode.workspace.asRelativePath(uri);
+		const brokenReferences = await findExternalReferences(uri, new Set([fileRelPath]), token);
 
-		if (symbols && symbols.length > 0) {
-			for (const sym of symbols) {
-				if (token.isCancellationRequested) {
-					return textResult({ blocked: false, message: 'Cancelled', success: false });
-				}
-
-				const locations = await vscode.commands.executeCommand<undefined | vscode.Location[]>(
-					'vscode.executeReferenceProvider',
-					uri,
-					sym.selectionRange.start
-				);
-
-				if (!locations) continue;
-
-				const externalRefs = locations.filter(
-					(loc) => vscode.workspace.asRelativePath(loc.uri) !== fileRelPath
-				);
-
-				if (externalRefs.length > 0) {
-					brokenReferences.push({
-						kind: vscode.SymbolKind[sym.kind],
-						references: externalRefs.map((loc) => ({
-							character: loc.range.start.character,
-							file: vscode.workspace.asRelativePath(loc.uri),
-							line: loc.range.start.line + 1
-						})),
-						symbol: sym.name
-					});
-				}
-			}
+		if (token.isCancellationRequested) {
+			return textResult({ blocked: false, message: 'Cancelled', success: false });
 		}
 
 		if (brokenReferences.length > 0) {
-			const totalRefs = brokenReferences.reduce((sum, b) => sum + b.references.length, 0);
-			const details = brokenReferences.map(b =>
-				`  ${b.symbol} (${b.kind}): ${b.references.map(r => `${r.file}:${r.line}`).join(', ')}`
-			).join('\n');
-			throw new Error(
-				`Cannot delete ${fileRelPath}: ${brokenReferences.length} symbol(s) with ${totalRefs} external reference(s) would break.\n\nRemove or update these references first:\n${details}`
-			);
+			throwBrokenRefsError(fileRelPath, brokenReferences);
 		}
 
 		await vscode.workspace.fs.delete(uri, { useTrash: true });
@@ -125,6 +69,54 @@ export class FileDeleteTool implements vscode.LanguageModelTool<IFileDeleteParam
 		return textResult({
 			blocked: false,
 			deletedFile: fileRelPath,
+			success: true
+		});
+	}
+
+	private async deleteDirectory(uri: vscode.Uri, token: vscode.CancellationToken): Promise<vscode.LanguageModelToolResult> {
+		const dirRelPath = vscode.workspace.asRelativePath(uri);
+
+		const pattern = new vscode.RelativePattern(uri, '**/*');
+		const childFiles = await vscode.workspace.findFiles(pattern);
+
+		const dirFileSet = new Set(childFiles.map(f => vscode.workspace.asRelativePath(f)));
+		dirFileSet.add(dirRelPath);
+
+		const allBrokenRefs: Array<{
+			symbol: string;
+			kind: string;
+			sourceFile: string;
+			references: Array<{ file: string; line: number; character: number }>;
+		}> = [];
+
+		for (const childUri of childFiles) {
+			if (token.isCancellationRequested) {
+				return textResult({ blocked: false, message: 'Cancelled', success: false });
+			}
+
+			const refs = await findExternalReferences(childUri, dirFileSet, token);
+			const childRelPath = vscode.workspace.asRelativePath(childUri);
+			for (const ref of refs) {
+				allBrokenRefs.push({ ...ref, sourceFile: childRelPath });
+			}
+		}
+
+		if (allBrokenRefs.length > 0) {
+			const totalRefs = allBrokenRefs.reduce((sum, b) => sum + b.references.length, 0);
+			const details = allBrokenRefs.map(b =>
+				`  ${b.sourceFile} → ${b.symbol} (${b.kind}): ${b.references.map(r => `${r.file}:${r.line}`).join(', ')}`
+			).join('\n');
+			throw new Error(
+				`Cannot delete ${dirRelPath}: ${allBrokenRefs.length} symbol(s) with ${totalRefs} external reference(s) would break.\n\nRemove or update these references first:\n${details}`
+			);
+		}
+
+		await vscode.workspace.fs.delete(uri, { useTrash: true, recursive: true });
+
+		return textResult({
+			blocked: false,
+			deletedFile: dirRelPath,
+			fileCount: childFiles.length,
 			success: true
 		});
 	}
@@ -139,6 +131,82 @@ function resolveFileUri(filePath: string): vscode.Uri {
 		return vscode.Uri.joinPath(workspaceFolders[0].uri, filePath);
 	}
 	return vscode.Uri.file(filePath);
+}
+
+interface BrokenRef {
+	symbol: string;
+	kind: string;
+	references: Array<{ file: string; line: number; character: number }>;
+}
+
+async function findExternalReferences(
+	uri: vscode.Uri,
+	excludeSet: Set<string>,
+	token: vscode.CancellationToken
+): Promise<BrokenRef[]> {
+	const doc = await vscode.workspace.openTextDocument(uri);
+	const fileHasContent = doc.getText().trim().length > 0;
+	let symbols = await vscode.commands.executeCommand<undefined | vscode.DocumentSymbol[]>(
+		'vscode.executeDocumentSymbolProvider',
+		uri
+	);
+
+	if (!symbols && fileHasContent) {
+		const backoffDelays = [500, 1000, 2000, 3000];
+		for (const delay of backoffDelays) {
+			if (token.isCancellationRequested) return [];
+			await new Promise(resolve => setTimeout(resolve, delay));
+			symbols = await vscode.commands.executeCommand<undefined | vscode.DocumentSymbol[]>(
+				'vscode.executeDocumentSymbolProvider',
+				uri
+			);
+			if (symbols) break;
+		}
+	}
+
+	const brokenRefs: BrokenRef[] = [];
+
+	if (symbols && symbols.length > 0) {
+		for (const sym of symbols) {
+			if (token.isCancellationRequested) return brokenRefs;
+
+			const locations = await vscode.commands.executeCommand<undefined | vscode.Location[]>(
+				'vscode.executeReferenceProvider',
+				uri,
+				sym.selectionRange.start
+			);
+
+			if (!locations) continue;
+
+			const externalRefs = locations.filter(
+				(loc) => !excludeSet.has(vscode.workspace.asRelativePath(loc.uri))
+			);
+
+			if (externalRefs.length > 0) {
+				brokenRefs.push({
+					kind: vscode.SymbolKind[sym.kind],
+					references: externalRefs.map((loc) => ({
+						character: loc.range.start.character,
+						file: vscode.workspace.asRelativePath(loc.uri),
+						line: loc.range.start.line + 1
+					})),
+					symbol: sym.name
+				});
+			}
+		}
+	}
+
+	return brokenRefs;
+}
+
+function throwBrokenRefsError(targetPath: string, brokenReferences: BrokenRef[]): never {
+	const totalRefs = brokenReferences.reduce((sum, b) => sum + b.references.length, 0);
+	const details = brokenReferences.map(b =>
+		`  ${b.symbol} (${b.kind}): ${b.references.map(r => `${r.file}:${r.line}`).join(', ')}`
+	).join('\n');
+	throw new Error(
+		`Cannot delete ${targetPath}: ${brokenReferences.length} symbol(s) with ${totalRefs} external reference(s) would break.\n\nRemove or update these references first:\n${details}`
+	);
 }
 
 function textResult(data: Record<string, unknown>): vscode.LanguageModelToolResult {

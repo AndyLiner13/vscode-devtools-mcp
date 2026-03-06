@@ -283,7 +283,11 @@
 						},
 						"severity": {
 							"type": "string",
-							"enum": ["error", "warning", "info"],
+							"enum": [
+								"error",
+								"warning",
+								"info"
+							],
 							"description": "Filter compressed logs by severity level."
 						},
 						"timeRange": {
@@ -307,7 +311,9 @@
 							"description": "Show/hide stack frame templates. Default: true."
 						}
 					},
-					"required": ["file"]
+					"required": [
+						"file"
+					]
 				}
 			},
 			{
@@ -343,14 +349,14 @@
 				"toolReferenceName": "file_delete",
 				"icon": "$(trash)",
 				"canBeReferencedInPrompt": true,
-				"userDescription": "Delete a file after verifying no symbols are referenced externally",
-				"modelDescription": "Delete a file from the workspace after verifying no external references would break.\n\nBefore deleting, this tool queries the language server for all symbols in the file, then checks each symbol for references in other files. If any external references exist, the deletion is blocked and a detailed report of all broken references is returned so they can be resolved first.\n\nThe file is moved to trash for recovery.\n\nArgs:\n  - filePath (string): Path of the file to delete (absolute or relative to workspace root)\n\nReturns on success: { success: true, deletedFile }\nReturns when blocked: { success: false, blocked: true, brokenReferences: [...], message }\n\nUse this tool when asked to delete, remove, or clean up a file.",
+				"userDescription": "Delete a file or folder after verifying no symbols are referenced externally",
+				"modelDescription": "Delete a file or folder from the workspace after verifying no external references would break.\n\nFor files: queries the language server for all symbols, then checks each for references in other files. If any external references exist, deletion is blocked with a detailed report.\n\nFor folders: scans all code files inside the folder, checks each file's symbols for references from files OUTSIDE the folder (internal cross-references within the folder are ignored). If any external references exist, deletion is blocked.\n\nFiles and folders are moved to trash for recovery.\n\nArgs:\n  - filePath (string): Path of the file or folder to delete (absolute or relative to workspace root)\n\nReturns on success: { success: true, deletedFile, fileCount? }\nReturns when blocked: { success: false, blocked: true, brokenReferences: [...], message }\n\nUse this tool when asked to delete, remove, or clean up a file or folder.",
 				"inputSchema": {
 					"type": "object",
 					"properties": {
 						"filePath": {
 							"type": "string",
-							"description": "Path of the file to delete (absolute or relative to workspace root)."
+							"description": "Path of the file or folder to delete (absolute or relative to workspace root)."
 						}
 					},
 					"required": [
