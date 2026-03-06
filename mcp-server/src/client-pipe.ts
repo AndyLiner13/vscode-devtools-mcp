@@ -298,14 +298,7 @@ export async function codebaseGetOverview(rootDir: string, dir: string, recursiv
  * Trace a symbol through the codebase: definition, references, call hierarchy,
  * type flows, and type hierarchy.
  */
-export async function codebaseTraceSymbol(
-	symbol: string,
-	rootDir?: string,
-	file?: string,
-	references?: boolean,
-	calls?: boolean,
-	types?: boolean
-): Promise<CodebaseTraceSymbolResult> {
+export async function codebaseTraceSymbol(symbol: string, rootDir?: string, file?: string, references?: boolean, calls?: boolean, types?: boolean): Promise<CodebaseTraceSymbolResult> {
 	const result = await sendClientRequest('codebase.traceSymbol', { calls, file, references, rootDir, symbol, types }, 65_000);
 	assertResult<CodebaseTraceSymbolResult>(result, 'codebase.traceSymbol');
 	return result;
@@ -339,15 +332,7 @@ export interface DeadCodeResult {
 /**
  * Find dead code: unused exports, unreachable functions, dead variables.
  */
-export async function codebaseFindDeadCode(
-	rootDir?: string,
-	pattern?: string,
-	exportedOnly?: boolean,
-	excludeTests?: boolean,
-	kinds?: string[],
-	limit?: number,
-	timeout?: number
-): Promise<DeadCodeResult> {
+export async function codebaseFindDeadCode(rootDir?: string, pattern?: string, exportedOnly?: boolean, excludeTests?: boolean, kinds?: string[], limit?: number, timeout?: number): Promise<DeadCodeResult> {
 	const result = await sendClientRequest('codebase.findDeadCode', { excludeTests, exportedOnly, kinds, limit, pattern, rootDir }, timeout ?? 60_000);
 	assertResult<DeadCodeResult>(result, 'codebase.findDeadCode');
 	return result;
@@ -698,27 +683,8 @@ export async function fileExtractStructure(filePath: string): Promise<FileStruct
 
 // ── File Rename / Delete Types ───────────────────────────
 
-interface FileRenameResult {
-	error?: string;
-	filesAffected: string[];
-	newPath?: string;
-	oldPath?: string;
-	success: boolean;
-}
-
 interface FileFindReferencesResult {
 	references: Array<{ character: number; file: string; line: number }>;
-}
-
-// ── File Rename Methods ──────────────────────────────────
-
-/**
- * Rename/move a file, updating all imports and references via VS Code's WorkspaceEdit.renameFile.
- */
-export async function fileRenameFile(oldPath: string, newPath: string): Promise<FileRenameResult> {
-	const result = await sendClientRequest('file.renameFile', { newPath, oldPath }, 30_000);
-	assertResult<FileRenameResult>(result, 'file.renameFile');
-	return result;
 }
 
 // ── Recovery Handler ─────────────────────────────────────
@@ -813,4 +779,3 @@ export async function ensureClientAvailable(): Promise<void> {
 }
 
 // ── Process Ledger Methods ─────────────────────────────────────
-

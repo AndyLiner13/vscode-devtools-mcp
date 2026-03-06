@@ -24,7 +24,6 @@ import * as vscode from 'vscode';
 
 import { BrowserService, CdpClient } from './browser';
 import { requireBrowserService, setBrowserService } from './clientDevTools';
-import { renameWorkspacePath } from './fileRenameService';
 import { type ChangeCheckResult, createHotReloadService } from './hotReloadService';
 import { log } from './logger';
 import { showCompletionNotification } from './notifications';
@@ -198,17 +197,6 @@ export async function waitForMcpReady(timeoutMs: number): Promise<boolean> {
 // ── Types ─────────────────────────────────────────────────────────────────
 
 type RegisterHandler = (method: string, handler: (params: Record<string, unknown>) => Promise<unknown> | unknown) => void;
-
-async function handleHostFileRename(params: Record<string, unknown>) {
-	const oldPath = typeof params.oldPath === 'string' ? params.oldPath : '';
-	const newPath = typeof params.newPath === 'string' ? params.newPath : '';
-
-	if (!oldPath || !newPath) {
-		throw new Error('oldPath and newPath are required');
-	}
-
-	return renameWorkspacePath(oldPath, newPath);
-}
 
 // ── Session Persistence ──────────────────────────────────────────────────────
 
@@ -1108,7 +1096,6 @@ function disconnectCdpClient(): void {
  */
 export function registerHostHandlers(register: RegisterHandler, context: vscode.ExtensionContext): void {
 	log('[host] Registering Host RPC handlers');
-	register('file.renameFile', handleHostFileRename);
 
 	// Capture workspaceState for session persistence helpers
 	hostWorkspaceState = context.workspaceState;

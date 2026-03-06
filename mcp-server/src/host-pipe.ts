@@ -61,14 +61,6 @@ interface TeardownResult {
 	stopped: boolean;
 }
 
-export interface FileRenameResult {
-	error?: string;
-	filesAffected: string[];
-	newPath?: string;
-	oldPath?: string;
-	success: boolean;
-}
-
 // ── JSON-RPC Transport ───────────────────────────────────
 
 /**
@@ -270,9 +262,4 @@ export async function browserGetConsoleMessages(params: { limit?: number }): Pro
 export async function browserGetConsoleMessageById(msgid: number): Promise<{ found: boolean; message?: BrowserConsoleMessage }> {
 	const result = await sendHostRequest('browser.getConsoleMessageById', { msgid }, BROWSER_TIMEOUT_MS);
 	return result as { found: boolean; message?: BrowserConsoleMessage };
-}
-
-export async function fileRenameFile(oldPath: string, newPath: string): Promise<FileRenameResult> {
-	const result = await sendHostRequest('file.renameFile', { newPath, oldPath }, 30_000);
-	return result as FileRenameResult;
 }

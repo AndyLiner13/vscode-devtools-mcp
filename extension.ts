@@ -13,7 +13,7 @@
  * even if handler code fails to compile, the pipe server responds to ping.
  */
 
-import { appendFileSync, mkdirSync } from 'node:fs';
+import { appendFileSync } from 'node:fs';
 import net from 'node:net';
 import { homedir } from 'node:os';
 import * as path from 'node:path';
@@ -38,8 +38,8 @@ import pkg from './package.json';
 import { startWorker, stopWorker } from './services/codebase/codebase-worker-proxy';
 import { registerInspectorPanel } from './services/inspector-panel';
 import { initInspectorChannel, initMainChannel, log } from './services/logger';
-import { attachErrorToChat, showCompletionNotification } from './services/notifications';
 import { registerMcpServerProvider } from './services/mcpServerProvider';
+import { attachErrorToChat, showCompletionNotification } from './services/notifications';
 
 // VS Code constructs server definition IDs as: ExtensionIdentifier.toKey(id) + '/' + label
 const MCP_SERVER_DEF_ID = 'andyliner.vscode-devtools/Client Controller';
@@ -130,7 +130,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	diagLog(`vscode.env.appHost=${vscode.env.appHost}`);
 	diagLog(`vscode.env.sessionId=${vscode.env.sessionId}`);
 	diagLog(`vscode.env.machineId=${vscode.env.machineId}`);
-	diagLog(`workspace.folders=${JSON.stringify(vscode.workspace.workspaceFolders?.map(f => f.uri.fsPath))}`);
+	diagLog(`workspace.folders=${JSON.stringify(vscode.workspace.workspaceFolders?.map((f) => f.uri.fsPath))}`);
 	diagLog(`extensionPath=${context.extensionPath}`);
 	diagLog(`extensionMode=${context.extensionMode}`);
 
@@ -294,8 +294,10 @@ export async function activate(context: vscode.ExtensionContext) {
 			// Register the MCP server provider so Copilot discovers it automatically
 			const mcpProvider = registerMcpServerProvider(context);
 
+			const isDevModeEnabled = (): boolean => vscode.workspace.getConfiguration('devtools').get<boolean>('dev.enabled', false);
+
 			// Gate the MCP server + client window on the dev mode setting
-			const devModeEnabled = vscode.workspace.getConfiguration('devtools').get<boolean>('dev.enabled', false);
+			const devModeEnabled = isDevModeEnabled();
 			diagLog(`devtools.dev.enabled = ${devModeEnabled}`);
 			if (!devModeEnabled) {
 				mcpProvider.setEnabled(false);
@@ -327,6 +329,13 @@ export async function activate(context: vscode.ExtensionContext) {
 			// ── MCP Server Lifecycle Commands ──────────────────────────────────
 			context.subscriptions.push(
 				vscode.commands.registerCommand('devtools.startMcpServer', async (options?: { silent?: boolean }) => {
+					if (!isDevModeEnabled()) {
+						log('Start MCP Server blocked: dev mode is disabled');
+						if (!options?.silent) {
+							showCompletionNotification('Enable dev mode to start the MCP server and client window.');
+						}
+						return;
+					}
 					if (mcpProvider.enabled) {
 						log('Start MCP Server: already enabled — ensuring server is running');
 						if (!options?.silent) {
@@ -336,11 +345,7 @@ export async function activate(context: vscode.ExtensionContext) {
 							log('Start MCP Server: client window not active — starting it');
 							await startClientWindow();
 						}
-						void vscode.commands.executeCommand(
-							'workbench.mcp.startServer',
-							MCP_SERVER_DEF_ID,
-							{ waitForLiveTools: true },
-						);
+						void vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true });
 						return;
 					}
 					log('Start MCP Server: enabling provider (triggers tethered lifecycle)');
@@ -349,7 +354,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				vscode.commands.registerCommand('devtools.stopMcpServer', () => {
 					if (!mcpProvider.enabled) {
 						log('Stop MCP Server: already stopped');
-					showCompletionNotification('MCP Server is already stopped.');
+						showCompletionNotification('MCP Server is already stopped.');
 						return;
 					}
 					log('Stop MCP Server: disabling provider (triggers tethered lifecycle)');
@@ -362,7 +367,7 @@ export async function activate(context: vscode.ExtensionContext) {
 						await new Promise<void>((r) => setTimeout(r, 2000));
 					}
 					mcpProvider.setEnabled(true);
-				}),
+				})
 			);
 			log('MCP Server lifecycle commands registered');
 
@@ -438,10 +443,22 @@ export async function activate(context: vscode.ExtensionContext) {
 					if (tetheredAction) {
 						return;
 					}
+					if (enabled && !isDevModeEnabled()) {
+						log('MCP server toggle-on blocked: dev mode is disabled');
+						mcpProvider.setEnabled(false);
+						updateStatusBar('disconnected');
+						return;
+					}
 					log(`MCP server toggled: ${enabled ? 'enabled' : 'disabled'}`);
 					if (enabled) {
 						updateStatusBar('connecting');
-						void vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true }).then(
+						void (async () => {
+							if (!isClientWindowConnected()) {
+								log('MCP server toggled on: client window not active — starting it');
+								await startClientWindow();
+							}
+							return vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true });
+						})().then(
 							() => {
 								log('MCP server started after toggle on');
 							},
@@ -460,18 +477,26 @@ export async function activate(context: vscode.ExtensionContext) {
 			);
 
 			// Auto-start: Start MCP server only — the MCP server's ensureConnection()
-			// will spawn the client window via the Host handlers. This avoids a race
-			// condition where both extension.ts AND mcp-server/main.ts try to spawn
-			// the client simultaneously.
+			// should also ensure the client window is active, matching Inspector behavior.
 			diagLog(`Step 3: Auto-start check — devModeEnabled=${devModeEnabled}`);
 			if (devModeEnabled) {
 				diagLog('AUTO-START: Starting MCP server + client window lifecycle');
 				updateStatusBar('connecting');
-				log('Auto-starting MCP server (will spawn client via ensureConnection)...');
+				log('Auto-starting MCP server and ensuring client window is running...');
 
 				// Startup progress notification that tracks both MCP server and client connection
 				let startupProgressResolve: (() => void) | undefined;
-				const startupProgressPromise = new Promise<void>((r) => { startupProgressResolve = r; });
+				const startupProgressPromise = new Promise<void>((r) => {
+					startupProgressResolve = r;
+				});
+				const startupClientListener = onClientStateChanged((connected: boolean) => {
+					if (connected && startupProgressResolve) {
+						vscode.window.setStatusBarMessage('✅ VS Code DevTools started', 3000);
+						startupProgressResolve();
+						startupProgressResolve = undefined;
+						startupClientListener.dispose();
+					}
+				});
 
 				void vscode.window.withProgress(
 					{
@@ -480,37 +505,33 @@ export async function activate(context: vscode.ExtensionContext) {
 						title: 'VS Code DevTools'
 					},
 					async (progress) => {
-						progress.report({ message: 'Starting MCP server…' });
+						progress.report({ message: 'Starting client window…' });
 						try {
-							await vscode.commands.executeCommand(
-								'workbench.mcp.startServer',
-								MCP_SERVER_DEF_ID,
-								{ waitForLiveTools: true },
-							);
+							if (!isClientWindowConnected()) {
+								await startClientWindow();
+							}
+							progress.report({ message: 'Starting MCP server…' });
+							await vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true });
 							log('[auto-start] MCP server started');
 							progress.report({ message: 'Connecting to client window…' });
+							if (isClientWindowConnected() && startupProgressResolve) {
+								vscode.window.setStatusBarMessage('✅ VS Code DevTools started', 3000);
+								startupProgressResolve();
+								startupProgressResolve = undefined;
+								startupClientListener.dispose();
+							}
 						} catch (err: unknown) {
 							const msg = err instanceof Error ? err.message : String(err);
 							log(`[auto-start] MCP server start failed: ${msg}`);
 							updateStatusBar('disconnected');
+							startupClientListener.dispose();
+							startupProgressResolve = undefined;
 							return;
 						}
 						// Keep the notification open until the client connects
 						await startupProgressPromise;
 					}
 				);
-
-				// Listen for client connection to dismiss the startup notification
-				const startupClientListener = onClientStateChanged((connected: boolean) => {
-					if (connected && startupProgressResolve) {
-						// Auto-hide notification after 3 seconds
-						vscode.window.setStatusBarMessage('✅ VS Code DevTools started', 3000);
-						startupProgressResolve();
-						startupProgressResolve = undefined;
-						startupClientListener.dispose();
-					}
-				});
-
 			} else {
 				diagLog('SKIP: Dev mode disabled — no auto-start');
 				log('Dev mode disabled — skipping auto-start. Enable devtools.dev.enabled to activate.');
