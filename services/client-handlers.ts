@@ -901,25 +901,36 @@ async function handleFileRenameFile(params: Record<string, unknown>) {
 	const oldUri = vscode.Uri.file(oldPath);
 	const newUri = vscode.Uri.file(newPath);
 
-	// Verify source file exists
+	// Verify source exists
+	let sourceStat: vscode.FileStat;
 	try {
-		await vscode.workspace.fs.stat(oldUri);
+		sourceStat = await vscode.workspace.fs.stat(oldUri);
 	} catch {
-		throw new Error(`Source file not found: ${oldPath}`);
+		throw new Error(`Source not found: ${oldPath}`);
 	}
 
 	// Verify target does not already exist
 	try {
 		await vscode.workspace.fs.stat(newUri);
-		throw new Error(`Target file already exists: ${newPath}`);
+		throw new Error(`Target already exists: ${newPath}`);
 	} catch (err) {
-		if (err instanceof Error && err.message.startsWith('Target file already exists')) throw err;
+		if (err instanceof Error && err.message.startsWith('Target already exists')) throw err;
 	}
 
-	// Open the file to activate the associated language service (e.g. TypeScript).
-	// Language extensions are lazy-activated and won't participate in rename events
-	// unless a file of that language type has been opened first.
-	await vscode.window.showTextDocument(oldUri, { preview: true, preserveFocus: true });
+	const isDirectory = sourceStat.type === vscode.FileType.Directory;
+
+	// Activate the language service so it participates in rename events.
+	// For files, open the file directly. For directories, open the first
+	// code file inside the folder to trigger lazy language activation.
+	if (isDirectory) {
+		const pattern = new vscode.RelativePattern(oldUri, '**/*.{ts,tsx,js,jsx,py,md}');
+		const childFiles = await vscode.workspace.findFiles(pattern, undefined, 1);
+		if (childFiles.length > 0) {
+			await vscode.window.showTextDocument(childFiles[0], { preview: true, preserveFocus: true });
+		}
+	} else {
+		await vscode.window.showTextDocument(oldUri, { preview: true, preserveFocus: true });
+	}
 
 	// Snapshot which documents are already dirty before the rename
 	const dirtyBefore = new Set<string>();
