@@ -7,8 +7,8 @@
 		"inspector:build": "node esbuild.mjs"
 	},
 	"dependencies": {
-		"better-sqlite3": "^11.7.0",
-		"monaco-editor": "^0.52.2"
+		"better-sqlite3": "^12.6.2",
+		"monaco-editor": "^0.55.1"
 	},
 	"devDependencies": {
 		"@types/better-sqlite3": "^7.6.12"
