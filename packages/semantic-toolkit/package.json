@@ -17,6 +17,6 @@
 		"ts-morph": "^25.0.0"
 	},
 	"devDependencies": {
-		"vitest": "^3.2.1"
+		"vitest": "^4.0.18"
 	}
 }
