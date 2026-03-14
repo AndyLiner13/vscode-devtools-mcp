@@ -17,14 +17,25 @@
 
 import * as vscode from 'vscode';
 
-import { extractStructure, findDeadCode, findDuplicates, getExports, getImportGraph, getOverview, traceSymbol } from './codebase/codebase-worker-proxy';
+import {
+	extractStructure,
+	findDeadCode,
+	findDuplicates,
+	getExports,
+	getImportGraph,
+	getOverview,
+	traceSymbol
+} from './codebase/codebase-worker-proxy';
 import { registerInspectorHandlers } from './inspector-backend';
 import { log, warn } from './logger';
 import { getUserActionTracker } from './userActionTracker';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type RegisterHandler = (method: string, handler: (params: Record<string, unknown>) => Promise<unknown> | unknown) => void;
+export type RegisterHandler = (
+	method: string,
+	handler: (params: Record<string, unknown>) => Promise<unknown> | unknown
+) => void;
 
 // ── Type-safe param extraction ───────────────────────────────────────────────
 
@@ -327,7 +338,10 @@ async function handleCodebaseGetDiagnostics(params: Record<string, unknown>) {
 
 				if (items.length >= limit) break;
 
-				const codeStr = typeof diag.code === 'object' && diag.code !== null ? String((diag.code as { value: number | string }).value) : String(diag.code ?? '');
+				const codeStr =
+					typeof diag.code === 'object' && diag.code !== null
+						? String((diag.code as { value: number | string }).value)
+						: String(diag.code ?? '');
 
 				items.push({
 					code: codeStr,
@@ -464,7 +478,10 @@ async function handleFileGetSymbols(params: Record<string, unknown>) {
 		/* best-effort open */
 	}
 
-	const symbols = await vscode.commands.executeCommand<undefined | vscode.DocumentSymbol[] | vscode.SymbolInformation[]>('vscode.executeDocumentSymbolProvider', uri);
+	const symbols = await vscode.commands.executeCommand<undefined | vscode.DocumentSymbol[] | vscode.SymbolInformation[]>(
+		'vscode.executeDocumentSymbolProvider',
+		uri
+	);
 
 	if (!symbols || symbols.length === 0) return { symbols: [] };
 
@@ -581,6 +598,52 @@ async function handleFileHighlightReadRange(params: Record<string, unknown>) {
 }
 
 /**
+ * Open a file in preview mode, place cursor at startLine:startCol, and highlight the
+ * range from startLine:startCol to endLine:endCol using a decoration (no selection).
+ * Used by the URI handler on the host to forward /open/client/ requests.
+ */
+async function handleUriOpenFileWithRange(params: Record<string, unknown>) {
+	const filePath = paramStr(params, 'filePath');
+	if (!filePath) throw new Error('filePath is required');
+
+	const startLine = paramNum(params, 'startLine') ?? 0;
+	const startCol = paramNum(params, 'startCol') ?? 0;
+	const endLine = paramNum(params, 'endLine') ?? startLine;
+	const endCol = paramNum(params, 'endCol') ?? startCol;
+
+	const uri = vscode.Uri.file(filePath);
+	const doc = await vscode.workspace.openTextDocument(uri);
+
+	for (const editor of vscode.window.visibleTextEditors) {
+		editor.setDecorations(readHighlightDecoration, []);
+	}
+
+	const editor = await vscode.window.showTextDocument(doc, {
+		preserveFocus: false,
+		preview: true
+	});
+
+	const clampedStart = new vscode.Position(
+		Math.min(startLine, doc.lineCount - 1),
+		Math.min(startCol, doc.lineAt(Math.min(startLine, doc.lineCount - 1)).text.length)
+	);
+	const clampedEnd = new vscode.Position(
+		Math.min(endLine, doc.lineCount - 1),
+		Math.min(endCol, doc.lineAt(Math.min(endLine, doc.lineCount - 1)).text.length)
+	);
+	const highlightRange = new vscode.Range(clampedStart, clampedEnd);
+
+	editor.selection = new vscode.Selection(clampedStart, clampedStart);
+	editor.revealRange(highlightRange, vscode.TextEditorRevealType.InCenter);
+
+	if (!highlightRange.isEmpty) {
+		editor.setDecorations(readHighlightDecoration, [highlightRange]);
+	}
+
+	return { success: true };
+}
+
+/**
  * Show an inline diff editor comparing old content vs current file after an edit.
  * Old content was pre-captured by handleFileApplyEdit before the edit was applied.
  */
@@ -668,7 +731,10 @@ async function handleFileGetDiagnostics(params: Record<string, unknown>) {
 	const items = diagnostics
 		.filter((d) => d.severity === vscode.DiagnosticSeverity.Error || d.severity === vscode.DiagnosticSeverity.Warning)
 		.map((d) => ({
-			code: typeof d.code === 'object' && d.code !== null ? String((d.code as { value: number | string }).value) : String(d.code ?? ''),
+			code:
+				typeof d.code === 'object' && d.code !== null
+					? String((d.code as { value: number | string }).value)
+					: String(d.code ?? ''),
 			column: d.range.start.character + 1,
 			endColumn: d.range.end.character + 1,
 			endLine: d.range.end.line + 1,
@@ -698,7 +764,12 @@ async function handleFileExecuteRename(params: Record<string, unknown>) {
 	await vscode.workspace.openTextDocument(uri);
 	const position = new vscode.Position(line, character);
 
-	const workspaceEdit = await vscode.commands.executeCommand<undefined | vscode.WorkspaceEdit>('vscode.executeDocumentRenameProvider', uri, position, newName);
+	const workspaceEdit = await vscode.commands.executeCommand<undefined | vscode.WorkspaceEdit>(
+		'vscode.executeDocumentRenameProvider',
+		uri,
+		position,
+		newName
+	);
 
 	if (!workspaceEdit) {
 		return { error: 'Rename provider returned no edits', filesAffected: [], success: false, totalEdits: 0 };
@@ -763,7 +834,11 @@ async function handleFileFindReferences(params: Record<string, unknown>) {
 	await vscode.workspace.openTextDocument(uri);
 	const position = new vscode.Position(line, character);
 
-	const locations = await vscode.commands.executeCommand<undefined | vscode.Location[]>('vscode.executeReferenceProvider', uri, position);
+	const locations = await vscode.commands.executeCommand<undefined | vscode.Location[]>(
+		'vscode.executeReferenceProvider',
+		uri,
+		position
+	);
 
 	if (!locations) return { references: [] };
 
@@ -792,7 +867,11 @@ async function handleFileGetCodeActions(params: Record<string, unknown>) {
 	const doc = await vscode.workspace.openTextDocument(uri);
 	const range = new vscode.Range(startLine, 0, endLine, doc.lineAt(endLine).text.length);
 
-	const actions = await vscode.commands.executeCommand<undefined | vscode.CodeAction[]>('vscode.executeCodeActionProvider', uri, range);
+	const actions = await vscode.commands.executeCommand<undefined | vscode.CodeAction[]>(
+		'vscode.executeCodeActionProvider',
+		uri,
+		range
+	);
 
 	if (!actions) return { actions: [] };
 
@@ -827,7 +906,11 @@ async function handleFileApplyCodeAction(params: Record<string, unknown>) {
 	const doc = await vscode.workspace.openTextDocument(uri);
 	const range = new vscode.Range(startLine, 0, endLine, doc.lineAt(endLine).text.length);
 
-	const actions = await vscode.commands.executeCommand<undefined | vscode.CodeAction[]>('vscode.executeCodeActionProvider', uri, range);
+	const actions = await vscode.commands.executeCommand<undefined | vscode.CodeAction[]>(
+		'vscode.executeCodeActionProvider',
+		uri,
+		range
+	);
 
 	if (!actions || actionIndex >= actions.length) {
 		return { error: `Code action at index ${actionIndex} not found`, success: false };
@@ -867,7 +950,11 @@ function collectDirtyFiles(excludeUri?: vscode.Uri): string[] {
 	return dirty;
 }
 
-async function waitForDirtyDocuments(knownDirtyBefore: Set<string>, maxWaitMs: number, pollIntervalMs: number): Promise<string[]> {
+async function waitForDirtyDocuments(
+	knownDirtyBefore: Set<string>,
+	maxWaitMs: number,
+	pollIntervalMs: number
+): Promise<string[]> {
 	const deadline = Date.now() + maxWaitMs;
 	let newDirtyFiles: string[] = [];
 
@@ -924,6 +1011,9 @@ export function registerClientHandlers(register: RegisterHandler, workspaceState
 	register('file.getCodeActions', handleFileGetCodeActions);
 	register('file.applyCodeAction', handleFileApplyCodeAction);
 	register('file.extractStructure', handleFileExtractStructure);
+
+	// URI handler forwarding
+	register('uri.openFileWithRange', handleUriOpenFileWithRange);
 
 	// Inspector backend handlers (storage CRUD, MCP proxy, file browsing, symbols)
 	registerInspectorHandlers(register, workspaceState);

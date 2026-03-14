@@ -40,6 +40,7 @@ import { registerInspectorPanel } from './services/inspector-panel';
 import { initInspectorChannel, initMainChannel, log } from './services/logger';
 import { registerMcpServerProvider } from './services/mcpServerProvider';
 import { attachErrorToChat, showCompletionNotification } from './services/notifications';
+import { DevToolsUriHandler, disposeUriHandler } from './services/uriHandler';
 
 // VS Code constructs server definition IDs as: ExtensionIdentifier.toKey(id) + '/' + label
 const MCP_SERVER_DEF_ID = 'andyliner.vscode-devtools/Client Controller';
@@ -253,6 +254,17 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	// ========================================================================
+	// Step 1.5: Register URI Handler (Host only, always active)
+	// ========================================================================
+
+	if (currentRole === 'host') {
+		const uriHandler = new DevToolsUriHandler();
+		context.subscriptions.push(vscode.window.registerUriHandler(uriHandler));
+		context.subscriptions.push({ dispose: disposeUriHandler });
+		log('URI handler registered — vscode://andyliner.vscode-devtools/open/... links are active');
+	}
+
+	// ========================================================================
 	// Step 2: Load Role-Specific Handlers
 	// ========================================================================
 
@@ -262,7 +274,17 @@ export async function activate(context: vscode.ExtensionContext) {
 			// Dynamic import keeps host-handlers out of the static dependency graph.
 			// If it fails to compile, the extension still works in Safe Mode.
 			log('Loading host-handlers module...');
-			const { cleanup, createReconnectCdpCallback, isClientWindowConnected, isHotReloadInProgress, onBrowserServiceChanged, onClientStateChanged, registerHostHandlers, startClientWindow, stopClientWindow } = await import('./services/host-handlers');
+			const {
+				cleanup,
+				createReconnectCdpCallback,
+				isClientWindowConnected,
+				isHotReloadInProgress,
+				onBrowserServiceChanged,
+				onClientStateChanged,
+				registerHostHandlers,
+				startClientWindow,
+				stopClientWindow
+			} = await import('./services/host-handlers');
 			log('host-handlers module loaded, registering handlers...');
 			registerHostHandlers(bootstrap.registerHandler, context);
 			hostHandlersCleanup = cleanup;
@@ -597,11 +619,13 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		updateStatusBar('safe-mode', msg);
 
-		vscode.window.showErrorMessage(`devtools: Runtime failed to load — entering Safe Mode.\n\n${msg}`, 'Attach to Chat').then((choice) => {
-			if (choice === 'Attach to Chat') {
-				void attachErrorToChat(`Runtime failed to load — entering Safe Mode.\n\n${msg}`, stack);
-			}
-		});
+		vscode.window
+			.showErrorMessage(`devtools: Runtime failed to load — entering Safe Mode.\n\n${msg}`, 'Attach to Chat')
+			.then((choice) => {
+				if (choice === 'Attach to Chat') {
+					void attachErrorToChat(`Runtime failed to load — entering Safe Mode.\n\n${msg}`, stack);
+				}
+			});
 
 		log(`SAFE MODE — Runtime failed to load: ${msg}`);
 		if (stack) {
@@ -616,7 +640,11 @@ export async function activate(context: vscode.ExtensionContext) {
 // ── Session Conflict Handling ────────────────────────────────────────────────
 
 async function showSessionConflictNotification(): Promise<void> {
-	const choice = await vscode.window.showWarningMessage('VS Code DevTools: Another session is already running (both Host and Client pipes exist).', 'Override Session', 'Cancel');
+	const choice = await vscode.window.showWarningMessage(
+		'VS Code DevTools: Another session is already running (both Host and Client pipes exist).',
+		'Override Session',
+		'Cancel'
+	);
 
 	if (choice === 'Override Session') {
 		log('User chose to override session — initiating takeover');
@@ -629,7 +657,9 @@ async function showSessionConflictNotification(): Promise<void> {
 async function initiateTakeover(): Promise<void> {
 	// TODO: Connect to existing Host pipe and send takeover command
 	// For now, just log and show a message
-	vscode.window.showInformationMessage('Session takeover is not yet fully implemented. Please close the existing VS Code windows and try again.');
+	vscode.window.showInformationMessage(
+		'Session takeover is not yet fully implemented. Please close the existing VS Code windows and try again.'
+	);
 	log('Takeover: Not yet implemented');
 }
 

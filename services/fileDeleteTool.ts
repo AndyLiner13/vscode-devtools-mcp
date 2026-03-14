@@ -7,19 +7,27 @@ interface IFileDeleteParams {
 }
 
 export class FileDeleteTool implements vscode.LanguageModelTool<IFileDeleteParams> {
-	async prepareInvocation(options: vscode.LanguageModelToolInvocationPrepareOptions<IFileDeleteParams>, _token: vscode.CancellationToken): Promise<undefined | vscode.PreparedToolInvocation> {
+	async prepareInvocation(
+		options: vscode.LanguageModelToolInvocationPrepareOptions<IFileDeleteParams>,
+		_token: vscode.CancellationToken
+	): Promise<undefined | vscode.PreparedToolInvocation> {
 		const { filePath } = options.input;
 
 		return {
 			confirmationMessages: {
-				message: new vscode.MarkdownString(`Delete **${filePath}**? This will check for external references first and block if any exist.`),
+				message: new vscode.MarkdownString(
+					`Delete **${filePath}**? This will check for external references first and block if any exist.`
+				),
 				title: 'File Delete'
 			},
 			invocationMessage: `Checking references before deleting ${filePath}`
 		};
 	}
 
-	async invoke(options: vscode.LanguageModelToolInvocationOptions<IFileDeleteParams>, token: vscode.CancellationToken): Promise<vscode.LanguageModelToolResult> {
+	async invoke(
+		options: vscode.LanguageModelToolInvocationOptions<IFileDeleteParams>,
+		token: vscode.CancellationToken
+	): Promise<vscode.LanguageModelToolResult> {
 		const { filePath } = options.input;
 
 		if (!filePath) {
@@ -79,7 +87,7 @@ export class FileDeleteTool implements vscode.LanguageModelTool<IFileDeleteParam
 		const pattern = new vscode.RelativePattern(uri, '**/*');
 		const childFiles = await vscode.workspace.findFiles(pattern);
 
-		const dirFileSet = new Set(childFiles.map(f => vscode.workspace.asRelativePath(f)));
+		const dirFileSet = new Set(childFiles.map((f) => vscode.workspace.asRelativePath(f)));
 		dirFileSet.add(dirRelPath);
 
 		const allBrokenRefs: Array<{
@@ -103,9 +111,9 @@ export class FileDeleteTool implements vscode.LanguageModelTool<IFileDeleteParam
 
 		if (allBrokenRefs.length > 0) {
 			const totalRefs = allBrokenRefs.reduce((sum, b) => sum + b.references.length, 0);
-			const details = allBrokenRefs.map(b =>
-				`  ${b.sourceFile} → ${b.symbol} (${b.kind}): ${b.references.map(r => `${r.file}:${r.line}`).join(', ')}`
-			).join('\n');
+			const details = allBrokenRefs
+				.map((b) => `  ${b.sourceFile} → ${b.symbol} (${b.kind}): ${b.references.map((r) => `${r.file}:${r.line}`).join(', ')}`)
+				.join('\n');
 			throw new Error(
 				`Cannot delete ${dirRelPath}: ${allBrokenRefs.length} symbol(s) with ${totalRefs} external reference(s) would break.\n\nRemove or update these references first:\n${details}`
 			);
@@ -144,7 +152,13 @@ async function findExternalReferences(
 	excludeSet: Set<string>,
 	token: vscode.CancellationToken
 ): Promise<BrokenRef[]> {
-	const doc = await vscode.workspace.openTextDocument(uri);
+	let doc: vscode.TextDocument;
+	try {
+		doc = await vscode.workspace.openTextDocument(uri);
+	} catch {
+		// Binary or otherwise non-text files have no code references to check
+		return [];
+	}
 	const fileHasContent = doc.getText().trim().length > 0;
 	let symbols = await vscode.commands.executeCommand<undefined | vscode.DocumentSymbol[]>(
 		'vscode.executeDocumentSymbolProvider',
@@ -155,7 +169,7 @@ async function findExternalReferences(
 		const backoffDelays = [500, 1000, 2000, 3000];
 		for (const delay of backoffDelays) {
 			if (token.isCancellationRequested) return [];
-			await new Promise(resolve => setTimeout(resolve, delay));
+			await new Promise((resolve) => setTimeout(resolve, delay));
 			symbols = await vscode.commands.executeCommand<undefined | vscode.DocumentSymbol[]>(
 				'vscode.executeDocumentSymbolProvider',
 				uri
@@ -167,7 +181,7 @@ async function findExternalReferences(
 	const brokenRefs: BrokenRef[] = [];
 
 	if (symbols && symbols.length > 0) {
-		const exportedSymbols = symbols.filter(sym => isExportedSymbol(doc, sym));
+		const exportedSymbols = symbols.filter((sym) => isExportedSymbol(doc, sym));
 
 		for (const sym of exportedSymbols) {
 			if (token.isCancellationRequested) return brokenRefs;
@@ -180,9 +194,7 @@ async function findExternalReferences(
 
 			if (!locations) continue;
 
-			const externalRefs = locations.filter(
-				(loc) => !excludeSet.has(vscode.workspace.asRelativePath(loc.uri))
-			);
+			const externalRefs = locations.filter((loc) => !excludeSet.has(vscode.workspace.asRelativePath(loc.uri)));
 
 			if (externalRefs.length > 0) {
 				brokenRefs.push({
@@ -216,9 +228,9 @@ function isExportedSymbol(doc: vscode.TextDocument, sym: vscode.DocumentSymbol):
 
 function throwBrokenRefsError(targetPath: string, brokenReferences: BrokenRef[]): never {
 	const totalRefs = brokenReferences.reduce((sum, b) => sum + b.references.length, 0);
-	const details = brokenReferences.map(b =>
-		`  ${b.symbol} (${b.kind}): ${b.references.map(r => `${r.file}:${r.line}`).join(', ')}`
-	).join('\n');
+	const details = brokenReferences
+		.map((b) => `  ${b.symbol} (${b.kind}): ${b.references.map((r) => `${r.file}:${r.line}`).join(', ')}`)
+		.join('\n');
 	throw new Error(
 		`Cannot delete ${targetPath}: ${brokenReferences.length} symbol(s) with ${totalRefs} external reference(s) would break.\n\nRemove or update these references first:\n${details}`
 	);
