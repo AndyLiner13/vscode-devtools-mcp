@@ -117,11 +117,18 @@ export class DevToolsUriHandler implements vscode.UriHandler {
 
 		const fileUri = vscode.Uri.file(filePath);
 
+		let stat: vscode.FileStat;
 		try {
-			await vscode.workspace.fs.stat(fileUri);
+			stat = await vscode.workspace.fs.stat(fileUri);
 		} catch {
-			warn(`[uri-handler] File not found: ${filePath}`);
-			vscode.window.showErrorMessage(`File not found: ${filePath}`);
+			warn(`[uri-handler] Path not found: ${filePath}`);
+			vscode.window.showErrorMessage(`Path not found: ${filePath}`);
+			return;
+		}
+
+		if (stat.type === vscode.FileType.Directory) {
+			log(`[uri-handler] Path is a directory — opening folder in VS Code`);
+			await vscode.commands.executeCommand('vscode.openFolder', fileUri, { forceNewWindow: false });
 			return;
 		}
 
