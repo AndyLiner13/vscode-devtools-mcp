@@ -127,8 +127,8 @@ export class DevToolsUriHandler implements vscode.UriHandler {
 		}
 
 		if (stat.type === vscode.FileType.Directory) {
-			log(`[uri-handler] Path is a directory — opening folder in VS Code`);
-			await vscode.commands.executeCommand('vscode.openFolder', fileUri, { forceNewWindow: false });
+			log(`[uri-handler] Path is a directory — revealing in explorer`);
+			await vscode.commands.executeCommand('revealInExplorer', fileUri);
 			return;
 		}
 
