@@ -17,7 +17,7 @@
 		"@modelcontextprotocol/sdk": "1.27.0"
 	},
 	"devDependencies": {
-		"@types/debug": "^4.1.12",
+		"@types/debug": "^4.1.13",
 		"@types/filesystem": "^0.0.36",
 		"debug": "4.4.3",
 		"zod": "^4.3.6"
