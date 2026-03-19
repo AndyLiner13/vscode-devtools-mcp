@@ -28,7 +28,7 @@ import { buildIdentifierMap, populateExtractedSymbolRefs } from './reference-cou
 import { getWorkspaceProject } from './ts-project';
 import { TS_PARSEABLE_EXTS } from './types';
 
-// ── Types (compatible with FileSymbol in mcp-server/src/client-pipe.ts) ──
+// ── Types (compatible with FileSymbol in client-controller/src/client-pipe.ts) ──
 
 export interface ExtractedSymbolRange {
 	endChar: number; // 0-indexed (column)
@@ -139,7 +139,14 @@ function collectPropertySignatureModifiers(node: PropertySignature): string[] {
 
 function isNodeExported(node: Node): boolean {
 	// Check for export keyword on the node itself
-	if (Node.isFunctionDeclaration(node) || Node.isClassDeclaration(node) || Node.isInterfaceDeclaration(node) || Node.isTypeAliasDeclaration(node) || Node.isEnumDeclaration(node) || Node.isModuleDeclaration(node)) {
+	if (
+		Node.isFunctionDeclaration(node) ||
+		Node.isClassDeclaration(node) ||
+		Node.isInterfaceDeclaration(node) ||
+		Node.isTypeAliasDeclaration(node) ||
+		Node.isEnumDeclaration(node) ||
+		Node.isModuleDeclaration(node)
+	) {
 		return node.isExported();
 	}
 
@@ -163,7 +170,7 @@ const CONTROL_FLOW_KINDS = new Map<SyntaxKind, string>([
 	[SyntaxKind.ForOfStatement, 'for-of'],
 	[SyntaxKind.WhileStatement, 'while'],
 	[SyntaxKind.DoStatement, 'do-while'],
-	[SyntaxKind.SwitchStatement, 'switch'],
+	[SyntaxKind.SwitchStatement, 'switch']
 ]);
 
 // SyntaxKind values for all function-like nodes that may contain a Block body
@@ -174,7 +181,7 @@ const FUNCTION_LIKE_KINDS: ReadonlySet<SyntaxKind> = new Set([
 	SyntaxKind.GetAccessor,
 	SyntaxKind.SetAccessor,
 	SyntaxKind.ArrowFunction,
-	SyntaxKind.FunctionExpression,
+	SyntaxKind.FunctionExpression
 ]);
 
 // ── Individual Extractors ──
@@ -271,7 +278,7 @@ function deriveControlFlowName(node: Node, kind: string): string {
 function extractControlFlowChildren(node: Node, sf: SourceFile): ExtractedSymbol[] {
 	const children: ExtractedSymbol[] = [];
 
-	node.forEachChild(child => {
+	node.forEachChild((child) => {
 		if (Node.isBlock(child)) {
 			const stmts = extractBodyStatements(child.getStatements(), sf);
 
@@ -340,7 +347,7 @@ function getBodyBlock(node: Node): import('ts-morph').Block | undefined {
 	if (!FUNCTION_LIKE_KINDS.has(node.getKind())) return undefined;
 
 	let block: import('ts-morph').Block | undefined;
-	node.forEachChild(child => {
+	node.forEachChild((child) => {
 		if (!block && Node.isBlock(child)) {
 			block = child;
 		}

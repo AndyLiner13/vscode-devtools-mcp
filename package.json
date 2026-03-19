@@ -21,7 +21,7 @@
 	"main": "./dist/extension.js",
 	"workspaces": [
 		"packages/*",
-		"mcp-server",
+		"client-controller",
 		"inspector"
 	],
 	"scripts": {
@@ -33,8 +33,8 @@
 		"knip": "knip --strict",
 		"lint": "eslint .",
 		"lint:fix": "eslint --fix .",
-		"mcp:build": "cd mcp-server && npm run build && tsc --noEmit",
-		"mcp:inspect": "node mcp-server/scripts/inspect.mjs",
+		"mcp:build": "cd client-controller && npm run build && tsc --noEmit",
+		"mcp:inspect": "node client-controller/scripts/inspect.mjs",
 		"reinstall": "npm run build && code.cmd --install-extension vscode-devtools-0.1.0.vsix --force",
 		"vscode:prepublish": "node esbuild.mjs"
 	},
@@ -406,7 +406,7 @@
 		],
 		"mcpServerDefinitionProviders": [
 			{
-				"id": "devtools.mcp-server",
+				"id": "devtools.client-controller",
 				"label": "Client Controller"
 			}
 		]

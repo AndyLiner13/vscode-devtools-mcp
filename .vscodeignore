@@ -64,7 +64,7 @@ packages/**/node_modules/**
 inspector/**
 !inspector/styles.css
 !inspector/dist/**
-mcp-server/**
+client-controller/**
 .devtools/**
 tests/**
 resources/**

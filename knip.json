@@ -13,7 +13,7 @@
 			"ignoreDependencies": ["@modelcontextprotocol/inspector", "@packages/log-consolidation", "@vscode/codicons"],
 			"ignoreBinaries": ["code", "knip"]
 		},
-		"mcp-server": {
+		"client-controller": {
 			"entry": ["src/index.ts", "src/main.ts", "scripts/**/*.{ts,mts,mjs}"],
 			"ignoreDependencies": ["@types/filesystem", "@packages/log-consolidation"]
 		},

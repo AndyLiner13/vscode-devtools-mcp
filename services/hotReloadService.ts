@@ -23,7 +23,6 @@ import { join, relative } from 'node:path';
 import { ts } from 'ts-morph';
 import { log } from './logger';
 
-
 // ── Storage Keys ─────────────────────────────────────────────────────────────
 
 const HASH_KEY_MCP = 'hotReload:hash:mcpServer';
@@ -169,7 +168,7 @@ class HotReloadService {
 				const srcIdx = targetPath.indexOf('/src/');
 				if (srcIdx === -1) continue;
 				const pkgRelative = targetPath.slice(0, srcIdx);
-				// Resolve relative to the monorepo root (parent of mcp-server)
+				// Resolve relative to the monorepo root (parent of client-controller)
 				const monorepoRoot = join(packageRoot, '..');
 				const pkgAbsolute = join(monorepoRoot, pkgRelative);
 				if (existsSync(pkgAbsolute)) {

@@ -15,8 +15,7 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { log } from './logger';
 
-
-const PROVIDER_ID = 'devtools.mcp-server';
+const PROVIDER_ID = 'devtools.client-controller';
 const TOGGLE_COMMAND = 'devtools.toggleMcpServer';
 
 /**
@@ -28,7 +27,11 @@ function buildConfigEnv(workspacePath: string): Record<string, string> {
 	const clientWorkspaceRaw = config.get<string>('clientWorkspace', '');
 	const extensionPathRaw = config.get<string>('extensionPath', '.');
 
-	const clientWorkspace = clientWorkspaceRaw ? (path.isAbsolute(clientWorkspaceRaw) ? clientWorkspaceRaw : path.resolve(workspacePath, clientWorkspaceRaw)) : workspacePath;
+	const clientWorkspace = clientWorkspaceRaw
+		? path.isAbsolute(clientWorkspaceRaw)
+			? clientWorkspaceRaw
+			: path.resolve(workspacePath, clientWorkspaceRaw)
+		: workspacePath;
 	const extensionPath = path.isAbsolute(extensionPathRaw) ? extensionPathRaw : path.resolve(workspacePath, extensionPathRaw);
 
 	const resolvedConfig = {
@@ -78,13 +81,15 @@ class McpServerProvider implements vscode.McpServerDefinitionProvider<vscode.Mcp
 	}
 
 	provideMcpServerDefinitions(_token: vscode.CancellationToken): vscode.McpStdioServerDefinition[] {
-		log(`[mcpServerProvider] provideMcpServerDefinitions called (enabled=${this._enabled}, workspace=${this._workspacePath ? 'YES' : 'NO'})`);
+		log(
+			`[mcpServerProvider] provideMcpServerDefinitions called (enabled=${this._enabled}, workspace=${this._workspacePath ? 'YES' : 'NO'})`
+		);
 		if (!this._enabled || !this._workspacePath) {
 			log('[mcpServerProvider] Returning empty — provider disabled or no workspace');
 			return [];
 		}
 
-		const initScript = path.join(this._workspacePath, 'mcp-server', 'scripts', 'init.mjs');
+		const initScript = path.join(this._workspacePath, 'client-controller', 'scripts', 'init.mjs');
 
 		log(`[mcpServerProvider] Returning definition: command=node, args=[${initScript}]`);
 		const env = buildConfigEnv(this._workspacePath);
@@ -103,14 +108,17 @@ class McpServerProvider implements vscode.McpServerDefinitionProvider<vscode.Mcp
 	 * Rebuilds the MCP server to ensure fresh output. If the build fails, throws
 	 * an error so VS Code surfaces it to Copilot instead of starting a broken server.
 	 */
-	async resolveMcpServerDefinition(server: vscode.McpStdioServerDefinition, token: vscode.CancellationToken): Promise<vscode.McpStdioServerDefinition> {
+	async resolveMcpServerDefinition(
+		server: vscode.McpStdioServerDefinition,
+		token: vscode.CancellationToken
+	): Promise<vscode.McpStdioServerDefinition> {
 		log('[mcpServerProvider] resolveMcpServerDefinition called — building MCP server...');
 		if (!this._workspacePath) {
 			log('[mcpServerProvider] No workspace path — skipping build');
 			return server;
 		}
 
-		const mcpServerRoot = path.join(this._workspacePath, 'mcp-server');
+		const mcpServerRoot = path.join(this._workspacePath, 'client-controller');
 		const buildStart = Date.now();
 		const buildError = await this._runBuild(mcpServerRoot, token);
 		const buildDuration = Date.now() - buildStart;

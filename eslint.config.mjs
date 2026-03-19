@@ -17,7 +17,17 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default defineConfig([
-	globalIgnores(['**/dist/**', '**/node_modules/**', '**/*.d.ts', '.devtools/**', 'client-workspace/**', 'client-workspace/**', 'tests/**', 'resources/**', 'mcp-server/build/**']),
+	globalIgnores([
+		'**/dist/**',
+		'**/node_modules/**',
+		'**/*.d.ts',
+		'.devtools/**',
+		'client-workspace/**',
+		'client-workspace/**',
+		'tests/**',
+		'resources/**',
+		'client-controller/build/**'
+	]),
 	{
 		extends: ['js/recommended'],
 		languageOptions: {
@@ -25,7 +35,7 @@ export default defineConfig([
 			parser: tseslint.parser,
 			parserOptions: {
 				projectService: {
-					allowDefaultProject: ['esbuild.mjs', 'eslint.config.mjs', '.prettierrc.cjs', 'mcp-server/rollup.config.mjs']
+					allowDefaultProject: ['esbuild.mjs', 'eslint.config.mjs', '.prettierrc.cjs', 'client-controller/rollup.config.mjs']
 				}
 			},
 			sourceType: 'module'
@@ -272,7 +282,9 @@ export default defineConfig([
 			'jsdoc/require-jsdoc': [
 				'error',
 				{
-					contexts: ['ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[init.type!="ArrowFunctionExpression"][init.type!="FunctionExpression"]'],
+					contexts: [
+						'ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[init.type!="ArrowFunctionExpression"][init.type!="FunctionExpression"]'
+					],
 					require: {
 						ArrowFunctionExpression: false,
 						ClassDeclaration: false,
@@ -285,7 +297,7 @@ export default defineConfig([
 		}
 	},
 	{
-		files: ['mcp-server/**/*.ts', 'mcp-server/**/*.js', 'mcp-server/**/*.mjs'],
+		files: ['client-controller/**/*.ts', 'client-controller/**/*.js', 'client-controller/**/*.mjs'],
 		languageOptions: {
 			globals: {
 				...globals.node

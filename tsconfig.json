@@ -14,5 +14,14 @@
 		}
 	},
 	"include": ["**/*.ts"],
-	"exclude": ["node_modules", "dist", "mcp-server", "inspector", "tests", "resources", "test-workspace", "packages/*/tests"]
+	"exclude": [
+		"node_modules",
+		"dist",
+		"client-controller",
+		"inspector",
+		"tests",
+		"resources",
+		"test-workspace",
+		"packages/*/tests"
+	]
 }

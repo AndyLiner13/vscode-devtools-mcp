@@ -44,7 +44,7 @@ import { DevToolsUriHandler, disposeUriHandler } from './services/uriHandler';
 
 // VS Code constructs server definition IDs as: ExtensionIdentifier.toKey(id) + '/' + label
 const MCP_SERVER_DEF_ID = 'andyliner.vscode-devtools/Client Controller';
-const MCP_PROVIDER_ID = 'devtools.mcp-server';
+const MCP_PROVIDER_ID = 'devtools.client-controller';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
