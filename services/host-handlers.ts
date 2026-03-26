@@ -219,7 +219,13 @@ function isPersistedSession(value: unknown): value is PersistedSession {
 	const extensionPath = Reflect.get(value, 'extensionPath');
 	const startedAt = Reflect.get(value, 'startedAt');
 
-	return typeof clientPid === 'number' && typeof persistedCdpPort === 'number' && typeof persistedInspectorPort === 'number' && typeof extensionPath === 'string' && typeof startedAt === 'number';
+	return (
+		typeof clientPid === 'number' &&
+		typeof persistedCdpPort === 'number' &&
+		typeof persistedInspectorPort === 'number' &&
+		typeof extensionPath === 'string' &&
+		typeof startedAt === 'number'
+	);
 }
 
 // Captured during registerHostHandlers — used by session persistence helpers
@@ -230,7 +236,12 @@ function getWorkspacePath(): null | string {
 	return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
 }
 
-async function notifyMcpClientReconnected(params: { electronPid: null | number; cdpPort: number; inspectorPort: number; at: number }): Promise<void> {
+async function notifyMcpClientReconnected(params: {
+	electronPid: null | number;
+	cdpPort: number;
+	inspectorPort: number;
+	at: number;
+}): Promise<void> {
 	await new Promise<void>((resolve) => {
 		const socket = net.createConnection(MCP_PIPE_PATH);
 		let settled = false;
@@ -338,7 +349,10 @@ function isProcessAlive(pid: number): boolean {
 function discoverElectronPid(port: number): null | number {
 	try {
 		if (IS_WINDOWS) {
-			const out = execSync(`netstat -ano | findstr "LISTENING" | findstr ":${port} "`, { encoding: 'utf8', timeout: 5000 }).trim();
+			const out = execSync(`netstat -ano | findstr "LISTENING" | findstr ":${port} "`, {
+				encoding: 'utf8',
+				timeout: 5000
+			}).trim();
 			for (const line of out.split('\n')) {
 				const parts = line.trim().split(/\s+/);
 				if (parts.length >= 5) {
@@ -588,7 +602,11 @@ function getElectronPath(): string {
  * startClientWindow racing) await the same in-flight spawn instead of
  * starting a second Electron instance.
  */
-async function spawnClient(clientWorkspace: string, extensionPath: string, launchFlags?: Record<string, unknown>): Promise<{ cdpPort: number; userDataDir: string; clientStartedAt: number }> {
+async function spawnClient(
+	clientWorkspace: string,
+	extensionPath: string,
+	launchFlags?: Record<string, unknown>
+): Promise<{ cdpPort: number; userDataDir: string; clientStartedAt: number }> {
 	if (spawnInProgress) {
 		log('[host] spawnClient: spawn already in progress — awaiting existing promise');
 		return spawnInProgress;
@@ -602,7 +620,11 @@ async function spawnClient(clientWorkspace: string, extensionPath: string, launc
 	}
 }
 
-async function doSpawnClient(clientWorkspace: string, extensionPath: string, launchFlags?: Record<string, unknown>): Promise<{ cdpPort: number; userDataDir: string; clientStartedAt: number }> {
+async function doSpawnClient(
+	clientWorkspace: string,
+	extensionPath: string,
+	launchFlags?: Record<string, unknown>
+): Promise<{ cdpPort: number; userDataDir: string; clientStartedAt: number }> {
 	// Allocate ports (CDP for browser debugging + inspector for Extension Host debugging)
 	const allocatedCdpPort = await allocatePort();
 	const allocatedInspectorPort = await allocatePort();
@@ -611,7 +633,9 @@ async function doSpawnClient(clientWorkspace: string, extensionPath: string, lau
 	const electronPath = getElectronPath();
 
 	// User data directory for the Client (persists state, stored in workspace storage)
-	const userDataDir = hostStoragePath ? path.join(hostStoragePath, 'user-data') : path.join(clientWorkspace, '.devtools', 'user-data');
+	const userDataDir = hostStoragePath
+		? path.join(hostStoragePath, 'user-data')
+		: path.join(clientWorkspace, '.devtools', 'user-data');
 	if (!fs.existsSync(userDataDir)) {
 		fs.mkdirSync(userDataDir, { recursive: true });
 	}
@@ -625,7 +649,10 @@ async function doSpawnClient(clientWorkspace: string, extensionPath: string, lau
 		'--new-window',
 		'--no-sandbox',
 		'--disable-gpu-sandbox',
-		'--disable-updates'
+		'--disable-updates',
+		'--skip-add-to-recently-opened',
+		'--disable-crash-reporter',
+		'--disable-telemetry'
 	];
 
 	// Apply launch flags from MCP config (if provided)
@@ -819,7 +846,9 @@ async function waitForClientReady(port: number, maxWaitMs = 90_000, adaptiveMaxM
 		// Log status every 5 seconds so we can diagnose hangs
 		const now = Date.now();
 		if (now - lastLog >= 5000) {
-			log(`[host] Still waiting for Client (${elapsed}ms elapsed) — CDP: ${cdpOk ? 'UP' : 'DOWN'}, pipe: ${pipeOk ? 'UP' : 'DOWN'}${pipeSeenUp ? ' (adaptive timeout active)' : ''}`);
+			log(
+				`[host] Still waiting for Client (${elapsed}ms elapsed) — CDP: ${cdpOk ? 'UP' : 'DOWN'}, pipe: ${pipeOk ? 'UP' : 'DOWN'}${pipeSeenUp ? ' (adaptive timeout active)' : ''}`
+			);
 			lastLog = now;
 		}
 
@@ -830,7 +859,9 @@ async function waitForClientReady(port: number, maxWaitMs = 90_000, adaptiveMaxM
 	const finalCdp = await isCdpPortReady(port);
 	const finalPipe = await pingClientPipe(2000);
 	const totalElapsed = Date.now() - startTime;
-	throw new Error(`Client did not become ready within ${totalElapsed}ms — CDP: ${finalCdp ? 'UP' : 'DOWN'}, pipe RPC: ${finalPipe ? 'UP' : 'DOWN'}`);
+	throw new Error(
+		`Client did not become ready within ${totalElapsed}ms — CDP: ${finalCdp ? 'UP' : 'DOWN'}, pipe RPC: ${finalPipe ? 'UP' : 'DOWN'}`
+	);
 }
 
 async function sleep(ms: number): Promise<void> {
@@ -1124,7 +1155,8 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 		// MCP tells us where the client workspace and extension are
 		const clientWorkspace = typeof params.clientWorkspace === 'string' ? params.clientWorkspace : undefined;
 		const extensionPath = typeof params.extensionPath === 'string' ? params.extensionPath : undefined;
-		const launchFlags = typeof params.launch === 'object' && params.launch !== null ? (params.launch as Record<string, unknown>) : undefined;
+		const launchFlags =
+			typeof params.launch === 'object' && params.launch !== null ? (params.launch as Record<string, unknown>) : undefined;
 		const forceRestart = typeof params.forceRestart === 'boolean' ? params.forceRestart : false;
 
 		if (!clientWorkspace) {
@@ -1162,7 +1194,9 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 				const healthy = await isClientHealthy();
 				if (healthy && !extCheck.changed) {
 					log('[host] Existing Client is healthy and build is current, returning connection info');
-					const dataDir = hostStoragePath ? path.join(hostStoragePath, 'user-data') : path.join(clientWorkspace, '.devtools', 'user-data');
+					const dataDir = hostStoragePath
+						? path.join(hostStoragePath, 'user-data')
+						: path.join(clientWorkspace, '.devtools', 'user-data');
 
 					// Ensure CDP client is connected for browser automation LM tools
 					if (!activeCdpClient?.connected) {
@@ -1208,7 +1242,8 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 
 		const clientWorkspace = typeof params.clientWorkspace === 'string' ? params.clientWorkspace : undefined;
 		const extensionPath = typeof params.extensionPath === 'string' ? params.extensionPath : undefined;
-		const launchFlags = typeof params.launch === 'object' && params.launch !== null ? (params.launch as Record<string, unknown>) : undefined;
+		const launchFlags =
+			typeof params.launch === 'object' && params.launch !== null ? (params.launch as Record<string, unknown>) : undefined;
 
 		if (!clientWorkspace || !extensionPath) {
 			throw new Error('hotReloadRequired: clientWorkspace and extensionPath are required');
@@ -1737,12 +1772,18 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 	register('browser.executeWithDiff', async (params) => {
 		const service = await requireBrowserService();
 		const action = String(params.action);
-		const actionParams = typeof params.actionParams === 'object' && params.actionParams !== null ? (params.actionParams as Record<string, unknown>) : {};
+		const actionParams =
+			typeof params.actionParams === 'object' && params.actionParams !== null
+				? (params.actionParams as Record<string, unknown>)
+				: {};
 
 		const { summary } = await service.executeWithDiff(async () => {
 			switch (action) {
 				case 'click':
-					await service.clickElement(String(actionParams.uid), typeof actionParams.clickCount === 'number' ? actionParams.clickCount : 1);
+					await service.clickElement(
+						String(actionParams.uid),
+						typeof actionParams.clickCount === 'number' ? actionParams.clickCount : 1
+					);
 					break;
 				case 'hover':
 					await service.hoverElement(String(actionParams.uid));
@@ -1761,7 +1802,11 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 					await service.pressKey(String(actionParams.key));
 					break;
 				case 'scroll':
-					await service.scrollElement(String(actionParams.uid), typeof actionParams.direction === 'string' ? actionParams.direction : undefined, typeof actionParams.amount === 'number' ? actionParams.amount : undefined);
+					await service.scrollElement(
+						String(actionParams.uid),
+						typeof actionParams.direction === 'string' ? actionParams.direction : undefined,
+						typeof actionParams.amount === 'number' ? actionParams.amount : undefined
+					);
 					break;
 			}
 		}, 1500);
@@ -1827,7 +1872,11 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
  * Resolve clientWorkspace and extensionPath from VS Code settings.
  * Mirrors the config resolution in mcpServerProvider's buildConfigEnv.
  */
-function resolveClientConfig(): null | { clientWorkspace: string; extensionPath: string; launchFlags: Record<string, unknown> } {
+function resolveClientConfig(): null | {
+	clientWorkspace: string;
+	extensionPath: string;
+	launchFlags: Record<string, unknown>;
+} {
 	const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 	if (!workspacePath) {
 		return null;
@@ -1838,7 +1887,11 @@ function resolveClientConfig(): null | { clientWorkspace: string; extensionPath:
 	const clientWorkspaceRaw = config.get<string>('clientWorkspace', '');
 	const extensionPathRaw = config.get<string>('extensionPath', '.');
 
-	const clientWorkspace = clientWorkspaceRaw ? (path.isAbsolute(clientWorkspaceRaw) ? clientWorkspaceRaw : path.resolve(workspacePath, clientWorkspaceRaw)) : workspacePath;
+	const clientWorkspace = clientWorkspaceRaw
+		? path.isAbsolute(clientWorkspaceRaw)
+			? clientWorkspaceRaw
+			: path.resolve(workspacePath, clientWorkspaceRaw)
+		: workspacePath;
 	const extensionPath = path.isAbsolute(extensionPathRaw) ? extensionPathRaw : path.resolve(workspacePath, extensionPathRaw);
 
 	const launchFlags: Record<string, unknown> = {
