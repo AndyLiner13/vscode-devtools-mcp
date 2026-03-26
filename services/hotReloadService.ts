@@ -260,8 +260,15 @@ class HotReloadService {
 	/**
 	 * Run a package.json script using the detected package manager.
 	 * Returns null on success, error output on failure.
+	 * If the script does not exist in the target package.json, returns null
+	 * (no-op) so callers never build non-extension workspaces.
 	 */
 	async runBuild(packageRoot: string, scriptName: string): Promise<null | string> {
+		if (!this.hasPackageScript(packageRoot, scriptName)) {
+			log(`[hotReload] Skipping build: no "${scriptName}" script in ${packageRoot}`);
+			return null;
+		}
+
 		return new Promise((resolve) => {
 			const pm = this.detectPackageManager(packageRoot);
 			const cmd = `${pm} run ${scriptName}`;
@@ -307,9 +314,20 @@ class HotReloadService {
 	 * Check if source files have changed without triggering a build.
 	 * Returns the current content hash and whether it differs from stored.
 	 * Use with runBuild() + commitHash() for progress-aware workflows.
+	 *
+	 * Returns no-change when the package lacks the corresponding build
+	 * script, so callers never enter build/restart flows for non-extension
+	 * workspaces.
 	 */
 	detectChange(packageRoot: string, hashKey: 'ext' | 'inspector' | 'mcp'): { changed: boolean; currentHash: string } {
 		const key = hashKey === 'mcp' ? HASH_KEY_MCP : hashKey === 'inspector' ? HASH_KEY_INSPECTOR : HASH_KEY_EXT;
+
+		const buildScript = hashKey === 'mcp' ? 'build' : hashKey === 'inspector' ? 'inspector:build' : 'compile';
+		if (!this.hasPackageScript(packageRoot, buildScript)) {
+			log(`[hotReload] Skipping detectChange (${key}): no "${buildScript}" script in ${packageRoot}`);
+			return { changed: false, currentHash: '' };
+		}
+
 		const files = this.discoverSourceFiles(packageRoot);
 		if (files.length === 0) {
 			return { changed: false, currentHash: '' };
@@ -339,11 +357,45 @@ class HotReloadService {
 	}
 
 	/**
+	 * Check whether a package.json in the given directory defines the named script.
+	 * Returns false if package.json is missing, unreadable, or lacks the script.
+	 */
+	private hasPackageScript(packageRoot: string, scriptName: string): boolean {
+		const pkgPath = join(packageRoot, 'package.json');
+		try {
+			const raw = readFileSync(pkgPath, 'utf-8');
+			const pkg: unknown = JSON.parse(raw);
+			if (typeof pkg !== 'object' || pkg === null) {
+				return false;
+			}
+			if (!('scripts' in pkg)) {
+				return false;
+			}
+			const { scripts } = pkg;
+			if (typeof scripts !== 'object' || scripts === null) {
+				return false;
+			}
+			return scriptName in scripts;
+		} catch {
+			return false;
+		}
+	}
+
+	/**
 	 * Check for changes in a single package.
 	 * Discovers files, hashes content, compares to stored hash,
 	 * and rebuilds if content has changed.
+	 *
+	 * If the target directory has no package.json or the required build
+	 * script is missing, returns early with no change — this gracefully
+	 * handles workspaces that are not the extension source directory.
 	 */
 	private async checkPackage(packageRoot: string, hashKey: string, buildScript: string): Promise<PackageCheckResult> {
+		if (!this.hasPackageScript(packageRoot, buildScript)) {
+			log(`[hotReload] Skipping ${hashKey}: no "${buildScript}" script in ${packageRoot}`);
+			return { buildError: null, changed: false, rebuilt: false };
+		}
+
 		const files = this.discoverSourceFiles(packageRoot);
 		if (files.length === 0) {
 			return { buildError: null, changed: false, rebuilt: false };
