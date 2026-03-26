@@ -9,7 +9,7 @@
  * This provider only handles server definition provisioning and toggle logic.
  */
 
-import { exec } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
@@ -66,9 +66,13 @@ class McpServerProvider implements vscode.McpServerDefinitionProvider<vscode.Mcp
 
 	private _enabled = true;
 	private readonly _workspacePath: string | undefined;
+	private readonly _extensionPath: string;
+	private readonly _extensionMode: vscode.ExtensionMode;
 
-	constructor() {
+	constructor(extensionPath: string, extensionMode: vscode.ExtensionMode) {
 		this._workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+		this._extensionPath = extensionPath;
+		this._extensionMode = extensionMode;
 	}
 
 	get enabled(): boolean {
@@ -84,15 +88,16 @@ class McpServerProvider implements vscode.McpServerDefinitionProvider<vscode.Mcp
 		log(
 			`[mcpServerProvider] provideMcpServerDefinitions called (enabled=${this._enabled}, workspace=${this._workspacePath ? 'YES' : 'NO'})`
 		);
-		if (!this._enabled || !this._workspacePath) {
-			log('[mcpServerProvider] Returning empty — provider disabled or no workspace');
+		if (!this._enabled) {
+			log('[mcpServerProvider] Returning empty — provider disabled');
 			return [];
 		}
 
-		const initScript = path.join(this._workspacePath, 'client-controller', 'scripts', 'init.mjs');
+		// Use the extension's bundled client-controller, not the workspace
+		const initScript = path.join(this._extensionPath, 'client-controller', 'scripts', 'init.mjs');
 
 		log(`[mcpServerProvider] Returning definition: command=node, args=[${initScript}]`);
-		const env = buildConfigEnv(this._workspacePath);
+		const env = buildConfigEnv(this._workspacePath ?? this._extensionPath);
 
 		return [new vscode.McpStdioServerDefinition('Client Controller', 'node', [initScript], env)];
 	}
@@ -105,20 +110,24 @@ class McpServerProvider implements vscode.McpServerDefinitionProvider<vscode.Mcp
 
 	/**
 	 * Called by VS Code before every MCP server start — including after crashes.
-	 * Rebuilds the MCP server to ensure fresh output. If the build fails, throws
-	 * an error so VS Code surfaces it to Copilot instead of starting a broken server.
+	 * In development mode, rebuilds the MCP server to ensure fresh output.
+	 * For installed extensions, the server is pre-built — skip the build step.
 	 */
 	async resolveMcpServerDefinition(
 		server: vscode.McpStdioServerDefinition,
 		token: vscode.CancellationToken
 	): Promise<vscode.McpStdioServerDefinition> {
-		log('[mcpServerProvider] resolveMcpServerDefinition called — building MCP server...');
-		if (!this._workspacePath) {
-			log('[mcpServerProvider] No workspace path — skipping build');
+		log('[mcpServerProvider] resolveMcpServerDefinition called');
+
+		// Skip build for installed extensions — the VSIX includes pre-built files
+		if (this._extensionMode === vscode.ExtensionMode.Production) {
+			log('[mcpServerProvider] Production mode — using pre-built MCP server');
 			return server;
 		}
 
-		const mcpServerRoot = path.join(this._workspacePath, 'client-controller');
+		// Development mode: rebuild to pick up source changes
+		log('[mcpServerProvider] Development mode — rebuilding MCP server...');
+		const mcpServerRoot = path.join(this._extensionPath, 'client-controller');
 		const buildStart = Date.now();
 		const buildError = await this._runBuild(mcpServerRoot, token);
 		const buildDuration = Date.now() - buildStart;
@@ -135,18 +144,44 @@ class McpServerProvider implements vscode.McpServerDefinitionProvider<vscode.Mcp
 	private async _runBuild(packageRoot: string, token: vscode.CancellationToken): Promise<null | string> {
 		return new Promise((resolve) => {
 			const pm = this._detectPackageManager(packageRoot);
-			const cmd = `${pm} run build`;
 
-			log(`[mcpServerProvider] Pre-start build: ${cmd} in ${packageRoot}`);
+			log(`[mcpServerProvider] Pre-start build: ${pm} run build in ${packageRoot}`);
+			log(`[mcpServerProvider] PATH=${process.env['PATH']?.substring(0, 200)}...`);
+			log(`[mcpServerProvider] ComSpec=${process.env['ComSpec']}`);
 
-			const child = exec(cmd, { cwd: packageRoot, timeout: 300_000 }, (error, stdout, stderr) => {
+			// Use spawn with shell:true which is more reliable on Windows
+			// than exec() which has issues finding cmd.exe in some environments
+			const child = spawn(pm, ['run', 'build'], {
+				cwd: packageRoot,
+				shell: true,
+				stdio: ['ignore', 'pipe', 'pipe'],
+				timeout: 300_000
+			});
+
+			let stdout = '';
+			let stderr = '';
+
+			child.stdout?.on('data', (data: Buffer) => {
+				stdout += data.toString();
+			});
+
+			child.stderr?.on('data', (data: Buffer) => {
+				stderr += data.toString();
+			});
+
+			child.on('error', (err: Error) => {
+				log(`[mcpServerProvider] Build spawn error: ${err.message}`);
+				resolve(err.message);
+			});
+
+			child.on('close', (code: number | null) => {
 				if (token.isCancellationRequested) {
 					resolve('Build cancelled');
 					return;
 				}
-				if (error) {
+				if (code !== 0) {
 					const output = [stderr, stdout].filter(Boolean).join('\n').trim();
-					resolve(output || error.message);
+					resolve(output || `Build exited with code ${code}`);
 				} else {
 					resolve(null);
 				}
@@ -189,7 +224,7 @@ class McpServerProvider implements vscode.McpServerDefinitionProvider<vscode.Mcp
  * The status bar is managed by extension.ts — not by this module.
  */
 export function registerMcpServerProvider(context: vscode.ExtensionContext): McpServerProvider {
-	const provider = new McpServerProvider();
+	const provider = new McpServerProvider(context.extensionPath, context.extensionMode);
 
 	context.subscriptions.push(vscode.lm.registerMcpServerDefinitionProvider(PROVIDER_ID, provider));
 

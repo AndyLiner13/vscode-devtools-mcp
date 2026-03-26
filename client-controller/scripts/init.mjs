@@ -14,9 +14,21 @@ import { fileURLToPath } from 'node:url';
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const serverDir = dirname(scriptDir);
 
-const entryUrl = new URL('../build/src/index.js', import.meta.url);
-if (!existsSync(entryUrl)) {
+// Check for bundled version first (VSIX distribution), then dev version
+const bundledEntry = new URL('../build/index.js', import.meta.url);
+const devEntry = new URL('../build/src/index.js', import.meta.url);
+
+let entryUrl;
+if (existsSync(bundledEntry)) {
+	// Bundled version from VSIX — all dependencies included
+	entryUrl = bundledEntry;
+} else if (existsSync(devEntry)) {
+	// Dev version — transpiled but not bundled
+	entryUrl = devEntry;
+} else {
+	// Build in dev mode if nothing exists
 	execSync('npm run build', { cwd: serverDir, stdio: 'inherit' });
+	entryUrl = devEntry;
 }
 
 await import(entryUrl.toString());

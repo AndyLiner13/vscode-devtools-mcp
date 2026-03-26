@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const watch = process.argv.includes('--watch');
+const bundle = process.argv.includes('--bundle');
 
 /**
  * Post-process transpiled output to rewrite @packages/* import paths
@@ -105,7 +106,64 @@ const tfidfConfig = {
 
 const packageConfigs = [logConsolidationConfig, semanticToolkitConfig, tfidfConfig];
 
-if (watch) {
+// Node.js built-in modules (both prefixed and unprefixed for compatibility)
+const nodeBuiltins = [
+	'assert', 'buffer', 'child_process', 'cluster', 'console', 'constants',
+	'crypto', 'dgram', 'dns', 'domain', 'events', 'fs', 'http', 'https',
+	'module', 'net', 'os', 'path', 'perf_hooks', 'process', 'punycode',
+	'querystring', 'readline', 'repl', 'stream', 'string_decoder', 'sys',
+	'timers', 'tls', 'tty', 'url', 'util', 'v8', 'vm', 'worker_threads', 'zlib'
+];
+const externals = [
+	...nodeBuiltins,
+	...nodeBuiltins.map(m => `node:${m}`)
+];
+
+// Bundle mode: create a single self-contained file for VSIX distribution
+if (bundle) {
+	const packagesDir = path.resolve(__dirname, '..', 'packages');
+	
+	// Clean build directory to ensure fresh bundle
+	const buildDir = path.join(__dirname, 'build');
+	if (fs.existsSync(buildDir)) {
+		fs.rmSync(buildDir, { recursive: true, force: true });
+	}
+	fs.mkdirSync(buildDir, { recursive: true });
+	
+	// Clean build directory to ensure fresh bundle
+	if (fs.existsSync('build')) {
+		fs.rmSync('build', { force: true, recursive: true });
+	}
+	fs.mkdirSync('build', { recursive: true });
+	
+	await esbuild.build({
+		entryPoints: ['src/main.ts'],
+		outfile: 'build/index.js',
+		bundle: true,
+		format: 'esm',
+		platform: 'node',
+		target: 'es2023',
+		sourcemap: true,
+		// Don't bundle Node.js built-ins (both prefixed and unprefixed)
+		external: externals,
+		// Resolve @packages/* aliases
+		alias: {
+			'@packages/log-consolidation': path.join(packagesDir, 'log-consolidation', 'src', 'index.ts'),
+			'@packages/semantic-toolkit': path.join(packagesDir, 'semantic-toolkit', 'src', 'index.ts'),
+			'@packages/tfidf': path.join(packagesDir, 'tfidf', 'src', 'index.ts'),
+		},
+		// Provide a real require() for CJS dependencies (e.g. debug)
+		// that use require() for Node.js built-ins like tty, fs, etc.
+		banner: {
+			js: [
+				'#!/usr/bin/env node',
+				'import { createRequire as __bundleCreateRequire } from "node:module";',
+				'const require = __bundleCreateRequire(import.meta.url);',
+			].join('\n')
+		}
+	});
+	console.log('[esbuild] bundled client-controller → build/index.js');
+} else if (watch) {
 	// Build once initially (with packages + rewrite), then watch src only
 	await Promise.all([esbuild.build(config), ...packageConfigs.map((c) => esbuild.build(c))]);
 	rewritePackageImports(path.resolve(__dirname, 'build'));

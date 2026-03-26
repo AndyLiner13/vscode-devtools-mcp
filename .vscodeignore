@@ -64,7 +64,14 @@ packages/**/node_modules/**
 inspector/**
 !inspector/styles.css
 !inspector/dist/**
+
+# client-controller: only include bundled output and init script
 client-controller/**
+!client-controller/build/index.js
+!client-controller/build/index.js.map
+!client-controller/scripts/init.mjs
+!client-controller/package.json
+
 .devtools/**
 tests/**
 resources/**

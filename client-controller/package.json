@@ -4,14 +4,16 @@
 	"description": "Client controller for VS Code DevTools",
 	"license": "Apache-2.0",
 	"type": "module",
-	"main": "build/src/index.js",
-	"bin": "./build/src/index.js",
+	"main": "build/index.js",
+	"bin": "./build/index.js",
 	"files": [
-		"build/src",
+		"build/index.js",
+		"build/index.js.map",
 		"LICENSE"
 	],
 	"scripts": {
-		"build": "node esbuild.mjs"
+		"build": "node esbuild.mjs",
+		"build:bundle": "node esbuild.mjs --bundle"
 	},
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "1.27.0"

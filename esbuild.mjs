@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import esbuild from 'esbuild';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -110,6 +111,21 @@ async function main() {
 		fs.rmSync('dist', { force: true, recursive: true });
 	}
 	fs.mkdirSync('dist', { recursive: true });
+
+	// Build client-controller for bundling in VSIX (production only)
+	if (!watch) {
+		console.log('[client-controller] Building bundled version...');
+		try {
+			execSync('npm run build:bundle', {
+				cwd: path.join(__dirname, 'client-controller'),
+				stdio: 'inherit'
+			});
+			console.log('[client-controller] Build complete');
+		} catch (err) {
+			console.error('[client-controller] Build failed:', err.message);
+			process.exit(1);
+		}
+	}
 
 	const loaderCtx = await esbuild.context(loaderConfig);
 	const runtimeCtx = await esbuild.context(runtimeConfig);
