@@ -597,6 +597,53 @@ function getElectronPath(): string {
 }
 
 /**
+ * Pre-seed the Client's user-data-dir with settings that suppress the
+ * Inno Setup updater's GC pass (`inno_updater.exe --gc`).
+ *
+ * Without this, {@ link postInitialize} in `updateService.win32.ts` spawns
+ * the updater which tries to open every file in the install directory with
+ * DELETE access. Because the Host VS Code is still running from the same
+ * Code.exe, the call fails with "Access is denied" and eventually surfaces
+ * a native Windows MessageBox after 16 retries.
+ *
+ * Merges into any existing settings the user may have configured.
+ */
+function seedClientSettings(userDataDir: string): void {
+	const settingsDir = path.join(userDataDir, 'User');
+	const settingsPath = path.join(settingsDir, 'settings.json');
+
+	const requiredSettings: Record<string, unknown> = {
+		'update.enableWindowsBackgroundUpdates': false,
+		'update.mode': 'none'
+	};
+
+	try {
+		if (!fs.existsSync(settingsDir)) {
+			fs.mkdirSync(settingsDir, { recursive: true });
+		}
+
+		let existing: Record<string, unknown> = {};
+		if (fs.existsSync(settingsPath)) {
+			try {
+				const raw = fs.readFileSync(settingsPath, 'utf8');
+				const parsed: Record<string, unknown> = JSON.parse(raw);
+				if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+					existing = parsed;
+				}
+			} catch {
+				// Corrupted settings — overwrite
+			}
+		}
+
+		const merged = { ...existing, ...requiredSettings };
+		fs.writeFileSync(settingsPath, JSON.stringify(merged, null, '\t'), 'utf8');
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		log(`[host] Warning: could not seed client settings: ${msg}`);
+	}
+}
+
+/**
  * Spawn the Extension Development Host (Client).
  * Guarded by {@link spawnInProgress} — concurrent callers (e.g. mcpReady +
  * startClientWindow racing) await the same in-flight spawn instead of
@@ -639,6 +686,12 @@ async function doSpawnClient(
 	if (!fs.existsSync(userDataDir)) {
 		fs.mkdirSync(userDataDir, { recursive: true });
 	}
+
+	// Seed settings.json so the Client's inno_updater.exe --gc cleanup is
+	// suppressed. Without this, the updater tries to open every file in the
+	// install directory with DELETE access and hits "Access is denied" on
+	// Code.exe (locked by the Host), producing a native Windows error dialog.
+	seedClientSettings(userDataDir);
 
 	// Build launch arguments — core flags first
 	const args = [
