@@ -282,7 +282,6 @@ export async function activate(context: vscode.ExtensionContext) {
 				onBrowserServiceChanged,
 				onClientStateChanged,
 				registerHostHandlers,
-				startClientWindow,
 				stopClientWindow
 			} = await import('./services/host-handlers');
 			log('host-handlers module loaded, registering handlers...');
@@ -362,10 +361,6 @@ export async function activate(context: vscode.ExtensionContext) {
 						log('Start MCP Server: already enabled — ensuring server is running');
 						if (!options?.silent) {
 							showCompletionNotification('MCP Server is already running.');
-						}
-						if (!isClientWindowConnected()) {
-							log('Start MCP Server: client window not active — starting it');
-							await startClientWindow();
 						}
 						void vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true });
 						return;
@@ -457,9 +452,8 @@ export async function activate(context: vscode.ExtensionContext) {
 				})
 			);
 
-			// When MCP is toggled, start/stop client window + MCP server together.
-			// Only start the MCP server here — its ensureConnection/mcpReady will
-			// spawn the client window via the Host handlers, avoiding double spawn.
+			// When MCP is toggled, start/stop the MCP server. The mcpReady handler
+			// in host-handlers will spawn the client window — no pre-launch here.
 			context.subscriptions.push(
 				mcpProvider.onDidToggle((enabled: boolean) => {
 					if (tetheredAction) {
@@ -474,22 +468,18 @@ export async function activate(context: vscode.ExtensionContext) {
 					log(`MCP server toggled: ${enabled ? 'enabled' : 'disabled'}`);
 					if (enabled) {
 						updateStatusBar('connecting');
-						void (async () => {
-							if (!isClientWindowConnected()) {
-								log('MCP server toggled on: client window not active — starting it');
-								await startClientWindow();
-							}
-							return vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true });
-						})().then(
-							() => {
-								log('MCP server started after toggle on');
-							},
-							(err: unknown) => {
-								const msg = err instanceof Error ? err.message : String(err);
-								log(`MCP server start after toggle on failed: ${msg}`);
-								updateStatusBar('disconnected');
-							}
-						);
+						void vscode.commands
+							.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true })
+							.then(
+								() => {
+									log('MCP server started after toggle on');
+								},
+								(err: unknown) => {
+									const msg = err instanceof Error ? err.message : String(err);
+									log(`MCP server start after toggle on failed: ${msg}`);
+									updateStatusBar('disconnected');
+								}
+							);
 					} else {
 						// MCP turned off → stop client window
 						stopClientWindow();
@@ -498,15 +488,13 @@ export async function activate(context: vscode.ExtensionContext) {
 				})
 			);
 
-			// Auto-start: Start MCP server only — the MCP server's ensureConnection()
-			// should also ensure the client window is active, matching Inspector behavior.
+			// Auto-start: Start MCP server only — mcpReady will spawn the client window.
 			diagLog(`Step 3: Auto-start check — devModeEnabled=${devModeEnabled}`);
 			if (devModeEnabled) {
-				diagLog('AUTO-START: Starting MCP server + client window lifecycle');
+				diagLog('AUTO-START: Starting MCP server (client window will launch on mcpReady)');
 				updateStatusBar('connecting');
-				log('Auto-starting MCP server and ensuring client window is running...');
+				log('Auto-starting MCP server — client window will launch when mcpReady fires...');
 
-				// Startup progress notification that tracks both MCP server and client connection
 				let startupProgressResolve: (() => void) | undefined;
 				const startupProgressPromise = new Promise<void>((r) => {
 					startupProgressResolve = r;
@@ -527,15 +515,11 @@ export async function activate(context: vscode.ExtensionContext) {
 						title: 'VS Code DevTools'
 					},
 					async (progress) => {
-						progress.report({ message: 'Starting client window…' });
+						progress.report({ message: 'Starting MCP server…' });
 						try {
-							if (!isClientWindowConnected()) {
-								await startClientWindow();
-							}
-							progress.report({ message: 'Starting MCP server…' });
 							await vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true });
-							log('[auto-start] MCP server started');
-							progress.report({ message: 'Connecting to client window…' });
+							log('[auto-start] MCP server started — waiting for mcpReady to spawn client');
+							progress.report({ message: 'Waiting for client window…' });
 							if (isClientWindowConnected() && startupProgressResolve) {
 								vscode.window.setStatusBarMessage('✅ VS Code DevTools started', 3000);
 								startupProgressResolve();
@@ -550,7 +534,6 @@ export async function activate(context: vscode.ExtensionContext) {
 							startupProgressResolve = undefined;
 							return;
 						}
-						// Keep the notification open until the client connects
 						await startupProgressPromise;
 					}
 				);
