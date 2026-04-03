@@ -210,6 +210,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	if (clientToken) {
 		diagLog(`Client token found: ${clientToken.slice(0, 8)}... — this instance is CLIENT`);
 		currentRole = 'client';
+		void vscode.commands.executeCommand('setContext', 'devtools.isHost', false);
+		void vscode.commands.executeCommand('setContext', 'devtools.isClient', true);
 		log(`Client token present — this instance is the CLIENT`);
 
 		// Start the client pipe server for RPC from MCP server
@@ -244,6 +246,8 @@ export async function activate(context: vscode.ExtensionContext) {
 			diagLog(`Attempting to claim Host pipe: ${HOST_PIPE_PATH}`);
 			await bootstrap.startServer(HOST_PIPE_PATH);
 			currentRole = 'host';
+			void vscode.commands.executeCommand('setContext', 'devtools.isHost', true);
+			void vscode.commands.executeCommand('setContext', 'devtools.isClient', false);
 			diagLog('SUCCESS: Claimed Host pipe — this instance is HOST');
 			log(`Claimed Host pipe @ ${HOST_PIPE_PATH} — this instance is the HOST`);
 		} catch (err: unknown) {

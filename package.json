@@ -43,7 +43,7 @@
 			{
 				"command": "devtools.toggleMcpServer",
 				"title": "VS Code DevTools: Toggle MCP Server",
-				"when": "config.devtools.dev.enabled"
+				"when": "devtools.isHost && config.devtools.dev.enabled"
 			},
 			{
 				"command": "devtools.openSettings",
@@ -52,31 +52,31 @@
 			{
 				"command": "devtools.openInspector",
 				"title": "DevTools: Open MCP Inspector",
-				"when": "config.devtools.dev.enabled"
+				"when": "devtools.isHost && config.devtools.dev.enabled"
 			},
 			{
 				"command": "devtools.refreshInspector",
 				"title": "DevTools: Refresh MCP Inspector",
-				"when": "config.devtools.dev.enabled"
+				"when": "devtools.isHost && config.devtools.dev.enabled"
 			},
 			{
 				"command": "devtools.startMcpServer",
 				"title": "DevTools: Start MCP Server",
-				"when": "config.devtools.dev.enabled"
+				"when": "devtools.isHost && config.devtools.dev.enabled"
 			},
 			{
 				"command": "devtools.stopMcpServer",
 				"title": "DevTools: Stop MCP Server",
-				"when": "config.devtools.dev.enabled"
+				"when": "devtools.isHost && config.devtools.dev.enabled"
 			},
 			{
 				"command": "devtools.restartMcpServer",
 				"title": "DevTools: Restart MCP Server",
-				"when": "config.devtools.dev.enabled"
+				"when": "devtools.isHost && config.devtools.dev.enabled"
 			},
 			{
 				"command": "devtools.restartTsServer",
-				"title": "DevTools: Restart TS Server"
+				"title": "DevTools: Restart TypeScript Server"
 			}
 		],
 		"keybindings": [
@@ -87,6 +87,38 @@
 				"when": "activeWebviewPanelId == 'mcpInspector'"
 			}
 		],
+		"menus": {
+			"commandPalette": [
+				{
+					"command": "devtools.toggleMcpServer",
+					"when": "devtools.isHost && config.devtools.dev.enabled"
+				},
+				{
+					"command": "devtools.openInspector",
+					"when": "devtools.isHost && config.devtools.dev.enabled"
+				},
+				{
+					"command": "devtools.refreshInspector",
+					"when": "devtools.isHost && config.devtools.dev.enabled"
+				},
+				{
+					"command": "devtools.startMcpServer",
+					"when": "devtools.isHost && config.devtools.dev.enabled"
+				},
+				{
+					"command": "devtools.stopMcpServer",
+					"when": "devtools.isHost && config.devtools.dev.enabled"
+				},
+				{
+					"command": "devtools.restartMcpServer",
+					"when": "devtools.isHost && config.devtools.dev.enabled"
+				},
+				{
+					"command": "devtools.restartTsServer",
+					"when": "editorLangId =~ /typescript|javascript/"
+				}
+			]
+		},
 		"configuration": [
 			{
 				"title": "Notifications",
