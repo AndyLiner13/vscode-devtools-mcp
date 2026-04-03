@@ -251,6 +251,16 @@ export async function activate(context: vscode.ExtensionContext) {
 			if (error.code === 'EADDRINUSE') {
 				diagLog('Host pipe EADDRINUSE and no client token — this is a regular VS Code window');
 				log('Host pipe exists but no client token — this VS Code instance is not a DevTools participant');
+
+				// Register global commands even for regular VS Code windows
+				context.subscriptions.push(
+					vscode.commands.registerCommand('devtools.restartTsServer', () => {
+						log('Restart TS Server invoked');
+						void vscode.commands.executeCommand('typescript.restartTsServer');
+					})
+				);
+				log('Global commands registered (regular window)');
+
 				// Not the host, not the client — just a regular VS Code window
 				return;
 			}
@@ -268,6 +278,18 @@ export async function activate(context: vscode.ExtensionContext) {
 		context.subscriptions.push({ dispose: disposeUriHandler });
 		log('URI handler registered — vscode://andyliner.vscode-devtools/open/... links are active');
 	}
+
+	// ========================================================================
+	// Step 1.6: Register Global Commands (work in any window)
+	// ========================================================================
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('devtools.restartTsServer', () => {
+			log('Restart TS Server invoked');
+			void vscode.commands.executeCommand('typescript.restartTsServer');
+		})
+	);
+	log('Global commands registered');
 
 	// ========================================================================
 	// Step 2: Load Role-Specific Handlers
@@ -389,10 +411,6 @@ export async function activate(context: vscode.ExtensionContext) {
 						await new Promise<void>((r) => setTimeout(r, 2000));
 					}
 					mcpProvider.setEnabled(true);
-				}),
-				vscode.commands.registerCommand('devtools.restartTsServer', () => {
-					log('Restart TS Server invoked');
-					void vscode.commands.executeCommand('typescript.restartTsServer');
 				})
 			);
 			log('MCP Server lifecycle commands registered');
