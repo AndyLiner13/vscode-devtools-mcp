@@ -61,7 +61,7 @@ const /**
 // Initialize lifecycle service with MCP config (target workspace + extension path + launch flags)
 lifecycleService.init({
 	clientWorkspace: config.clientWorkspace,
-	extensionPath: config.extensionBridgePath,
+	extensionPaths: config.extensionPaths,
 	launch: { ...config.launch },
 	wasHotReloaded: false
 });
@@ -86,7 +86,7 @@ process.on('unhandledRejection', (reason, promise) => {
 
 logger(`Starting VS Code DevTools MCP Server v${VERSION}`);
 logger(`Config: hostWorkspace=${config.hostWorkspace}, clientWorkspace=${config.clientWorkspace}`);
-logger(`Config: extensionBridgePath=${config.extensionBridgePath}`);
+logger(`Config: extensionPaths=${config.extensionPaths.join(', ')}`);
 const server = new McpServer(
 	{
 		name: 'vscode_devtools',
@@ -119,7 +119,7 @@ Avoid sharing sensitive or personal information that you do not want to share wi
 
 const pipeline = new RequestPipeline({
 	checkForChanges: async (mcpRoot, extPath) => checkForChanges(mcpRoot, extPath),
-	extensionPath: config.extensionBridgePath,
+	extensionPaths: config.extensionPaths,
 	hotReloadEnabled: config.hotReload.enabled && config.explicitExtensionDevelopmentPath,
 	mcpServerRoot: mcpServerDir,
 	onShutdown: async () => {

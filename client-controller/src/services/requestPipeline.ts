@@ -41,10 +41,20 @@ const RESTARTING_QUEUED_MESSAGE = [
 ].join('\n');
 
 function formatBuildFailure(packageName: string, error: string): string {
-	return [`❌ **${packageName} rebuild failed:**`, '', '```', error, '```', '', `The ${packageName} was NOT restarted because the build failed.`, 'Fix the error above and try calling a tool again to trigger a rebuild.'].join('\n');
+	return [
+		`❌ **${packageName} rebuild failed:**`,
+		'',
+		'```',
+		error,
+		'```',
+		'',
+		`The ${packageName} was NOT restarted because the build failed.`,
+		'Fix the error above and try calling a tool again to trigger a rebuild.'
+	].join('\n');
 }
 
-const EXT_REBUILT_BANNER = '✅ **Extension was recently updated.** The Extension Development Host is now running the newest code.';
+const EXT_REBUILT_BANNER =
+	'✅ **Extension was recently updated.** The Extension Development Host is now running the newest code.';
 
 // ── Types ────────────────────────────────────────────────
 
@@ -78,8 +88,8 @@ interface PipelineEntry {
 interface PipelineDeps {
 	/** Call the extension's checkForChanges RPC. */
 	checkForChanges: (mcpServerRoot: string, extensionPath: string) => Promise<ChangeCheckResult>;
-	/** Extension root (absolute path), or empty string if no extension configured. */
-	extensionPath: string;
+	/** Extension roots (absolute paths), or empty array if no extension configured. */
+	extensionPaths: string[];
 	/** Master switch — when false, all hot-reload checks are skipped. */
 	hotReloadEnabled: boolean;
 	/** MCP server package root (absolute path). */
@@ -238,7 +248,7 @@ export class RequestPipeline {
 		}
 
 		const promise = this.deps
-			.checkForChanges(this.deps.mcpServerRoot, this.deps.extensionPath)
+			.checkForChanges(this.deps.mcpServerRoot, this.deps.extensionPaths[0] ?? '')
 			.catch((err: unknown) => {
 				const message = err instanceof Error ? err.message : String(err);
 				logger(`[pipeline] checkForChanges RPC failed: ${message} — proceeding without hot-reload check`);

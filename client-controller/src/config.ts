@@ -73,8 +73,10 @@ export interface ResolvedConfig {
 	clientWorkspace: string;
 	/** True when extensionPath was explicitly set in host config */
 	explicitExtensionDevelopmentPath: boolean;
-	/** Path to the extension folder, or empty string when no extension is configured */
+	/** Path to the primary extension folder, or empty string when no extension is configured */
 	extensionBridgePath: string;
+	/** All extension paths to load into the client window */
+	extensionPaths: string[];
 	/** The host workspace where VS Code is running */
 	hostWorkspace: string;
 	/** Resolved hot-reload configuration with defaults applied */
@@ -222,6 +224,7 @@ export function loadConfig(): ResolvedConfig {
 			clientWorkspace: hostRoot,
 			explicitExtensionDevelopmentPath: false,
 			extensionBridgePath: hostRoot,
+			extensionPaths: [hostRoot],
 			hostWorkspace: hostRoot,
 			hotReload: { ...DEFAULT_HOT_RELOAD_CONFIG },
 			launch: { ...DEFAULT_LAUNCH_FLAGS }
@@ -239,6 +242,7 @@ export function loadConfig(): ResolvedConfig {
 				clientWorkspace: hostRoot,
 				explicitExtensionDevelopmentPath: false,
 				extensionBridgePath: hostRoot,
+				extensionPaths: [hostRoot],
 				hostWorkspace: hostRoot,
 				hotReload: { ...DEFAULT_HOT_RELOAD_CONFIG },
 				launch: { ...DEFAULT_LAUNCH_FLAGS }
@@ -249,9 +253,23 @@ export function loadConfig(): ResolvedConfig {
 			typeof parsed.clientWorkspace === 'string' && parsed.clientWorkspace ? parsed.clientWorkspace : hostRoot;
 		_resolvedClientWorkspace = clientWorkspace;
 
+		// Parse extensionPaths (array) with fallback to legacy extensionPath (string)
+		let extensionPaths: string[] = [];
+		if (Array.isArray(parsed.extensionPaths)) {
+			for (const item of parsed.extensionPaths) {
+				if (typeof item === 'string' && item) extensionPaths.push(item);
+			}
+		}
 		const extensionPathRaw = typeof parsed.extensionPath === 'string' ? parsed.extensionPath : '';
-		const extensionPath = extensionPathRaw || hostRoot;
-		const explicitExtensionDevelopmentPath = extensionPathRaw.length > 0;
+		if (extensionPaths.length === 0 && extensionPathRaw) {
+			extensionPaths = [extensionPathRaw];
+		}
+		if (extensionPaths.length === 0) {
+			extensionPaths = [hostRoot];
+		}
+
+		const extensionPath = extensionPaths[0];
+		const explicitExtensionDevelopmentPath = extensionPathRaw.length > 0 || extensionPaths.length > 0;
 
 		const launchPartial = coerceLaunchFlags(parsed.launch);
 		const hotReloadPartial: Partial<HotReloadConfig> = {};
@@ -273,6 +291,7 @@ export function loadConfig(): ResolvedConfig {
 			clientWorkspace,
 			explicitExtensionDevelopmentPath,
 			extensionBridgePath: extensionPath,
+			extensionPaths,
 			hostWorkspace: hostRoot,
 			hotReload: resolveHotReloadConfig(hotReloadPartial),
 			launch: resolveLaunchFlags(launchPartial)
@@ -284,6 +303,7 @@ export function loadConfig(): ResolvedConfig {
 			clientWorkspace: hostRoot,
 			explicitExtensionDevelopmentPath: false,
 			extensionBridgePath: hostRoot,
+			extensionPaths: [hostRoot],
 			hostWorkspace: hostRoot,
 			hotReload: { ...DEFAULT_HOT_RELOAD_CONFIG },
 			launch: { ...DEFAULT_LAUNCH_FLAGS }

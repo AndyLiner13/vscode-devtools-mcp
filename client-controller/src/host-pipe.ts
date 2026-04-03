@@ -40,7 +40,7 @@ interface JsonRpcResponse {
 
 interface McpReadyParams {
 	clientWorkspace: string;
-	extensionPath: string;
+	extensionPath: string | string[];
 	forceRestart?: boolean;
 	launch?: Record<string, unknown>;
 }
@@ -68,7 +68,11 @@ interface TeardownResult {
  * Each call creates a fresh connection, sends the request, reads one
  * newline-delimited response, and disconnects.
  */
-async function sendHostRequest(method: string, params: Record<string, unknown>, timeoutMs: number = DEFAULT_TIMEOUT_MS): Promise<unknown> {
+async function sendHostRequest(
+	method: string,
+	params: Record<string, unknown>,
+	timeoutMs: number = DEFAULT_TIMEOUT_MS
+): Promise<unknown> {
 	return new Promise((resolve, reject) => {
 		logger(`[host-pipe] ${method} → ${HOST_PIPE_PATH} (timeout=${timeoutMs}ms)`);
 		const client = net.createConnection(HOST_PIPE_PATH);
@@ -244,12 +248,20 @@ export async function browserFetchAXTree(verbose: boolean): Promise<BrowserAXTre
 	return result as BrowserAXTreeResult;
 }
 
-export async function browserCaptureScreenshot(params: { format?: string; fullPage?: boolean; quality?: number; uid?: string }): Promise<BrowserScreenshotResult> {
+export async function browserCaptureScreenshot(params: {
+	format?: string;
+	fullPage?: boolean;
+	quality?: number;
+	uid?: string;
+}): Promise<BrowserScreenshotResult> {
 	const result = await sendHostRequest('browser.captureScreenshot', params, BROWSER_TIMEOUT_MS);
 	return result as BrowserScreenshotResult;
 }
 
-export async function browserExecuteWithDiff(action: string, actionParams: Record<string, unknown>): Promise<{ summary: string }> {
+export async function browserExecuteWithDiff(
+	action: string,
+	actionParams: Record<string, unknown>
+): Promise<{ summary: string }> {
 	const result = await sendHostRequest('browser.executeWithDiff', { action, actionParams }, BROWSER_TIMEOUT_MS);
 	return result as { summary: string };
 }
@@ -259,7 +271,9 @@ export async function browserGetConsoleMessages(params: { limit?: number }): Pro
 	return result as BrowserConsoleResult;
 }
 
-export async function browserGetConsoleMessageById(msgid: number): Promise<{ found: boolean; message?: BrowserConsoleMessage }> {
+export async function browserGetConsoleMessageById(
+	msgid: number
+): Promise<{ found: boolean; message?: BrowserConsoleMessage }> {
 	const result = await sendHostRequest('browser.getConsoleMessageById', { msgid }, BROWSER_TIMEOUT_MS);
 	return result as { found: boolean; message?: BrowserConsoleMessage };
 }

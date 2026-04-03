@@ -36,6 +36,7 @@ function diagLog(msg: string): void {
 import * as bootstrap from './bootstrap';
 import pkg from './package.json';
 import { startWorker, stopWorker } from './services/codebase/codebase-worker-proxy';
+import { detectExtensionPaths } from './services/extensionDetection';
 import { registerInspectorPanel } from './services/inspector-panel';
 import { initInspectorChannel, initMainChannel, log } from './services/logger';
 import { registerMcpServerProvider } from './services/mcpServerProvider';
@@ -70,6 +71,7 @@ let currentRole: 'client' | 'host' | undefined;
 let hostHandlersCleanup: (() => void) | undefined;
 let clientHandlersCleanup: undefined | vscode.Disposable;
 let reconnectCdpCallbackForRuntime: (() => Promise<boolean>) | undefined;
+let globalCommandsRegistered = false;
 
 async function notifyHostOfShutdown(reason: string): Promise<void> {
 	await new Promise<void>((resolve) => {
@@ -241,7 +243,51 @@ export async function activate(context: vscode.ExtensionContext) {
 		statusBarItem.command = undefined;
 		statusBarItem.show();
 	} else {
-		// No client token — try to become host
+		// No client token — this window MAY become the host, but only if dev mode is enabled.
+		const devModeEnabledAtStart = vscode.workspace.getConfiguration('devtools').get<boolean>('dev.enabled', false);
+
+		if (!devModeEnabledAtStart) {
+			diagLog('Dev mode disabled — skipping host pipe claim, this is a regular VS Code window');
+			log('Dev mode disabled — not claiming host pipe. Enable devtools.dev.enabled to activate.');
+
+			// Register global commands for regular VS Code windows
+			context.subscriptions.push(
+				vscode.commands.registerCommand('devtools.restartTsServer', () => {
+					log('Restart TS Server invoked');
+					void vscode.commands.executeCommand('typescript.restartTsServer');
+				})
+			);
+			globalCommandsRegistered = true;
+			log('Global commands registered (regular window)');
+
+			// Listen for dev mode being toggled on later — late activation
+			context.subscriptions.push(
+				vscode.workspace.onDidChangeConfiguration((e) => {
+					if (!e.affectsConfiguration('devtools.dev.enabled')) return;
+					const newEnabled = vscode.workspace.getConfiguration('devtools').get<boolean>('dev.enabled', false);
+					if (newEnabled && currentRole === undefined) {
+						log('Dev mode toggled on — attempting late host activation');
+						void activateAsHost();
+					}
+				})
+			);
+
+			// Fall through to Step 3 (runtime loading) — skip Step 2 since no role assigned
+		} else {
+			// Dev mode is enabled at startup — claim the host pipe immediately
+			const claimed = await claimHostPipe();
+			if (!claimed) {
+				log('Host pipe already in use — this window will not be a DevTools participant');
+				// Fall through to runtime loading anyway
+			}
+		}
+	}
+
+	// ========================================================================
+	// Helper: Claim the host pipe
+	// ========================================================================
+
+	async function claimHostPipe(): Promise<boolean> {
 		try {
 			diagLog(`Attempting to claim Host pipe: ${HOST_PIPE_PATH}`);
 			await bootstrap.startServer(HOST_PIPE_PATH);
@@ -250,60 +296,52 @@ export async function activate(context: vscode.ExtensionContext) {
 			void vscode.commands.executeCommand('setContext', 'devtools.isClient', false);
 			diagLog('SUCCESS: Claimed Host pipe — this instance is HOST');
 			log(`Claimed Host pipe @ ${HOST_PIPE_PATH} — this instance is the HOST`);
+			return true;
 		} catch (err: unknown) {
 			const error = err as NodeJS.ErrnoException;
 			if (error.code === 'EADDRINUSE') {
-				diagLog('Host pipe EADDRINUSE and no client token — this is a regular VS Code window');
-				log('Host pipe exists but no client token — this VS Code instance is not a DevTools participant');
-
-				// Register global commands even for regular VS Code windows
-				context.subscriptions.push(
-					vscode.commands.registerCommand('devtools.restartTsServer', () => {
-						log('Restart TS Server invoked');
-						void vscode.commands.executeCommand('typescript.restartTsServer');
-					})
-				);
-				log('Global commands registered (regular window)');
-
-				// Not the host, not the client — just a regular VS Code window
-				return;
+				diagLog('Host pipe EADDRINUSE — another host already running');
+				log('Host pipe already in use — cannot become host');
+				return false;
 			}
 			throw err;
 		}
 	}
 
 	// ========================================================================
-	// Step 1.5: Register URI Handler (Host only, always active)
+	// Helper: Full host activation (pipe claim + handler loading + MCP setup)
 	// ========================================================================
 
-	if (currentRole === 'host') {
+	async function activateAsHost(): Promise<void> {
+		// Claim the host pipe if not already claimed
+		if (currentRole !== 'host') {
+			const claimed = await claimHostPipe();
+			if (!claimed) {
+				log('Could not claim host pipe — remaining as regular window');
+				return;
+			}
+		}
+
+		// Register URI handler
 		const uriHandler = new DevToolsUriHandler();
 		context.subscriptions.push(vscode.window.registerUriHandler(uriHandler));
 		context.subscriptions.push({ dispose: disposeUriHandler });
 		log('URI handler registered — vscode://andyliner.vscode-devtools/open/... links are active');
-	}
 
-	// ========================================================================
-	// Step 1.6: Register Global Commands (work in any window)
-	// ========================================================================
+		// Register global commands (skip restartTsServer if already registered from early-return path)
+		if (!globalCommandsRegistered) {
+			context.subscriptions.push(
+				vscode.commands.registerCommand('devtools.restartTsServer', () => {
+					log('Restart TS Server invoked');
+					void vscode.commands.executeCommand('typescript.restartTsServer');
+				})
+			);
+			globalCommandsRegistered = true;
+			log('Global commands registered');
+		}
 
-	context.subscriptions.push(
-		vscode.commands.registerCommand('devtools.restartTsServer', () => {
-			log('Restart TS Server invoked');
-			void vscode.commands.executeCommand('typescript.restartTsServer');
-		})
-	);
-	log('Global commands registered');
-
-	// ========================================================================
-	// Step 2: Load Role-Specific Handlers
-	// ========================================================================
-
-	try {
-		if (currentRole === 'host') {
-			diagLog('Step 2: Loading HOST handlers...');
-			// Dynamic import keeps host-handlers out of the static dependency graph.
-			// If it fails to compile, the extension still works in Safe Mode.
+		try {
+			diagLog('Loading HOST handlers...');
 			log('Loading host-handlers module...');
 			const {
 				cleanup,
@@ -319,9 +357,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			registerHostHandlers(bootstrap.registerHandler, context);
 			hostHandlersCleanup = cleanup;
 
-			// Safety net: kill spawned processes if the extension host exits without
-			// deactivate() running (crash, force-close, timeout). stopClient() inside
-			// cleanup() uses execSync which is safe in synchronous 'exit' handlers.
 			process.on('exit', () => {
 				if (hostHandlersCleanup) {
 					hostHandlersCleanup();
@@ -329,11 +364,8 @@ export async function activate(context: vscode.ExtensionContext) {
 				}
 			});
 
-			// Save the callback for wiring to runtime after it loads
 			reconnectCdpCallbackForRuntime = createReconnectCdpCallback();
 
-			// Register a callback to propagate browser service changes to runtime bundle
-			// This callback will be invoked when runtime loads and sets up runtimeModule
 			onBrowserServiceChanged((service: unknown) => {
 				if (runtimeModule) {
 					runtimeModule.wireBrowserService(service);
@@ -341,21 +373,21 @@ export async function activate(context: vscode.ExtensionContext) {
 				}
 			});
 
+			// Wire CDP reconnect callback if runtime already loaded
+			if (runtimeModule && reconnectCdpCallbackForRuntime) {
+				runtimeModule.wireReconnectCdpCallback(reconnectCdpCallbackForRuntime);
+				log('Wired CDP reconnect callback to already-loaded runtime bundle');
+			}
+
 			log('Host handlers registered, CDP reconnect callback created');
 
-			// Register the MCP server provider so Copilot discovers it automatically
 			const mcpProvider = registerMcpServerProvider(context);
 
 			const isDevModeEnabled = (): boolean => vscode.workspace.getConfiguration('devtools').get<boolean>('dev.enabled', false);
 
-			// Gate the MCP server + client window on the dev mode setting
-			const devModeEnabled = isDevModeEnabled();
-			diagLog(`devtools.dev.enabled = ${devModeEnabled}`);
-			if (!devModeEnabled) {
-				mcpProvider.setEnabled(false);
-			}
+			// Dev mode is known to be enabled (either at startup or just toggled on)
 			diagLog(`MCP provider enabled=${mcpProvider.enabled}`);
-			log(`MCP server provider registered (enabled: ${mcpProvider.enabled}, devMode: ${devModeEnabled})`);
+			log(`MCP server provider registered (enabled: ${mcpProvider.enabled})`);
 
 			// Listen for settings changes — dev mode toggle + general refresh
 			context.subscriptions.push(
@@ -363,9 +395,11 @@ export async function activate(context: vscode.ExtensionContext) {
 					if (e.affectsConfiguration('devtools.dev.enabled')) {
 						const newEnabled = vscode.workspace.getConfiguration('devtools').get<boolean>('dev.enabled', false);
 						if (newEnabled && !mcpProvider.enabled) {
-							log('Dev mode enabled — starting MCP server and client window');
-							updateStatusBar('connecting');
-							mcpProvider.setEnabled(true);
+							log('Dev mode enabled — running extension detection then starting MCP server');
+							void runExtensionDetection().then(() => {
+								updateStatusBar('connecting');
+								mcpProvider.setEnabled(true);
+							});
 						} else if (!newEnabled && mcpProvider.enabled) {
 							log('Dev mode disabled — stopping MCP server and client window');
 							mcpProvider.setEnabled(false);
@@ -420,13 +454,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			log('MCP Server lifecycle commands registered');
 
 			// ── Tethered Lifecycle: Client Window ↔ MCP Server ──────────────────
-			// The client window and MCP server are a single entity:
-			// - Extension activation → start both immediately
-			// - Client dies → stop MCP server (keeps server registered for restart)
-			// - MCP toggled off → stop client window
-			// - MCP toggled on → start client window
-
-			// Track whether WE are driving a toggle to avoid recursive loops
 			let tetheredAction = false;
 			const TETHERED_TIMEOUT_MS = 30_000;
 
@@ -453,7 +480,6 @@ export async function activate(context: vscode.ExtensionContext) {
 				);
 			}
 
-			// When client state changes (health monitor fires), update status bar and MCP
 			context.subscriptions.push(
 				onClientStateChanged((connected: boolean) => {
 					if (tetheredAction) {
@@ -468,7 +494,6 @@ export async function activate(context: vscode.ExtensionContext) {
 						updateStatusBar('connected');
 						log('Client window connected — ensuring MCP server is running');
 
-						// Restore Inspector panel if it was open before reload
 						if (inspectorPanel.wasOpen && !inspectorPanel.isVisible) {
 							log('Restoring Inspector panel (was open before reload)');
 							inspectorPanel.show();
@@ -483,8 +508,6 @@ export async function activate(context: vscode.ExtensionContext) {
 				})
 			);
 
-			// When MCP is toggled, start/stop the MCP server. The mcpReady handler
-			// in host-handlers will spawn the client window — no pre-launch here.
 			context.subscriptions.push(
 				mcpProvider.onDidToggle((enabled: boolean) => {
 					if (tetheredAction) {
@@ -512,68 +535,113 @@ export async function activate(context: vscode.ExtensionContext) {
 								}
 							);
 					} else {
-						// MCP turned off → stop client window
 						stopClientWindow();
 						updateStatusBar('disconnected');
 					}
 				})
 			);
 
-			// Auto-start: Start MCP server only — mcpReady will spawn the client window.
-			diagLog(`Step 3: Auto-start check — devModeEnabled=${devModeEnabled}`);
-			if (devModeEnabled) {
-				diagLog('AUTO-START: Starting MCP server (client window will launch on mcpReady)');
-				updateStatusBar('connecting');
-				log('Auto-starting MCP server — client window will launch when mcpReady fires...');
+			// ── Extension Path Detection ─────────────────────────────────────
+			const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 
-				let startupProgressResolve: (() => void) | undefined;
-				const startupProgressPromise = new Promise<void>((r) => {
-					startupProgressResolve = r;
-				});
-				const startupClientListener = onClientStateChanged((connected: boolean) => {
-					if (connected && startupProgressResolve) {
-						vscode.window.setStatusBarMessage('✅ VS Code DevTools started', 3000);
-						startupProgressResolve();
-						startupProgressResolve = undefined;
-						startupClientListener.dispose();
+			async function runExtensionDetection(): Promise<void> {
+				if (!workspaceRoot) return;
+				try {
+					const result = await detectExtensionPaths(workspaceRoot);
+					if (result.paths.length > 0) {
+						log(
+							`[extensionDetection] Active extension paths: ${result.paths.join(', ')} (autoDetected: ${result.autoDetected})`
+						);
+					} else {
+						log('[extensionDetection] No VS Code extension folders found in workspace');
 					}
-				});
-
-				void vscode.window.withProgress(
-					{
-						cancellable: false,
-						location: vscode.ProgressLocation.Notification,
-						title: 'VS Code DevTools'
-					},
-					async (progress) => {
-						progress.report({ message: 'Starting MCP server…' });
-						try {
-							await vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true });
-							log('[auto-start] MCP server started — waiting for mcpReady to spawn client');
-							progress.report({ message: 'Waiting for client window…' });
-							if (isClientWindowConnected() && startupProgressResolve) {
-								vscode.window.setStatusBarMessage('✅ VS Code DevTools started', 3000);
-								startupProgressResolve();
-								startupProgressResolve = undefined;
-								startupClientListener.dispose();
-							}
-						} catch (err: unknown) {
-							const msg = err instanceof Error ? err.message : String(err);
-							log(`[auto-start] MCP server start failed: ${msg}`);
-							updateStatusBar('disconnected');
-							startupClientListener.dispose();
-							startupProgressResolve = undefined;
-							return;
-						}
-						await startupProgressPromise;
-					}
-				);
-			} else {
-				diagLog('SKIP: Dev mode disabled — no auto-start');
-				log('Dev mode disabled — skipping auto-start. Enable devtools.dev.enabled to activate.');
+				} catch (err) {
+					const msg = err instanceof Error ? err.message : String(err);
+					log(`[extensionDetection] Detection failed: ${msg}`);
+				}
 			}
-		} else {
-			diagLog('Step 2: Loading CLIENT handlers...');
+
+			// Auto-start: run extension detection then start MCP server
+			await runExtensionDetection();
+			diagLog('AUTO-START: Starting MCP server (client window will launch on mcpReady)');
+			updateStatusBar('connecting');
+			log('Auto-starting MCP server — client window will launch when mcpReady fires...');
+
+			let startupProgressResolve: (() => void) | undefined;
+			const startupProgressPromise = new Promise<void>((r) => {
+				startupProgressResolve = r;
+			});
+			const startupClientListener = onClientStateChanged((connected: boolean) => {
+				if (connected && startupProgressResolve) {
+					vscode.window.setStatusBarMessage('✅ VS Code DevTools started', 3000);
+					startupProgressResolve();
+					startupProgressResolve = undefined;
+					startupClientListener.dispose();
+				}
+			});
+
+			void vscode.window.withProgress(
+				{
+					cancellable: false,
+					location: vscode.ProgressLocation.Notification,
+					title: 'VS Code DevTools'
+				},
+				async (progress) => {
+					progress.report({ message: 'Starting MCP server…' });
+					try {
+						await vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true });
+						log('[auto-start] MCP server started — waiting for mcpReady to spawn client');
+						progress.report({ message: 'Waiting for client window…' });
+						if (isClientWindowConnected() && startupProgressResolve) {
+							vscode.window.setStatusBarMessage('✅ VS Code DevTools started', 3000);
+							startupProgressResolve();
+							startupProgressResolve = undefined;
+							startupClientListener.dispose();
+						}
+					} catch (err: unknown) {
+						const msg = err instanceof Error ? err.message : String(err);
+						log(`[auto-start] MCP server start failed: ${msg}`);
+						updateStatusBar('disconnected');
+						startupClientListener.dispose();
+						startupProgressResolve = undefined;
+						return;
+					}
+					await startupProgressPromise;
+				}
+			);
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			const stack = err instanceof Error ? err.stack : undefined;
+			log(`Failed to load host handlers — Safe Mode: ${msg}`);
+			if (stack) {
+				log(`Stack trace:\n${stack}`);
+			}
+			updateStatusBar('safe-mode', msg);
+		}
+	}
+
+	// ========================================================================
+	// Step 2: Role-specific setup
+	// ========================================================================
+
+	if (currentRole === 'host') {
+		// Host pipe was already claimed above — run the full host setup
+		await activateAsHost();
+	} else if (currentRole === 'client') {
+		// Register global commands for the client window
+		if (!globalCommandsRegistered) {
+			context.subscriptions.push(
+				vscode.commands.registerCommand('devtools.restartTsServer', () => {
+					log('Restart TS Server invoked');
+					void vscode.commands.executeCommand('typescript.restartTsServer');
+				})
+			);
+			globalCommandsRegistered = true;
+			log('Global commands registered');
+		}
+
+		try {
+			diagLog('Loading CLIENT handlers...');
 			log('Loading client-handlers module...');
 
 			const { registerClientHandlers } = await import('./services/client-handlers');
@@ -583,27 +651,23 @@ export async function activate(context: vscode.ExtensionContext) {
 			context.subscriptions.push(disposable);
 			log('Client handlers registered');
 
-			// Noop MCP provider: the package.json declares mcpServerDefinitionProviders
-			// globally, so VS Code in this window will try to discover the provider.
-			// Register an empty provider so the client never spawns its own MCP server.
 			const noopProvider: vscode.McpServerDefinitionProvider = {
 				provideMcpServerDefinitions: () => []
 			};
 			context.subscriptions.push(vscode.lm.registerMcpServerDefinitionProvider(MCP_PROVIDER_ID, noopProvider));
 			log('Noop MCP provider registered — client will not spawn MCP server');
 
-			// Start the codebase worker thread so ts-morph stays warm
 			startWorker();
 			log('Codebase worker thread started');
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			const stack = err instanceof Error ? err.stack : undefined;
+			log(`Failed to load client handlers — Safe Mode: ${msg}`);
+			if (stack) {
+				log(`Stack trace:\n${stack}`);
+			}
+			updateStatusBar('safe-mode', msg);
 		}
-	} catch (err) {
-		const msg = err instanceof Error ? err.message : String(err);
-		const stack = err instanceof Error ? err.stack : undefined;
-		log(`Failed to load ${currentRole} handlers — Safe Mode: ${msg}`);
-		if (stack) {
-			log(`Stack trace:\n${stack}`);
-		}
-		updateStatusBar('safe-mode', msg);
 	}
 
 	// ========================================================================

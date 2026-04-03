@@ -25,18 +25,23 @@ function buildConfigEnv(workspacePath: string): Record<string, string> {
 	const config = vscode.workspace.getConfiguration('devtools');
 
 	const clientWorkspaceRaw = config.get<string>('clientWorkspace', '');
-	const extensionPathRaw = config.get<string>('extensionPath', '.');
+	const extensionPathsRaw = config.get<string[]>('extensionPath', []);
 
 	const clientWorkspace = clientWorkspaceRaw
 		? path.isAbsolute(clientWorkspaceRaw)
 			? clientWorkspaceRaw
 			: path.resolve(workspacePath, clientWorkspaceRaw)
 		: workspacePath;
-	const extensionPath = path.isAbsolute(extensionPathRaw) ? extensionPathRaw : path.resolve(workspacePath, extensionPathRaw);
+
+	const extensionPaths =
+		extensionPathsRaw.length > 0
+			? extensionPathsRaw.map((p) => (path.isAbsolute(p) ? p : path.resolve(workspacePath, p)))
+			: [workspacePath];
 
 	const resolvedConfig = {
 		clientWorkspace,
-		extensionPath,
+		extensionPath: extensionPaths[0],
+		extensionPaths,
 		hotReload: {
 			enabled: config.get<boolean>('hotReload.enabled', true),
 			mcpStatusTimeout: config.get<number>('hotReload.mcpStatusTimeout', 60000)

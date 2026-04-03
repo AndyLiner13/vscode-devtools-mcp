@@ -35,8 +35,8 @@ class LifecycleService {
 
 	/** Client workspace folder the MCP server controls */
 	private _clientWorkspace: string | undefined;
-	/** Extension development path for the Client */
-	private _extensionPath: string | undefined;
+	/** Extension development paths for the Client */
+	private _extensionPaths: string[] | undefined;
 	/** Launch flags for the Client VS Code window */
 	private _launchFlags: Record<string, unknown> | undefined;
 	/** True if this MCP process was just hot-reloaded */
@@ -48,12 +48,19 @@ class LifecycleService {
 	 *
 	 * @param params.wasHotReloaded - True if MCP server was just hot-reloaded
 	 */
-	init(params: { clientWorkspace: string; extensionPath: string; launch?: Record<string, unknown>; wasHotReloaded?: boolean }): void {
+	init(params: {
+		clientWorkspace: string;
+		extensionPaths: string[];
+		launch?: Record<string, unknown>;
+		wasHotReloaded?: boolean;
+	}): void {
 		this._clientWorkspace = params.clientWorkspace;
-		this._extensionPath = params.extensionPath;
+		this._extensionPaths = params.extensionPaths;
 		this._launchFlags = params.launch;
 		this._wasHotReloaded = params.wasHotReloaded ?? false;
-		logger(`[Lifecycle] Initialized — client=${params.clientWorkspace}, ext=${params.extensionPath}, wasHotReloaded=${this._wasHotReloaded}`);
+		logger(
+			`[Lifecycle] Initialized — client=${params.clientWorkspace}, ext=${params.extensionPaths.join(', ')}, wasHotReloaded=${this._wasHotReloaded}`
+		);
 	}
 
 	// ── Startup ────────────────────────────────────────────
@@ -100,7 +107,7 @@ class LifecycleService {
 	async handleHotReload(): Promise<void> {
 		logger('[Lifecycle] Hot-reload — requesting Host rebuild…');
 
-		if (this._clientWorkspace === undefined || this._extensionPath === undefined) {
+		if (this._clientWorkspace === undefined || this._extensionPaths === undefined) {
 			throw new Error('[Lifecycle] Not initialized — call init() before handleHotReload()');
 		}
 
@@ -109,7 +116,7 @@ class LifecycleService {
 		try {
 			const result = await hotReloadRequired({
 				clientWorkspace: this._clientWorkspace,
-				extensionPath: this._extensionPath,
+				extensionPath: this._extensionPaths,
 				launch: this._launchFlags
 			});
 			clientStartedAt = result.clientStartedAt;
@@ -119,7 +126,7 @@ class LifecycleService {
 
 			const fallbackResult = await mcpReady({
 				clientWorkspace: this._clientWorkspace,
-				extensionPath: this._extensionPath,
+				extensionPath: this._extensionPaths,
 				launch: this._launchFlags
 			});
 			clientStartedAt = fallbackResult.clientStartedAt;
@@ -256,13 +263,13 @@ class LifecycleService {
 	private async doConnect(options?: { forceRestart?: boolean }): Promise<void> {
 		logger('[Lifecycle] Connecting — calling mcpReady()…');
 
-		if (this._clientWorkspace === undefined || this._extensionPath === undefined) {
+		if (this._clientWorkspace === undefined || this._extensionPaths === undefined) {
 			throw new Error('[Lifecycle] Not initialized — call init() before ensureConnection()');
 		}
 
 		const result = await mcpReady({
 			clientWorkspace: this._clientWorkspace,
-			extensionPath: this._extensionPath,
+			extensionPath: this._extensionPaths,
 			forceRestart: options?.forceRestart,
 			launch: this._launchFlags
 		});
@@ -273,7 +280,9 @@ class LifecycleService {
 		// hot-reloads when only MCP server files changed.
 		if (this._wasHotReloaded) {
 			this._debugWindowStartedAt = Date.now();
-			logger(`[Lifecycle] MCP hot-reload detected — using fresh timestamp for extension checks: ${new Date(this._debugWindowStartedAt).toISOString()}`);
+			logger(
+				`[Lifecycle] MCP hot-reload detected — using fresh timestamp for extension checks: ${new Date(this._debugWindowStartedAt).toISOString()}`
+			);
 		} else {
 			this._debugWindowStartedAt = result.clientStartedAt ?? Date.now();
 		}
@@ -289,7 +298,7 @@ class LifecycleService {
 	private async doRecoverClientConnection(): Promise<void> {
 		logger('[Lifecycle] Client pipe recovery requested — restarting Client…');
 
-		if (this._clientWorkspace === undefined || this._extensionPath === undefined) {
+		if (this._clientWorkspace === undefined || this._extensionPaths === undefined) {
 			throw new Error('[Lifecycle] Not initialized — call init() before recoverClientConnection()');
 		}
 

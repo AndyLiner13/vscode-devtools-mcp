@@ -295,6 +295,14 @@ class HotReloadService {
 	}
 
 	/**
+	 * Check a single extension path with a user-configured build script.
+	 * Used by the multi-path extension flow in host-handlers.
+	 */
+	async checkPackageWithScript(packageRoot: string, buildScript: string): Promise<PackageCheckResult> {
+		return this.checkPackage(packageRoot, HASH_KEY_EXT, buildScript);
+	}
+
+	/**
 	 * Check inspector frontend source and rebuild if changed.
 	 * Uses the inspector's own tsconfig to discover source files
 	 * and runs 'inspector:build' (esbuild → inspector/dist/).

@@ -75,6 +75,23 @@ let currentDebugSession: null | vscode.DebugSession = null;
 
 // ── MCP Server ID Resolution ─────────────────────────────────────────────
 
+/**
+ * Normalize the extensionPath / extensionPaths param from incoming RPC to a string[].
+ * Accepts either key, as string or string[]. Returns undefined when nothing usable is provided.
+ */
+function parseExtensionPaths(params: Record<string, unknown>): string[] | undefined {
+	for (const key of ['extensionPaths', 'extensionPath'] as const) {
+		const value = params[key];
+		if (Array.isArray(value)) {
+			const filtered = (value as unknown[]).filter((p): p is string => typeof p === 'string');
+			if (filtered.length > 0) return filtered;
+		} else if (typeof value === 'string' && value.length > 0) {
+			return [value];
+		}
+	}
+	return undefined;
+}
+
 // VS Code constructs server definition IDs as: ExtensionIdentifier.toKey(id) + '/' + label
 // Our extension ID is 'andyliner.vscode-devtools', label is 'Client Controller'
 const MCP_SERVER_ID = 'andyliner.vscode-devtools/Client Controller';
@@ -131,7 +148,7 @@ let hostStoragePath: null | string = null;
 let clientStartedAt: null | number = null;
 
 /** Last extension path used for Client launch */
-let currentExtensionPath: null | string = null;
+let currentExtensionPath: null | string[] = null;
 
 /** Last client workspace used for Client launch */
 let currentClientWorkspace: null | string = null;
@@ -211,6 +228,7 @@ interface PersistedSession {
 	cdpPort: number;
 	clientPid: number;
 	extensionPath: string;
+	extensionPaths: string[];
 	inspectorPort: number;
 	startedAt: number;
 }
@@ -230,7 +248,7 @@ function isPersistedSession(value: unknown): value is PersistedSession {
 		typeof clientPid === 'number' &&
 		typeof persistedCdpPort === 'number' &&
 		typeof persistedInspectorPort === 'number' &&
-		typeof extensionPath === 'string' &&
+		(typeof extensionPath === 'string' || Array.isArray(Reflect.get(value, 'extensionPaths'))) &&
 		typeof startedAt === 'number'
 	);
 }
@@ -658,14 +676,14 @@ function seedClientSettings(userDataDir: string): void {
  */
 async function spawnClient(
 	clientWorkspace: string,
-	extensionPath: string,
+	extensionPaths: string[],
 	launchFlags?: Record<string, unknown>
 ): Promise<{ cdpPort: number; userDataDir: string; clientStartedAt: number }> {
 	if (spawnInProgress) {
 		log('[host] spawnClient: spawn already in progress — awaiting existing promise');
 		return spawnInProgress;
 	}
-	const promise = doSpawnClient(clientWorkspace, extensionPath, launchFlags);
+	const promise = doSpawnClient(clientWorkspace, extensionPaths, launchFlags);
 	spawnInProgress = promise;
 	try {
 		return await promise;
@@ -676,7 +694,7 @@ async function spawnClient(
 
 async function doSpawnClient(
 	clientWorkspace: string,
-	extensionPath: string,
+	extensionPaths: string[],
 	launchFlags?: Record<string, unknown>
 ): Promise<{ cdpPort: number; userDataDir: string; clientStartedAt: number }> {
 	// Allocate ports (CDP for browser debugging + inspector for Extension Host debugging)
@@ -701,8 +719,9 @@ async function doSpawnClient(
 	seedClientSettings(userDataDir);
 
 	// Build launch arguments — core flags first
+	const extensionPathArg = extensionPaths.join(';');
 	const args = [
-		`--extensionDevelopmentPath=${extensionPath}`,
+		`--extensionDevelopmentPath=${extensionPathArg}`,
 		`--remote-debugging-port=${allocatedCdpPort}`,
 		`--inspect-extensions=${allocatedInspectorPort}`,
 		`--user-data-dir=${userDataDir}`,
@@ -821,7 +840,7 @@ async function doSpawnClient(
 	cdpPort = allocatedCdpPort;
 	inspectorPort = allocatedInspectorPort;
 	clientStartedAt = Date.now();
-	currentExtensionPath = extensionPath;
+	currentExtensionPath = extensionPaths;
 	currentClientWorkspace = clientWorkspace;
 	const spawnTimestamp = clientStartedAt;
 
@@ -860,7 +879,8 @@ async function doSpawnClient(
 	persistSession({
 		cdpPort: allocatedCdpPort,
 		clientPid: electronPid ?? child.pid,
-		extensionPath,
+		extensionPath: extensionPaths.join(';'),
+		extensionPaths,
 		inspectorPort: allocatedInspectorPort,
 		startedAt: clientStartedAt
 	});
@@ -1031,7 +1051,8 @@ async function reconnectToClient(maxWaitMs = 60_000): Promise<boolean> {
 				persistSession({
 					cdpPort,
 					clientPid: pidToPersist,
-					extensionPath: currentExtensionPath,
+					extensionPath: currentExtensionPath[0] ?? '',
+					extensionPaths: currentExtensionPath,
 					inspectorPort,
 					startedAt: clientStartedAt
 				});
@@ -1216,12 +1237,12 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 	register('mcpReady', async (params) => {
 		log('[host] mcpReady called with params:', JSON.stringify(params));
 
-		// Signal that the MCP server is ready (unblocks waitForMcpReady callers)
 		signalMcpReady();
 
-		// MCP tells us where the client workspace and extension are
 		const clientWorkspace = typeof params.clientWorkspace === 'string' ? params.clientWorkspace : undefined;
-		const extensionPath = typeof params.extensionPath === 'string' ? params.extensionPath : undefined;
+
+		const extensionPaths = parseExtensionPaths(params);
+
 		const launchFlags =
 			typeof params.launch === 'object' && params.launch !== null ? (params.launch as Record<string, unknown>) : undefined;
 		const forceRestart = typeof params.forceRestart === 'boolean' ? params.forceRestart : false;
@@ -1229,27 +1250,36 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 		if (!clientWorkspace) {
 			throw new Error('mcpReady: clientWorkspace is required');
 		}
-		if (!extensionPath) {
-			throw new Error('mcpReady: extensionPath is required');
+		if (!extensionPaths || extensionPaths.length === 0) {
+			throw new Error('mcpReady: extensionPath or extensionPaths is required');
 		}
 
-		// Check if extension source changed (content hash, not mtime)
-		const extCheck = await hotReloadService.checkExtensionOnly(extensionPath);
-		if (extCheck.changed && !extCheck.rebuilt) {
-			log(`[host] Extension build failed: ${extCheck.buildError ?? 'unknown'}`);
+		// Check if extension source changed across all paths
+		const buildScriptName = vscode.workspace.getConfiguration('devtools').get<string>('buildScriptName', 'build');
+		let anyExtChanged = false;
+		let anyExtBuildFailed = false;
+		for (const extPath of extensionPaths) {
+			const extCheck = await hotReloadService.checkPackageWithScript(extPath, buildScriptName);
+			if (extCheck.changed && !extCheck.rebuilt) {
+				log(`[host] Extension build failed for ${extPath}: ${extCheck.buildError ?? 'unknown'}`);
+				anyExtBuildFailed = true;
+			}
+			if (extCheck.changed) anyExtChanged = true;
+		}
+		if (anyExtBuildFailed) {
+			log('[host] One or more extension builds failed');
 		}
 
 		// Check for existing healthy Client
 		const session = loadPersistedSession();
 		if (session) {
-			electronPid = session.clientPid; // Persisted PID is the real Electron PID
+			electronPid = session.clientPid;
 			cdpPort = session.cdpPort;
 			inspectorPort = session.inspectorPort;
-			currentExtensionPath = session.extensionPath;
+			currentExtensionPath = session.extensionPaths ?? (session.extensionPath ? [session.extensionPath] : null);
 
 			if (forceRestart) {
-				// MCP explicitly requested a restart — Client is unresponsive
-				log('[host] forceRestart requested — stopping existing Client unconditionally');
+				log('[host] forceRestart requested \u2014 stopping existing Client unconditionally');
 				stopClient();
 				clearPersistedSession();
 				electronPid = null;
@@ -1259,13 +1289,12 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 				await waitForPipeRelease();
 			} else {
 				const healthy = await isClientHealthy();
-				if (healthy && !extCheck.changed) {
+				if (healthy && !anyExtChanged) {
 					log('[host] Existing Client is healthy and build is current, returning connection info');
 					const dataDir = hostStoragePath
 						? path.join(hostStoragePath, 'user-data')
 						: path.join(clientWorkspace, '.devtools', 'user-data');
 
-					// Ensure CDP client is connected for browser automation LM tools
 					if (!activeCdpClient?.connected) {
 						await connectCdpClient(session.cdpPort);
 					}
@@ -1273,9 +1302,8 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 					return { cdpPort: session.cdpPort, clientStartedAt: session.startedAt, userDataDir: dataDir };
 				}
 
-				// Client exists but source changed — restart with fresh code
-				if (healthy && extCheck.rebuilt) {
-					log('[host] Extension source changed — stopping existing Client to restart with fresh code');
+				if (healthy && anyExtChanged) {
+					log('[host] Extension source changed \u2014 stopping existing Client to restart with fresh code');
 				} else {
 					log('[host] Persisted session exists but Client is not healthy');
 				}
@@ -1289,11 +1317,9 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 			}
 		}
 
-		// Spawn new Client with MCP-provided paths (build is guaranteed up-to-date)
-		log(`[host] Spawning new Client — workspace: ${clientWorkspace}, ext: ${extensionPath}`);
-		const result = await spawnClient(clientWorkspace, extensionPath, launchFlags);
+		log(`[host] Spawning new Client \u2014 workspace: ${clientWorkspace}, extensions: ${extensionPaths.join(', ')}`);
+		const result = await spawnClient(clientWorkspace, extensionPaths, launchFlags);
 
-		// Connect CDP client for browser automation LM tools
 		await connectCdpClient(result.cdpPort);
 
 		return { cdpPort: result.cdpPort, clientStartedAt: result.clientStartedAt, userDataDir: result.userDataDir };
@@ -1308,35 +1334,36 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 		hotReloadInProgress = true;
 
 		const clientWorkspace = typeof params.clientWorkspace === 'string' ? params.clientWorkspace : undefined;
-		const extensionPath = typeof params.extensionPath === 'string' ? params.extensionPath : undefined;
+
+		const extensionPaths = parseExtensionPaths(params);
+
 		const launchFlags =
 			typeof params.launch === 'object' && params.launch !== null ? (params.launch as Record<string, unknown>) : undefined;
 
-		if (!clientWorkspace || !extensionPath) {
-			throw new Error('hotReloadRequired: clientWorkspace and extensionPath are required');
+		if (!clientWorkspace || !extensionPaths || extensionPaths.length === 0) {
+			throw new Error('hotReloadRequired: clientWorkspace and extensionPath(s) are required');
 		}
 
 		try {
-			// Stop existing Client + teardown CDP client
 			disconnectCdpClient();
 			stopClient();
 
-			// Wait for pipe to be released before spawning new Client
 			await waitForPipeRelease();
 
-			// Ensure build is up-to-date before relaunching (content hash check)
-			await hotReloadService.checkExtensionOnly(extensionPath);
+			// Ensure builds are up-to-date for all extension paths
+			const buildScriptName = vscode.workspace.getConfiguration('devtools').get<string>('buildScriptName', 'build');
+			for (const extPath of extensionPaths) {
+				await hotReloadService.checkPackageWithScript(extPath, buildScriptName);
+			}
 
-			// Spawn fresh Client with latest build
-			const result = await spawnClient(clientWorkspace, extensionPath, launchFlags);
+			const result = await spawnClient(clientWorkspace, extensionPaths, launchFlags);
 
-			// Reconnect CDP for browser automation LM tools
 			await connectCdpClient(result.cdpPort);
 
 			return { cdpPort: result.cdpPort, clientStartedAt: result.clientStartedAt, userDataDir: result.userDataDir };
 		} finally {
 			hotReloadInProgress = false;
-			log('[host] hotReloadRequired: complete — health monitor resumed');
+			log('[host] hotReloadRequired: complete \u2014 health monitor resumed');
 
 			if (lastKnownClientState !== undefined) {
 				log(`[state-fire] hotReloadRequired: replaying state=${lastKnownClientState} after hot-reload guard lifted`);
@@ -1584,11 +1611,14 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 	 */
 	register('checkForChanges', async (params) => {
 		const mcpServerRoot = typeof params.mcpServerRoot === 'string' ? params.mcpServerRoot : undefined;
-		const extensionPath = typeof params.extensionPath === 'string' ? params.extensionPath : undefined;
 
-		if (!mcpServerRoot || !extensionPath) {
-			throw new Error('checkForChanges: mcpServerRoot and extensionPath are required');
+		const extensionPaths = parseExtensionPaths(params);
+
+		if (!mcpServerRoot || !extensionPaths || extensionPaths.length === 0) {
+			throw new Error('checkForChanges: mcpServerRoot and extensionPath(s) are required');
 		}
+
+		const buildScriptName = vscode.workspace.getConfiguration('devtools').get<string>('buildScriptName', 'build');
 
 		const result: ChangeCheckResult = {
 			extBuildError: null,
@@ -1602,27 +1632,26 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 			newClientStartedAt: null
 		};
 
-		// Phase 1: Detect changes (fast hash checks only — no builds yet)
-		const extChange = hotReloadService.detectChange(extensionPath, 'ext');
+		// Phase 1: Detect changes across all extension paths
+		const extChanges: Array<{ path: string; changed: boolean; currentHash: string }> = [];
+		for (const extPath of extensionPaths) {
+			const change = hotReloadService.detectChange(extPath, 'ext');
+			extChanges.push({ path: extPath, ...change });
+			if (change.changed) result.extChanged = true;
+		}
 		const mcpChange = hotReloadService.detectChange(mcpServerRoot, 'mcp');
-		result.extChanged = extChange.changed;
 		result.mcpChanged = mcpChange.changed;
 
-		if (!extChange.changed && !mcpChange.changed) {
+		if (!result.extChanged && !mcpChange.changed) {
 			return result;
 		}
 
-		// Suppress health monitor during the entire checkForChanges operation.
-		// Without this, stopping the client window (Phase 2) causes the health
-		// monitor to fire onClientStateChanged(false), which triggers the
-		// tethered lifecycle in extension.ts to call workbench.mcp.stopServer,
-		// killing the MCP server process that is waiting for this RPC response.
 		hotReloadInProgress = true;
-		log('[host] checkForChanges: changes detected — suppressing health monitor');
+		log('[host] checkForChanges: changes detected \u2014 suppressing health monitor');
 
 		try {
-			// Phase 2: Extension progress notification — rebuild → stop client → launch client
-			if (extChange.changed) {
+			// Phase 2: Extension rebuild across all changed paths
+			if (result.extChanged) {
 				await vscode.window.withProgress(
 					{
 						cancellable: false,
@@ -1630,39 +1659,43 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 						title: 'Extension'
 					},
 					async (progress) => {
-						progress.report({ message: 'Rebuilding…' });
-						const buildError = await hotReloadService.runBuild(extensionPath, 'compile');
-						if (buildError) {
-							result.extBuildError = buildError;
-							return;
+						progress.report({ message: 'Rebuilding\u2026' });
+
+						let anyBuildFailed = false;
+						for (const ext of extChanges) {
+							if (!ext.changed) continue;
+							const buildError = await hotReloadService.runBuild(ext.path, buildScriptName);
+							if (buildError) {
+								result.extBuildError = buildError;
+								anyBuildFailed = true;
+								continue;
+							}
+							await hotReloadService.commitHash('ext', ext.currentHash);
 						}
 
-						await hotReloadService.commitHash('ext', extChange.currentHash);
-						result.extRebuilt = true;
+						if (anyBuildFailed) return;
 
-						// Mark flagged inspector records as stale — extension code changed
+						result.extRebuilt = true;
 						markInspectorRecordsStale();
 
-						// Capture workspace before stopClient clears it
 						const workspace = currentClientWorkspace;
 
-						progress.report({ message: 'Stopping client window…' });
+						progress.report({ message: 'Stopping client window\u2026' });
 						disconnectCdpClient();
 						stopClient();
 						await waitForPipeRelease();
 
 						if (workspace) {
-							progress.report({ message: 'Launching client window…' });
-							const spawnResult = await spawnClient(workspace, extensionPath);
+							progress.report({ message: 'Launching client window\u2026' });
+							const spawnResult = await spawnClient(workspace, extensionPaths);
 							result.extClientReloaded = true;
 							result.newCdpPort = spawnResult.cdpPort;
 							result.newClientStartedAt = spawnResult.clientStartedAt;
 							log(`[host] Client restarted with fresh extension code (cdpPort: ${spawnResult.cdpPort})`);
 
-							// Reconnect CDP so Host knows client is alive and browser LM tools work
 							await connectCdpClient(spawnResult.cdpPort);
 
-							showCompletionNotification('✅ Extension rebuilt — client reconnected');
+							showCompletionNotification('\u2705 Extension rebuilt \u2014 client reconnected');
 						}
 					}
 				);
@@ -1941,7 +1974,7 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
  */
 function resolveClientConfig(): null | {
 	clientWorkspace: string;
-	extensionPath: string;
+	extensionPaths: string[];
 	launchFlags: Record<string, unknown>;
 } {
 	const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
@@ -1952,14 +1985,18 @@ function resolveClientConfig(): null | {
 	const config = vscode.workspace.getConfiguration('devtools');
 
 	const clientWorkspaceRaw = config.get<string>('clientWorkspace', '');
-	const extensionPathRaw = config.get<string>('extensionPath', '.');
+	const extensionPathsRaw = config.get<string[]>('extensionPath', []);
 
 	const clientWorkspace = clientWorkspaceRaw
 		? path.isAbsolute(clientWorkspaceRaw)
 			? clientWorkspaceRaw
 			: path.resolve(workspacePath, clientWorkspaceRaw)
 		: workspacePath;
-	const extensionPath = path.isAbsolute(extensionPathRaw) ? extensionPathRaw : path.resolve(workspacePath, extensionPathRaw);
+
+	const extensionPaths =
+		extensionPathsRaw.length > 0
+			? extensionPathsRaw.map((p) => (path.isAbsolute(p) ? p : path.resolve(workspacePath, p)))
+			: [workspacePath];
 
 	const launchFlags: Record<string, unknown> = {
 		disableGpu: config.get<boolean>('launch.disableGpu', false),
@@ -1970,7 +2007,7 @@ function resolveClientConfig(): null | {
 		verbose: config.get<boolean>('launch.verbose', false)
 	};
 
-	return { clientWorkspace, extensionPath, launchFlags };
+	return { clientWorkspace, extensionPaths, launchFlags };
 }
 
 /**
@@ -2025,7 +2062,7 @@ async function doStartClientWindow(): Promise<boolean> {
 		electronPid = session.clientPid;
 		cdpPort = session.cdpPort;
 		inspectorPort = session.inspectorPort;
-		currentExtensionPath = session.extensionPath;
+		currentExtensionPath = session.extensionPaths ?? (session.extensionPath ? [session.extensionPath] : null);
 
 		log(`startClientWindow: Checking persisted session health (pid=${session.clientPid}, cdpPort=${session.cdpPort})`);
 		const healthy = await isClientHealthy();
@@ -2058,7 +2095,7 @@ async function doStartClientWindow(): Promise<boolean> {
 	try {
 		log('[host] Auto-starting client window...');
 		log(`startClientWindow: Spawning client window...`);
-		const result = await spawnClient(resolved.clientWorkspace, resolved.extensionPath, resolved.launchFlags);
+		const result = await spawnClient(resolved.clientWorkspace, resolved.extensionPaths, resolved.launchFlags);
 		log(`startClientWindow: Client spawned, connecting CDP on port ${result.cdpPort}...`);
 		await connectCdpClient(result.cdpPort);
 		log(`startClientWindow: CDP connection attempt complete, activeCdpClient.connected=${activeCdpClient?.connected}`);
@@ -2115,7 +2152,7 @@ export function createReconnectCdpCallback(): () => Promise<boolean> {
 			electronPid = session.clientPid;
 			cdpPort = session.cdpPort;
 			inspectorPort = session.inspectorPort;
-			currentExtensionPath = session.extensionPath;
+			currentExtensionPath = session.extensionPaths ?? (session.extensionPath ? [session.extensionPath] : null);
 		}
 
 		log(`lazyReconnectCallback: Calling connectCdpClient(${session.cdpPort})...`);

@@ -147,9 +147,26 @@
 						"scope": "resource"
 					},
 					"devtools.extensionPath": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"default": [],
+						"description": "Paths to VS Code extension folders to load into the client window (absolute, or relative to host workspace root). Auto-detected when empty.",
+						"scope": "resource"
+					},
+					"devtools.extensionDetection.scanDepth": {
+						"type": "integer",
+						"default": 3,
+						"minimum": 1,
+						"maximum": 10,
+						"description": "Maximum folder depth to scan when auto-detecting VS Code extension folders.",
+						"scope": "resource"
+					},
+					"devtools.buildScriptName": {
 						"type": "string",
-						"default": ".",
-						"description": "Path to the vscode-devtools extension folder (absolute, or relative to host workspace root).",
+						"default": "build",
+						"description": "The package.json script name to run when building extensions for hot-reload.",
 						"scope": "resource"
 					},
 					"devtools.hotReload.enabled": {
