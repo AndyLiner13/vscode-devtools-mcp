@@ -17,6 +17,7 @@
  */
 
 import { type ChildProcess, execSync, spawn } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
@@ -59,6 +60,12 @@ let cdpPort: null | number = null;
 
 /** Inspector port for the Client Extension Host debugger */
 let inspectorPort: null | number = null;
+
+/** Unique token to identify the spawned client — prevents random VS Code windows from becoming clients */
+let currentClientToken: null | string = null;
+
+/** Environment variable name for client token */
+export const CLIENT_TOKEN_ENV_VAR = 'DEVTOOLS_CLIENT_TOKEN';
 
 /** The Extension Development Host process reference */
 let clientProcess: ChildProcess | null = null;
@@ -753,6 +760,13 @@ async function doSpawnClient(
 			delete childEnv[key];
 		}
 	}
+
+	// Generate a unique token so the client can positively identify itself.
+	// This prevents random VS Code windows from becoming clients just because
+	// the host pipe exists — only the spawned client has this token.
+	currentClientToken = randomUUID();
+	childEnv[CLIENT_TOKEN_ENV_VAR] = currentClientToken;
+	log(`[host] Client token generated: ${currentClientToken.slice(0, 8)}...`);
 
 	// `detached: true` is REQUIRED on Windows because Code.exe is a launcher
 	// stub that forks the real Electron binary and immediately exits (code 9).

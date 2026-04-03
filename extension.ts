@@ -52,6 +52,9 @@ const IS_WINDOWS = process.platform === 'win32';
 const HOST_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-host' : '/tmp/vscode-devtools-host.sock';
 const CLIENT_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-client' : '/tmp/vscode-devtools-client.sock';
 
+/** Environment variable name for client token — must match host-handlers.ts */
+const CLIENT_TOKEN_ENV_VAR = 'DEVTOOLS_CLIENT_TOKEN';
+
 // ── Module State ─────────────────────────────────────────────────────────────
 
 interface RuntimeModule {
@@ -211,8 +214,23 @@ export async function activate(context: vscode.ExtensionContext) {
 	} catch (err: unknown) {
 		const error = err as NodeJS.ErrnoException;
 		if (error.code === 'EADDRINUSE') {
-			diagLog('Host pipe EADDRINUSE — another Host exists, becoming CLIENT');
-			// Host pipe exists → we're the Client
+			diagLog('Host pipe EADDRINUSE — another Host exists');
+
+			// Check for client token — only the spawned client has this env var.
+			// This prevents random VS Code windows from becoming clients just
+			// because they opened while the host was running.
+			const clientToken = process.env[CLIENT_TOKEN_ENV_VAR];
+			if (!clientToken) {
+				diagLog('No client token found — this is NOT the DevTools client, doing nothing');
+				log('Host pipe exists but no client token — this VS Code instance is not a DevTools client');
+				// Not the host, not the client — just a regular VS Code window
+				// Don't show any UI, don't claim any pipes
+				return;
+			}
+
+			diagLog(`Client token found: ${clientToken.slice(0, 8)}... — becoming CLIENT`);
+
+			// Host pipe exists AND we have the token → we're the Client
 			// Try to claim the Client pipe — may need retries if the previous
 			// Client was just killed and the OS hasn't released the pipe yet
 			let clientPipeClaimed = false;
