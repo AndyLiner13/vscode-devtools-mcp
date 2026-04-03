@@ -15,11 +15,8 @@ import { LogFileReadTool } from './logFileReadTool';
 import { OutputReadTool, setClientLogsStoragePath, setHostLogUri } from './readHostOutputTool';
 import { setBrowserService, setReconnectCdpCallback } from './clientDevTools';
 import { disposeUserActionTracker, getUserActionTracker } from './userActionTracker';
-import { FileDeleteTool } from './fileDeleteTool';
-import { FileRenameTool } from './fileRenameTool';
 import { WaitTool } from './waitLmTool';
 import { log } from './logger';
-
 
 // ============================================================================
 // Runtime Activation
@@ -47,16 +44,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	);
 
 	// ========================================================================
-	// Open Settings Command
-	// ========================================================================
-
-	track(
-		vscode.commands.registerCommand('devtools.openSettings', () => {
-			vscode.commands.executeCommand('workbench.action.openSettings', '@ext:AndyLiner.vscode-devtools');
-		})
-	);
-
-	// ========================================================================
 	// LM Tool Registration (all registered unconditionally, native toggle)
 	// ========================================================================
 
@@ -68,8 +55,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	track(vscode.lm.registerTool('logFile_read', new LogFileReadTool()));
 	track(vscode.lm.registerTool('output_read', new OutputReadTool()));
 	track(vscode.lm.registerTool('wait', new WaitTool()));
-	track(vscode.lm.registerTool('file_delete', new FileDeleteTool()));
-	track(vscode.lm.registerTool('file_rename', new FileRenameTool()));
 
 	log('[devtools:runtime] All LM tools registered');
 

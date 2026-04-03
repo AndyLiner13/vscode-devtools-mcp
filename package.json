@@ -1,6 +1,6 @@
 {
 	"name": "vscode-devtools",
-	"displayName": "VS Code DevTools",
+	"displayName": "DevTools",
 	"version": "0.1.0",
 	"description": "VS Code DevTools with Git workspace picker, LM tool management, and MCP integration",
 	"categories": [
@@ -42,12 +42,8 @@
 		"commands": [
 			{
 				"command": "devtools.toggleMcpServer",
-				"title": "VS Code DevTools: Toggle MCP Server",
+				"title": "DevTools: Toggle MCP Server",
 				"when": "devtools.isHost && config.devtools.dev.enabled"
-			},
-			{
-				"command": "devtools.openSettings",
-				"title": "VS Code DevTools: Settings"
 			},
 			{
 				"command": "devtools.openInspector",
@@ -376,58 +372,6 @@
 					},
 					"required": [
 						"durationMs"
-					]
-				}
-			},
-			{
-				"name": "file_delete",
-				"displayName": "File Delete",
-				"toolReferenceName": "file_delete",
-				"icon": "$(trash)",
-				"canBeReferencedInPrompt": true,
-				"userDescription": "Delete a file or folder after verifying no symbols are referenced externally",
-				"modelDescription": "Delete a file or folder from the workspace after verifying no external references would break.\n\nFor files: queries the language server for all symbols, then checks each for references in other files. If any external references exist, deletion is blocked with a detailed report.\n\nFor folders: scans all code files inside the folder, checks each file's symbols for references from files OUTSIDE the folder (internal cross-references within the folder are ignored). If any external references exist, deletion is blocked.\n\nFiles and folders are moved to trash for recovery.\n\nArgs:\n  - filePath (string): Path of the file or folder to delete (absolute or relative to workspace root)\n\nReturns on success: { success: true, deletedFile, fileCount? }\nReturns when blocked: { success: false, blocked: true, brokenReferences: [...], message }\n\nUse this tool when asked to delete, remove, or clean up a file or folder.",
-				"inputSchema": {
-					"type": "object",
-					"properties": {
-						"filePath": {
-							"type": "string",
-							"description": "Path of the file or folder to delete (absolute or relative to workspace root)."
-						}
-					},
-					"required": [
-						"filePath"
-					]
-				}
-			},
-			{
-				"name": "file_rename",
-				"displayName": "File Rename",
-				"toolReferenceName": "file_rename",
-				"icon": "$(edit)",
-				"canBeReferencedInPrompt": true,
-				"userDescription": "Rename or move a file or folder, updating all imports and references",
-				"modelDescription": "Rename or move a file or folder in the workspace, with optional import/reference updates across the codebase.\n\nWhen updateRefs=true, uses VS Code's refactoring API to ensure all import paths, re-exports, and references are updated to reflect the new file location. When updateRefs=false, performs a plain rename/move without updating imports or references. Supports both files and folders.\n\nArgs:\n  - filePath (string): Current path of the file or folder (absolute or relative to workspace root)\n  - newPath (string): New path for the file or folder (absolute or relative to workspace root)\n  - updateRefs (boolean): Whether to automatically update imports and references after the move\n\nReturns on success: { success: true, oldPath, newPath, filesAffected: [...] }\nReturns on failure: { success: false, error: '...' }\n\nUse updateRefs=false for archiving or relocating files when reference updates are not wanted.",
-				"inputSchema": {
-					"type": "object",
-					"properties": {
-						"filePath": {
-							"type": "string",
-							"description": "Current path of the file or folder to rename (absolute or relative to workspace root)."
-						},
-						"newPath": {
-							"type": "string",
-							"description": "New path for the file or folder (absolute or relative to workspace root)."
-						},
-						"updateRefs": {
-							"type": "boolean",
-							"description": "Whether to automatically update imports and references after the move."
-						}
-					},
-					"required": [
-						"filePath",
-						"newPath",
-						"updateRefs"
 					]
 				}
 			}
