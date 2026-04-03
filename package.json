@@ -73,6 +73,10 @@
 				"command": "devtools.restartMcpServer",
 				"title": "DevTools: Restart MCP Server",
 				"when": "config.devtools.dev.enabled"
+			},
+			{
+				"command": "devtools.restartTsServer",
+				"title": "DevTools: Restart TS Server"
 			}
 		],
 		"keybindings": [

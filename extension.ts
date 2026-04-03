@@ -384,6 +384,10 @@ export async function activate(context: vscode.ExtensionContext) {
 						await new Promise<void>((r) => setTimeout(r, 2000));
 					}
 					mcpProvider.setEnabled(true);
+				}),
+				vscode.commands.registerCommand('devtools.restartTsServer', () => {
+					log('Restart TS Server invoked');
+					void vscode.commands.executeCommand('typescript.restartTsServer');
 				})
 			);
 			log('MCP Server lifecycle commands registered');
