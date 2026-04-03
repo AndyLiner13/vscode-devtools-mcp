@@ -200,73 +200,60 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	// ========================================================================
-	// Step 1: Role Detection via Pipe Availability
+	// Step 1: Role Detection
 	// ========================================================================
 
 	diagLog('Step 1: Role detection starting...');
-	try {
-		// Try to claim the Host pipe
-		diagLog(`Attempting to claim Host pipe: ${HOST_PIPE_PATH}`);
-		await bootstrap.startServer(HOST_PIPE_PATH);
-		currentRole = 'host';
-		diagLog('SUCCESS: Claimed Host pipe — this instance is HOST');
-		log(`Claimed Host pipe @ ${HOST_PIPE_PATH} — this instance is the HOST`);
-	} catch (err: unknown) {
-		const error = err as NodeJS.ErrnoException;
-		if (error.code === 'EADDRINUSE') {
-			diagLog('Host pipe EADDRINUSE — another Host exists');
 
-			// Check for client token — only the spawned client has this env var.
-			// This prevents random VS Code windows from becoming clients just
-			// because they opened while the host was running.
-			const clientToken = process.env[CLIENT_TOKEN_ENV_VAR];
-			if (!clientToken) {
-				diagLog('No client token found — this is NOT the DevTools client, doing nothing');
-				log('Host pipe exists but no client token — this VS Code instance is not a DevTools client');
-				// Not the host, not the client — just a regular VS Code window
-				// Don't show any UI, don't claim any pipes
-				return;
-			}
+	// Check for client token first — if present, this is the spawned client
+	const clientToken = process.env[CLIENT_TOKEN_ENV_VAR];
+	if (clientToken) {
+		diagLog(`Client token found: ${clientToken.slice(0, 8)}... — this instance is CLIENT`);
+		currentRole = 'client';
+		log(`Client token present — this instance is the CLIENT`);
 
-			diagLog(`Client token found: ${clientToken.slice(0, 8)}... — becoming CLIENT`);
-
-			// Host pipe exists AND we have the token → we're the Client
-			// Try to claim the Client pipe — may need retries if the previous
-			// Client was just killed and the OS hasn't released the pipe yet
-			let clientPipeClaimed = false;
-			const MAX_PIPE_RETRIES = 6;
-			for (let attempt = 1; attempt <= MAX_PIPE_RETRIES; attempt++) {
+		// Start the client pipe server for RPC from MCP server
+		try {
+			await bootstrap.startServer(CLIENT_PIPE_PATH);
+			diagLog('SUCCESS: Started client pipe server');
+			log(`Started client pipe server @ ${CLIENT_PIPE_PATH}`);
+		} catch (pipeErr: unknown) {
+			const pipeError = pipeErr as NodeJS.ErrnoException;
+			if (pipeError.code === 'EADDRINUSE') {
+				// Previous client pipe not yet released — wait and retry
+				diagLog('Client pipe EADDRINUSE — waiting for release...');
+				await new Promise((resolve) => setTimeout(resolve, 1000));
 				try {
 					await bootstrap.startServer(CLIENT_PIPE_PATH);
-					clientPipeClaimed = true;
-					break;
-				} catch (clientErr: unknown) {
-					const clientError = clientErr as NodeJS.ErrnoException;
-					if (clientError.code !== 'EADDRINUSE') {
-						throw clientErr;
-					}
-					if (attempt < MAX_PIPE_RETRIES) {
-						log(`Client pipe EADDRINUSE — retry ${attempt}/${MAX_PIPE_RETRIES} (waiting ${attempt * 500}ms for pipe release)`);
-						await new Promise((resolve) => setTimeout(resolve, attempt * 500));
-					}
+					diagLog('SUCCESS: Started client pipe server (retry)');
+				} catch {
+					log('Warning: Could not start client pipe server — RPC may not work');
 				}
+			} else {
+				log(`Warning: Client pipe server error: ${pipeError.message}`);
 			}
+		}
 
-			if (!clientPipeClaimed) {
-				// Exhausted retries — genuine session conflict
-				log('Session conflict: Both Host and Client pipes already exist after retries');
-				await showSessionConflictNotification();
+		statusBarItem.text = '$(debug-connected) VS Code DevTools Client';
+		statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Client`;
+		statusBarItem.command = undefined;
+		statusBarItem.show();
+	} else {
+		// No client token — try to become host
+		try {
+			diagLog(`Attempting to claim Host pipe: ${HOST_PIPE_PATH}`);
+			await bootstrap.startServer(HOST_PIPE_PATH);
+			currentRole = 'host';
+			diagLog('SUCCESS: Claimed Host pipe — this instance is HOST');
+			log(`Claimed Host pipe @ ${HOST_PIPE_PATH} — this instance is the HOST`);
+		} catch (err: unknown) {
+			const error = err as NodeJS.ErrnoException;
+			if (error.code === 'EADDRINUSE') {
+				diagLog('Host pipe EADDRINUSE and no client token — this is a regular VS Code window');
+				log('Host pipe exists but no client token — this VS Code instance is not a DevTools participant');
+				// Not the host, not the client — just a regular VS Code window
 				return;
 			}
-
-			currentRole = 'client';
-			diagLog(`SUCCESS: Claimed Client pipe — this instance is CLIENT`);
-			log(`Host pipe exists — claimed Client pipe @ ${CLIENT_PIPE_PATH} — this instance is the CLIENT`);
-			statusBarItem.text = '$(debug-connected) VS Code DevTools Client';
-			statusBarItem.tooltip = `VS Code DevTools v${version}\nRole: Client\nPipe: ${CLIENT_PIPE_PATH}`;
-			statusBarItem.command = undefined;
-			statusBarItem.show();
-		} else {
 			throw err;
 		}
 	}
@@ -640,32 +627,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	diagLog(`========== ACTIVATE COMPLETE (role: ${currentRole}) ==========`);
 	log(`Extension activation complete (role: ${currentRole})`);
-}
-
-// ── Session Conflict Handling ────────────────────────────────────────────────
-
-async function showSessionConflictNotification(): Promise<void> {
-	const choice = await vscode.window.showWarningMessage(
-		'VS Code DevTools: Another session is already running (both Host and Client pipes exist).',
-		'Override Session',
-		'Cancel'
-	);
-
-	if (choice === 'Override Session') {
-		log('User chose to override session — initiating takeover');
-		await initiateTakeover();
-	} else {
-		log('User cancelled — extension will not activate pipes');
-	}
-}
-
-async function initiateTakeover(): Promise<void> {
-	// TODO: Connect to existing Host pipe and send takeover command
-	// For now, just log and show a message
-	vscode.window.showInformationMessage(
-		'Session takeover is not yet fully implemented. Please close the existing VS Code windows and try again.'
-	);
-	log('Takeover: Not yet implemented');
 }
 
 // ── Deactivation ─────────────────────────────────────────────────────────────
