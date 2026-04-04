@@ -6,7 +6,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 
-interface ILogReadParams {
+interface IlogFileReadParams {
 	correlationId?: string;
 	includeStackFrames?: boolean;
 	minDuration?: string;
@@ -30,7 +30,7 @@ function getWorkspaceRoots(): string[] {
 }
 
 function getConfiguredPaths(): { customPaths: string[]; globalPaths: string[] } {
-	const config = vscode.workspace.getConfiguration('devtools.logReadTool');
+	const config = vscode.workspace.getConfiguration('devtools.logFileReadTool');
 	const globalPaths = config.get<string[]>('globalPaths', []);
 	const customPaths = config.get<string[]>('customPaths', []);
 	return { customPaths, globalPaths };
@@ -118,8 +118,15 @@ function getVsCodeLogsHint(): string {
 		case 'linux':
 			logsPath = path.join(homeDir, '.config', 'Code', 'logs');
 			break;
-		default:
-			logsPath = `<${platform ?? 'unknown'} platform — check VS Code docs>`;
+		case 'aix':
+		case 'android':
+		case 'freebsd':
+		case 'haiku':
+		case 'openbsd':
+		case 'sunos':
+		case 'cygwin':
+		case 'netbsd':
+			logsPath = path.join(homeDir, '.config', 'Code', 'logs');
 			break;
 	}
 
@@ -128,11 +135,11 @@ function getVsCodeLogsHint(): string {
 		'---',
 		'**💡 Tip: VS Code Output Logs**',
 		`VS Code stores its internal output logs at: \`${logsPath}\``,
-		'Use the `output_read` tool to read VS Code output channels, or add this path to `devtools.logReadTool.globalPaths` to include them in discovery.',
+		'To include VS Code output logs in discovery, add this path to `devtools.logFileReadTool.globalPaths` in your User Settings.',
 		'',
 		'**💡 Tip: Add Custom Log Paths**',
-		'- `devtools.logReadTool.globalPaths` — Paths scanned for ALL workspaces (User Settings)',
-		'- `devtools.logReadTool.customPaths` — Paths scanned for THIS workspace only (.vscode/settings.json)',
+		'- `devtools.logFileReadTool.globalPaths` — Paths scanned for ALL workspaces (User Settings)',
+		'- `devtools.logFileReadTool.customPaths` — Paths scanned for THIS workspace only (.vscode/settings.json)',
 		'Both settings are additive — custom paths extend global paths, they never override them.'
 	].join('\n');
 }
@@ -191,7 +198,7 @@ function isDirectory(filePath: string): boolean {
 	}
 }
 
-function readLogFile(filePath: string, params: ILogReadParams): vscode.LanguageModelToolResult {
+function readLogFile(filePath: string, params: IlogFileReadParams): vscode.LanguageModelToolResult {
 	if (!fs.existsSync(filePath)) {
 		let msg = `**Error:** File not found: \`${filePath}\``;
 		if (params.path && !path.isAbsolute(params.path)) {
@@ -229,9 +236,9 @@ function readLogFile(filePath: string, params: ILogReadParams): vscode.LanguageM
 	return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(result.formatted)]);
 }
 
-export class LogReadTool implements vscode.LanguageModelTool<ILogReadParams> {
+export class LogFileReadTool implements vscode.LanguageModelTool<IlogFileReadParams> {
 	prepareInvocation(
-		options: vscode.LanguageModelToolInvocationPrepareOptions<ILogReadParams>,
+		options: vscode.LanguageModelToolInvocationPrepareOptions<IlogFileReadParams>,
 		_token: vscode.CancellationToken
 	): undefined | vscode.PreparedToolInvocation {
 		const inputPath = options.input.path;
@@ -274,7 +281,7 @@ export class LogReadTool implements vscode.LanguageModelTool<ILogReadParams> {
 	}
 
 	invoke(
-		options: vscode.LanguageModelToolInvocationOptions<ILogReadParams>,
+		options: vscode.LanguageModelToolInvocationOptions<IlogFileReadParams>,
 		_token: vscode.CancellationToken
 	): vscode.LanguageModelToolResult {
 		const params = options.input;
