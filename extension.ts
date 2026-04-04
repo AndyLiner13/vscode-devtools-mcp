@@ -567,48 +567,51 @@ export async function activate(context: vscode.ExtensionContext) {
 			updateStatusBar('connecting');
 			log('Auto-starting MCP server — client window will launch when mcpReady fires...');
 
-			let startupProgressResolve: (() => void) | undefined;
-			const startupProgressPromise = new Promise<void>((r) => {
-				startupProgressResolve = r;
-			});
-			const startupClientListener = onClientStateChanged((connected: boolean) => {
-				if (connected && startupProgressResolve) {
+			let startupInProgress = true;
+
+			const resolveStartup = (showSuccess: boolean) => {
+				if (!startupInProgress) return;
+				startupInProgress = false;
+				if (showSuccess) {
 					vscode.window.setStatusBarMessage('✅ VS Code DevTools started', 3000);
-					startupProgressResolve();
-					startupProgressResolve = undefined;
-					startupClientListener.dispose();
 				}
+				startupClientListener.dispose();
+				clearInterval(clientPollInterval);
+			};
+
+			const startupClientListener = onClientStateChanged((connected: boolean) => {
+				resolveStartup(connected);
 			});
 
-			void vscode.window.withProgress(
-				{
-					cancellable: false,
-					location: vscode.ProgressLocation.Notification,
-					title: 'VS Code DevTools'
-				},
-				async (progress) => {
-					progress.report({ message: 'Starting MCP server…' });
-					try {
-						await vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true });
-						log('[auto-start] MCP server started — waiting for mcpReady to spawn client');
-						progress.report({ message: 'Waiting for client window…' });
-						if (isClientWindowConnected() && startupProgressResolve) {
-							vscode.window.setStatusBarMessage('✅ VS Code DevTools started', 3000);
-							startupProgressResolve();
-							startupProgressResolve = undefined;
-							startupClientListener.dispose();
-						}
-					} catch (err: unknown) {
-						const msg = err instanceof Error ? err.message : String(err);
-						log(`[auto-start] MCP server start failed: ${msg}`);
-						updateStatusBar('disconnected');
-						startupClientListener.dispose();
-						startupProgressResolve = undefined;
-						return;
-					}
-					await startupProgressPromise;
+			let wasEverConnected = false;
+			const clientPollInterval = setInterval(() => {
+				if (!startupInProgress) {
+					clearInterval(clientPollInterval);
+					return;
 				}
-			);
+				const connected = isClientWindowConnected();
+				if (connected) {
+					wasEverConnected = true;
+					resolveStartup(true);
+				} else if (wasEverConnected) {
+					resolveStartup(false);
+				}
+			}, 500);
+
+			void (async () => {
+				try {
+					await vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true });
+					log('[auto-start] MCP server started — waiting for mcpReady to spawn client');
+					if (isClientWindowConnected()) {
+						resolveStartup(true);
+					}
+				} catch (err: unknown) {
+					const msg = err instanceof Error ? err.message : String(err);
+					log(`[auto-start] MCP server start failed: ${msg}`);
+					updateStatusBar('disconnected');
+					resolveStartup(false);
+				}
+			})();
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			const stack = err instanceof Error ? err.stack : undefined;
