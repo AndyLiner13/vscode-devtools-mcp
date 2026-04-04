@@ -12,6 +12,7 @@ import * as vscode from 'vscode';
 
 import type { BrowserService } from './browser';
 import { LogFileReadTool } from './logFileReadTool';
+import { LogReadTool } from './log-read-tool';
 import { OutputReadTool, setClientLogsStoragePath, setHostLogUri } from './readHostOutputTool';
 import { setBrowserService, setReconnectCdpCallback } from './clientDevTools';
 import { disposeUserActionTracker, getUserActionTracker } from './userActionTracker';
@@ -52,6 +53,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 	setHostLogUri(context.logUri.fsPath);
 
+	track(vscode.lm.registerTool('log_read', new LogReadTool()));
 	track(vscode.lm.registerTool('logFile_read', new LogFileReadTool()));
 	track(vscode.lm.registerTool('output_read', new OutputReadTool()));
 	track(vscode.lm.registerTool('wait', new WaitTool()));

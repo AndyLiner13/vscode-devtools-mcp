@@ -233,9 +233,83 @@
 						"description": "Automatically retry tool requests after MCP server restarts instead of showing the reboot message."
 					}
 				}
+			},
+			{
+				"title": "Log Read Tool",
+				"properties": {
+					"devtools.logReadTool.globalPaths": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"default": [],
+						"description": "Absolute paths to directories scanned for log files in ALL workspaces. These are additive — custom workspace paths extend this list, never override it.",
+						"scope": "application"
+					},
+					"devtools.logReadTool.customPaths": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"default": [],
+						"description": "Additional paths scanned for log files in THIS workspace only. Absolute or relative to workspace root. Additive to globalPaths.",
+						"scope": "resource"
+					}
+				}
 			}
 		],
 		"languageModelTools": [
+			{
+				"name": "log_read",
+				"displayName": "Log Read",
+				"toolReferenceName": "log_read",
+				"icon": "$(search)",
+				"canBeReferencedInPrompt": true,
+				"userDescription": "Discover and read log files in the workspace and configured paths",
+				"modelDescription": "Discover and read log files with automatic pattern compression and drill-down filtering.\n\n**THREE MODES:**\n\n1. **Discovery (no path):** Call with empty input `{}` to list ALL log files found in the workspace root and any user-configured paths. Returns a complete library of full file paths you can read.\n\n2. **Folder discovery (path = folder):** Set `path` to a folder to recursively list all log files in that folder and its children.\n\n3. **Read file (path = file):** Set `path` to a specific log file to read its contents with automatic log compression and drill-down filtering.\n\n**IMPORTANT:** Use this tool FIRST when you need to find log files. Do NOT search for log files manually with the terminal or file search. This tool is the source of truth for log file discovery in the workspace. It ignores .gitignore and scans all directories.\n\n**Supported Extensions:** .log, .out, .err, .trace, .syslog, .access, .audit, .jsonl, .ndjson, .dump, .diag, .debug, .csv\n\n**Read Mode Parameters (when path is a file):**\n- `templateId` — Expand a specific pattern from the overview\n- `severity` — Filter by error, warning, or info\n- `timeRange` — Filter by time window (HH:MM-HH:MM)\n- `pattern` — Regex filter on raw content\n- `minDuration` — Show slow operations (e.g. '1s', '500ms')\n- `correlationId` — Trace a specific request UUID\n- `includeStackFrames` — Show/hide stack frames (default: true)\n\n**User Configuration:**\n- `devtools.logReadTool.globalPaths` — Paths scanned for ALL workspaces (User Settings)\n- `devtools.logReadTool.customPaths` — Paths scanned for THIS workspace only (.vscode/settings.json)\nBoth are additive — custom paths extend global paths.\n\n**EXAMPLES:**\n- Discover all logs: {}\n- Discover logs in folder: { path: \"logs/\" }\n- Read a log file: { path: \"server.log\" }\n- Read with filter: { path: \"server.log\", severity: \"error\" }\n- Drill into pattern: { path: \"server.log\", templateId: \"t003\" }",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"path": {
+							"type": "string",
+							"description": "Path to a log file or folder. If omitted, discovers all log files. If a folder, lists log files recursively. If a file, reads it with compression."
+						},
+						"templateId": {
+							"type": "string",
+							"description": "Show raw lines matching this template ID from the compressed log overview."
+						},
+						"severity": {
+							"type": "string",
+							"enum": [
+								"error",
+								"warning",
+								"info"
+							],
+							"description": "Filter compressed logs by severity level."
+						},
+						"timeRange": {
+							"type": "string",
+							"description": "Time window filter: 'HH:MM-HH:MM' or 'HH:MM:SS-HH:MM:SS'."
+						},
+						"pattern": {
+							"type": "string",
+							"description": "Regex pattern to filter log content (case-insensitive)."
+						},
+						"minDuration": {
+							"type": "string",
+							"description": "Show templates with durations >= threshold: '1s', '500ms', '100ms'."
+						},
+						"correlationId": {
+							"type": "string",
+							"description": "Trace a specific request by UUID/correlation ID."
+						},
+						"includeStackFrames": {
+							"type": "boolean",
+							"description": "Show/hide stack frame templates. Default: true."
+						}
+					}
+				}
+			},
 			{
 				"name": "output_read",
 				"displayName": "Output Read",
