@@ -9,12 +9,12 @@
 				"services/client-handlers.ts",
 				"services/host-handlers.ts"
 			],
-			"ignoreDependencies": ["@modelcontextprotocol/inspector", "@packages/log-consolidation", "@vscode/codicons"],
+			"ignoreDependencies": ["@modelcontextprotocol/inspector", "@vscode/codicons"],
 			"ignoreBinaries": ["code", "knip"]
 		},
 		"client-controller": {
 			"entry": ["src/index.ts", "src/main.ts", "scripts/**/*.{ts,mts,mjs}"],
-			"ignoreDependencies": ["@types/filesystem", "@packages/log-consolidation"]
+			"ignoreDependencies": ["@types/filesystem"]
 		},
 		"inspector": {
 			"entry": ["src/main.ts"],

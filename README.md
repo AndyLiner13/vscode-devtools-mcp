@@ -113,9 +113,9 @@ These tools are exposed through the Client Controller MCP server and operate on 
 
 #### Debugging
 
-| Tool               | Description                                                                                                                                                                                |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **`console_read`** | Read console messages from the Client window with filtering by message type, regex pattern, source URL pattern, and ID range. Supports drill-down parameters for compressed log overviews. |
+| Tool               | Description                                                                                                                                                       |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`console_read`** | Read console messages from the Client window with filtering by message type, regex pattern, source URL pattern, and ID range. Returns matching messages directly. |
 
 ## Settings
 

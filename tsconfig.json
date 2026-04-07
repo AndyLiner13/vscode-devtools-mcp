@@ -8,10 +8,7 @@
 		"rootDir": ".",
 		"resolveJsonModule": true,
 		"declaration": false,
-		"sourceMap": true,
-		"paths": {
-			"@packages/log-consolidation": ["./packages/log-consolidation/src/index.ts"]
-		}
+		"sourceMap": true
 	},
 	"include": ["**/*.ts"],
 	"exclude": [

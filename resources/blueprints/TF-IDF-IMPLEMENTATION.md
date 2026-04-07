@@ -9,7 +9,7 @@ Add a TF-IDF service that generates semantic identifiers for anonymous comment c
 | Decision | Choice | Rationale |
 |---|---|---|
 | Scope | TS/JS comments only (Phase 1) | Comments are the anonymous nodes; code symbols already have language-server names |
-| Package location | `packages/tfidf/` | Full npm workspace package, same pattern as `log-consolidation` |
+| Package location | `packages/tfidf/` | Full npm workspace package |
 | Library | `natural` (npm) | Pre-built TF-IDF class, WordTokenizer, PorterStemmer, English stop words |
 | Registry | In-memory `Map` with lazy rebuild | Zero-cost repeated reads; comment corpus per file is small |
 | Integration point | Indexing time (pre-computed) | Baked into FileStructure during `extractStructure()` |
@@ -364,7 +364,6 @@ Add `@packages/tfidf` to the root `package.json` workspaces array:
 {
   "workspaces": [
     "mcp-server",
-    "packages/log-consolidation",
     "packages/tfidf",
     "inspector"
   ]

@@ -29,19 +29,6 @@ const esbuildProblemMatcherPlugin = {
 	}
 };
 
-/**
- * Resolve @packages/* path aliases to the shared packages directory.
- * @type {import('esbuild').Plugin}
- */
-const packageAliasPlugin = {
-	name: 'package-alias',
-	setup(build) {
-		build.onResolve({ filter: /^@packages\/log-consolidation$/ }, () => ({
-			path: path.resolve(__dirname, 'packages/log-consolidation/src/index.ts')
-		}));
-	}
-};
-
 // Loader build: extension/extension.ts → dist/extension.js
 // The loader starts the bridge and dynamically loads the runtime.
 // The dynamic import(path.join(...)) pattern in extension.ts
@@ -62,7 +49,7 @@ const loaderConfig = {
 	// - @lancedb/lancedb: native .node addon + apache-arrow peer dep (Phase 7 indexer)
 	external: ['vscode', 'jsonc-parser', 'koffi', '@lancedb/lancedb', 'apache-arrow'],
 	logLevel: 'silent',
-	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin]
+	plugins: [esbuildProblemMatcherPlugin]
 };
 
 // Runtime build: extension/runtime.ts → dist/runtime.js
@@ -83,7 +70,7 @@ const runtimeConfig = {
 	// - @lancedb/lancedb: native .node addon + apache-arrow peer dep (Phase 7 indexer)
 	external: ['vscode', 'jsonc-parser', 'koffi', '@lancedb/lancedb', 'apache-arrow'],
 	logLevel: 'silent',
-	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin]
+	plugins: [esbuildProblemMatcherPlugin]
 };
 
 async function main() {

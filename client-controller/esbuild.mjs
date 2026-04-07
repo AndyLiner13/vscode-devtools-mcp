@@ -13,10 +13,10 @@ const bundle = process.argv.includes('--bundle');
  * Necessary because esbuild's onResolve only fires in bundle mode.
  */
 function rewritePackageImports(buildDir) {
-	const aliases = [
-		{ alias: '@packages/log-consolidation', target: 'packages/log-consolidation/src/index.js' },
-		{ alias: '@packages/tfidf', target: 'packages/tfidf/src/index.js' },
-	];
+	const aliases = [];
+	if (tfidfFiles.length > 0) {
+		aliases.push({ alias: '@packages/tfidf', target: 'packages/tfidf/src/index.js' });
+	}
 
 	function processDir(dir) {
 		for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -43,6 +43,7 @@ function rewritePackageImports(buildDir) {
 }
 
 const packagesDir = path.resolve(__dirname, '..', 'packages');
+const tfidfSourceDir = path.join(packagesDir, 'tfidf', 'src');
 
 function findTsFiles(dir) {
 	const result = [];
@@ -57,9 +58,7 @@ function findTsFiles(dir) {
 	return result;
 }
 
-// Transpile the shared package files into build/packages/
-const logConsolidationFiles = findTsFiles(path.join(packagesDir, 'log-consolidation', 'src'));
-const tfidfFiles = findTsFiles(path.join(packagesDir, 'tfidf', 'src'));
+const tfidfFiles = fs.existsSync(tfidfSourceDir) ? findTsFiles(tfidfSourceDir) : [];
 
 const config = {
 	entryPoints: findTsFiles('src'),
@@ -71,18 +70,7 @@ const config = {
 	sourcemap: true
 };
 
-// Separate configs for each shared package (different outbase)
-const logConsolidationConfig = {
-	entryPoints: logConsolidationFiles,
-	outdir: path.join('build', 'packages', 'log-consolidation'),
-	outbase: path.join(packagesDir, 'log-consolidation'),
-	format: 'esm',
-	platform: 'node',
-	target: 'es2023',
-	sourcemap: true
-};
-
-const tfidfConfig = {
+const packageConfigs = tfidfFiles.length > 0 ? [{
 	entryPoints: tfidfFiles,
 	outdir: path.join('build', 'packages', 'tfidf'),
 	outbase: path.join(packagesDir, 'tfidf'),
@@ -90,9 +78,7 @@ const tfidfConfig = {
 	platform: 'node',
 	target: 'es2023',
 	sourcemap: true
-};
-
-const packageConfigs = [logConsolidationConfig, tfidfConfig];
+}] : [];
 
 // Node.js built-in modules (both prefixed and unprefixed for compatibility)
 const nodeBuiltins = [
@@ -110,6 +96,10 @@ const externals = [
 // Bundle mode: create a single self-contained file for VSIX distribution
 if (bundle) {
 	const packagesDir = path.resolve(__dirname, '..', 'packages');
+	const aliases = {};
+	if (tfidfFiles.length > 0) {
+		aliases['@packages/tfidf'] = path.join(packagesDir, 'tfidf', 'src', 'index.ts');
+	}
 	
 	// Clean build directory to ensure fresh bundle
 	const buildDir = path.join(__dirname, 'build');
@@ -135,10 +125,7 @@ if (bundle) {
 		// Don't bundle Node.js built-ins (both prefixed and unprefixed)
 		external: externals,
 		// Resolve @packages/* aliases
-		alias: {
-			'@packages/log-consolidation': path.join(packagesDir, 'log-consolidation', 'src', 'index.ts'),
-			'@packages/tfidf': path.join(packagesDir, 'tfidf', 'src', 'index.ts'),
-		},
+		alias: aliases,
 		// Provide a real require() for CJS dependencies (e.g. debug)
 		// that use require() for Node.js built-ins like tty, fs, etc.
 		banner: {
