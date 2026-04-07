@@ -37,7 +37,7 @@ import * as bootstrap from './bootstrap';
 import pkg from './package.json';
 import { detectExtensionPaths } from './services/extensionDetection';
 import { registerInspectorPanel } from './services/inspector-panel';
-import { initInspectorChannel, initMainChannel, log } from './services/logger';
+import { debug, initDebugLogging, initInspectorChannel, initMainChannel, log, setDebugEnabled } from './services/logger';
 import { registerMcpServerProvider } from './services/mcpServerProvider';
 import { attachErrorToChat, showCompletionNotification } from './services/notifications';
 import { DevToolsUriHandler, disposeUriHandler } from './services/uriHandler';
@@ -149,7 +149,19 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(inspectorChannel);
 	initInspectorChannel(inspectorChannel);
 
+	// Initialize debug file logging if enabled
+	const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
+	const debugModeEnabled = vscode.workspace.getConfiguration('devtools').get<boolean>('debug.enabled', false);
+	initDebugLogging(workspaceRoot, debugModeEnabled);
+	if (debugModeEnabled) {
+		diagLog('Debug mode enabled — writing to devtools.debug.log');
+	}
+
 	log('VS Code DevTools extension activating...');
+	debug(`Extension path: ${context.extensionPath}`);
+	debug(`Extension mode: ${context.extensionMode}`);
+	debug(`Workspace root: ${workspaceRoot ?? 'none'}`);
+	debug(`VS Code version: ${vscode.version}`);
 
 	// Register the Inspector WebView serializer synchronously — MUST happen
 	// before any `await` so VS Code can restore the panel across reloads.
@@ -259,6 +271,17 @@ export async function activate(context: vscode.ExtensionContext) {
 			globalCommandsRegistered = true;
 			log('Global commands registered (regular window)');
 
+			// Listen for debug mode being toggled
+			context.subscriptions.push(
+				vscode.workspace.onDidChangeConfiguration((e) => {
+					if (!e.affectsConfiguration('devtools.debug.enabled')) return;
+					const newDebugEnabled = vscode.workspace.getConfiguration('devtools').get<boolean>('debug.enabled', false);
+					const wsRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
+					setDebugEnabled(newDebugEnabled, wsRoot);
+					log(`Debug mode ${newDebugEnabled ? 'enabled' : 'disabled'}`);
+				})
+			);
+
 			// Listen for dev mode being toggled on later — late activation
 			context.subscriptions.push(
 				vscode.workspace.onDidChangeConfiguration((e) => {
@@ -266,6 +289,7 @@ export async function activate(context: vscode.ExtensionContext) {
 					const newEnabled = vscode.workspace.getConfiguration('devtools').get<boolean>('dev.enabled', false);
 					if (newEnabled && currentRole === undefined) {
 						log('Dev mode toggled on — attempting late host activation');
+						debug('Late host activation triggered from settings change');
 						void activateAsHost();
 					}
 				})
@@ -366,6 +390,7 @@ export async function activate(context: vscode.ExtensionContext) {
 					onBrowserServiceChanged,
 					onClientStateChanged,
 					registerHostHandlers,
+					startClientWindow,
 					stopClientWindow
 				} = await import('./services/host-handlers');
 				log('host-handlers module loaded, registering handlers...');
@@ -405,11 +430,18 @@ export async function activate(context: vscode.ExtensionContext) {
 				diagLog(`MCP provider enabled=${mcpProvider.enabled}`);
 				log(`MCP server provider registered (enabled: ${mcpProvider.enabled})`);
 
-				// Listen for settings changes — dev mode toggle + general refresh
+				// Listen for settings changes — dev mode toggle + debug mode toggle + general refresh
 				context.subscriptions.push(
 					vscode.workspace.onDidChangeConfiguration((e) => {
+						if (e.affectsConfiguration('devtools.debug.enabled')) {
+							const newDebugEnabled = vscode.workspace.getConfiguration('devtools').get<boolean>('debug.enabled', false);
+							const wsRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
+							setDebugEnabled(newDebugEnabled, wsRoot);
+							log(`Debug mode ${newDebugEnabled ? 'enabled' : 'disabled'}`);
+						}
 						if (e.affectsConfiguration('devtools.dev.enabled')) {
 							const newEnabled = vscode.workspace.getConfiguration('devtools').get<boolean>('dev.enabled', false);
+							debug(`Dev mode config changed: ${newEnabled}`);
 							if (newEnabled && !mcpProvider.enabled) {
 								log('Dev mode enabled — running extension detection then starting MCP server');
 								void runExtensionDetection().then(() => {
@@ -424,6 +456,7 @@ export async function activate(context: vscode.ExtensionContext) {
 						} else if (e.affectsConfiguration('devtools')) {
 							mcpProvider.refresh();
 							log('Settings changed — MCP server definitions refreshed');
+							debug('MCP provider refresh triggered by config change');
 						}
 					})
 				);
@@ -440,6 +473,19 @@ export async function activate(context: vscode.ExtensionContext) {
 						}
 						if (mcpProvider.enabled) {
 							log('Start MCP Server: already enabled — ensuring server is running');
+							if (!isClientWindowConnected()) {
+								log('Start MCP Server: client disconnected — launching client window first');
+								updateStatusBar('connecting');
+								const started = await startClientWindow();
+								if (!started) {
+									log('Start MCP Server: failed to launch client window');
+									updateStatusBar('disconnected');
+									if (!options?.silent) {
+										showCompletionNotification('Failed to start the client window.');
+									}
+								}
+								return;
+							}
 							if (!options?.silent) {
 								showCompletionNotification('MCP Server is already running.');
 							}
@@ -448,6 +494,16 @@ export async function activate(context: vscode.ExtensionContext) {
 						}
 						log('Start MCP Server: enabling provider (triggers tethered lifecycle)');
 						mcpProvider.setEnabled(true);
+						if (!isClientWindowConnected()) {
+							log('Start MCP Server: provider enabled while client disconnected — launching client window');
+							updateStatusBar('connecting');
+							const started = await startClientWindow();
+							if (!started) {
+								log('Start MCP Server: failed to launch client window after enabling provider');
+								updateStatusBar('disconnected');
+								mcpProvider.setEnabled(false);
+							}
+						}
 					}),
 					vscode.commands.registerCommand('devtools.stopMcpServer', () => {
 						if (!mcpProvider.enabled) {
@@ -475,9 +531,11 @@ export async function activate(context: vscode.ExtensionContext) {
 
 				function runTetheredCommand(label: string, ...commandArgs: unknown[]): void {
 					tetheredAction = true;
+					debug(`Tethered command starting: ${label}`);
 					const timeout = setTimeout(() => {
 						if (tetheredAction) {
 							log(`Tethered lifecycle: ${label} timed out after ${TETHERED_TIMEOUT_MS}ms — resetting guard`);
+							debug(`Tethered timeout - command args: ${JSON.stringify(commandArgs)}`);
 							tetheredAction = false;
 						}
 					}, TETHERED_TIMEOUT_MS);
@@ -485,12 +543,14 @@ export async function activate(context: vscode.ExtensionContext) {
 						() => {
 							clearTimeout(timeout);
 							log(`Tethered lifecycle: ${label} completed`);
+							debug(`Tethered command done: ${label}`);
 							tetheredAction = false;
 						},
 						(err: unknown) => {
 							clearTimeout(timeout);
 							const msg = err instanceof Error ? err.message : String(err);
 							log(`Tethered lifecycle: ${label} failed: ${msg}`);
+							debug(`Tethered command error: ${label} - ${msg}`);
 							tetheredAction = false;
 						}
 					);
@@ -498,6 +558,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
 				context.subscriptions.push(
 					onClientStateChanged((connected: boolean) => {
+						debug(
+							`onClientStateChanged fired: connected=${connected}, tetheredAction=${tetheredAction}, hotReload=${isHotReloadInProgress()}`
+						);
 						if (tetheredAction) {
 							log('Tethered lifecycle: ignoring state change (tethered action in progress)');
 							return;
@@ -524,9 +587,16 @@ export async function activate(context: vscode.ExtensionContext) {
 					})
 				);
 
+				// onDidToggle is for reacting to MCP server state changes - NOT for spawning clients.
+				// The tethered lifecycle (onClientStateChanged) handles client spawn → MCP start.
+				// This handler only updates status bar and stops the client when MCP is disabled.
 				context.subscriptions.push(
 					mcpProvider.onDidToggle((enabled: boolean) => {
+						debug(
+							`onDidToggle fired: enabled=${enabled}, tetheredAction=${tetheredAction}, devMode=${isDevModeEnabled()}, clientConnected=${isClientWindowConnected()}`
+						);
 						if (tetheredAction) {
+							debug('onDidToggle: skipping (tethered action in progress)');
 							return;
 						}
 						if (enabled && !isDevModeEnabled()) {
@@ -537,18 +607,16 @@ export async function activate(context: vscode.ExtensionContext) {
 						}
 						log(`MCP server toggled: ${enabled ? 'enabled' : 'disabled'}`);
 						if (enabled) {
-							updateStatusBar('connecting');
-							void vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID).then(
-								() => {
-									log('MCP server started after toggle on');
-								},
-								(err: unknown) => {
-									const msg = err instanceof Error ? err.message : String(err);
-									log(`MCP server start after toggle on failed: ${msg}`);
-									updateStatusBar('disconnected');
-								}
-							);
+							// Just update status - client spawn is handled by tethered lifecycle
+							if (isClientWindowConnected()) {
+								updateStatusBar('connected');
+								debug('onDidToggle: client already connected, status=connected');
+							} else {
+								updateStatusBar('connecting');
+								debug('onDidToggle: client not connected yet, status=connecting');
+							}
 						} else {
+							debug('onDidToggle: stopping client window');
 							stopClientWindow();
 							updateStatusBar('disconnected');
 						}
@@ -575,11 +643,12 @@ export async function activate(context: vscode.ExtensionContext) {
 					}
 				}
 
-				// Auto-start: run extension detection then start MCP server
+				// Auto-start: run extension detection then start the client window directly.
+				// Once connected, the tethered lifecycle starts the MCP server.
 				await runExtensionDetection();
-				diagLog('AUTO-START: Starting MCP server (client window will launch on mcpReady)');
+				diagLog('AUTO-START: Starting client window directly');
 				updateStatusBar('connecting');
-				log('Auto-starting MCP server — client window will launch when mcpReady fires...');
+				log('Auto-starting client window directly...');
 
 				let startupInProgress = true;
 
@@ -614,8 +683,13 @@ export async function activate(context: vscode.ExtensionContext) {
 
 				void (async () => {
 					try {
-						await vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID);
-						log('[auto-start] MCP server started — waiting for mcpReady to spawn client');
+						const started = await startClientWindow();
+						log(`[auto-start] startClientWindow completed: started=${started}`);
+						if (!started) {
+							updateStatusBar('disconnected');
+							resolveStartup(false);
+							return;
+						}
 						if (isClientWindowConnected()) {
 							resolveStartup(true);
 						}

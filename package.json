@@ -134,6 +134,11 @@
 						"type": "boolean",
 						"default": false,
 						"description": "Enable dev mode. When enabled, the MCP server is registered and available to Copilot."
+					},
+					"devtools.debug.enabled": {
+						"type": "boolean",
+						"default": false,
+						"description": "Enable debug logging. When enabled, saves detailed debug logs to devtools.debug.log in the workspace root."
 					}
 				}
 			},

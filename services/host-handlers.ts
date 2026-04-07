@@ -26,7 +26,7 @@ import * as vscode from 'vscode';
 import { BrowserService, CdpClient } from './browser';
 import { requireBrowserService, setBrowserService } from './clientDevTools';
 import { type ChangeCheckResult, createHotReloadService } from './hotReloadService';
-import { log } from './logger';
+import { debug, log } from './logger';
 import { showCompletionNotification } from './notifications';
 
 // ── Client State Events ────────────────────────────────────────────────────
@@ -315,13 +315,15 @@ async function notifyMcpClientReconnected(params: {
 
 async function notifyMcpClientStateChanged(connected: boolean): Promise<void> {
 	log(`[host] Notifying MCP server of client state change: connected=${connected}`);
+	debug(`notifyMcpClientStateChanged: sending to MCP_PIPE_PATH=${MCP_PIPE_PATH}`);
 	await new Promise<void>((resolve) => {
 		const socket = net.createConnection(MCP_PIPE_PATH);
 		let settled = false;
 
-		const done = () => {
+		const done = (reason: string) => {
 			if (settled) return;
 			settled = true;
+			debug(`notifyMcpClientStateChanged: completed via ${reason}`);
 			resolve();
 		};
 
@@ -331,10 +333,11 @@ async function notifyMcpClientStateChanged(connected: boolean): Promise<void> {
 			} catch {
 				// best-effort
 			}
-			done();
+			done('timeout');
 		}, 1500);
 
 		socket.on('connect', () => {
+			debug('notifyMcpClientStateChanged: socket connected, sending payload');
 			const payload = {
 				jsonrpc: '2.0',
 				method: 'client-state-changed',
@@ -343,18 +346,19 @@ async function notifyMcpClientStateChanged(connected: boolean): Promise<void> {
 			socket.write(`${JSON.stringify(payload)}\n`, () => {
 				clearTimeout(timer);
 				socket.end();
-				done();
+				done('write-complete');
 			});
 		});
 
-		socket.on('error', () => {
+		socket.on('error', (err) => {
+			debug(`notifyMcpClientStateChanged: socket error: ${err.message}`);
 			clearTimeout(timer);
-			done();
+			done('error');
 		});
 
 		socket.on('close', () => {
 			clearTimeout(timer);
-			done();
+			done('close');
 		});
 	});
 }
@@ -1193,16 +1197,22 @@ function stopClient(): void {
  */
 async function connectCdpClient(port: number): Promise<void> {
 	log(`connectCdpClient: Connecting to CDP on port ${port}...`);
+	debug(
+		`connectCdpClient: activeCdpClient=${activeCdpClient ? 'exists' : 'null'}, lastKnownClientState=${lastKnownClientState}`
+	);
 	disconnectCdpClient();
 
 	try {
+		debug('connectCdpClient: Creating new CdpClient...');
 		const client = new CdpClient();
 		await client.connect(port);
 		activeCdpClient = client;
+		debug(`connectCdpClient: CdpClient connected, client.connected=${client.connected}`);
 
 		// Stale-closure guard: if a newer connection replaced this one,
 		// the async WebSocket close event must not overwrite the new state.
 		client.onDisconnect(() => {
+			debug(`connectCdpClient onDisconnect callback: activeCdpClient===client: ${activeCdpClient === client}`);
 			if (activeCdpClient !== client) {
 				log('[host] CDP WebSocket closed — ignoring stale disconnect (superseded by newer connection)');
 				return;
@@ -1216,6 +1226,7 @@ async function connectCdpClient(port: number): Promise<void> {
 			activeCdpClient = null;
 			lastKnownClientState = false;
 			log('[state-fire] connectCdpClient: firing connected=false (websocket closed)');
+			debug('Firing _onClientStateChanged(false) from CDP WebSocket close');
 			_onClientStateChanged.fire(false);
 		});
 
@@ -1226,6 +1237,7 @@ async function connectCdpClient(port: number): Promise<void> {
 
 		lastKnownClientState = true;
 		log('[state-fire] connectCdpClient: firing connected=true');
+		debug('Firing _onClientStateChanged(true) from connectCdpClient');
 		_onClientStateChanged.fire(true);
 
 		const msg = `CDP client connected on port ${port} — browser LM tools active`;
@@ -1233,9 +1245,11 @@ async function connectCdpClient(port: number): Promise<void> {
 		log(msg);
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
+		const stack = err instanceof Error ? err.stack : undefined;
 		const warning = `CDP client connection failed on port ${port}: ${msg}. Browser LM tools unavailable.`;
 		log(`[host] Warning: ${warning}`);
 		log(warning);
+		debug(`connectCdpClient error stack: ${stack ?? 'no stack'}`);
 		disconnectCdpClient();
 	}
 }
@@ -1245,6 +1259,7 @@ async function connectCdpClient(port: number): Promise<void> {
  * Safe to call multiple times (idempotent).
  */
 function disconnectCdpClient(): void {
+	debug(`disconnectCdpClient: activeCdpClient=${activeCdpClient ? 'exists' : 'null'}`);
 	setBrowserService(null);
 	onBrowserServiceChangedCallback?.(null);
 	if (activeCdpClient) {
@@ -1320,8 +1335,11 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 			if (extCheck.changed) anyExtChanged = true;
 		}
 		if (anyExtBuildFailed) {
-			log('[host] One or more extension builds failed');
+			log('[host] One or more extension builds failed — keeping existing Client');
 		}
+
+		// Only consider the extension "changed" if it changed AND rebuilt successfully
+		const shouldRestartForExtChange = anyExtChanged && !anyExtBuildFailed;
 
 		// Check for existing healthy Client
 		const session = loadPersistedSession();
@@ -1342,7 +1360,7 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 				await waitForPipeRelease();
 			} else {
 				const healthy = await isClientHealthy();
-				if (healthy && !anyExtChanged) {
+				if (healthy && !shouldRestartForExtChange) {
 					log('[host] Existing Client is healthy and build is current, returning connection info');
 					const dataDir = hostStoragePath
 						? path.join(hostStoragePath, 'user-data')
@@ -1355,7 +1373,7 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 					return { cdpPort: session.cdpPort, clientStartedAt: session.startedAt, userDataDir: dataDir };
 				}
 
-				if (healthy && anyExtChanged) {
+				if (healthy && shouldRestartForExtChange) {
 					log('[host] Extension source changed \u2014 stopping existing Client to restart with fresh code');
 				} else {
 					log('[host] Persisted session exists but Client is not healthy');
@@ -1432,33 +1450,23 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 	register('clientShuttingDown', async (params) => {
 		const reason = typeof params.reason === 'string' ? params.reason : 'unknown';
 		log(`[host] clientShuttingDown received: reason=${reason}`);
+		debug(
+			`clientShuttingDown: hotReloadInProgress=${hotReloadInProgress}, lastKnownClientState=${lastKnownClientState}, cdpPort=${cdpPort}`
+		);
 
 		if (hotReloadInProgress) {
+			debug('clientShuttingDown: ignoring due to hotReloadInProgress');
 			return { acknowledged: true, ignored: 'hot-reload', reconnecting: false };
 		}
 
-		if (!cdpPort) {
-			lastKnownClientState = false;
-			log('[state-fire] clientShuttingDown: firing connected=false (no-cdp-port)');
-			_onClientStateChanged.fire(false);
-			return { acknowledged: true, ignored: 'no-cdp-port', reconnecting: false };
-		}
-
-		const cdpStillAlive = await isCdpPortReady(cdpPort, 2000);
-		if (!cdpStillAlive) {
-			log('[host] CDP is down after shutdown notification; treating as close');
-			disconnectCdpClient();
-			lastKnownClientState = false;
-			log('[state-fire] clientShuttingDown: firing connected=false (cdp-down)');
-			_onClientStateChanged.fire(false);
-			return { acknowledged: true, ignored: 'cdp-down', reconnecting: false };
-		}
-
-		void reconnectToClient().then((ok) => {
-			log(`[host] Background reconnect completed: ${ok ? 'success' : 'failed'}`);
-		});
-
-		return { acknowledged: true, reconnecting: true };
+		debug('clientShuttingDown: disconnecting CDP and stopping client');
+		disconnectCdpClient();
+		stopClient();
+		lastKnownClientState = false;
+		log('[state-fire] clientShuttingDown: firing connected=false');
+		debug('Firing _onClientStateChanged(false) from clientShuttingDown');
+		_onClientStateChanged.fire(false);
+		return { acknowledged: true, reconnecting: false };
 	});
 
 	/**
@@ -1466,6 +1474,9 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 	 */
 	register('getStatus', async (_params) => {
 		const healthy = cdpPort ? await isClientHealthy() : false;
+		debug(
+			`getStatus: cdpPort=${cdpPort}, healthy=${healthy}, hotReloadInProgress=${hotReloadInProgress}, lastKnownClientState=${lastKnownClientState}`
+		);
 
 		return {
 			cdpPort,
@@ -2092,15 +2103,20 @@ export async function startClientWindow(): Promise<boolean> {
 
 async function doStartClientWindow(): Promise<boolean> {
 	log('startClientWindow: ENTRY');
-	log('[host] startClientWindow: ENTRY');
+	debug(
+		`startClientWindow: ENTRY - cdpPort=${cdpPort}, electronPid=${electronPid}, lastKnownClientState=${lastKnownClientState}`
+	);
 
 	// Already running?
 	if (cdpPort && electronPid) {
 		log(`startClientWindow: PATH=already-running (cdpPort=${cdpPort}, pid=${electronPid})`);
+		debug(`Checking client health for existing session...`);
 		const healthy = await isClientHealthy();
+		debug(`Client health check result: ${healthy}`);
 		if (healthy) {
 			log('[host] Client window already running and healthy');
 			if (!activeCdpClient?.connected) {
+				debug(`CDP not connected, attempting connection on port ${cdpPort}`);
 				await connectCdpClient(cdpPort);
 			}
 			if (!activeCdpClient?.connected) {
@@ -2108,16 +2124,21 @@ async function doStartClientWindow(): Promise<boolean> {
 			}
 			lastKnownClientState = true;
 			log('[state-fire] startClientWindow: firing connected=true (already-running path)');
+			debug('Firing _onClientStateChanged(true) - already-running path');
 			_onClientStateChanged.fire(true);
 			return true;
 		}
 		// Not healthy — clean up and respawn
+		debug('Client not healthy, calling stopClient() before respawn');
 		stopClient();
 	}
 
 	// Try persisted session first
 	const session = loadPersistedSession();
 	log(`startClientWindow: PATH=persisted-session (session=${session ? 'FOUND' : 'NULL'})`);
+	debug(
+		`Persisted session: ${session ? JSON.stringify({ clientPid: session.clientPid, cdpPort: session.cdpPort, inspectorPort: session.inspectorPort }) : 'null'}`
+	);
 	if (session) {
 		electronPid = session.clientPid;
 		cdpPort = session.cdpPort;
@@ -2136,16 +2157,21 @@ async function doStartClientWindow(): Promise<boolean> {
 			}
 			lastKnownClientState = true;
 			log('[state-fire] startClientWindow: firing connected=true (persisted-session path)');
+			debug('Firing _onClientStateChanged(true) - persisted-session path');
 			_onClientStateChanged.fire(true);
 			return true;
 		}
 		// Stale session — clean up
+		debug('Persisted session stale, stopping client and waiting for pipe release');
 		stopClient();
 		await waitForPipeRelease();
 	}
 
 	const resolved = resolveClientConfig();
 	log(`startClientWindow: PATH=spawn (resolved=${resolved ? 'OK' : 'NULL'})`);
+	debug(
+		`Resolved client config: ${resolved ? JSON.stringify({ clientWorkspace: resolved.clientWorkspace, extensionPaths: resolved.extensionPaths }) : 'null'}`
+	);
 	if (!resolved) {
 		log('[host] Cannot auto-start client: no workspace folder or config');
 		log('startClientWindow: FAILED — no workspace folder or config');
@@ -2155,19 +2181,28 @@ async function doStartClientWindow(): Promise<boolean> {
 	try {
 		log('[host] Auto-starting client window...');
 		log(`startClientWindow: Spawning client window...`);
+		debug(
+			`Calling spawnClient with workspace=${resolved.clientWorkspace}, extensionPaths=${JSON.stringify(resolved.extensionPaths)}`
+		);
 		const result = await spawnClient(resolved.clientWorkspace, resolved.extensionPaths, resolved.launchFlags);
+		debug(
+			`spawnClient returned: cdpPort=${result.cdpPort}, userDataDir=${result.userDataDir}, clientStartedAt=${result.clientStartedAt}`
+		);
 		log(`startClientWindow: Client spawned, connecting CDP on port ${result.cdpPort}...`);
 		await connectCdpClient(result.cdpPort);
 		log(`startClientWindow: CDP connection attempt complete, activeCdpClient.connected=${activeCdpClient?.connected}`);
 		log(`[host] Client window auto-started successfully (cdpPort: ${result.cdpPort})`);
 		lastKnownClientState = true;
 		log('[state-fire] startClientWindow: firing connected=true (spawn path)');
+		debug('Firing _onClientStateChanged(true) - spawn path');
 		_onClientStateChanged.fire(true);
 		return true;
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
+		const stack = err instanceof Error ? err.stack : undefined;
 		log(`[host] Failed to auto-start client window: ${msg}`);
 		log(`startClientWindow: FAILED — ${msg}`);
+		debug(`startClientWindow error stack: ${stack ?? 'no stack'}`);
 		return false;
 	}
 }
