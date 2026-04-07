@@ -1307,6 +1307,13 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 
 		signalMcpReady();
 
+		// MCP socket server is now listening — send current client state
+		// (earlier notification may have failed if socket wasn't ready yet)
+		if (lastKnownClientState !== undefined) {
+			log(`[host] mcpReady: re-sending client state=${lastKnownClientState} to MCP socket`);
+			void notifyMcpClientStateChanged(lastKnownClientState);
+		}
+
 		const clientWorkspace = typeof params.clientWorkspace === 'string' ? params.clientWorkspace : undefined;
 
 		const extensionPaths = parseExtensionPaths(params);
