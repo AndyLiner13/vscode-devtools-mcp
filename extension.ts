@@ -607,13 +607,13 @@ export async function activate(context: vscode.ExtensionContext) {
 						}
 						log(`MCP server toggled: ${enabled ? 'enabled' : 'disabled'}`);
 						if (enabled) {
-							// Just update status - client spawn is handled by tethered lifecycle
 							if (isClientWindowConnected()) {
 								updateStatusBar('connected');
 								debug('onDidToggle: client already connected, status=connected');
 							} else {
 								updateStatusBar('connecting');
-								debug('onDidToggle: client not connected yet, status=connecting');
+								debug('onDidToggle: client not connected, starting client window');
+								void startClientWindow();
 							}
 						} else {
 							debug('onDidToggle: stopping client window');
