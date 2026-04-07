@@ -215,6 +215,8 @@ function registerTool(targetServer: McpServer, tool: ToolDefinition): void {
 		},
 		async (params): Promise<CallToolResult> => executeTool(tool.name, params)
 	);
+	// Start disabled — tools are enabled when client connects via client-state-changed
+	registered.disable();
 	registeredTools.set(tool.name, registered);
 }
 
@@ -258,12 +260,9 @@ for (const tool of tools) {
 	registerTool(server, tool);
 }
 
-// Start with tools disabled — they will be enabled when the Host confirms
-// the client window connected via `client-state-changed` notification.
-// This prevents tools from being visible if the client dies during startup.
-setToolsEnabled(false);
-
 // Wire up socket server with tool dispatch deps
+// Tools start disabled (set in registerTool) and are enabled when the Host
+// confirms the client window connected via `client-state-changed` notification.
 startMcpSocketServer({
 	executeTool,
 	getToolList,

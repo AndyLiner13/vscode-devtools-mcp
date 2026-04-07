@@ -1438,12 +1438,19 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 		}
 
 		if (!cdpPort) {
+			lastKnownClientState = false;
+			log('[state-fire] clientShuttingDown: firing connected=false (no-cdp-port)');
+			_onClientStateChanged.fire(false);
 			return { acknowledged: true, ignored: 'no-cdp-port', reconnecting: false };
 		}
 
 		const cdpStillAlive = await isCdpPortReady(cdpPort, 2000);
 		if (!cdpStillAlive) {
 			log('[host] CDP is down after shutdown notification; treating as close');
+			disconnectCdpClient();
+			lastKnownClientState = false;
+			log('[state-fire] clientShuttingDown: firing connected=false (cdp-down)');
+			_onClientStateChanged.fire(false);
 			return { acknowledged: true, ignored: 'cdp-down', reconnecting: false };
 		}
 

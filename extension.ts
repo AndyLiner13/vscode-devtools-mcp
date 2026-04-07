@@ -443,7 +443,7 @@ export async function activate(context: vscode.ExtensionContext) {
 							if (!options?.silent) {
 								showCompletionNotification('MCP Server is already running.');
 							}
-							void vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true });
+							void vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID);
 							return;
 						}
 						log('Start MCP Server: enabling provider (triggers tethered lifecycle)');
@@ -515,7 +515,7 @@ export async function activate(context: vscode.ExtensionContext) {
 								inspectorPanel.show();
 							}
 
-							runTetheredCommand('MCP startServer', 'workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true });
+							runTetheredCommand('MCP startServer', 'workbench.mcp.startServer', MCP_SERVER_DEF_ID);
 						} else {
 							updateStatusBar('disconnected');
 							log('Client window disconnected — stopping MCP server via tethered lifecycle');
@@ -538,18 +538,16 @@ export async function activate(context: vscode.ExtensionContext) {
 						log(`MCP server toggled: ${enabled ? 'enabled' : 'disabled'}`);
 						if (enabled) {
 							updateStatusBar('connecting');
-							void vscode.commands
-								.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true })
-								.then(
-									() => {
-										log('MCP server started after toggle on');
-									},
-									(err: unknown) => {
-										const msg = err instanceof Error ? err.message : String(err);
-										log(`MCP server start after toggle on failed: ${msg}`);
-										updateStatusBar('disconnected');
-									}
-								);
+							void vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID).then(
+								() => {
+									log('MCP server started after toggle on');
+								},
+								(err: unknown) => {
+									const msg = err instanceof Error ? err.message : String(err);
+									log(`MCP server start after toggle on failed: ${msg}`);
+									updateStatusBar('disconnected');
+								}
+							);
 						} else {
 							stopClientWindow();
 							updateStatusBar('disconnected');
@@ -616,7 +614,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 				void (async () => {
 					try {
-						await vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID, { waitForLiveTools: true });
+						await vscode.commands.executeCommand('workbench.mcp.startServer', MCP_SERVER_DEF_ID);
 						log('[auto-start] MCP server started — waiting for mcpReady to spawn client');
 						if (isClientWindowConnected()) {
 							resolveStartup(true);
