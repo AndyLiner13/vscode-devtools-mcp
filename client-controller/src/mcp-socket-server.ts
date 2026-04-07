@@ -50,6 +50,7 @@ interface ToolCallResult {
 interface McpSocketDeps {
 	executeTool: (name: string, args: Record<string, unknown>) => Promise<ToolCallResult>;
 	getToolList: () => ToolInfo[];
+	onClientStateChanged?: (connected: boolean) => void;
 	version: string;
 }
 
@@ -195,7 +196,19 @@ async function dispatch(req: JsonRpcRequest): Promise<JsonRpcResponse> {
 			const { electronPid } = params;
 			const { cdpPort } = params;
 			const { inspectorPort } = params;
-			logger(`MCP socket: client-reconnected received — pid=${String(electronPid)}, cdp=${String(cdpPort)}, inspector=${String(inspectorPort)}`);
+			logger(
+				`MCP socket: client-reconnected received — pid=${String(electronPid)}, cdp=${String(cdpPort)}, inspector=${String(inspectorPort)}`
+			);
+			return { id, jsonrpc: '2.0', result: { ok: true } };
+		}
+
+		case 'client-state-changed': {
+			const params = req.params ?? {};
+			const connected = params.connected as boolean | undefined;
+			logger(`MCP socket: client-state-changed received — connected=${String(connected)}`);
+			if (deps?.onClientStateChanged && typeof connected === 'boolean') {
+				deps.onClientStateChanged(connected);
+			}
 			return { id, jsonrpc: '2.0', result: { ok: true } };
 		}
 

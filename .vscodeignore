@@ -52,33 +52,19 @@
 !node_modules/jsonc-parser/lib/**/*.js
 !node_modules/jsonc-parser/package.json
 
-# ts-morph runtime files only
-!node_modules/ts-morph/dist/**/*.js
-!node_modules/ts-morph/lib/**/*.d.ts
-!node_modules/ts-morph/package.json
-!node_modules/@ts-morph/common/dist/**/*.js
-!node_modules/@ts-morph/common/lib/**/*.d.ts
-!node_modules/@ts-morph/common/package.json
-
-# code-block-writer runtime
-!node_modules/code-block-writer/esm/**/*.js
-!node_modules/code-block-writer/esm/**/*.d.ts
-!node_modules/code-block-writer/package.json
-
-# minimatch runtime (use the one in @ts-morph/common)
-!node_modules/@ts-morph/common/node_modules/minimatch/dist/commonjs/**/*.js
-!node_modules/@ts-morph/common/node_modules/minimatch/package.json
-!node_modules/@ts-morph/common/node_modules/brace-expansion/dist/commonjs/**/*.js
-!node_modules/@ts-morph/common/node_modules/brace-expansion/package.json
-!node_modules/@ts-morph/common/node_modules/balanced-match/dist/commonjs/**/*.js
-!node_modules/@ts-morph/common/node_modules/balanced-match/package.json
+# ts-morph + full dependency tree (required for correct module resolution)
+!node_modules/ts-morph/**
+!node_modules/@ts-morph/**
+!node_modules/code-block-writer/**
 
 # path-browserify, tinyglobby, fdir, picomatch
 !node_modules/path-browserify/index.js
 !node_modules/path-browserify/package.json
-!node_modules/tinyglobby/dist/**/*.js
+!node_modules/tinyglobby/dist/*
 !node_modules/tinyglobby/package.json
-!node_modules/fdir/dist/**/*.js
+!node_modules/fdir/dist/*
 !node_modules/fdir/package.json
+!node_modules/picomatch/index.js
+!node_modules/picomatch/posix.js
 !node_modules/picomatch/lib/**/*.js
 !node_modules/picomatch/package.json

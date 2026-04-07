@@ -276,7 +276,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		} else {
 			// Dev mode is enabled at startup — claim the host pipe immediately
 			const claimed = await claimHostPipe();
-			if (!claimed) {
+			if (claimed) {
+				await activateAsHost();
+			} else {
 				log('Host pipe already in use — this window will not be a DevTools participant');
 				// Fall through to runtime loading anyway
 			}

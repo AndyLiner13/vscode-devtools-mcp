@@ -313,6 +313,52 @@ async function notifyMcpClientReconnected(params: {
 	});
 }
 
+async function notifyMcpClientStateChanged(connected: boolean): Promise<void> {
+	log(`[host] Notifying MCP server of client state change: connected=${connected}`);
+	await new Promise<void>((resolve) => {
+		const socket = net.createConnection(MCP_PIPE_PATH);
+		let settled = false;
+
+		const done = () => {
+			if (settled) return;
+			settled = true;
+			resolve();
+		};
+
+		const timer = setTimeout(() => {
+			try {
+				socket.destroy();
+			} catch {
+				// best-effort
+			}
+			done();
+		}, 1500);
+
+		socket.on('connect', () => {
+			const payload = {
+				jsonrpc: '2.0',
+				method: 'client-state-changed',
+				params: { connected }
+			};
+			socket.write(`${JSON.stringify(payload)}\n`, () => {
+				clearTimeout(timer);
+				socket.end();
+				done();
+			});
+		});
+
+		socket.on('error', () => {
+			clearTimeout(timer);
+			done();
+		});
+
+		socket.on('close', () => {
+			clearTimeout(timer);
+			done();
+		});
+	});
+}
+
 function loadPersistedSession(): null | PersistedSession {
 	if (!hostWorkspaceState) return null;
 	try {
@@ -1224,6 +1270,13 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 
 	// Initialize the hot reload service (content-hash change detection)
 	const hotReloadService = createHotReloadService(context.workspaceState);
+
+	// Forward client state changes to MCP server so it can enable/disable tools
+	context.subscriptions.push(
+		_onClientStateChanged.event((connected) => {
+			void notifyMcpClientStateChanged(connected);
+		})
+	);
 
 	// Register lazy CDP reconnection callback for browser LM tools.
 	// NOTE: The reconnect callback is no longer set here because the extension.js and

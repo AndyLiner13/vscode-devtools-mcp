@@ -25,7 +25,7 @@
 		"inspector"
 	],
 	"scripts": {
-		"build": "vsce package --allow-star-activation",
+		"build": "vsce package --allow-star-activation --skip-license",
 		"check-types": "tsc --noEmit",
 		"compile": "node esbuild.mjs",
 		"format": "eslint --cache --fix . && prettier --write --cache .",

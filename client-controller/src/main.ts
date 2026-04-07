@@ -206,7 +206,7 @@ async function executeTool(toolName: string, args: Record<string, unknown>): Pro
 }
 
 function registerTool(targetServer: McpServer, tool: ToolDefinition): void {
-	targetServer.registerTool(
+	const registered = targetServer.registerTool(
 		tool.name,
 		{
 			annotations: tool.annotations,
@@ -215,6 +215,28 @@ function registerTool(targetServer: McpServer, tool: ToolDefinition): void {
 		},
 		async (params): Promise<CallToolResult> => executeTool(tool.name, params)
 	);
+	registeredTools.set(tool.name, registered);
+}
+
+// Track registered tools for dynamic enable/disable
+const registeredTools = new Map<string, ReturnType<typeof server.registerTool>>();
+
+/**
+ * Enable or disable all tools based on client connection state.
+ * When disabled, tools are hidden from MCP clients (LLMs won't see them).
+ */
+function setToolsEnabled(enabled: boolean): void {
+	logger(`[tools] Setting all tools enabled=${enabled}`);
+	for (const [name, tool] of registeredTools) {
+		if (enabled) {
+			tool.enable();
+		} else {
+			tool.disable();
+		}
+		logger(`[tools] ${name} → ${enabled ? 'enabled' : 'disabled'}`);
+	}
+	server.sendToolListChanged();
+	logger(`[tools] Sent tools/list_changed notification`);
 }
 
 // Build pre-converted JSON Schema list for the socket server
@@ -240,6 +262,7 @@ for (const tool of tools) {
 startMcpSocketServer({
 	executeTool,
 	getToolList,
+	onClientStateChanged: setToolsEnabled,
 	version: VERSION
 });
 
