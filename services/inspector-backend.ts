@@ -12,8 +12,6 @@ import type { RegisterHandler } from './client-handlers';
 
 import { readdirSync } from 'node:fs';
 
-import { extractStructure } from './codebase/codebase-worker-proxy';
-import { BODY_BEARING_KINDS, type FileSymbol } from './codebase/types';
 import { inspectorLog } from './logger';
 import net from 'node:net';
 import { resolve as resolvePath } from 'node:path';
@@ -48,29 +46,50 @@ const MCP_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-mcp' : '/tmp/vs
 const HOST_PIPE_PATH = IS_WINDOWS ? '\\\\.\\pipe\\vscode-devtools-host' : '/tmp/vscode-devtools-host.sock';
 const STORAGE_KEY = 'inspector.records';
 
-const CONTAINER_KINDS = new Set(['imports', 'exports', 'comment', 'jsdoc', 'tsdoc', 'directives']);
+const BODY_BEARING_SYMBOL_KINDS = new Set<vscode.SymbolKind>([
+	vscode.SymbolKind.Class,
+	vscode.SymbolKind.Constructor,
+	vscode.SymbolKind.Enum,
+	vscode.SymbolKind.Function,
+	vscode.SymbolKind.Interface,
+	vscode.SymbolKind.Method,
+	vscode.SymbolKind.Module,
+	vscode.SymbolKind.Namespace,
+	vscode.SymbolKind.Object,
+	vscode.SymbolKind.Struct
+]);
+
+const LOOKUPABLE_SYMBOL_KINDS = new Set<vscode.SymbolKind>([
+	...BODY_BEARING_SYMBOL_KINDS,
+	vscode.SymbolKind.Constant,
+	vscode.SymbolKind.EnumMember,
+	vscode.SymbolKind.Field,
+	vscode.SymbolKind.Key,
+	vscode.SymbolKind.Property,
+	vscode.SymbolKind.TypeParameter,
+	vscode.SymbolKind.Variable
+]);
 
 // Detect MCP restart messages (matches pipeline restart indicators)
-const RESTART_INDICATORS = [
-	'⚡ **MCP server source changed',
-	'⏳ MCP server is restarting'
-];
+const RESTART_INDICATORS = ['⚡ **MCP server source changed', '⏳ MCP server is restarting'];
 
 function isRestartMessage(result: Record<string, unknown>): boolean {
 	const content = result.content;
 	if (!Array.isArray(content)) return false;
-	const textBlock = content.find((c): c is { text: string; type: 'text' } =>
-		typeof c === 'object' && c !== null && 'type' in c && c.type === 'text' && 'text' in c
+	const textBlock = content.find(
+		(c): c is { text: string; type: 'text' } =>
+			typeof c === 'object' && c !== null && 'type' in c && c.type === 'text' && 'text' in c
 	);
 	if (!textBlock) return false;
-	return RESTART_INDICATORS.some(indicator => textBlock.text.startsWith(indicator));
+	return RESTART_INDICATORS.some((indicator) => textBlock.text.startsWith(indicator));
 }
 
 function isBuildFailure(result: Record<string, unknown>): boolean {
 	const content = result.content;
 	if (!Array.isArray(content)) return false;
-	const textBlock = content.find((c): c is { text: string; type: 'text' } =>
-		typeof c === 'object' && c !== null && 'type' in c && c.type === 'text' && 'text' in c
+	const textBlock = content.find(
+		(c): c is { text: string; type: 'text' } =>
+			typeof c === 'object' && c !== null && 'type' in c && c.type === 'text' && 'text' in c
 	);
 	if (!textBlock) return false;
 	return textBlock.text.startsWith('❌ **') && textBlock.text.includes('rebuild failed');
@@ -83,7 +102,7 @@ async function waitForMcpReady(maxWaitMs = 30_000, intervalMs = 500): Promise<bo
 			await sendPipeRpc(MCP_PIPE_PATH, 'listTools', {}, 5_000);
 			return true;
 		} catch {
-			await new Promise(resolve => setTimeout(resolve, intervalMs));
+			await new Promise((resolve) => setTimeout(resolve, intervalMs));
 		}
 	}
 	return false;
@@ -158,31 +177,72 @@ async function sendPipeRpc(
 
 // ── Symbol Flattening ──
 
-/**
- * Check if a symbol is a valid target for file_read's `symbol` parameter.
- * Valid targets are body-bearing symbols (function, class, etc.) and
- * container kinds (imports, exports, comments, etc.).
- */
-function isValidTarget(sym: FileSymbol): boolean {
-	return BODY_BEARING_KINDS.has(sym.kind) || CONTAINER_KINDS.has(sym.kind) || sym.children.length > 0;
+function symbolKindName(kind: vscode.SymbolKind): string {
+	const names: Record<number, string> = {
+		[vscode.SymbolKind.Class]: 'class',
+		[vscode.SymbolKind.Constant]: 'constant',
+		[vscode.SymbolKind.Constructor]: 'constructor',
+		[vscode.SymbolKind.Enum]: 'enum',
+		[vscode.SymbolKind.EnumMember]: 'enumMember',
+		[vscode.SymbolKind.Field]: 'field',
+		[vscode.SymbolKind.Function]: 'function',
+		[vscode.SymbolKind.Interface]: 'interface',
+		[vscode.SymbolKind.Key]: 'key',
+		[vscode.SymbolKind.Method]: 'method',
+		[vscode.SymbolKind.Module]: 'module',
+		[vscode.SymbolKind.Namespace]: 'namespace',
+		[vscode.SymbolKind.Object]: 'object',
+		[vscode.SymbolKind.Property]: 'property',
+		[vscode.SymbolKind.Struct]: 'struct',
+		[vscode.SymbolKind.TypeParameter]: 'typeParameter',
+		[vscode.SymbolKind.Variable]: 'variable'
+	};
+	return names[kind] ?? 'unknown';
 }
 
-/**
- * Flatten a FileSymbol tree into name+kind entries, keeping only valid targets.
- * Uses dot-qualified names for nested symbols (e.g. "MyClass.myMethod").
- */
-function flattenFileSymbols(
-	symbols: FileSymbol[],
-	prefix = ''
-): Array<{ kind: string; name: string }> {
+async function getDocumentSymbols(filePath: string): Promise<vscode.DocumentSymbol[]> {
+	const uri = vscode.Uri.file(filePath);
+	await vscode.workspace.openTextDocument(uri);
+	const symbols = await vscode.commands.executeCommand<undefined | vscode.DocumentSymbol[] | vscode.SymbolInformation[]>(
+		'vscode.executeDocumentSymbolProvider',
+		uri
+	);
+	if (!symbols) {
+		return [];
+	}
+	return symbols.filter((s): s is vscode.DocumentSymbol => 'children' in s);
+}
+
+function flattenDocumentSymbols(symbols: vscode.DocumentSymbol[], prefix = ''): Array<{ kind: string; name: string }> {
 	const out: Array<{ kind: string; name: string }> = [];
 	for (const sym of symbols) {
 		const fullName = prefix ? `${prefix}.${sym.name}` : sym.name;
-		if (isValidTarget(sym)) {
-			out.push({ kind: sym.kind, name: fullName });
+		if (LOOKUPABLE_SYMBOL_KINDS.has(sym.kind) || sym.children.length > 0) {
+			out.push({ kind: symbolKindName(sym.kind), name: fullName });
 		}
 		if (sym.children.length > 0) {
-			out.push(...flattenFileSymbols(sym.children, fullName));
+			out.push(...flattenDocumentSymbols(sym.children, fullName));
+		}
+	}
+	return out;
+}
+
+function flattenSemanticDocumentSymbols(
+	symbols: vscode.DocumentSymbol[],
+	parentName?: string
+): Array<{ kind: string; name: string; parentName?: string }> {
+	const out: Array<{ kind: string; name: string; parentName?: string }> = [];
+	for (const sym of symbols) {
+		if (LOOKUPABLE_SYMBOL_KINDS.has(sym.kind)) {
+			out.push({
+				kind: symbolKindName(sym.kind),
+				name: sym.name,
+				parentName: parentName ?? undefined
+			});
+		}
+		if (sym.children.length > 0) {
+			const nextParent = BODY_BEARING_SYMBOL_KINDS.has(sym.kind) ? sym.name : parentName;
+			out.push(...flattenSemanticDocumentSymbols(sym.children, nextParent));
 		}
 	}
 	return out;
@@ -205,10 +265,7 @@ async function saveAllRecords(state: vscode.Memento, records: ExecutionRecord[])
  * These handle every inspector operation — frontend communicates via
  * Host relay → Client pipe → these handlers.
  */
-export function registerInspectorHandlers(
-	register: RegisterHandler,
-	workspaceState: vscode.Memento
-): void {
+export function registerInspectorHandlers(register: RegisterHandler, workspaceState: vscode.Memento): void {
 	const log = (msg: string): void => {
 		inspectorLog(`[inspector-backend] ${msg}`);
 	};
@@ -228,9 +285,8 @@ export function registerInspectorHandlers(
 
 	register('inspector.mcp/call', async (params) => {
 		const toolName = typeof params.name === 'string' ? params.name : '';
-		const args = (typeof params.arguments === 'object' && params.arguments !== null)
-			? params.arguments as Record<string, unknown>
-			: {};
+		const args =
+			typeof params.arguments === 'object' && params.arguments !== null ? (params.arguments as Record<string, unknown>) : {};
 		if (!toolName) {
 			throw new Error('Missing required field: name');
 		}
@@ -272,9 +328,7 @@ export function registerInspectorHandlers(
 		const records = getAllRecords(workspaceState);
 
 		if (tool) {
-			return records
-				.filter((r) => r.toolName === tool)
-				.sort((a, b) => b.priority - a.priority);
+			return records.filter((r) => r.toolName === tool).sort((a, b) => b.priority - a.priority);
 		}
 
 		const grouped: Record<string, ExecutionRecord[]> = {};
@@ -292,7 +346,7 @@ export function registerInspectorHandlers(
 	register('inspector.records/create', async (params) => {
 		const toolName = typeof params.toolName === 'string' ? params.toolName : '';
 		const input = typeof params.input === 'string' ? params.input : '';
-		const output = Array.isArray(params.output) ? params.output as unknown[] : [];
+		const output = Array.isArray(params.output) ? (params.output as unknown[]) : [];
 		const isError = params.isError === true;
 		const durationMs = typeof params.durationMs === 'number' ? params.durationMs : 0;
 
@@ -364,7 +418,7 @@ export function registerInspectorHandlers(
 
 	register('inspector.records/output', async (params) => {
 		const id = typeof params.id === 'string' ? params.id : '';
-		const output = Array.isArray(params.output) ? params.output as unknown[] : [];
+		const output = Array.isArray(params.output) ? (params.output as unknown[]) : [];
 		const isError = params.isError === true;
 		const durationMs = typeof params.durationMs === 'number' ? params.durationMs : 0;
 		const records = getAllRecords(workspaceState);
@@ -393,7 +447,7 @@ export function registerInspectorHandlers(
 
 	register('inspector.records/reorder', async (params) => {
 		const _toolName = typeof params.toolName === 'string' ? params.toolName : '';
-		const orderedIds = Array.isArray(params.orderedIds) ? params.orderedIds as string[] : [];
+		const orderedIds = Array.isArray(params.orderedIds) ? (params.orderedIds as string[]) : [];
 		const records = getAllRecords(workspaceState);
 
 		for (let i = 0; i < orderedIds.length; i++) {
@@ -434,7 +488,7 @@ export function registerInspectorHandlers(
 				.filter((e) => !e.name.startsWith('.'))
 				.map((e) => ({
 					name: e.name,
-					type: e.isDirectory() ? 'dir' as const : 'file' as const
+					type: e.isDirectory() ? ('dir' as const) : ('file' as const)
 				}))
 				.sort((a, b) => {
 					if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
@@ -473,13 +527,7 @@ export function registerInspectorHandlers(
 		}
 
 		try {
-			const structure = await extractStructure(filePath);
-			if (!structure) {
-				log(`[editor/symbols] no structure returned for: ${filePath}`);
-				return { symbols: [] };
-			}
-
-			const symbols = flattenFileSymbols(structure.symbols);
+			const symbols = flattenDocumentSymbols(await getDocumentSymbols(filePath));
 			log(`[editor/symbols] returning ${symbols.length} valid targets`);
 			return { symbols };
 		} catch (err) {
@@ -487,51 +535,6 @@ export function registerInspectorHandlers(
 			return { error: String(err), symbols: [] };
 		}
 	});
-
-	// ── Semantic Symbol Lookup (for codebase_search query IntelliSense) ──
-
-	const SEMANTIC_SYMBOL_KINDS: ReadonlySet<string> = new Set([
-		// Body-bearing kinds
-		'function', 'method', 'constructor', 'getter', 'setter',
-		'class', 'interface', 'enum', 'namespace', 'module', 'staticBlock',
-		// Root-level named symbols that can be looked up via symbol =
-		'variable', 'constant', 'typeAlias',
-	]);
-
-	const SEMANTIC_EXCLUDED_KINDS: ReadonlySet<string> = new Set([
-		'import', 'expression', 're-export', 'comment',
-	]);
-
-	/**
-	 * Flatten FileSymbol tree into semantic symbols using `>` separator
-	 * for parent-child hierarchy (matching `symbol = Parent > Child` format).
-	 * Only includes symbols suitable for symbol lookup.
-	 */
-	function flattenSemanticSymbols(
-		symbols: FileSymbol[],
-		parentName?: string,
-	): Array<{ kind: string; name: string; parentName?: string }> {
-		const out: Array<{ kind: string; name: string; parentName?: string }> = [];
-		for (const sym of symbols) {
-			if (SEMANTIC_EXCLUDED_KINDS.has(sym.kind)) continue;
-
-			const isLookupable = SEMANTIC_SYMBOL_KINDS.has(sym.kind);
-
-			if (isLookupable) {
-				out.push({
-					kind: sym.kind,
-					name: sym.name,
-					parentName: parentName ?? undefined,
-				});
-			}
-
-			if (sym.children.length > 0) {
-				const nextParent = BODY_BEARING_KINDS.has(sym.kind) ? sym.name : parentName;
-				out.push(...flattenSemanticSymbols(sym.children, nextParent));
-			}
-		}
-		return out;
-	}
 
 	register('inspector.editor/semantic-symbols', async (params) => {
 		const { workspaceFolders } = vscode.workspace;
@@ -554,13 +557,7 @@ export function registerInspectorHandlers(
 		}
 
 		try {
-			const structure = await extractStructure(filePath);
-			if (!structure) {
-				log(`[editor/semantic-symbols] no structure returned for: ${filePath}`);
-				return { symbols: [] };
-			}
-
-			const symbols = flattenSemanticSymbols(structure.symbols);
+			const symbols = flattenSemanticDocumentSymbols(await getDocumentSymbols(filePath));
 			log(`[editor/semantic-symbols] returning ${symbols.length} semantic symbols`);
 			return { symbols };
 		} catch (err) {

@@ -7,8 +7,7 @@
 				"bootstrap.js",
 				"services/runtime.ts",
 				"services/client-handlers.ts",
-				"services/host-handlers.ts",
-				"services/codebase/codebase-worker.ts"
+				"services/host-handlers.ts"
 			],
 			"ignoreDependencies": ["@modelcontextprotocol/inspector", "@packages/log-consolidation", "@vscode/codicons"],
 			"ignoreBinaries": ["code", "knip"]

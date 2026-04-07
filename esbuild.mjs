@@ -58,10 +58,9 @@ const loaderConfig = {
 	sourcesContent: false,
 	// Packages that must load from node_modules at runtime:
 	// - jsonc-parser: UMD entry has dynamic require('./impl/...') that esbuild can't resolve
-	// - ts-morph: large dependency tree with dynamic requires (typescript compiler)
 	// - koffi: native FFI library with prebuilt .node binaries
 	// - @lancedb/lancedb: native .node addon + apache-arrow peer dep (Phase 7 indexer)
-	external: ['vscode', 'jsonc-parser', 'ts-morph', 'koffi', '@lancedb/lancedb', 'apache-arrow'],
+	external: ['vscode', 'jsonc-parser', 'koffi', '@lancedb/lancedb', 'apache-arrow'],
 	logLevel: 'silent',
 	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin]
 };
@@ -80,29 +79,11 @@ const runtimeConfig = {
 	sourcesContent: false,
 	// Packages that must load from node_modules at runtime:
 	// - jsonc-parser: UMD entry has dynamic require('./impl/...') that esbuild can't resolve
-	// - ts-morph: large dependency tree with dynamic requires (typescript compiler)
 	// - koffi: native FFI library with prebuilt .node binaries
 	// - @lancedb/lancedb: native .node addon + apache-arrow peer dep (Phase 7 indexer)
-	external: ['vscode', 'jsonc-parser', 'ts-morph', 'koffi', '@lancedb/lancedb', 'apache-arrow'],
+	external: ['vscode', 'jsonc-parser', 'koffi', '@lancedb/lancedb', 'apache-arrow'],
 	logLevel: 'silent',
 	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin]
-};
-
-// Worker build: extension/codebase-worker.ts → dist/codebase-worker.js
-// Runs ts-morph and all codebase analysis on a background thread.
-// Does NOT depend on the VS Code API — pure Node.js.
-const workerConfig = {
-	bundle: true,
-	entryPoints: ['services/codebase/codebase-worker.ts'],
-	external: ['jsonc-parser', 'ts-morph', '@lancedb/lancedb', 'apache-arrow'],
-	format: 'cjs',
-	logLevel: 'silent',
-	minify: production,
-	outfile: 'dist/codebase-worker.js',
-	platform: 'node',
-	plugins: [packageAliasPlugin, esbuildProblemMatcherPlugin],
-	sourcemap: !production,
-	sourcesContent: false
 };
 
 async function main() {
@@ -129,18 +110,14 @@ async function main() {
 
 	const loaderCtx = await esbuild.context(loaderConfig);
 	const runtimeCtx = await esbuild.context(runtimeConfig);
-	const workerCtx = await esbuild.context(workerConfig);
 	if (watch) {
 		await loaderCtx.watch();
 		await runtimeCtx.watch();
-		await workerCtx.watch();
 	} else {
 		await loaderCtx.rebuild();
 		await runtimeCtx.rebuild();
-		await workerCtx.rebuild();
 		await loaderCtx.dispose();
 		await runtimeCtx.dispose();
-		await workerCtx.dispose();
 	}
 }
 

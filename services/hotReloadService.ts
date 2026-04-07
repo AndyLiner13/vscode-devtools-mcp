@@ -19,8 +19,7 @@ import type * as vscode from 'vscode';
 import { exec } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join, relative } from 'node:path';
-import { ts } from 'ts-morph';
+import { extname, join, relative } from 'node:path';
 import { log } from './logger';
 
 // ── Storage Keys ─────────────────────────────────────────────────────────────
@@ -55,63 +54,11 @@ class HotReloadService {
 	constructor(private readonly workspaceState: vscode.Memento) {}
 
 	/**
-	 * Discover source files using TypeScript's own tsconfig resolution.
-	 *
-	 * Prefers tsconfig.build.json (build-specific config) over tsconfig.json.
-	 * Uses ts.readConfigFile() + ts.parseJsonConfigFileContent() to resolve
-	 * the full list of matching files, respecting include/exclude/extends.
-	 *
-	 * Also scans for non-TS asset files (.css, .html, .json) in the same
-	 * include directories so that style/markup changes trigger rebuilds.
-	 *
-	 * When the package has an esbuild.mjs that bundles @packages/* aliases,
-	 * source files from those dependent packages are included in the result
-	 * so that their changes are reflected in the content hash.
+	 * Discover source and config files with a lightweight recursive scan.
+	 * This avoids any dependency on the removed semantic analysis system.
 	 */
 	discoverSourceFiles(packageRoot: string): string[] {
-		const buildConfigPath = join(packageRoot, 'tsconfig.build.json');
-		const defaultConfigPath = join(packageRoot, 'tsconfig.json');
-		const configPath = existsSync(buildConfigPath) ? buildConfigPath : defaultConfigPath;
-
-		if (!existsSync(configPath)) {
-			log(`[hotReload] No tsconfig found in ${packageRoot}`);
-			return [];
-		}
-
-		const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
-		if (configFile.error) {
-			const msg = ts.flattenDiagnosticMessageText(configFile.error.messageText, '\n');
-			log(`[hotReload] Failed to read ${configPath}: ${msg}`);
-			return [];
-		}
-
-		const parsed = ts.parseJsonConfigFileContent(configFile.config, ts.sys, packageRoot, undefined, configPath);
-
-		if (parsed.errors.length > 0) {
-			for (const diag of parsed.errors) {
-				const msg = ts.flattenDiagnosticMessageText(diag.messageText, '\n');
-				log(`[hotReload] tsconfig warning: ${msg}`);
-			}
-		}
-
-		const tsFiles = parsed.fileNames;
-
-		// Also discover non-TS asset files (.css, .html) in tsconfig include dirs
-		const assetExtensions = new Set(['.css', '.html']);
-		const includes: string[] = configFile.config?.include ?? ['src'];
-		const assetFiles: string[] = [];
-
-		for (const inc of includes) {
-			const dir = join(packageRoot, inc);
-			if (existsSync(dir)) {
-				this.collectAssetFiles(dir, assetExtensions, assetFiles);
-			}
-		}
-
-		const allFiles = new Set(tsFiles);
-		for (const f of assetFiles) {
-			allFiles.add(f);
-		}
+		const allFiles = new Set(this.discoverSourceFilesForPackage(packageRoot));
 
 		// Include source files from bundled @packages/* dependencies
 		const bundledRoots = this.discoverBundledPackageRoots(packageRoot);
@@ -130,17 +77,41 @@ class HotReloadService {
 	 * Used to resolve files from dependent @packages/* roots.
 	 */
 	private discoverSourceFilesForPackage(packageRoot: string): string[] {
-		const buildConfigPath = join(packageRoot, 'tsconfig.build.json');
-		const defaultConfigPath = join(packageRoot, 'tsconfig.json');
-		const configPath = existsSync(buildConfigPath) ? buildConfigPath : defaultConfigPath;
+		const files: string[] = [];
+		const allowedExtensions = new Set(['.css', '.html', '.js', '.json', '.jsx', '.mjs', '.mts', '.ts', '.tsx']);
+		const excludedDirs = new Set(['.git', '.next', '.turbo', 'build', 'dist', 'node_modules', 'out']);
 
-		if (!existsSync(configPath)) return [];
+		for (const configName of ['package.json', 'tsconfig.json', 'tsconfig.build.json', 'esbuild.mjs']) {
+			const configPath = join(packageRoot, configName);
+			if (existsSync(configPath)) {
+				files.push(configPath);
+			}
+		}
 
-		const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
-		if (configFile.error) return [];
+		const walk = (dir: string): void => {
+			let entries;
+			try {
+				entries = readdirSync(dir, { withFileTypes: true });
+			} catch {
+				return;
+			}
 
-		const parsed = ts.parseJsonConfigFileContent(configFile.config, ts.sys, packageRoot, undefined, configPath);
-		return parsed.fileNames;
+			for (const entry of entries) {
+				const fullPath = join(dir, entry.name);
+				if (entry.isDirectory()) {
+					if (!excludedDirs.has(entry.name)) {
+						walk(fullPath);
+					}
+					continue;
+				}
+				if (entry.isFile() && allowedExtensions.has(extname(entry.name))) {
+					files.push(fullPath);
+				}
+			}
+		};
+
+		walk(packageRoot);
+		return files;
 	}
 
 	/**
@@ -181,29 +152,6 @@ class HotReloadService {
 		} catch {
 			log(`[hotReload] Failed to parse esbuild config at ${esbuildPath}`);
 			return [];
-		}
-	}
-
-	/**
-	 * Recursively collect files matching the given extensions.
-	 */
-	private collectAssetFiles(dir: string, extensions: Set<string>, result: string[]): void {
-		let entries;
-		try {
-			entries = readdirSync(dir, { withFileTypes: true });
-		} catch {
-			return;
-		}
-		for (const entry of entries) {
-			const fullPath = join(dir, entry.name);
-			if (entry.isDirectory()) {
-				this.collectAssetFiles(fullPath, extensions, result);
-			} else if (entry.isFile()) {
-				const dotIdx = entry.name.lastIndexOf('.');
-				if (dotIdx !== -1 && extensions.has(entry.name.slice(dotIdx))) {
-					result.push(fullPath);
-				}
-			}
 		}
 	}
 

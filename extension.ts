@@ -35,7 +35,6 @@ function diagLog(msg: string): void {
 
 import * as bootstrap from './bootstrap';
 import pkg from './package.json';
-import { startWorker, stopWorker } from './services/codebase/codebase-worker-proxy';
 import { detectExtensionPaths } from './services/extensionDetection';
 import { registerInspectorPanel } from './services/inspector-panel';
 import { initInspectorChannel, initMainChannel, log } from './services/logger';
@@ -686,9 +685,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			};
 			context.subscriptions.push(vscode.lm.registerMcpServerDefinitionProvider(MCP_PROVIDER_ID, noopProvider));
 			log('Noop MCP provider registered — client will not spawn MCP server');
-
-			startWorker();
-			log('Codebase worker thread started');
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			const stack = err instanceof Error ? err.stack : undefined;
@@ -787,15 +783,6 @@ export async function deactivate() {
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
 		log(`Bootstrap stop error: ${msg}`);
-	}
-
-	// Terminate the codebase worker thread
-	try {
-		await stopWorker();
-		log('Codebase worker thread stopped');
-	} catch (err) {
-		const msg = err instanceof Error ? err.message : String(err);
-		log(`Worker stop error: ${msg}`);
 	}
 
 	diagLog('========== DEACTIVATE COMPLETE ==========');

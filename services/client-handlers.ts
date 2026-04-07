@@ -11,21 +11,11 @@
  * API Surface:
  * - terminal.listAll: List all VS Code terminals
  * - command.execute: Run arbitrary VS Code commands
- * - codebase.*: Codebase analysis methods
  * - file.*: File service methods (read, edit, symbols, diagnostics, etc.)
  */
 
 import * as vscode from 'vscode';
 
-import {
-	extractStructure,
-	findDeadCode,
-	findDuplicates,
-	getExports,
-	getImportGraph,
-	getOverview,
-	traceSymbol
-} from './codebase/codebase-worker-proxy';
 import { registerInspectorHandlers } from './inspector-backend';
 import { log, warn } from './logger';
 import { getUserActionTracker } from './userActionTracker';
@@ -190,122 +180,6 @@ async function handleCommandExecute(params: Record<string, unknown>): Promise<{ 
 	const result = args ? await vscode.commands.executeCommand(command, ...args) : await vscode.commands.executeCommand(command);
 
 	return { result };
-}
-
-// ── Codebase Handler ─────────────────────────────────────────────────────────
-
-function resolveRootDir(params: Record<string, unknown>): string {
-	const explicit = paramStr(params, 'rootDir');
-	if (explicit) return explicit;
-	const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-	if (workspaceRoot) return workspaceRoot;
-	throw new Error('No workspace folder found. Open a folder or specify rootDir.');
-}
-
-async function handleCodebaseGetOverview(params: Record<string, unknown>) {
-	const rootDir = resolveRootDir(params);
-	return getOverview({
-		dir: paramStr(params, 'dir') ?? rootDir,
-		metadata: paramBool(params, 'metadata') ?? false,
-		recursive: paramBool(params, 'recursive') ?? false,
-		rootDir,
-		symbols: paramBool(params, 'symbols') ?? false,
-		toolScope: paramStr(params, 'toolScope') ?? undefined
-	});
-}
-
-async function handleCodebaseGetExports(params: Record<string, unknown>) {
-	const pathParam = paramStr(params, 'path');
-	if (!pathParam) {
-		throw new Error('path is required');
-	}
-
-	return getExports({
-		includeJSDoc: paramBool(params, 'includeJSDoc') ?? true,
-		includeTypes: paramBool(params, 'includeTypes') ?? true,
-		kind: paramStr(params, 'kind') ?? 'all',
-		path: pathParam,
-		rootDir: resolveRootDir(params)
-	});
-}
-
-async function handleCodebaseTraceSymbol(params: Record<string, unknown>) {
-	const symbol = paramStr(params, 'symbol');
-	if (!symbol) {
-		throw new Error('symbol is required');
-	}
-
-	try {
-		return await traceSymbol({
-			calls: paramBool(params, 'calls'),
-			file: paramStr(params, 'file'),
-			references: paramBool(params, 'references'),
-			rootDir: resolveRootDir(params),
-			symbol,
-			types: paramBool(params, 'types')
-		});
-	} catch (err: unknown) {
-		warn('[client] traceSymbol error:', errorMessage(err));
-		return {
-			errorMessage: errorMessage(err),
-			partial: true,
-			symbol
-		};
-	}
-}
-
-async function handleCodebaseFindDeadCode(params: Record<string, unknown>) {
-	try {
-		return await findDeadCode({
-			excludeTests: paramBool(params, 'excludeTests') ?? true,
-			exportedOnly: paramBool(params, 'exportedOnly') ?? true,
-			kinds: paramStrArray(params, 'kinds'),
-			limit: paramNum(params, 'limit') ?? 100,
-			pattern: paramStr(params, 'pattern'),
-			rootDir: resolveRootDir(params)
-		});
-	} catch (err: unknown) {
-		warn('[client] findDeadCode error:', errorMessage(err));
-		return {
-			deadCode: [],
-			errorMessage: errorMessage(err),
-			summary: { scanDurationMs: 0, totalDead: 0, totalScanned: 0 }
-		};
-	}
-}
-
-async function handleCodebaseGetImportGraph(params: Record<string, unknown>) {
-	try {
-		return await getImportGraph({
-			rootDir: resolveRootDir(params)
-		});
-	} catch (err: unknown) {
-		warn('[client] getImportGraph error:', errorMessage(err));
-		return {
-			circular: [],
-			errorMessage: errorMessage(err),
-			modules: {},
-			orphans: [],
-			stats: { circularCount: 0, orphanCount: 0, totalEdges: 0, totalModules: 0 }
-		};
-	}
-}
-
-async function handleCodebaseFindDuplicates(params: Record<string, unknown>) {
-	try {
-		return await findDuplicates({
-			kinds: paramStrArray(params, 'kinds'),
-			limit: paramNum(params, 'limit') ?? 50,
-			rootDir: resolveRootDir(params)
-		});
-	} catch (err: unknown) {
-		warn('[client] findDuplicates error:', errorMessage(err));
-		return {
-			errorMessage: errorMessage(err),
-			groups: [],
-			summary: { filesWithDuplicates: 0, scanDurationMs: 0, totalDuplicateInstances: 0, totalGroups: 0 }
-		};
-	}
 }
 
 async function handleCodebaseGetDiagnostics(params: Record<string, unknown>) {
@@ -930,14 +804,6 @@ async function handleFileApplyCodeAction(params: Record<string, unknown>) {
 	return { success: true, title: action.title };
 }
 
-// ── Unified File Structure Extraction (registry-based) ──────────────────────
-
-async function handleFileExtractStructure(params: Record<string, unknown>) {
-	const filePath = paramStr(params, 'filePath');
-	if (!filePath) throw new Error('filePath is required');
-	return extractStructure(filePath);
-}
-
 // ── File Rename (with import/reference updates) ─────────────────────────────
 
 function collectDirtyFiles(excludeUri?: vscode.Uri): string[] {
@@ -990,13 +856,6 @@ export function registerClientHandlers(register: RegisterHandler, workspaceState
 	// Command methods
 	register('command.execute', handleCommandExecute);
 
-	// Codebase analysis methods
-	register('codebase.getOverview', handleCodebaseGetOverview);
-	register('codebase.getExports', handleCodebaseGetExports);
-	register('codebase.traceSymbol', handleCodebaseTraceSymbol);
-	register('codebase.findDeadCode', handleCodebaseFindDeadCode);
-	register('codebase.getImportGraph', handleCodebaseGetImportGraph);
-	register('codebase.findDuplicates', handleCodebaseFindDuplicates);
 	register('codebase.getDiagnostics', handleCodebaseGetDiagnostics);
 
 	// File service methods (for semantic read/edit tools)
@@ -1010,8 +869,6 @@ export function registerClientHandlers(register: RegisterHandler, workspaceState
 	register('file.findReferences', handleFileFindReferences);
 	register('file.getCodeActions', handleFileGetCodeActions);
 	register('file.applyCodeAction', handleFileApplyCodeAction);
-	register('file.extractStructure', handleFileExtractStructure);
-
 	// URI handler forwarding
 	register('uri.openFileWithRange', handleUriOpenFileWithRange);
 

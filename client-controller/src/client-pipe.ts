@@ -55,7 +55,11 @@ function isJsonRpcResponse(value: unknown): value is JsonRpcResponse {
 /**
  * Send a JSON-RPC 2.0 request to the Client pipe and await the response.
  */
-async function sendClientRequest(method: string, params: Record<string, unknown>, timeoutMs: number = DEFAULT_TIMEOUT_MS): Promise<unknown> {
+async function sendClientRequest(
+	method: string,
+	params: Record<string, unknown>,
+	timeoutMs: number = DEFAULT_TIMEOUT_MS
+): Promise<unknown> {
 	return new Promise((resolve, reject) => {
 		logger(`[client-pipe] ${method} → ${CLIENT_PIPE_PATH} (timeout=${timeoutMs}ms)`);
 		const client = net.createConnection(CLIENT_PIPE_PATH);
@@ -123,293 +127,6 @@ async function sendClientRequest(method: string, params: Record<string, unknown>
 	});
 }
 
-// ── Codebase Types ───────────────────────────────────────
-
-export interface CodebaseSymbolNode {
-	children?: CodebaseSymbolNode[];
-	detail?: string;
-	implementationCount?: number;
-	kind: string;
-	name: string;
-	range: { start: number; end: number };
-	referenceCount?: number;
-}
-
-export interface CodebaseTreeNode {
-	children?: CodebaseTreeNode[];
-	dirCount?: number;
-	fileCount?: number;
-	ignored?: boolean;
-	lineCount?: number;
-	name: string;
-	symbolCount?: number;
-	symbols?: CodebaseSymbolNode[];
-	totalReferences?: number;
-	type: 'directory' | 'file';
-}
-
-interface CodebaseOverviewResult {
-	projectRoot: string;
-	summary: {
-		totalFiles: number;
-		totalDirectories: number;
-		totalSymbols: number;
-		diagnosticCounts?: { errors: number; warnings: number };
-	};
-	tree: CodebaseTreeNode[];
-}
-
-interface CodebaseExportInfo {
-	isDefault: boolean;
-	isReExport: boolean;
-	jsdoc?: string;
-	kind: string;
-	line: number;
-	name: string;
-	reExportSource?: string;
-	signature?: string;
-}
-
-interface CodebaseExportsResult {
-	exports: CodebaseExportInfo[];
-	module: string;
-	reExports: Array<{ name: string; from: string }>;
-	summary: string;
-}
-
-// ── Codebase Trace Symbol Types ──────────────────────────
-
-export interface TraceParameter {
-	defaultValue?: string;
-	name: string;
-	type: string;
-}
-
-export interface TraceResolutionStep {
-	action: string;
-	file: string;
-}
-
-export interface TraceMember {
-	kind: string;
-	name: string;
-	type?: string;
-}
-
-export interface TraceDefinition {
-	exported: boolean;
-	file: string;
-	generics?: string;
-	jsdoc?: string;
-	kind: string;
-	members?: TraceMember[];
-	modifiers?: string[];
-	overloads?: string[];
-	parameters?: TraceParameter[];
-	resolvedFrom?: TraceResolutionStep[];
-	returns?: string;
-	signature: string;
-	symbol: string;
-}
-
-export type TraceUsageKind = 'call' | 'import' | 'read' | 'type-ref' | 'unknown' | 'write';
-
-export interface TraceReferenceFile {
-	file: string;
-	test?: boolean;
-	usages: TraceUsageKind[];
-}
-
-export interface TraceReExport {
-	exportedAs: string;
-	file: string;
-	from: string;
-}
-
-export interface TraceReferences {
-	byFile: TraceReferenceFile[];
-	files: number;
-	reExports: TraceReExport[];
-	total: number;
-}
-
-export interface TraceCallNode {
-	children?: TraceCallNode[];
-	file: string;
-	symbol: string;
-}
-
-export interface TraceCalls {
-	incoming: TraceCallNode[];
-	outgoing: TraceCallNode[];
-}
-
-export interface TraceTypeFlow {
-	file?: string;
-	name: string;
-	type: string;
-}
-
-export interface TraceTypeHierarchy {
-	extends?: string;
-	implements?: string[];
-	subtypes?: string[];
-}
-
-export interface TraceTypes {
-	flows?: {
-		parameters?: TraceTypeFlow[];
-		properties?: TraceTypeFlow[];
-		returns?: string;
-	};
-	hierarchy?: TraceTypeHierarchy;
-	mergedDeclarations?: string[];
-	typeGuard?: string;
-}
-
-export interface CodebaseTraceSymbolResult {
-	calls?: TraceCalls;
-	definition?: TraceDefinition;
-	diagnostics?: string[];
-	elapsedMs?: number;
-	errorMessage?: string;
-	notFoundReason?: 'file-not-in-project' | 'no-matching-files' | 'no-project' | 'parse-error' | 'symbol-not-found';
-	partial?: boolean;
-	partialReason?: 'timeout';
-	references?: TraceReferences;
-	resolvedRootDir?: string;
-	sourceFileCount?: number;
-	symbol: string;
-	types?: TraceTypes;
-}
-
-// ── Codebase Methods ─────────────────────────────────
-
-/**
- * Get a structural overview of the codebase as a recursive tree.
- */
-export async function codebaseGetOverview(rootDir: string, dir: string, recursive: boolean, symbols: boolean, timeout?: number, metadata?: boolean, toolScope?: string): Promise<CodebaseOverviewResult> {
-	const result = await sendClientRequest('codebase.getOverview', { dir, metadata, recursive, rootDir, symbols, toolScope }, timeout ?? 30_000);
-	assertResult<CodebaseOverviewResult>(result, 'codebase.getOverview');
-	return result;
-}
-
-/**
- * Trace a symbol through the codebase: definition, references, call hierarchy,
- * type flows, and type hierarchy.
- */
-export async function codebaseTraceSymbol(symbol: string, rootDir?: string, file?: string, references?: boolean, calls?: boolean, types?: boolean): Promise<CodebaseTraceSymbolResult> {
-	const result = await sendClientRequest('codebase.traceSymbol', { calls, file, references, rootDir, symbol, types }, 65_000);
-	assertResult<CodebaseTraceSymbolResult>(result, 'codebase.traceSymbol');
-	return result;
-}
-
-// ── Dead Code Detection Types ────────────────────────────
-
-export interface DeadCodeItem {
-	confidence: 'high' | 'low' | 'medium';
-	exported: boolean;
-	file: string;
-	kind: string;
-	line: number;
-	name: string;
-	reason: string;
-}
-
-export interface DeadCodeResult {
-	deadCode: DeadCodeItem[];
-	diagnostics?: string[];
-	errorMessage?: string;
-	resolvedRootDir?: string;
-	summary: {
-		totalScanned: number;
-		totalDead: number;
-		scanDurationMs: number;
-		byKind?: Record<string, number>;
-	};
-}
-
-/**
- * Find dead code: unused exports, unreachable functions, dead variables.
- */
-export async function codebaseFindDeadCode(rootDir?: string, pattern?: string, exportedOnly?: boolean, excludeTests?: boolean, kinds?: string[], limit?: number, timeout?: number): Promise<DeadCodeResult> {
-	const result = await sendClientRequest('codebase.findDeadCode', { excludeTests, exportedOnly, kinds, limit, pattern, rootDir }, timeout ?? 60_000);
-	assertResult<DeadCodeResult>(result, 'codebase.findDeadCode');
-	return result;
-}
-
-// ── Import Graph Types ───────────────────────────────────
-
-export interface ImportGraphModule {
-	importedBy: string[];
-	imports: string[];
-	path: string;
-}
-
-export interface CircularChain {
-	chain: string[];
-}
-
-export interface ImportGraphResult {
-	circular: CircularChain[];
-	errorMessage?: string;
-	modules: Record<string, ImportGraphModule>;
-	orphans: string[];
-	stats: {
-		totalModules: number;
-		totalEdges: number;
-		circularCount: number;
-		orphanCount: number;
-	};
-}
-
-/**
- * Get the import graph for a codebase: module dependencies, circular chains, orphans.
- */
-export async function codebaseGetImportGraph(rootDir?: string, timeout?: number): Promise<ImportGraphResult> {
-	const result = await sendClientRequest('codebase.getImportGraph', { rootDir }, timeout ?? 60_000);
-	assertResult<ImportGraphResult>(result, 'codebase.getImportGraph');
-	return result;
-}
-
-// ── Duplicate Detection Types ────────────────────────────
-
-interface DuplicateInstance {
-	endLine: number;
-	file: string;
-	line: number;
-	name: string;
-}
-
-export interface DuplicateGroup {
-	hash: string;
-	instances: DuplicateInstance[];
-	kind: string;
-	lineCount: number;
-}
-
-export interface DuplicateDetectionResult {
-	diagnostics?: string[];
-	errorMessage?: string;
-	groups: DuplicateGroup[];
-	resolvedRootDir?: string;
-	summary: {
-		totalGroups: number;
-		totalDuplicateInstances: number;
-		filesWithDuplicates: number;
-		scanDurationMs: number;
-	};
-}
-
-/**
- * Find structurally duplicate code in the codebase using AST hashing.
- */
-export async function codebaseFindDuplicates(rootDir?: string, kinds?: string[], limit?: number, timeout?: number): Promise<DuplicateDetectionResult> {
-	const result = await sendClientRequest('codebase.findDuplicates', { kinds, limit, rootDir }, timeout ?? 60_000);
-	assertResult<DuplicateDetectionResult>(result, 'codebase.findDuplicates');
-	return result;
-}
-
 // ── Diagnostics Types ────────────────────────────────────
 
 export interface DiagnosticItem {
@@ -435,7 +152,11 @@ export interface DiagnosticsResult {
 /**
  * Get live diagnostics (errors/warnings) from VS Code's language services.
  */
-export async function codebaseGetDiagnostics(severityFilter?: string[], limit?: number, timeout?: number): Promise<DiagnosticsResult> {
+export async function codebaseGetDiagnostics(
+	severityFilter?: string[],
+	limit?: number,
+	timeout?: number
+): Promise<DiagnosticsResult> {
 	const result = await sendClientRequest('codebase.getDiagnostics', { limit, severityFilter }, timeout ?? 30_000);
 	assertResult<DiagnosticsResult>(result, 'codebase.getDiagnostics');
 	return result;
@@ -595,7 +316,13 @@ export async function fileReadContent(filePath: string, startLine?: number, endL
  * Open a file in the client editor and highlight the range that was just read.
  * Fire-and-forget — does not block the tool response.
  */
-export async function fileHighlightReadRange(filePath: string, startLine: number, endLine: number, collapsedRanges?: Array<{ startLine: number; endLine: number }>, sourceRanges?: Array<{ startLine: number; endLine: number }>): Promise<void> {
+export async function fileHighlightReadRange(
+	filePath: string,
+	startLine: number,
+	endLine: number,
+	collapsedRanges?: Array<{ startLine: number; endLine: number }>,
+	sourceRanges?: Array<{ startLine: number; endLine: number }>
+): Promise<void> {
 	try {
 		await sendClientRequest('file.highlightReadRange', { collapsedRanges, endLine, filePath, sourceRanges, startLine }, 5_000);
 	} catch {
@@ -619,8 +346,19 @@ export async function fileShowEditDiff(filePath: string, editStartLine: number):
 /**
  * Apply a text replacement (range → new content) and save.
  */
-export async function fileApplyEdit(filePath: string, startLine: number, endLine: number, newContent: string, startChar?: number, endChar?: number): Promise<FileApplyEditResult> {
-	const result = await sendClientRequest('file.applyEdit', { endChar, endLine, filePath, newContent, startChar, startLine }, 15_000);
+export async function fileApplyEdit(
+	filePath: string,
+	startLine: number,
+	endLine: number,
+	newContent: string,
+	startChar?: number,
+	endChar?: number
+): Promise<FileApplyEditResult> {
+	const result = await sendClientRequest(
+		'file.applyEdit',
+		{ endChar, endLine, filePath, newContent, startChar, startLine },
+		15_000
+	);
 	assertResult<FileApplyEditResult>(result, 'file.applyEdit');
 	return result;
 }
@@ -637,7 +375,12 @@ export async function fileGetDiagnostics(filePath: string): Promise<FileGetDiagn
 /**
  * Execute rename provider at a position.
  */
-export async function fileExecuteRename(filePath: string, line: number, character: number, newName: string): Promise<FileExecuteRenameResult> {
+export async function fileExecuteRename(
+	filePath: string,
+	line: number,
+	character: number,
+	newName: string
+): Promise<FileExecuteRenameResult> {
 	const result = await sendClientRequest('file.executeRename', { character, filePath, line, newName }, 15_000);
 	assertResult<FileExecuteRenameResult>(result, 'file.executeRename');
 	return result;
@@ -655,7 +398,11 @@ export async function fileFindReferences(filePath: string, line: number, charact
 /**
  * Get available code actions for a line range.
  */
-export async function fileGetCodeActions(filePath: string, startLine: number, endLine: number): Promise<FileGetCodeActionsResult> {
+export async function fileGetCodeActions(
+	filePath: string,
+	startLine: number,
+	endLine: number
+): Promise<FileGetCodeActionsResult> {
 	const result = await sendClientRequest('file.getCodeActions', { endLine, filePath, startLine }, 10_000);
 	assertResult<FileGetCodeActionsResult>(result, 'file.getCodeActions');
 	return result;
@@ -664,21 +411,15 @@ export async function fileGetCodeActions(filePath: string, startLine: number, en
 /**
  * Apply a specific code action by index for a line range.
  */
-export async function fileApplyCodeAction(filePath: string, startLine: number, endLine: number, actionIndex: number): Promise<FileApplyCodeActionResult> {
+export async function fileApplyCodeAction(
+	filePath: string,
+	startLine: number,
+	endLine: number,
+	actionIndex: number
+): Promise<FileApplyCodeActionResult> {
 	const result = await sendClientRequest('file.applyCodeAction', { actionIndex, endLine, filePath, startLine }, 10_000);
 	assertResult<FileApplyCodeActionResult>(result, 'file.applyCodeAction');
 	return result;
-}
-
-/**
- * Extract the complete file structure via the LanguageServiceRegistry.
- * Returns FileStructure if the file type is supported, undefined otherwise.
- */
-export async function fileExtractStructure(filePath: string): Promise<FileStructure | undefined> {
-	const result = await sendClientRequest('file.extractStructure', { filePath }, 30_000);
-	// The registry returns undefined for unsupported file types
-	if (result === undefined || result === null) return undefined;
-	return result as FileStructure;
 }
 
 // ── File Rename / Delete Types ───────────────────────────
@@ -740,11 +481,17 @@ export async function ensureClientAvailable(): Promise<void> {
 			// The driving caller's recovery failed — we still check if Client came back
 		}
 		if (await pingClient()) return;
-		throw new Error('Client pipe unavailable after waiting for concurrent recovery. ' + 'The VS Code Extension Development Host may have failed to restart.');
+		throw new Error(
+			'Client pipe unavailable after waiting for concurrent recovery. ' +
+				'The VS Code Extension Development Host may have failed to restart.'
+		);
 	}
 
 	if (!clientRecoveryHandler) {
-		throw new Error('Client pipe not available and no recovery handler is registered. ' + 'Make sure the VS Code Extension Development Host window is running.');
+		throw new Error(
+			'Client pipe not available and no recovery handler is registered. ' +
+				'Make sure the VS Code Extension Development Host window is running.'
+		);
 	}
 
 	logger('[client-pipe] Client pipe not responding — triggering recovery…');
@@ -768,7 +515,9 @@ export async function ensureClientAvailable(): Promise<void> {
 			logger(`[client-pipe] Retry ${attempt}/3 — client pipe still not responding`);
 		}
 
-		throw new Error('Client pipe unavailable after recovery. ' + 'The VS Code Extension Development Host may have failed to restart.');
+		throw new Error(
+			'Client pipe unavailable after recovery. ' + 'The VS Code Extension Development Host may have failed to restart.'
+		);
 	})();
 
 	try {
