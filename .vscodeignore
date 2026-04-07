@@ -1,82 +1,84 @@
-# Source files (not needed in VSIX — dist/ has the bundles)
-**/*.ts
+# ══════════════════════════════════════════════════════════════════════════════
+# IGNORE EVERYTHING BY DEFAULT
+# ══════════════════════════════════════════════════════════════════════════════
+**
 
-# Config files not needed at runtime
-esbuild.mjs
-tsconfig.json
-eslint.config.mjs
-knip.json
-.prettierrc.cjs
-.prettierignore
-.devtoolsignore
-
-# Build artifacts & config
-package-lock.json
-*.vsix
-*.log
-
-# Docs (except README)
-*.md
+# ══════════════════════════════════════════════════════════════════════════════
+# WHITELIST: Root files required by VS Code
+# ══════════════════════════════════════════════════════════════════════════════
+!package.json
 !README.md
+!LICENSE.txt
+!icon.png
+!icon.svg
 
-# Dotfiles / IDE
-.env*
-**/.env*
-.vscode/
-.gitignore
-.gitmodules
-.copilotignore
+# ══════════════════════════════════════════════════════════════════════════════
+# WHITELIST: Extension entry point and bootstrap
+# ══════════════════════════════════════════════════════════════════════════════
+!bootstrap.js
+!tsconfig.base.json
 
-# Parent directory leakage from npm workspaces
-../**
+# ══════════════════════════════════════════════════════════════════════════════
+# WHITELIST: Compiled extension bundle (only .js files, no maps)
+# ══════════════════════════════════════════════════════════════════════════════
+!dist/*.js
 
-# Always include dist/
-!dist/**
-
-# ── node_modules ──────────────────────────────────────────
-# Exclude ALL node_modules — esbuild bundles everything except
-# jsonc-parser and ts-morph (declared as externals in esbuild.js).
-# Only whitelist the runtime externals and their transitive dependencies.
-node_modules/**
-
-# jsonc-parser (leaf — no dependencies)
-!node_modules/jsonc-parser/**
-
-# ts-morph + dependency tree
-!node_modules/ts-morph/**
-!node_modules/@ts-morph/
-!node_modules/@ts-morph/**
-!node_modules/code-block-writer/**
-!node_modules/minimatch/**
-!node_modules/brace-expansion/**
-!node_modules/balanced-match/**
-!node_modules/path-browserify/**
-!node_modules/tinyglobby/**
-!node_modules/fdir/**
-!node_modules/picomatch/**
-
-# ── Workspace package node_modules ────────────────────────
-# esbuild bundles workspace packages; their own node_modules must NOT ship
-packages/**/node_modules/**
-
-# ── Directories not needed in extension VSIX ──────────────
-# These MUST come last so they override all earlier !include rules
-inspector/**
-!inspector/styles.css
-!inspector/dist/**
-
-# client-controller: only include bundled output and init script
-client-controller/**
+# ══════════════════════════════════════════════════════════════════════════════
+# WHITELIST: Client Controller (MCP server for browser automation)
+# ══════════════════════════════════════════════════════════════════════════════
 !client-controller/build/index.js
-!client-controller/build/index.js.map
 !client-controller/scripts/init.mjs
 !client-controller/package.json
 
-.devtools/**
-tests/**
-resources/**
-.github/**
-test-workspace/**
-backups/**
-documentation/**
-scripts/**
+# ══════════════════════════════════════════════════════════════════════════════
+# WHITELIST: Inspector Panel (webview assets, no maps)
+# ══════════════════════════════════════════════════════════════════════════════
+!inspector/dist/*.js
+!inspector/dist/*.css
+!inspector/dist/*.ttf
+!inspector/styles.css
+
+# ══════════════════════════════════════════════════════════════════════════════
+# WHITELIST: MCP Server (only .js files, no maps)
+# ══════════════════════════════════════════════════════════════════════════════
+!mcp-server/build/**/*.js
+
+# ══════════════════════════════════════════════════════════════════════════════
+# WHITELIST: Runtime dependencies (esbuild externals)
+# NOTE: We need specific patterns to avoid pulling in .map and test files
+# ══════════════════════════════════════════════════════════════════════════════
+
+# jsonc-parser (leaf — no dependencies)
+!node_modules/jsonc-parser/lib/**/*.js
+!node_modules/jsonc-parser/package.json
+
+# ts-morph runtime files only
+!node_modules/ts-morph/dist/**/*.js
+!node_modules/ts-morph/lib/**/*.d.ts
+!node_modules/ts-morph/package.json
+!node_modules/@ts-morph/common/dist/**/*.js
+!node_modules/@ts-morph/common/lib/**/*.d.ts
+!node_modules/@ts-morph/common/package.json
+
+# code-block-writer runtime
+!node_modules/code-block-writer/esm/**/*.js
+!node_modules/code-block-writer/esm/**/*.d.ts
+!node_modules/code-block-writer/package.json
+
+# minimatch runtime (use the one in @ts-morph/common)
+!node_modules/@ts-morph/common/node_modules/minimatch/dist/commonjs/**/*.js
+!node_modules/@ts-morph/common/node_modules/minimatch/package.json
+!node_modules/@ts-morph/common/node_modules/brace-expansion/dist/commonjs/**/*.js
+!node_modules/@ts-morph/common/node_modules/brace-expansion/package.json
+!node_modules/@ts-morph/common/node_modules/balanced-match/dist/commonjs/**/*.js
+!node_modules/@ts-morph/common/node_modules/balanced-match/package.json
+
+# path-browserify, tinyglobby, fdir, picomatch
+!node_modules/path-browserify/index.js
+!node_modules/path-browserify/package.json
+!node_modules/tinyglobby/dist/**/*.js
+!node_modules/tinyglobby/package.json
+!node_modules/fdir/dist/**/*.js
+!node_modules/fdir/package.json
+!node_modules/picomatch/lib/**/*.js
+!node_modules/picomatch/package.json

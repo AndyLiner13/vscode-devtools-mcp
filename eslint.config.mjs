@@ -10,7 +10,6 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 import jsdoc from 'eslint-plugin-jsdoc';
 import noSecrets from 'eslint-plugin-no-secrets';
 import perfectionist from 'eslint-plugin-perfectionist';
-import promise from 'eslint-plugin-promise';
 import unicorn from 'eslint-plugin-unicorn';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import globals from 'globals';
@@ -50,7 +49,6 @@ export default defineConfig([
 			jsdoc,
 			'no-secrets': noSecrets,
 			perfectionist,
-			promise,
 			unicorn
 		}
 	},
@@ -269,11 +267,6 @@ export default defineConfig([
 			'unicorn/no-useless-undefined': 'error',
 			'unicorn/prefer-node-protocol': 'error',
 			'unicorn/prefer-string-replace-all': 'error',
-
-			// ===== Promise Plugin Rules =====
-			'promise/no-multiple-resolved': 'error',
-			'promise/no-nesting': 'error',
-			'promise/prefer-await-to-then': 'error',
 
 			// ===== Secret Detection =====
 			'no-secrets/no-secrets': 'error',

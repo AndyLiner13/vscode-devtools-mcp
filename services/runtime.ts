@@ -3,7 +3,6 @@
  *
  * GUI features loaded dynamically by extension.ts:
  * - Settings welcome view — empty-state button to open extension settings
- * - Language Model tool registrations (native VS Code toggle)
  *
  * If this module fails to load, the extension enters Safe Mode.
  */
@@ -11,10 +10,8 @@
 import * as vscode from 'vscode';
 
 import type { BrowserService } from './browser';
-import { LogFileReadTool } from './log-file-read-tool';
 import { setBrowserService, setReconnectCdpCallback } from './clientDevTools';
 import { disposeUserActionTracker, getUserActionTracker } from './userActionTracker';
-import { WaitTool } from './waitLmTool';
 import { log } from './logger';
 
 // ============================================================================
@@ -41,15 +38,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 		})
 	);
-
-	// ========================================================================
-	// LM Tool Registration (all registered unconditionally, native toggle)
-	// ========================================================================
-
-	track(vscode.lm.registerTool('logFile_read', new LogFileReadTool()));
-	track(vscode.lm.registerTool('wait', new WaitTool()));
-
-	log('[devtools:runtime] All LM tools registered');
 
 	// ========================================================================
 	// User Action Tracker (detect user interventions)

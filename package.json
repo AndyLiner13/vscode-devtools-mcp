@@ -36,7 +36,7 @@
 		"mcp:build": "cd client-controller && npm run build && tsc --noEmit",
 		"mcp:inspect": "node client-controller/scripts/inspect.mjs",
 		"reinstall": "npm run build && code.cmd --install-extension vscode-devtools-0.1.0.vsix --force",
-		"vscode:prepublish": "node esbuild.mjs"
+		"vscode:prepublish": "node esbuild.mjs --production && cd inspector && node esbuild.mjs --production"
 	},
 	"contributes": {
 		"commands": [
@@ -233,109 +233,6 @@
 						"description": "Automatically retry tool requests after MCP server restarts instead of showing the reboot message."
 					}
 				}
-			},
-			{
-				"title": "Log File Read Tool",
-				"properties": {
-					"devtools.logFileReadTool.globalPaths": {
-						"type": "array",
-						"items": {
-							"type": "string"
-						},
-						"default": [],
-						"description": "Absolute paths to directories scanned for log files in ALL workspaces. These are additive — custom workspace paths extend this list, never override it.",
-						"scope": "application"
-					},
-					"devtools.logFileReadTool.customPaths": {
-						"type": "array",
-						"items": {
-							"type": "string"
-						},
-						"default": [],
-						"description": "Additional paths scanned for log files in THIS workspace only. Absolute or relative to workspace root. Additive to globalPaths.",
-						"scope": "resource"
-					}
-				}
-			}
-		],
-		"languageModelTools": [
-			{
-				"name": "logFile_read",
-				"displayName": "Log File Read",
-				"toolReferenceName": "logFile_read",
-				"icon": "$(file-text)",
-				"canBeReferencedInPrompt": true,
-				"userDescription": "Discover and read log files in the workspace and configured paths",
-				"modelDescription": "Discover and read log files with automatic pattern compression and drill-down filtering.\n\n**THREE MODES:**\n\n1. **Discovery (no path):** Call with empty input `{}` to list ALL log files found in the workspace root and any user-configured paths. Returns a complete library of full file paths you can read.\n\n2. **Folder discovery (path = folder):** Set `path` to a folder to recursively list all log files in that folder and its children.\n\n3. **Read file (path = file):** Set `path` to a specific log file to read its contents with automatic log compression and drill-down filtering.\n\n**IMPORTANT:** Use this tool FIRST when you need to find log files. Do NOT search for log files manually with the terminal or file search. This tool is the source of truth for log file discovery in the workspace. It ignores .gitignore and scans all directories.\n\n**Supported Extensions:** .log, .out, .err, .trace, .syslog, .access, .audit, .jsonl, .ndjson, .dump, .diag, .debug, .csv\n\n**Read Mode Parameters (when path is a file):**\n- `templateId` — Expand a specific pattern from the overview\n- `severity` — Filter by error, warning, or info\n- `timeRange` — Filter by time window (HH:MM-HH:MM)\n- `pattern` — Regex filter on raw content\n- `minDuration` — Show slow operations (e.g. '1s', '500ms')\n- `correlationId` — Trace a specific request UUID\n- `includeStackFrames` — Show/hide stack frames (default: true)\n\n**User Configuration:**\n- `devtools.logFileReadTool.globalPaths` — Paths scanned for ALL workspaces (User Settings)\n- `devtools.logFileReadTool.customPaths` — Paths scanned for THIS workspace only (.vscode/settings.json)\nBoth are additive — custom paths extend global paths.\n\n**EXAMPLES:**\n- Discover all logs: {}\n- Discover logs in folder: { path: \"logs/\" }\n- Read a log file: { path: \"server.log\" }\n- Read with filter: { path: \"server.log\", severity: \"error\" }\n- Drill into pattern: { path: \"server.log\", templateId: \"t003\" }",
-				"inputSchema": {
-					"type": "object",
-					"properties": {
-						"path": {
-							"type": "string",
-							"description": "Path to a log file or folder. If omitted, discovers all log files. If a folder, lists log files recursively. If a file, reads it with compression."
-						},
-						"templateId": {
-							"type": "string",
-							"description": "Show raw lines matching this template ID from the compressed log overview."
-						},
-						"severity": {
-							"type": "string",
-							"enum": [
-								"error",
-								"warning",
-								"info"
-							],
-							"description": "Filter compressed logs by severity level."
-						},
-						"timeRange": {
-							"type": "string",
-							"description": "Time window filter: 'HH:MM-HH:MM' or 'HH:MM:SS-HH:MM:SS'."
-						},
-						"pattern": {
-							"type": "string",
-							"description": "Regex pattern to filter log content (case-insensitive)."
-						},
-						"minDuration": {
-							"type": "string",
-							"description": "Show templates with durations >= threshold: '1s', '500ms', '100ms'."
-						},
-						"correlationId": {
-							"type": "string",
-							"description": "Trace a specific request by UUID/correlation ID."
-						},
-						"includeStackFrames": {
-							"type": "boolean",
-							"description": "Show/hide stack frame templates. Default: true."
-						}
-					}
-				}
-			},
-			{
-				"name": "wait",
-				"displayName": "Wait",
-				"toolReferenceName": "wait",
-				"icon": "$(watch)",
-				"canBeReferencedInPrompt": true,
-				"userDescription": "Wait for a specified duration before continuing",
-				"modelDescription": "Wait for a specified duration before continuing. Useful for giving the page time to update, animations to complete, or network requests to settle.\n\nArgs:\n  - durationMs (number): Duration in milliseconds (0-30000)\n  - reason (string): Optional explanation for the wait\n\nReturns:\n  { elapsed_ms, requested_ms, reason? }\n\nExamples:\n  - \"Wait for animation\" -> { durationMs: 500, reason: \"animation to complete\" }\n  - \"Wait for API response\" -> { durationMs: 2000, reason: \"network request to settle\" }\n\nError Handling:\n  - Duration must be between 0 and 30000ms",
-				"inputSchema": {
-					"type": "object",
-					"properties": {
-						"durationMs": {
-							"type": "integer",
-							"minimum": 0,
-							"maximum": 30000,
-							"description": "Duration to wait in milliseconds. Must be between 0 and 30000 (30 seconds)."
-						},
-						"reason": {
-							"type": "string",
-							"description": "Optional reason for waiting (e.g., \"waiting for animation to complete\"). Included in the response for context."
-						}
-					},
-					"required": [
-						"durationMs"
-					]
-				}
 			}
 		],
 		"languages": [
@@ -362,6 +259,7 @@
 		"apache-arrow": "^18.1.0",
 		"jsonc-parser": "^3.3.1",
 		"koffi": "^2.15.1",
+		"logpare": "^0.1.0",
 		"remark-directive": "^3.0.1",
 		"remark-frontmatter": "^5.0.0",
 		"remark-gfm": "^4.0.1",
@@ -387,7 +285,6 @@
 		"eslint-plugin-jsdoc": "^62.0.0",
 		"eslint-plugin-no-secrets": "^2.1.0",
 		"eslint-plugin-perfectionist": "^4.0.0",
-		"eslint-plugin-promise": "^7.2.0",
 		"eslint-plugin-unicorn": "^56.0.0",
 		"globals": "^17.0.0",
 		"mdast-util-directive": "^3.1.0",
