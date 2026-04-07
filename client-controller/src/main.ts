@@ -258,6 +258,11 @@ for (const tool of tools) {
 	registerTool(server, tool);
 }
 
+// Start with tools disabled — they will be enabled when the Host confirms
+// the client window connected via `client-state-changed` notification.
+// This prevents tools from being visible if the client dies during startup.
+setToolsEnabled(false);
+
 // Wire up socket server with tool dispatch deps
 startMcpSocketServer({
 	executeTool,
