@@ -22,7 +22,8 @@
 import type * as vscode from 'vscode';
 
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, watch } from 'node:fs';
+import type { FSWatcher } from 'node:fs';
 import { join, relative } from 'node:path';
 import { log } from './logger';
 
@@ -55,6 +56,10 @@ interface PackageCheckResult {
 // ── Service ──────────────────────────────────────────────────────────────────
 
 class HotReloadService {
+	private watchers = new Map<string, FSWatcher>();
+	private debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+	private onChange: ((packageRoot: string) => void) | undefined;
+
 	constructor(private readonly workspaceState: vscode.Memento) {}
 
 	/**
@@ -215,6 +220,75 @@ class HotReloadService {
 		const storedPrefix = `${storedHash.slice(0, 12)}...`;
 		log(`[hotReload] Output changed (${key}): ${storedPrefix} -> ${currentPrefix}`);
 		return { changed: true, currentHash };
+	}
+
+	/**
+	 * Start watching the output folder of each extension path.
+	 * Uses native fs.watch (recursive) with 500ms debounce.
+	 * On confirmed content change, calls the onChange callback.
+	 */
+	startWatching(extensionPaths: string[], onChangeCallback: (packageRoot: string) => void): void {
+		this.stopWatching();
+		this.onChange = onChangeCallback;
+
+		for (const packageRoot of extensionPaths) {
+			const outputFolder = this.getOutputFolder(packageRoot);
+			if (!outputFolder || !existsSync(outputFolder)) {
+				log(`[hotReload] Cannot watch ${packageRoot}: no output folder`);
+				continue;
+			}
+
+			try {
+				const watcher = watch(outputFolder, { recursive: true }, (_event, _filename) => {
+					this.handleFsEvent(packageRoot);
+				});
+
+				watcher.on('error', (err) => {
+					log(`[hotReload] Watcher error for ${outputFolder}: ${String(err)}`);
+				});
+
+				this.watchers.set(packageRoot, watcher);
+				log(`[hotReload] Watching output folder: ${outputFolder}`);
+			} catch (err) {
+				log(`[hotReload] Failed to watch ${outputFolder}: ${String(err)}`);
+			}
+		}
+	}
+
+	/**
+	 * Stop all file watchers.
+	 */
+	stopWatching(): void {
+		for (const [key, watcher] of this.watchers) {
+			watcher.close();
+			log(`[hotReload] Stopped watching: ${key}`);
+		}
+		this.watchers.clear();
+
+		for (const timer of this.debounceTimers.values()) {
+			clearTimeout(timer);
+		}
+		this.debounceTimers.clear();
+
+		this.onChange = undefined;
+	}
+
+	private handleFsEvent(packageRoot: string): void {
+		const existing = this.debounceTimers.get(packageRoot);
+		if (existing) clearTimeout(existing);
+
+		const timer = setTimeout(() => {
+			this.debounceTimers.delete(packageRoot);
+			const detection = this.detectOutputChange(packageRoot, 'ext');
+			if (detection.changed) {
+				log(`[hotReload] File watcher confirmed content change for ${packageRoot}`);
+				this.onChange?.(packageRoot);
+			} else {
+				log(`[hotReload] File watcher event but content unchanged for ${packageRoot}`);
+			}
+		}, 500);
+
+		this.debounceTimers.set(packageRoot, timer);
 	}
 
 	/**

@@ -25,7 +25,7 @@ import * as vscode from 'vscode';
 
 import { BrowserService, CdpClient } from './browser';
 import { requireBrowserService, setBrowserService } from './clientDevTools';
-import { type ChangeCheckResult, createHotReloadService } from './hotReloadService';
+import { type ChangeCheckResult, createHotReloadService, getHotReloadService } from './hotReloadService';
 import { debug, log } from './logger';
 import { showCompletionNotification } from './notifications';
 
@@ -65,7 +65,10 @@ let inspectorPort: null | number = null;
 let currentClientToken: null | string = null;
 
 /** Environment variable name for client token */
-export const CLIENT_TOKEN_ENV_VAR = 'DEVTOOLS_CLIENT_TOKEN';
+export const /**
+	 *
+	 */
+	CLIENT_TOKEN_ENV_VAR = 'DEVTOOLS_CLIENT_TOKEN';
 
 /** The Extension Development Host process reference */
 let clientProcess: ChildProcess | null = null;
@@ -104,10 +107,10 @@ function getMcpServerId(): string {
 let hotReloadInProgress = false;
 
 /** Mutex preventing concurrent spawnClient calls from mcpReady + startClientWindow */
-let spawnInProgress: Promise<{ cdpPort: number; userDataDir: string; clientStartedAt: number }> | null = null;
+let spawnInProgress: null | Promise<{ cdpPort: number; userDataDir: string; clientStartedAt: number }> = null;
 
 /** Mutex preventing concurrent startClientWindow calls */
-let startInProgress: Promise<boolean> | null = null;
+let startInProgress: null | Promise<boolean> = null;
 
 /** Exported getter so extension.ts can check before tethered lifecycle actions. */
 export function isHotReloadInProgress(): boolean {
@@ -161,6 +164,71 @@ let reconnectPromise: null | Promise<boolean> = null;
 
 /** Active CDP client for browser automation LM tools */
 let activeCdpClient: CdpClient | null = null;
+
+/**
+ * Start the native file watcher on extension output folders.
+ * When a content change is confirmed (debounced + hash verified),
+ * triggers the hot reload restart flow.
+ */
+function startOutputWatcher(extensionPaths: string[]): void {
+	const svc = getHotReloadService();
+	if (!svc) {
+		log('[hotReload] Cannot start watcher — hotReloadService not initialized');
+		return;
+	}
+	svc.startWatching(extensionPaths, (packageRoot) => {
+		if (hotReloadInProgress) {
+			log('[hotReload] Ignoring watcher event — hot reload already in progress');
+			return;
+		}
+
+		log(`[hotReload] Watcher triggered restart for ${packageRoot}`);
+		void performHotReload();
+	});
+}
+
+async function performHotReload(): Promise<void> {
+	if (!currentClientWorkspace || !currentExtensionPath || currentExtensionPath.length === 0) {
+		log('[hotReload] Cannot perform hot reload — no active client session');
+		return;
+	}
+
+	hotReloadInProgress = true;
+	const extensionPaths = [...currentExtensionPath];
+	const workspace = currentClientWorkspace;
+	const svc = getHotReloadService();
+
+	try {
+		svc?.stopWatching();
+		disconnectCdpClient();
+		stopClient();
+
+		await waitForPipeRelease();
+
+		const result = await spawnClient(workspace, extensionPaths);
+
+		await connectCdpClient(result.cdpPort);
+
+		if (svc) {
+			for (const extPath of extensionPaths) {
+				await svc.commitHash('ext', svc.detectOutputChange(extPath, 'ext').currentHash);
+			}
+		}
+
+		startOutputWatcher(extensionPaths);
+
+		log(`[hotReload] Hot reload complete — client restarted on port ${result.cdpPort}`);
+	} catch (err) {
+		log(`[hotReload] Hot reload failed: ${String(err)}`);
+	} finally {
+		hotReloadInProgress = false;
+
+		if (lastKnownClientState !== undefined) {
+			log(`[state-fire] hotReload: replaying state=${lastKnownClientState} after hot-reload guard lifted`);
+			_onClientStateChanged.fire(lastKnownClientState);
+		}
+	}
+}
 
 /** Optional callback to propagate browser service changes to other bundles (e.g., runtime.js) */
 let onBrowserServiceChangedCallback: ((service: BrowserService | null) => void) | null = null;
@@ -1188,6 +1256,7 @@ function stopClient(): void {
 	clientReconnecting = false;
 	reconnectPromise = null;
 	clearPersistedSession();
+	getHotReloadService()?.stopWatching();
 }
 
 /**
@@ -1393,6 +1462,9 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 			await hotReloadService.commitHash('ext', hotReloadService.detectOutputChange(extPath, 'ext').currentHash);
 		}
 
+		// Start watching output folders for changes
+		startOutputWatcher(extensionPaths);
+
 		return { cdpPort: result.cdpPort, clientStartedAt: result.clientStartedAt, userDataDir: result.userDataDir };
 	});
 
@@ -1429,6 +1501,9 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 			for (const extPath of extensionPaths) {
 				await hotReloadService.commitHash('ext', hotReloadService.detectOutputChange(extPath, 'ext').currentHash);
 			}
+
+			// Re-start watching output folders
+			startOutputWatcher(extensionPaths);
 
 			return { cdpPort: result.cdpPort, clientStartedAt: result.clientStartedAt, userDataDir: result.userDataDir };
 		} finally {
@@ -2136,7 +2211,7 @@ async function doStartClientWindow(): Promise<boolean> {
 	const session = loadPersistedSession();
 	log(`startClientWindow: PATH=persisted-session (session=${session ? 'FOUND' : 'NULL'})`);
 	debug(
-		`Persisted session: ${session ? JSON.stringify({ clientPid: session.clientPid, cdpPort: session.cdpPort, inspectorPort: session.inspectorPort }) : 'null'}`
+		`Persisted session: ${session ? JSON.stringify({ cdpPort: session.cdpPort, clientPid: session.clientPid, inspectorPort: session.inspectorPort }) : 'null'}`
 	);
 	if (session) {
 		electronPid = session.clientPid;
