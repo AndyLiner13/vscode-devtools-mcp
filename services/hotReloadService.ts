@@ -173,11 +173,15 @@ class HotReloadService {
 	detectOutputChange(packageRoot: string, hashKey: 'ext' | 'inspector' | 'mcp'): { changed: boolean; currentHash: string } {
 		const key = hashKey === 'mcp' ? HASH_KEY_MCP : hashKey === 'inspector' ? HASH_KEY_INSPECTOR : HASH_KEY_EXT;
 
+		log(`[hotReload] detectOutputChange called for ${packageRoot} (${key})`);
+
 		const outputFolder = this.getOutputFolder(packageRoot);
 		if (!outputFolder) {
 			log(`[hotReload] Skipping detectOutputChange (${key}): no main field in package.json at ${packageRoot}`);
 			return { changed: false, currentHash: '' };
 		}
+
+		log(`[hotReload] Output folder resolved: ${outputFolder}`);
 
 		if (!existsSync(outputFolder)) {
 			log(`[hotReload] Skipping detectOutputChange (${key}): output folder does not exist: ${outputFolder}`);
@@ -190,15 +194,25 @@ class HotReloadService {
 			return { changed: false, currentHash: '' };
 		}
 
+		log(`[hotReload] Found ${files.length} files in output folder`);
+
 		const currentHash = this.computeContentHash(outputFolder, files);
 		const storedHash = this.getStoredHash(key);
 
-		if (storedHash === currentHash) {
+		const currentPrefix = `${currentHash.slice(0, 12)}...`;
+
+		// No stored hash = first run, just store it without triggering restart
+		if (!storedHash) {
+			log(`[hotReload] First run (${key}), storing initial hash: ${currentPrefix}`);
 			return { changed: false, currentHash };
 		}
 
-		const storedPrefix = storedHash ? `${storedHash.slice(0, 12)}...` : 'none';
-		const currentPrefix = `${currentHash.slice(0, 12)}...`;
+		if (storedHash === currentHash) {
+			log(`[hotReload] Output unchanged (${key}): ${currentPrefix}`);
+			return { changed: false, currentHash };
+		}
+
+		const storedPrefix = `${storedHash.slice(0, 12)}...`;
 		log(`[hotReload] Output changed (${key}): ${storedPrefix} -> ${currentPrefix}`);
 		return { changed: true, currentHash };
 	}
@@ -220,12 +234,12 @@ class HotReloadService {
 	 * Returns whether output changed. No builds are triggered.
 	 * The `rebuilt` field is always false (no build orchestration).
 	 * The `buildError` field is always null (no builds).
+	 *
+	 * IMPORTANT: Does NOT commit the hash. Caller must call commitHash()
+	 * after the client successfully restarts.
 	 */
 	async checkPackageWithScript(packageRoot: string, _buildScript: string): Promise<PackageCheckResult> {
 		const detection = this.detectOutputChange(packageRoot, 'ext');
-		if (detection.changed) {
-			await this.commitHash('ext', detection.currentHash);
-		}
 		return {
 			buildError: null,
 			changed: detection.changed,
@@ -239,6 +253,9 @@ class HotReloadService {
 	 * Checks if output folders have changed. No builds are triggered.
 	 * - If extension output changed: caller handles Client restart
 	 * - If MCP output changed: caller handles MCP restart
+	 *
+	 * IMPORTANT: Does NOT commit hashes. Caller must call commitHash()
+	 * after the client/MCP successfully restarts.
 	 */
 	async checkForChanges(mcpServerRoot: string, extensionRoot: string): Promise<ChangeCheckResult> {
 		const result: ChangeCheckResult = {
@@ -257,17 +274,11 @@ class HotReloadService {
 		const extDetection = this.detectOutputChange(extensionRoot, 'ext');
 		result.extChanged = extDetection.changed;
 		result.extRebuilt = extDetection.changed;
-		if (extDetection.changed) {
-			await this.commitHash('ext', extDetection.currentHash);
-		}
 
 		// MCP server output folder
 		const mcpDetection = this.detectOutputChange(mcpServerRoot, 'mcp');
 		result.mcpChanged = mcpDetection.changed;
 		result.mcpRebuilt = mcpDetection.changed;
-		if (mcpDetection.changed) {
-			await this.commitHash('mcp', mcpDetection.currentHash);
-		}
 
 		return result;
 	}

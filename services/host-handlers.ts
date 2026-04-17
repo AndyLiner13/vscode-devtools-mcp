@@ -1388,6 +1388,11 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 
 		await connectCdpClient(result.cdpPort);
 
+		// Always commit the current hash after successful startup (both for first run and after hot reload)
+		for (const extPath of extensionPaths) {
+			await hotReloadService.commitHash('ext', hotReloadService.detectOutputChange(extPath, 'ext').currentHash);
+		}
+
 		return { cdpPort: result.cdpPort, clientStartedAt: result.clientStartedAt, userDataDir: result.userDataDir };
 	});
 
@@ -1416,14 +1421,14 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 
 			await waitForPipeRelease();
 
-			// Commit the current output hash for all extension paths
-			for (const extPath of extensionPaths) {
-				await hotReloadService.checkPackageWithScript(extPath, '');
-			}
-
 			const result = await spawnClient(clientWorkspace, extensionPaths, launchFlags);
 
 			await connectCdpClient(result.cdpPort);
+
+			// Commit the hash now that client has successfully restarted
+			for (const extPath of extensionPaths) {
+				await hotReloadService.commitHash('ext', hotReloadService.detectOutputChange(extPath, 'ext').currentHash);
+			}
 
 			return { cdpPort: result.cdpPort, clientStartedAt: result.clientStartedAt, userDataDir: result.userDataDir };
 		} finally {
