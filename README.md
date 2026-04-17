@@ -47,7 +47,7 @@ The **Client Controller** is the MCP server component that bridges AI assistants
 
 - Launches and manages the Client VS Code window lifecycle (spawn, reconnect, graceful shutdown).
 - Exposes a set of MCP tools for browser automation, input simulation, console reading, and screenshot capture.
-- Supports hot-reload: when you change the extension or MCP server source code, it detects content-hash changes, rebuilds, and restarts automatically.
+- Supports hot-reload: watches the extension's output folder (derived from `package.json` `main` field) and restarts automatically when built artifacts change.
 - Provides a request pipeline (FIFO queue) that serializes all tool calls to prevent race conditions.
 - Communicates with the Host extension over named pipes for CDP operations (accessibility tree, screenshots, console messages, input dispatch).
 
@@ -123,11 +123,11 @@ All settings are under the `devtools.*` namespace.
 
 ### General
 
-| Setting                      | Type      | Default | Description                                                                                                                                                                           |
-| ---------------------------- | --------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `devtools.clientWorkspace`   | `string`  | `""`    | Path to the client workspace folder (absolute, or relative to host workspace root). If empty, uses the host workspace root.                                                           |
-| `devtools.extensionPath`     | `string`  | `"."`   | Path to the vscode-devtools extension folder (absolute, or relative to host workspace root).                                                                                          |
-| `devtools.hotReload.enabled` | `boolean` | `true`  | Enable automatic hot-reload on source changes. When enabled, the extension detects content-hash changes in the MCP server and extension source, rebuilds, and restarts automatically. |
+| Setting                      | Type      | Default | Description                                                                                                                                                                                                                           |
+| ---------------------------- | --------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `devtools.clientWorkspace`   | `string`  | `""`    | Path to the client workspace folder (absolute, or relative to host workspace root). If empty, uses the host workspace root.                                                                                                           |
+| `devtools.extensionPath`     | `string`  | `"."`   | Path to the vscode-devtools extension folder (absolute, or relative to host workspace root).                                                                                                                                          |
+| `devtools.hotReload.enabled` | `boolean` | `true`  | Enable automatic hot-reload on output changes. When enabled, the extension watches the output folder (e.g., `dist/`) derived from the extension's `package.json` `main` field and restarts automatically when built artifacts change. |
 
 ### Notifications
 

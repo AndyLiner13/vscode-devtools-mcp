@@ -1329,24 +1329,12 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 			throw new Error('mcpReady: extensionPath or extensionPaths is required');
 		}
 
-		// Check if extension source changed across all paths
-		const buildScriptName = vscode.workspace.getConfiguration('devtools').get<string>('buildScriptName', 'build');
+		// Check if extension output changed across all paths
 		let anyExtChanged = false;
-		let anyExtBuildFailed = false;
 		for (const extPath of extensionPaths) {
-			const extCheck = await hotReloadService.checkPackageWithScript(extPath, buildScriptName);
-			if (extCheck.changed && !extCheck.rebuilt) {
-				log(`[host] Extension build failed for ${extPath}: ${extCheck.buildError ?? 'unknown'}`);
-				anyExtBuildFailed = true;
-			}
+			const extCheck = await hotReloadService.checkPackageWithScript(extPath, '');
 			if (extCheck.changed) anyExtChanged = true;
 		}
-		if (anyExtBuildFailed) {
-			log('[host] One or more extension builds failed — keeping existing Client');
-		}
-
-		// Only consider the extension "changed" if it changed AND rebuilt successfully
-		const shouldRestartForExtChange = anyExtChanged && !anyExtBuildFailed;
 
 		// Check for existing healthy Client
 		const session = loadPersistedSession();
@@ -1367,8 +1355,8 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 				await waitForPipeRelease();
 			} else {
 				const healthy = await isClientHealthy();
-				if (healthy && !shouldRestartForExtChange) {
-					log('[host] Existing Client is healthy and build is current, returning connection info');
+				if (healthy && !anyExtChanged) {
+					log('[host] Existing Client is healthy and output is current, returning connection info');
 					const dataDir = hostStoragePath
 						? path.join(hostStoragePath, 'user-data')
 						: path.join(clientWorkspace, '.devtools', 'user-data');
@@ -1380,8 +1368,8 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 					return { cdpPort: session.cdpPort, clientStartedAt: session.startedAt, userDataDir: dataDir };
 				}
 
-				if (healthy && shouldRestartForExtChange) {
-					log('[host] Extension source changed \u2014 stopping existing Client to restart with fresh code');
+				if (healthy && anyExtChanged) {
+					log('[host] Extension output changed \u2014 stopping existing Client to restart with fresh build');
 				} else {
 					log('[host] Persisted session exists but Client is not healthy');
 				}
@@ -1428,10 +1416,9 @@ export function registerHostHandlers(register: RegisterHandler, context: vscode.
 
 			await waitForPipeRelease();
 
-			// Ensure builds are up-to-date for all extension paths
-			const buildScriptName = vscode.workspace.getConfiguration('devtools').get<string>('buildScriptName', 'build');
+			// Commit the current output hash for all extension paths
 			for (const extPath of extensionPaths) {
-				await hotReloadService.checkPackageWithScript(extPath, buildScriptName);
+				await hotReloadService.checkPackageWithScript(extPath, '');
 			}
 
 			const result = await spawnClient(clientWorkspace, extensionPaths, launchFlags);
